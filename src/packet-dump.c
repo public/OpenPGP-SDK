@@ -18,9 +18,11 @@ static ops_packet_reader_ret reader(unsigned char *dest,unsigned length)
     return OPS_PR_OK;
     }
 
-void callback(ops_content_tag tag,ops_parser_content *content)
+void callback(ops_parser_content *content_)
     {
-    switch(tag)
+    ops_parser_content_union *content=&content_->content;
+
+    switch(content_->tag)
 	{
     case OPS_PARSER_ERROR:
 	printf("parse error: %s\n",content->error.error);
@@ -28,16 +30,16 @@ void callback(ops_content_tag tag,ops_parser_content *content)
 
     case OPS_PARSER_PTAG:
 	printf("ptag new_format=%d content_tag=%d length_type=%d"
-	       " length=0x%x (%d)\n",
-	       content->ptag.new_format,content->ptag.content_tag,
-	       content->ptag.length_type,content->ptag.length,
-	       content->ptag.length);
+	       " length=0x%x (%d)\n",content->ptag.new_format,
+	       content->ptag.content_tag,content->ptag.length_type,
+	       content->ptag.length,content->ptag.length);
 	break;
 
     case OPS_PTAG_CT_PUBLIC_KEY:
 	printf("public key version=%d creation_time=%ld (%.24s)\n",
 	       content->public_key.version,content->public_key.creation_time,
 	       ctime(&content->public_key.creation_time));
+	/* XXX: convert algorithm to string */
 	printf("           days_valid=%d algorithm=%d\n",
 	       content->public_key.days_valid,content->public_key.algorithm);
 	switch(content->public_key.algorithm)
@@ -67,8 +69,12 @@ void callback(ops_content_tag tag,ops_parser_content *content)
 	putchar('\n');
 	break;
 
+    case OPS_PTAG_CT_USER_ID:
+	printf("user id user_id=%s\n",content->user_id.user_id);
+	break;
+
     default:
-	fprintf(stderr,"unknown tag=%d\n",tag);
+	fprintf(stderr,"unknown tag=%d\n",content_->tag);
 	exit(1);
 	}
     }

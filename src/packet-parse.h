@@ -5,8 +5,7 @@ typedef enum
     OPS_PR_EARLY_EOF	=2,
     } ops_packet_reader_ret;
 
-typedef void ops_packet_parse_callback(ops_content_tag tag,
-				       ops_parser_content *content);
+typedef void ops_packet_parse_callback(ops_parser_content *content);
 typedef ops_packet_reader_ret ops_packet_reader(unsigned char *dest,
 						unsigned length);
 

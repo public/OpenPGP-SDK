@@ -110,9 +110,22 @@ typedef struct
     ops_public_key		key;
     } ops_parser_public_key;
 
+typedef struct
+    {
+    char *			user_id;
+    } ops_parser_user_id;
+
 typedef union
     {
     ops_parser_error		error;
     ops_parser_ptag		ptag;
     ops_parser_public_key	public_key;
+    ops_parser_user_id		user_id;
+    } ops_parser_content_union;
+
+typedef struct
+    {
+    ops_content_tag		tag;
+    ops_parser_content_union 	content;
     } ops_parser_content;
+
