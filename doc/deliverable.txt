@@ -23,9 +23,9 @@ API
 
 * Add/remove UID
 
-* Sign UID
+* Certify UID
 
-* Revoke signature
+* Revoke certification
 
 * Sign message
 
@@ -37,7 +37,7 @@ API
 
 * Decrypt, using a key
 
-* Import any object to GPG/PGP (key, keyring, signed message, encrypted message)
+* Import any object to GPG/PGP (key, keyring)
 
 * Export any object
 
@@ -78,9 +78,9 @@ Command-line
 
 * Remove UID
 
-* Sign UID
+* Certify UID
 
-* Revoke signature 
+* Revoke certification
 
 * Encrypt
 
@@ -90,6 +90,6 @@ Command-line
 
 * Verify
 
-Note that (at least the first phase) is not aiming at super-smooth
+Note that at least the first phase is not aiming at super-smooth
 command-line utilities - these will be good enough for testing, rather
 than for general use.
