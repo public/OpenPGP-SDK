@@ -64,59 +64,69 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
     return ops_true;
     }
 
-ops_boolean_t
-ops_check_certification_signature(const ops_public_key_t *key,
-				  const ops_user_id_t *id,
-				  const ops_signature_t *sig,
-				  const ops_public_key_t *signer,
-				  const unsigned char *raw_packet)
+static void hash_add_key(ops_hash_t *hash,const ops_public_key_t *key)
     {
-    ops_hash_t hash;
     ops_memory_t mem;
-    unsigned char hashout[OPS_MAX_HASH];
-    unsigned n;
-    ops_boolean_t ret;
 
+    memset(&mem,'\0',sizeof mem);
+    ops_build_public_key(&mem,key,ops_false);
+
+    hash_add_int(hash,0x99,1);
+    hash_add_int(hash,mem.length,2);
+    hash->add(hash,mem.buf,mem.length);
+
+    ops_memory_release(&mem);
+    }
+
+static void init_signature(ops_hash_t *hash,const ops_signature_t *sig,
+			   const ops_public_key_t *key)
+    {
     switch(sig->hash_algorithm)
 	{
     case OPS_HASH_MD5:
-	ops_hash_md5(&hash);
+	ops_hash_md5(hash);
 	break;
 
     case OPS_HASH_SHA1:
-	ops_hash_sha1(&hash);
+	ops_hash_sha1(hash);
 	break;
 
     default:
 	assert(0);
 	}
-    hash.init(&hash);
 
-    memset(&mem,'\0',sizeof mem);
-    ops_build_public_key(&mem,key,ops_false);
+    hash->init(hash);
+    hash_add_key(hash,key);
+    }
 
-    hash_add_int(&hash,0x99,1);
-    hash_add_int(&hash,mem.length,2);
-    hash.add(&hash,mem.buf,mem.length);
+static void hash_add_trailer(ops_hash_t *hash,const ops_signature_t *sig,
+			     const ops_public_key_t *signer,
+			     const unsigned char *raw_packet)
+    {
     if(sig->version == OPS_SIG_V4)
 	{
-	hash_add_int(&hash,0xb4,1);
-	hash_add_int(&hash,strlen(id->user_id),4);
-	hash.add(&hash,id->user_id,strlen(id->user_id));
-	hash.add(&hash,raw_packet+sig->v4_hashed_data_start,
-		 sig->v4_hashed_data_length);
-	hash_add_int(&hash,sig->version,1);
-	hash_add_int(&hash,0xff,1);
-	hash_add_int(&hash,sig->v4_hashed_data_length,4);
+	hash->add(hash,raw_packet+sig->v4_hashed_data_start,
+		  sig->v4_hashed_data_length);
+	hash_add_int(hash,sig->version,1);
+	hash_add_int(hash,0xff,1);
+	hash_add_int(hash,sig->v4_hashed_data_length,4);
 	}
     else
 	{
-	hash.add(&hash,id->user_id,strlen(id->user_id));
-	hash_add_int(&hash,sig->type,1);
-	hash_add_int(&hash,sig->creation_time,4);
+	hash_add_int(hash,sig->type,1);
+	hash_add_int(hash,sig->creation_time,4);
 	}
+    }
 
-    n=hash.finish(&hash,hashout);
+static ops_boolean_t check_signature(ops_hash_t *hash,
+				     const ops_signature_t *sig,
+				     const ops_public_key_t *signer)
+    {
+    int n;
+    ops_boolean_t ret;
+    unsigned char hashout[OPS_MAX_HASH];
+
+    n=hash->finish(hash,hashout);
     printf(" hash=");
     //    hashout[0]=0;
     hexdump(hashout,n);
@@ -138,3 +148,52 @@ ops_check_certification_signature(const ops_public_key_t *key,
 
     return ret;
     }
+
+static ops_boolean_t finalise_signature(ops_hash_t *hash,
+					const ops_signature_t *sig,
+					const ops_public_key_t *signer,
+					const unsigned char *raw_packet)
+    {
+    hash_add_trailer(hash,sig,signer,raw_packet);
+    return check_signature(hash,sig,signer);
+    }
+
+ops_boolean_t
+ops_check_certification_signature(const ops_public_key_t *key,
+				  const ops_user_id_t *id,
+				  const ops_signature_t *sig,
+				  const ops_public_key_t *signer,
+				  const unsigned char *raw_packet)
+    {
+    ops_hash_t hash;
+
+    init_signature(&hash,sig,key);
+
+    if(sig->version == OPS_SIG_V4)
+	{
+	hash_add_int(&hash,0xb4,1);
+	hash_add_int(&hash,strlen(id->user_id),4);
+	hash.add(&hash,id->user_id,strlen(id->user_id));
+	}
+    else
+	hash.add(&hash,id->user_id,strlen(id->user_id));
+
+    return finalise_signature(&hash,sig,signer,raw_packet);
+    }
+
+ops_boolean_t
+ops_check_subkey_signature(const ops_public_key_t *key,
+			   const ops_public_key_t *subkey,
+			   const ops_signature_t *sig,
+			   const ops_public_key_t *signer,
+			   const unsigned char *raw_packet)
+    {
+    ops_hash_t hash;
+
+    init_signature(&hash,sig,key);
+    hash_add_key(&hash,subkey);
+
+    return finalise_signature(&hash,sig,signer,raw_packet);
+    }
+
+

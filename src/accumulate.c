@@ -108,6 +108,7 @@ typedef struct
     int offset;
     // validation data
     ops_public_key_t pkey;
+    ops_public_key_t subkey;
     ops_user_id_t user_id;
     const ops_keyring_t *keyring;
     } validate_arg_t;
@@ -141,12 +142,17 @@ validate_cb(const ops_parser_content_t *content_,void *arg_)
     const ops_parser_content_union_t *content=&content_->content;
     validate_arg_t *arg=arg_;
     const ops_key_data_t *signer;
+    ops_boolean_t valid;
 
     switch(content_->tag)
 	{
     case OPS_PTAG_CT_PUBLIC_KEY:
 	assert(arg->pkey.version == 0);
 	arg->pkey=content->public_key;
+	return OPS_KEEP_MEMORY;
+
+    case OPS_PTAG_CT_PUBLIC_SUBKEY:
+	arg->subkey=content->public_key;
 	return OPS_KEEP_MEMORY;
 
     case OPS_PTAG_CT_USER_ID:
@@ -168,18 +174,24 @@ validate_cb(const ops_parser_content_t *content_,void *arg_)
 	    printf(" UNKNOWN SIGNER\n");
 	    break;
 	    }
+
 	switch(content->signature.type)
 	    {
 	case OPS_CERT_GENERIC:
 	case OPS_CERT_PERSONA:
 	case OPS_CERT_CASUAL:
 	case OPS_CERT_POSITIVE:
-	    if(ops_check_certification_signature(&arg->pkey,&arg->user_id,
-		 &content->signature,&signer->pkey,
-		 arg->key->packets[arg->packet].raw))
-		printf(" validated\n");
-	    else
-		printf(" BAD SIGNATURE\n");
+	case OPS_SIG_REV_CERT:
+	    valid=ops_check_certification_signature(&arg->pkey,&arg->user_id,
+		    &content->signature,&signer->pkey,
+		    arg->key->packets[arg->packet].raw);
+	    break;
+
+	case OPS_SIG_SUBKEY:
+	    // XXX: we should also check that the signer is the key we are validating, I think.
+	    valid=ops_check_subkey_signature(&arg->pkey,&arg->subkey,
+		    &content->signature,&signer->pkey,
+		    arg->key->packets[arg->packet].raw);
 	    break;
 
 	default:
@@ -187,6 +199,10 @@ validate_cb(const ops_parser_content_t *content_,void *arg_)
 		    content->signature.type);
 	    exit(1);
 	    }
+	if(valid)
+	    printf(" validated\n");
+	else
+	    printf(" BAD SIGNATURE\n");
 	break;
 
     default:
