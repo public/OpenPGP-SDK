@@ -1,10 +1,15 @@
-/* $Id$ */
+/** \file packet-parse.h
+ * Parser for OpenPGP packets - headers.
+ *
+ * $Id$
+ */
 
+/** Return values for #ops_packet_reader_t. */
 typedef enum
     {
-    OPS_PR_OK		=0,
-    OPS_PR_EOF		=1,
-    OPS_PR_EARLY_EOF	=2,
+    OPS_PR_OK		=0,	/*!< success */
+    OPS_PR_EOF		=1,	/*!< reached end of file, no data has been returned */
+    OPS_PR_EARLY_EOF	=2,	/*!< could not read the requested amount of bytes */  /* XXX: How do we tell how many? */
     } ops_packet_reader_ret_t;
 
 typedef void ops_packet_parse_callback_t(const ops_parser_content_t *content);
@@ -34,3 +39,5 @@ void ops_parse_packet_options(ops_parse_packet_options_t *opt,
 			      ops_content_tag_t tag,
 			      ops_parse_type_t type);
 
+/* vim:set textwidth=120: */
+/* vim:set ts=8: */

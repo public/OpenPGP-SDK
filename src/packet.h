@@ -157,7 +157,7 @@ typedef struct
     unsigned		length;		/*!< The length of the packet.  This value is set when we read and compute the
 					  length information, not at the same moment we create the packet tag structure.
 					  Only defined if #length_read is set. */  /* XXX: Ben, is this correct? */
-    unsigned		length_read;	/*!< Whether this packet's length has been read and computed - for internal use
+    unsigned		length_read;	/*!< How much bytes of this packet we have read so far - for internal use
 					  only. */
     } ops_ptag_t;
 
@@ -173,7 +173,7 @@ typedef enum
     OPS_PKA_RSA			=1,	/*!< RSA (Encrypt or Sign) */
     OPS_PKA_RSA_ENCRYPT_ONLY	=2,	/*!< RSA Encrypt-Only (deprecated - \see RFC2440bis-12 12.4) */
     OPS_PKA_RSA_SIGN_ONLY	=3,	/*!< RSA Sign-Only (deprecated - \see RFC2440bis-12 12.4) */
-    OPS_PKA_ELGAMEL		=16,	/*!< Elgamal (Encrypt-Only) */
+    OPS_PKA_ELGAMAL		=16,	/*!< Elgamal (Encrypt-Only) */
     OPS_PKA_DSA			=17	/*!< DSA (Digital Signature Algorithm) */
     } ops_public_key_algorithm_t;
 
