@@ -397,6 +397,9 @@ typedef struct
 
 void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key);
 void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
+void ops_public_key_free(ops_public_key_t *key);
+void ops_user_id_free(ops_user_id_t *id);
+void ops_signature_free(ops_signature_t *sig);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

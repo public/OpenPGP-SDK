@@ -39,7 +39,8 @@ static void bndump(const char *name,const BIGNUM *bn)
     putchar('\n');
     }
 
-static void callback(const ops_parser_content_t *content_,void *arg_)
+static ops_parse_callback_return_t
+callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
 
@@ -146,6 +147,7 @@ static void callback(const ops_parser_content_t *content_,void *arg_)
 	fprintf(stderr,"unknown tag=%d\n",content_->tag);
 	exit(1);
 	}
+    return OPS_RELEASE_MEMORY;
     }
 
 int main(int argc,char **argv)

@@ -12,8 +12,14 @@ typedef enum
     OPS_PR_EARLY_EOF	=2,	/*!< could not read the requested amount of bytes */  /* XXX: How do we tell how many? */
     } ops_packet_reader_ret_t;
 
-typedef void ops_packet_parse_callback_t(const ops_parser_content_t *content,
-					 void *arg);
+typedef enum
+    {
+    OPS_RELEASE_MEMORY,
+    OPS_KEEP_MEMORY
+    } ops_parse_callback_return_t;
+
+typedef ops_parse_callback_return_t
+ops_packet_parse_callback_t(const ops_parser_content_t *content,void *arg);
 typedef ops_packet_reader_ret_t ops_packet_reader_t(unsigned char *dest,
 						    unsigned length,
 						    void *arg);
@@ -46,6 +52,8 @@ typedef enum
 
 void ops_parse_options(ops_parse_options_t *opt,ops_content_tag_t tag,
 		       ops_parse_type_t type);
+
+void ops_content_free_inner(ops_parser_content_t *c);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

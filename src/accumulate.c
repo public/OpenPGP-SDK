@@ -26,11 +26,12 @@ typedef struct
     int nkeys; // while we are constructing a key, this is the offset
     int nkeys_allocated;
     key_data_t *keys;
-    } accumulate_arg_t;    
+    } ops_keyring_t;    
 
-static void accumulate_cb(const ops_parser_content_t *content_,void *arg_)
+static ops_parse_callback_return_t
+accumulate_cb(const ops_parser_content_t *content_,void *arg_)
     {
-    accumulate_arg_t *arg=arg_;
+    ops_keyring_t *arg=arg_;
     const ops_parser_content_union_t *content=&content_->content;
     key_data_t *cur=&arg->keys[arg->nkeys];
 
@@ -55,7 +56,7 @@ static void accumulate_cb(const ops_parser_content_t *content_,void *arg_)
     case OPS_PARSER_PACKET_END:
 	EXPAND_ARRAY(cur,packets);
 	cur->packets[cur->npackets++]=content->packet;
-	break;
+	return OPS_KEEP_MEMORY;
 
     case OPS_PARSER_ERROR:
 	fprintf(stderr,"Error: %s\n",content->error.error);
@@ -66,7 +67,8 @@ static void accumulate_cb(const ops_parser_content_t *content_,void *arg_)
 	}
 
     if(arg->cb)
-	arg->cb(content_,arg->cb_arg);
+	return arg->cb(content_,arg->cb_arg);
+    return OPS_RELEASE_MEMORY;
     }
 
 static void dump_one_key_data(const key_data_t *key)
@@ -100,9 +102,22 @@ static void dump_key_data(const key_data_t *keys,int nkeys)
 	dump_one_key_data(&keys[n]);
     }
 
+static void validate_key_signatures(const key_data_t *key,
+				    const ops_keyring_t *ring)
+    {
+    }
+
+static void validate_all_signatures(const ops_keyring_t *ring)
+    {
+    int n;
+
+    for(n=0 ; n < ring->nkeys ; ++n)
+	validate_key_signatures(&ring->keys[n],ring);
+    }
+
 void ops_parse_and_accumulate(ops_parse_options_t *opt)
     {
-    accumulate_arg_t arg;
+    ops_keyring_t arg;
 
     assert(!opt->accumulate);
 
@@ -119,4 +134,5 @@ void ops_parse_and_accumulate(ops_parse_options_t *opt)
     ++arg.nkeys;
 
     dump_key_data(arg.keys,arg.nkeys);
+    validate_all_signatures(&arg);
     }

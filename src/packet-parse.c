@@ -25,7 +25,7 @@ static void init_subregion(ops_region_t *subregion,ops_region_t *region)
     subregion->parent=region;
     }
 
-#define CB(t,pc)	do { (pc)->tag=(t); opt->cb(pc,opt->cb_arg); } while(0)
+#define CB(t,pc)	do { (pc)->tag=(t); if(opt->cb(pc,opt->cb_arg) == OPS_RELEASE_MEMORY) ops_content_free_inner(pc); } while(0)
 #define C		content.content
 
 #define E		CB(OPS_PARSER_ERROR,&content); return 0
@@ -316,6 +316,72 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
     return limited_read_scalar(length,4,region,opt);
     }
 
+void ops_content_free_inner(ops_parser_content_t *c)
+    {
+    switch(c->tag)
+	{
+    case OPS_PARSER_PTAG:
+	break;
+
+    case OPS_PTAG_CT_SIGNATURE:
+	ops_signature_free(&c->content.signature);
+	break;
+
+    case OPS_PTAG_CT_PUBLIC_KEY:
+    case OPS_PTAG_CT_PUBLIC_SUBKEY:
+	ops_public_key_free(&c->content.public_key);
+	break;
+
+    case OPS_PTAG_CT_USER_ID:
+	ops_user_id_free(&c->content.user_id);
+	break;
+
+    case OPS_PARSER_PACKET_END:
+	free(c->content.packet.raw);
+	c->content.packet.raw=NULL;
+	break;
+
+    default:
+	fprintf(stderr,"Can't free %d (0x%x)\n",c->tag,c->tag);
+	assert(0);
+	}
+    }
+
+static void free_BN(BIGNUM **pp)
+    {
+    BN_free(*pp);
+    *pp=NULL;
+    }
+
+void ops_public_key_free(ops_public_key_t *p)
+    {
+    switch(p->algorithm)
+	{
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	free_BN(&p->key.rsa.n);
+	free_BN(&p->key.rsa.e);
+	break;
+
+    case OPS_PKA_DSA:
+	free_BN(&p->key.dsa.p);
+	free_BN(&p->key.dsa.q);
+	free_BN(&p->key.dsa.g);
+	free_BN(&p->key.dsa.y);
+	break;
+
+    case OPS_PKA_ELGAMAL:
+	free_BN(&p->key.elgamal.p);
+	free_BN(&p->key.elgamal.g);
+	free_BN(&p->key.elgamal.y);
+	break;
+
+    default:
+	assert(0);
+	}
+    }
+
 /** Parse a public key packet.
  *
  * This function parses an entire v3 (== v2) or v4 public key packet for RSA, ElGamal, and DSA keys.
@@ -397,6 +463,12 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     return 1;
     }
 
+void ops_user_id_free(ops_user_id_t *id)
+    {
+    free(id->user_id);
+    id->user_id=NULL;
+    }
+
 /** Parse a user id.
  *
  * This function parses an user id packet, which is basically just a char array the size of the packet.
@@ -429,6 +501,24 @@ static int parse_user_id(ops_region_t *region,ops_parse_options_t *opt)
     CB(OPS_PTAG_CT_USER_ID,&content);
 
     return 1;
+    }
+
+void ops_signature_free(ops_signature_t *sig)
+    {
+    switch(sig->key_algorithm)
+	{
+    case OPS_PKA_RSA:
+	free_BN(&sig->signature.rsa.sig);
+	break;
+
+    case OPS_PKA_DSA:
+	free_BN(&sig->signature.dsa.r);
+	free_BN(&sig->signature.dsa.s);
+	break;
+
+    default:
+	assert(0);
+	}
     }
 
 /** Parse a version 3 signature.
