@@ -13,6 +13,3 @@ clean:
 
 .depend: *.[ch]
 	$(CC) -E -MM *.[ch] > .depend
-
-dox:
-	doxygen doxygen.conf
