@@ -1,5 +1,5 @@
 #include "signature.h"
-#include "hash.h"
+#include "crypto.h"
 #include "memory.h"
 #include "build.h"
 #include <assert.h>

@@ -1,7 +1,4 @@
-#include "packet.h"
 #include "util.h"
-#include "hash.h"
-#include "build.h"
 #include <stdio.h>
 #include <assert.h>
 
