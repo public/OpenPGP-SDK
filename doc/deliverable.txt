@@ -7,17 +7,25 @@ API
 
 * Generate key
 
-* Find key in loaded keyring (by key ID, by UID)
-
 * Add key to keyring
 
-* Add/Edit/remove UID
+* Find key in loaded keyring (by key ID, by UID)
+
+* Generate subkey
+
+* Revoke subkey
+
+* Delete subkey
+
+* Update subkey
+
+* Delete key from keyring
+
+* Add/remove UID
 
 * Sign UID
 
 * Revoke signature
-
-* Delete key from keyring
 
 * Sign message
 
@@ -54,11 +62,25 @@ Command-line
 
 * Import key/keyring
 
-* Generate Key
+* Generate key
 
-* Edit key
+* Delete key
 
-* Sign key
+* Generate subkey
+
+* Revoke subkey
+
+* Delete subkey
+
+* Update subkey
+
+* Add UID
+
+* Remove UID
+
+* Sign UID
+
+* Revoke signature 
 
 * Encrypt
 
