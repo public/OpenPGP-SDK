@@ -73,6 +73,7 @@ void md5_add(hash_t *hash,const unsigned char *data,unsigned length)
 unsigned md5_finish(hash_t *hash,unsigned char *out)
     {
     MD5_Final(out,hash->data);
+    free(hash->data);
     return 16;
     }
 

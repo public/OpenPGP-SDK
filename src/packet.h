@@ -386,5 +386,14 @@ typedef struct
     ops_parser_content_union_t 	content;
     } ops_parser_content_t;
 
+typedef struct
+    {
+    unsigned char 		fingerprint[20];
+    unsigned			length;
+    } ops_fingerprint_t;
+
+void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key);
+void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
+
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

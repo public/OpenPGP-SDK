@@ -4,14 +4,19 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#define DECLARE_ARRAY(type,arr)	unsigned n##arr; unsigned n##arr##_allocated; type *arr
+#define EXPAND_ARRAY(str,arr) do if(str->n##arr == str->n##arr##_allocated) \
+				{ \
+				str->n##arr##_allocated=str->n##arr##_allocated*2+10; \
+				str->arr=realloc(str->arr,str->n##arr##_allocated*sizeof *str->arr); \
+				} while(0)
+
 typedef struct
     {
-    unsigned nuids;
-    unsigned nuids_allocated;
-    ops_user_id_t *uids;
-    unsigned npackets;
-    unsigned npackets_allocated;
-    ops_packet_t *packets;
+    DECLARE_ARRAY(ops_user_id_t,uids);
+    DECLARE_ARRAY(ops_packet_t,packets);
+    unsigned char keyid[8];
+    ops_fingerprint_t fingerprint;
     } key_data_t;
 
 typedef struct
@@ -34,23 +39,16 @@ static void accumulate_cb(const ops_parser_content_t *content_,void *arg_)
     case OPS_PTAG_CT_PUBLIC_KEY:
 	//	printf("New key\n");
 	++arg->nkeys;
-	if(arg->nkeys == arg->nkeys_allocated)
-	    {
-	    arg->nkeys_allocated=arg->nkeys_allocated*2+10;
-	    arg->keys=realloc(arg->keys,
-			      arg->nkeys_allocated*sizeof *arg->keys);
-	    }
+	EXPAND_ARRAY(arg,keys);
 	memset(&arg->keys[arg->nkeys],'\0',sizeof arg->keys[arg->nkeys]);
+	ops_keyid(arg->keys[arg->nkeys].keyid,&content->public_key);
+	ops_fingerprint(&arg->keys[arg->nkeys].fingerprint,
+			&content->public_key);
 	break;
 
     case OPS_PTAG_CT_USER_ID:
 	//	printf("User ID: %s\n",content->user_id.user_id);
-	if(cur->nuids == cur->nuids_allocated)
-	    {
-	    cur->nuids_allocated=cur->nuids_allocated*2+10;
-	    cur->uids=realloc(cur->uids,
-			      cur->nuids_allocated*sizeof *cur->uids);
-	    }
+	EXPAND_ARRAY(cur,uids);
 	cur->uids[cur->nuids++]=content->user_id;
 	break;
 
@@ -80,7 +78,13 @@ static void dump_one_key_data(const key_data_t *key)
     {
     int n;
 
-    printf("UIDs\n====\n\n");
+    printf("Key ID: ");
+    hexdump(key->keyid,8);
+
+    printf("\nFingerpint: ");
+    hexdump(key->fingerprint.fingerprint,key->fingerprint.length);
+
+    printf("\n\nUIDs\n====\n\n");
     for(n=0 ; n < key->nuids ; ++n)
 	printf("%s\n",key->uids[n].user_id);
 
