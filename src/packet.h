@@ -56,6 +56,14 @@ typedef enum
     /* used by the parser */
     OPS_PARSER_ERROR			=0x100,
     OPS_PARSER_PTAG			=0x101,
+    OPS_PTAG_RAW_SS			=0x102,
+
+    /* signature subpackets (0x200-2ff) (type+0x200) */
+    /* only those we can parse are listed here */
+    OPS_PTAG_SIGNATURE_SUBPACKET_BASE	=0x200,
+    OPS_PTAG_SS_CREATION_TIME		=0x200+2,
+    OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,
+    OPS_PTAG_SS_TRUST			=0x200+5,
     } ops_content_tag_t;
 
 typedef struct
@@ -185,6 +193,18 @@ typedef struct
     ops_signature_union_t	signature;
     } ops_signature_t;
 
+typedef struct
+    {
+    ops_content_tag_t		tag;
+    unsigned char		*raw;
+    } ops_ss_raw_t;
+
+typedef struct
+    {
+    unsigned char		level;
+    unsigned char		amount;
+    } ops_ss_trust_t;
+
 typedef union
     {
     ops_parser_error_t		error;
@@ -192,11 +212,14 @@ typedef union
     ops_public_key_t		public_key;
     ops_user_id_t		user_id;
     ops_signature_t		signature;
+    ops_ss_raw_t		ss_raw;
+    ops_ss_trust_t		ss_trust;
     } ops_parser_content_union_t;
 
 typedef struct
     {
     ops_content_tag_t		tag;
+    unsigned char		critical; /* for signature subpackets */
     ops_parser_content_union_t 	content;
     } ops_parser_content_t;
 

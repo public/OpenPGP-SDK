@@ -11,6 +11,9 @@
 #define ERR(err)	do { C.error.error=err; E; } while(0)
 #define ERR1(fmt,x)	do { format_error(&content,(fmt),(x)); E; } while(0)
 
+/* XXX: replace ops_ptag_t with something more appropriate for limiting
+   reads */
+
 /* Note that this makes the parser non-reentrant, in a limited way */
 /* It is the caller's responsibility to avoid overflow in the buffer */
 static void format_error(ops_parser_content_t *content,
@@ -59,6 +62,22 @@ static int limited_read(unsigned char *dest,unsigned length,
 
     ptag->length_read+=length;
 
+    return 1;
+    }
+
+static int limited_skip(unsigned length,ops_ptag_t *ptag,
+			ops_packet_reader_t *reader,
+			ops_packet_parse_callback_t *cb)
+    {
+    unsigned char buf[8192];
+
+    while(length)
+	{
+	int n=length%8192;
+	if(!limited_read(buf,n,ptag,reader,cb))
+	    return 0;
+	length-=n;
+	}
     return 1;
     }
     
@@ -115,6 +134,31 @@ static int limited_read_mpi(BIGNUM **pbn,ops_ptag_t *ptag,
 
     *pbn=BN_bin2bn(buf,length,NULL);
     return 1;
+    }
+
+static int limited_read_new_length(unsigned *length,ops_ptag_t *ptag,
+				   ops_packet_reader_t *reader,
+				   ops_packet_parse_callback_t *cb)
+    {
+    unsigned char c[1];
+
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    if(c[0] < 192)
+	{
+	*length=c[0];
+	return 1;
+	}
+    if(c[0] < 255)
+	{
+	unsigned t=(c[0]-192) << 8;
+
+	if(!limited_read(c,1,ptag,reader,cb))
+	    return 0;
+	*length=t+c[1]+192;
+	return 1;
+	}
+    return limited_read_scalar(length,4,ptag,reader,cb);
     }
 
 static int parse_public_key(ops_ptag_t *ptag,ops_packet_reader_t *reader,
@@ -252,16 +296,154 @@ static int parse_v3_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
     return 1;
     }
 
-static int parse_v4_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
-			      ops_packet_parse_callback_t *cb)
+static int parse_one_signature_subpacket(ops_ptag_t *ptag,
+					 ops_packet_reader_t *reader,
+					 ops_packet_parse_callback_t *cb,
+					 ops_parse_packet_options_t *opt)
     {
-    assert(0);
+    ops_ptag_t subptag;
+    char c[1];
+    ops_parser_content_t content;
+    unsigned t8,t7;
+
+    memset(&subptag,'\0',sizeof subptag);
+    if(!limited_read_new_length(&subptag.length,ptag,reader,cb))
+	return 0;
+
+    if(!limited_read(c,1,&subptag,reader,cb))
+	return 0;
+
+    t8=(c[0]&0x7f)/8;
+    t7=1 << (c[0]&7);
+
+    content.critical=c[0] >> 7;
+    content.tag=OPS_PTAG_SIGNATURE_SUBPACKET_BASE+(c[0]&0x7f);
+    if(opt->ss_raw[t8]&t7)
+	{
+	C.ss_raw.tag=content.tag;
+	C.ss_raw.raw=malloc(subptag.length-1);
+	if(!limited_read(C.ss_raw.raw,subptag.length-1,ptag,reader,cb))
+	    return 0;
+	ptag->length_read+=subptag.length;
+	CB(OPS_PTAG_RAW_SS,&content);
+	return 1;
+	}
+    if(!(opt->ss_parsed[t8]&t7))
+	{
+	if(content.critical)
+	    ERR1("Critical signature subpacket ignored (%d)",c[0]&0x7f);
+	if(!limited_skip(subptag.length-1,&subptag,reader,cb))
+	    return 0;
+	printf("skipped %d length %d\n",c[0]&0x7f,subptag.length);
+	ptag->length_read+=subptag.length;
+	return 1;
+	}
+
+    switch(content.tag)
+	{
+    case OPS_PTAG_SS_TRUST:
+	if(!limited_read(&C.ss_trust.level,1,&subptag,reader,cb)
+	   || !limited_read(&C.ss_trust.level,1,&subptag,reader,cb))
+	    return 0;
+	break;
+
+    default:
+	ERR1("Unknown signature subpacket type (%d)",c[0]&0x7f);
+	}
+ 
+    ptag->length_read+=subptag.length;
+    cb(&content);
+
+    return 1;
+    }
+
+static int parse_signature_subpackets(ops_ptag_t *ptag,
+				      ops_packet_reader_t *reader,
+				      ops_packet_parse_callback_t *cb,
+				      ops_parse_packet_options_t *opt)
+    {
+    ops_ptag_t subptag;
+
+    memset(&subptag,'\0',sizeof subptag);
+    if(!limited_read_scalar(&subptag.length,2,ptag,reader,cb))
+	return 0;
+
+    while(subptag.length_read < subptag.length)
+	if(!parse_one_signature_subpacket(&subptag,reader,cb,opt))
+	    {
+	    ptag->length_read+=subptag.length_read;
+	    return 0;
+	    }
+
+    assert(subptag.length_read == subptag.length);
+    ptag->length_read+=subptag.length_read;
+
+    return 1;
+    }
+
+static int parse_v4_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
+			      ops_packet_parse_callback_t *cb,
+			      ops_parse_packet_options_t *opt)
+    {
+    unsigned char c[1];
+    ops_parser_content_t content;
+
+    C.signature.version=OPS_SIG_V4;
+
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    C.signature.type=c[0];
+    /* XXX: check signature type */
+
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    C.signature.key_algorithm=c[0];
+    /* XXX: check algorithm */
+
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    C.signature.hash_algorithm=c[0];
+    /* XXX: check algorithm */
+    
+    if(!parse_signature_subpackets(ptag,reader,cb,opt))
+	return 0;
+
+    if(!parse_signature_subpackets(ptag,reader,cb,opt))
+	return 0;
+
+    
+
+    if(!limited_read(C.signature.hash2,2,ptag,reader,cb))
+	return 0;
+
+    switch(C.signature.key_algorithm)
+	{
+    case OPS_PKA_RSA:
+	if(!limited_read_mpi(&C.signature.signature.rsa.sig,ptag,reader,cb))
+	    return 0;
+	break;
+
+    case OPS_PKA_DSA:
+	if(!limited_read_mpi(&C.signature.signature.dsa.r,ptag,reader,cb)
+	   || !limited_read_mpi(&C.signature.signature.dsa.s,ptag,reader,cb))
+	    return 0;
+	break;
+
+    default:
+	ERR1("Bad signature key algorithm (%d)",C.signature.key_algorithm);
+	}
+
+    if(ptag->length_read != ptag->length)
+	ERR1("Unconsumed data (%d)", ptag->length-ptag->length_read);
+
+    CB(OPS_PTAG_CT_SIGNATURE,&content);
 
     return 1;
     }
 
 static int parse_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
-			   ops_packet_parse_callback_t *cb)
+			   ops_packet_parse_callback_t *cb,
+			   ops_parse_packet_options_t *opt)
     {
     unsigned char c[1];
     ops_parser_content_t content;
@@ -273,12 +455,13 @@ static int parse_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
     if(c[0] == 2 || c[0] == 3)
 	return parse_v3_signature(ptag,reader,cb);
     else if(c[0] == 4)
-	return parse_v4_signature(ptag,reader,cb);
+	return parse_v4_signature(ptag,reader,cb,opt);
     ERR1("Bad signature version (%d)",c[0]);
     }
 
 static int ops_parse_one_packet(ops_packet_reader_t *reader,
-				ops_packet_parse_callback_t *cb)
+				ops_packet_parse_callback_t *cb,
+				ops_parse_packet_options_t *opt)
     {
     char ptag[1];
     ops_packet_reader_ret_t ret;
@@ -335,7 +518,7 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
     switch(C.ptag.content_tag)
 	{
     case OPS_PTAG_CT_SIGNATURE:
-	r=parse_signature(&C.ptag,reader,cb);
+	r=parse_signature(&C.ptag,reader,cb,opt);
 	break;
 
     case OPS_PTAG_CT_PUBLIC_KEY:
@@ -356,8 +539,40 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
     }
 
 void ops_parse_packet(ops_packet_reader_t *reader,
-		      ops_packet_parse_callback_t *cb)
+		      ops_packet_parse_callback_t *cb,
+		      ops_parse_packet_options_t *opt)
     {
-    while(ops_parse_one_packet(reader,cb))
+    while(ops_parse_one_packet(reader,cb,opt))
 	;
     }
+
+void ops_parse_packet_options(ops_parse_packet_options_t *opt,
+			      ops_content_tag_t tag,
+			      ops_parse_type_t type)
+    {
+    int t8,t7;
+
+    assert(tag >= OPS_PTAG_SIGNATURE_SUBPACKET_BASE
+	   && tag <= OPS_PTAG_SIGNATURE_SUBPACKET_BASE+255);
+    t8=(tag-OPS_PTAG_SIGNATURE_SUBPACKET_BASE)/8;
+    t7=1 << ((tag-OPS_PTAG_SIGNATURE_SUBPACKET_BASE)&7);
+    switch(type)
+	{
+    case OPS_PARSE_RAW:
+	opt->ss_raw[t8] |= t7;
+	opt->ss_parsed[t8] &= ~t7;
+	break;
+
+    case OPS_PARSE_PARSED:
+	opt->ss_raw[t8] &= ~t7;
+	opt->ss_parsed[t8] |= t7;
+	break;
+
+    case OPS_PARSE_IGNORE:
+	opt->ss_raw[t8] &= ~t7;
+	opt->ss_parsed[t8] &= ~t7;
+	break;
+	}
+    }
+
+	

@@ -5,6 +5,12 @@
 #include <assert.h>
 #include <stdlib.h>
 
+static void hexdump(const unsigned char *src,size_t length)
+    {
+    while(length--)
+	printf("%02X",*src++);
+    }
+
 static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length)
     {
     int n=read(0,dest,length);
@@ -14,14 +20,12 @@ static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length)
 
     if(n != length)
 	return OPS_PR_EARLY_EOF;
-
+#if 0
+    printf("[read 0x%x: ",length);
+    hexdump(dest,length);
+    putchar(']');
+#endif
     return OPS_PR_OK;
-    }
-
-static void hexdump(const char *src,size_t length)
-    {
-    while(length--)
-	printf("%02X",*src++);
     }
 
 static void bndump(const char *name,const BIGNUM *bn)
@@ -119,7 +123,10 @@ static void callback(const ops_parser_content_t *content_)
 
 int main(int argc,char **argv)
     {
-    ops_parse_packet(reader,callback);
+    ops_parse_packet_options_t opt;
+
+    ops_parse_packet_options_init(&opt);
+    ops_parse_packet(reader,callback,&opt);
 
     return 0;
     }
