@@ -24,12 +24,16 @@ typedef struct
     unsigned char ss_parsed[256/8];
     ops_packet_parse_callback_t *cb;
     void *cb_arg;
-    ops_packet_reader_t *reader;
+    ops_packet_reader_t *_reader;
+    unsigned accumulate:1;	/*!< accumulate packet data */
+    unsigned char *accumulated;	/*!< the accumulated data */
+    unsigned char asize;	/*!< size of the buffer */
+    unsigned char alength;	/*!< used buffer */
     } ops_parse_options_t;
 
 void ops_parse(ops_parse_options_t *opt);
-
 void ops_parse_and_validate(ops_parse_options_t *opt);
+void ops_parse_and_accumulate(ops_parse_options_t *opt);
 
 typedef enum
     {

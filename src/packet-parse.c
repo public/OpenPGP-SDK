@@ -48,6 +48,24 @@ static void format_error(ops_parser_content_t *content,
     content->content.error.error=buf;
     }
 
+static ops_packet_reader_ret_t base_read(unsigned char *dest,unsigned length,
+					 ops_parse_options_t *opt)
+    {
+    ops_packet_reader_ret_t ret=opt->_reader(dest,length,opt->cb_arg);
+    if(!opt->accumulate || ret != OPS_PR_OK)
+	return ret;
+
+    if(opt->alength+length > opt->asize)
+	{
+	opt->asize=opt->asize*2+length;
+	opt->accumulated=realloc(opt->accumulated,opt->asize);
+	}
+    memcpy(opt->accumulated+opt->alength,dest,length);
+    opt->alength+=length;
+
+    return ret;
+    }
+
 /** Read a scalar value of selected length from reader.
  *
  * Read an unsigned scalar value from reader in Big Endian representation.
@@ -72,7 +90,7 @@ static ops_packet_reader_ret_t read_scalar(unsigned *result,unsigned length,
 	{
 	unsigned char c[1];
 
-	ret=opt->reader(c,1,opt->cb_arg);
+	ret=base_read(c,1,opt);
 	if(ret != OPS_PR_OK)
 	    return ret;
 	t=(t << 8)+c[0];
@@ -106,7 +124,7 @@ static int limited_read(unsigned char *dest,unsigned length,
     if(region->length_read+length > region->length)
 	ERR("Not enough data left");
 
-    if(opt->reader(dest,length,opt->cb_arg) != OPS_PR_OK)
+    if(base_read(dest,length,opt) != OPS_PR_OK)
 	ERR("Read failed");
 
     do
@@ -541,7 +559,7 @@ static int parse_one_signature_subpacket(ops_region_t *region,
 	    ERR1("Critical signature subpacket ignored (%d)",c[0]&0x7f);
 	if(!limited_skip(subregion.length-1,&subregion,opt))
 	    return 0;
-	printf("skipped %d length %d\n",c[0]&0x7f,subregion.length);
+	//	printf("skipped %d length %d\n",c[0]&0x7f,subregion.length);
 	return 1;
 	}
 
@@ -722,7 +740,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
     int r;
     ops_region_t region;
 
-    ret=opt->reader(ptag,1,opt->cb_arg);
+    ret=base_read(ptag,1,opt);
     if(ret == OPS_PR_EOF)
 	return 0;
     assert(ret == OPS_PR_OK);
@@ -791,6 +809,15 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	CB(OPS_PARSER_ERROR,&content);
 	r=0;
 	}
+    if(opt->accumulate)
+	{
+	C.packet.length=opt->alength;
+	C.packet.raw=opt->accumulated;
+	opt->accumulated=NULL;
+	opt->asize=opt->alength=0;
+	CB(OPS_PARSER_PACKET_END,&content);
+	}
+	
     return r;
     }
 

@@ -2,6 +2,7 @@
 
 #include "packet.h"
 #include "packet-parse.h"
+#include "util.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <assert.h>
@@ -11,12 +12,6 @@
 static void showtime(const unsigned char *name,time_t t)
     {
     printf("%s=%ld (%.24s)",name,t,ctime(&t));
-    }
-
-static void hexdump(const unsigned char *src,size_t length)
-    {
-    while(length--)
-	printf("%02X",*src++);
     }
 
 static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length,
@@ -161,8 +156,8 @@ int main(int argc,char **argv)
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
     ops_parse_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     opt.cb=callback;
-    opt.reader=reader;
-    ops_parse_and_validate(&opt);
+    opt._reader=reader;
+    ops_parse(&opt);
 
     return 0;
     }

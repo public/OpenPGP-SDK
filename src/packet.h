@@ -130,6 +130,7 @@ typedef enum
 						     callback sends back the PTag. */
     OPS_PTAG_RAW_SS			=0x102,	/*!< Internal Use: content is raw sig subtag */
     OPS_PTAG_SS_ALL			=0x103,	/*!< Internal Use: select all subtags */
+    OPS_PARSER_PACKET_END		=0x104,
 
     /* signature subpackets (0x200-2ff) (type+0x200) */
     /* only those we can parse are listed here */
@@ -359,6 +360,12 @@ typedef struct
     time_t			time;
     } ops_ss_time_t;
 
+typedef struct
+    {
+    size_t			length;
+    unsigned char		*raw;
+    } ops_packet_t;
+
 typedef union
     {
     ops_parser_error_t		error;
@@ -369,6 +376,7 @@ typedef union
     ops_ss_raw_t		ss_raw;
     ops_ss_trust_t		ss_trust;
     ops_ss_time_t		ss_time;
+    ops_packet_t		packet;
     } ops_parser_content_union_t;
 
 typedef struct

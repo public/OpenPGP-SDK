@@ -1,7 +1,9 @@
 #include "packet.h"
+#include "util.h"
 #include "packet-parse.h"
 #include <stdlib.h>
 #include <assert.h>
+#include <openssl/md5.h>
 
 typedef struct
     {
@@ -12,7 +14,9 @@ typedef struct
     unsigned length;
     unsigned size;
     unsigned char *pkey_packet;
+    unsigned pkey_length;
     unsigned char *uid_packet;
+    unsigned uid_length;
     } validate_arg_t;
 
 static ops_packet_reader_ret_t val_reader(unsigned char *dest,unsigned length,
@@ -36,6 +40,84 @@ static ops_packet_reader_ret_t val_reader(unsigned char *dest,unsigned length,
     arg->length+=length;
 
     return ret;
+    }
+
+#define MAX_HASH	(512/8)
+
+typedef struct _hash_t hash_t;
+
+typedef void hash_init_t(hash_t *hash);
+typedef void hash_add_t(hash_t *hash,const unsigned char *data,
+			unsigned length);
+typedef unsigned hash_finish_t(hash_t *hash,unsigned char *out);
+
+struct _hash_t
+    {
+    hash_init_t *init;
+    hash_add_t *add;
+    hash_finish_t *finish;
+    void *data;
+    };
+
+void md5_init(hash_t *hash)
+    {
+    hash->data=malloc(sizeof(MD5_CTX));
+    MD5_Init(hash->data);
+    }
+
+void md5_add(hash_t *hash,const unsigned char *data,unsigned length)
+    {
+    MD5_Update(hash->data,data,length);
+    }
+
+unsigned md5_finish(hash_t *hash,unsigned char *out)
+    {
+    MD5_Final(out,hash->data);
+    return 16;
+    }
+
+hash_t md5={md5_init,md5_add,md5_finish};
+
+void hash_add_int(hash_t *hash,unsigned n,unsigned length)
+    {
+    while(length--)
+	{
+	unsigned char c[1];
+
+	c[0]=n >> (length*8);
+	hash->add(hash,c,1);
+	}
+    }
+
+static void verify(const ops_signature_t *sig,validate_arg_t *arg)
+    {
+    hash_t *hash=&md5;
+    unsigned char hashout[MAX_HASH];
+    unsigned n;
+
+    assert(sig->version == OPS_SIG_V3);
+    assert(sig->hash_algorithm == OPS_HASH_MD5);
+
+    hash->init(hash);
+    switch(sig->type)
+	{
+    case OPS_CERT_POSITIVE:
+	hash_add_int(hash,0x99,1);
+	hash_add_int(hash,arg->pkey_length,2);
+	hash->add(hash,arg->pkey_packet,arg->pkey_length);
+	hash->add(hash,arg->uid_packet,arg->uid_length);
+	hash_add_int(hash,sig->type,1);
+	hash_add_int(hash,sig->creation_time,4);
+	break;
+
+    default:
+	assert(0);
+	}
+
+    n=hash->finish(hash,hashout);
+    printf("hash=");
+    hexdump(hashout,n);
+    printf("\n");
     }
 
 static void validate_cb(const ops_parser_content_t *content_,void *arg_)
@@ -63,13 +145,19 @@ static void validate_cb(const ops_parser_content_t *content_,void *arg_)
     case OPS_PTAG_CT_PUBLIC_KEY:
 	/* Packet has ended */
 	arg->pkey_packet=arg->packet;
+	arg->pkey_length=arg->length;
 	arg->packet=NULL;
 	break;
 
     case OPS_PTAG_CT_USER_ID:
 	/* Packet has ended */
 	arg->uid_packet=arg->packet;
+	arg->uid_length=arg->length;
 	arg->packet=NULL;
+	break;
+
+    case OPS_PTAG_CT_SIGNATURE:
+	verify(&content->signature,arg);
 	break;
 
     default:
