@@ -405,12 +405,15 @@ typedef struct
     unsigned			length;
     } ops_fingerprint_t;
 
+void ops_init(void);
+void ops_finish(void);
 void ops_keyid(unsigned char keyid[OPS_KEY_ID_SIZE],
 	       const ops_public_key_t *key);
 void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
 void ops_public_key_free(ops_public_key_t *key);
 void ops_user_id_free(ops_user_id_t *id);
 void ops_signature_free(ops_signature_t *sig);
+void ops_packet_free(ops_packet_t *packet);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

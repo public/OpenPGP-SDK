@@ -12,3 +12,5 @@ typedef struct
 ops_key_data_t *
 ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 			   const unsigned char keyid[OPS_KEY_ID_SIZE]);
+void ops_key_data_free(ops_key_data_t *key);
+void ops_keyring_free(ops_keyring_t *keyring);

@@ -18,6 +18,8 @@ struct _ops_hash_t
     void *data;
     };
 
+void ops_crypto_init(void);
+void ops_crypto_finish(void);
 void ops_hash_md5(ops_hash_t *hash);
 void ops_hash_sha1(ops_hash_t *hash);
 

@@ -3,8 +3,13 @@
 #include <openssl/sha.h>
 #include <openssl/dsa.h>
 #include <openssl/rsa.h>
+#include <openssl/err.h>
 #include <assert.h>
 #include <stdlib.h>
+
+#ifdef DMALLOC
+# include <dmalloc.h>
+#endif
 
 static void md5_init(ops_hash_t *hash)
     {
@@ -107,4 +112,22 @@ int ops_rsa_public_decrypt(unsigned char *out,const unsigned char *in,
     RSA_free(orsa);
 
     return n;
+    }
+
+void ops_crypto_init()
+    {
+#ifdef DMALLOC
+    CRYPTO_malloc_debug_init();
+    CRYPTO_dbg_set_options(V_CRYPTO_MDEBUG_ALL);
+    CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ON);
+#endif
+    }
+
+void ops_crypto_finish()
+    {
+    CRYPTO_cleanup_all_ex_data();
+    ERR_remove_state(0);
+#ifdef DMALLOC
+    CRYPTO_mem_leaks_fp(stderr);
+#endif
     }

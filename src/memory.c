@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifdef DMALLOC
+# include <dmalloc.h>
+#endif
+
 void ops_memory_init(ops_memory_t *mem,size_t initial_size)
     {
     mem->length=0;

@@ -152,6 +152,8 @@ validate_cb(const ops_parser_content_t *content_,void *arg_)
 	return OPS_KEEP_MEMORY;
 
     case OPS_PTAG_CT_PUBLIC_SUBKEY:
+	if(arg->subkey.version)
+	    ops_public_key_free(&arg->subkey);
 	arg->subkey=content->public_key;
 	return OPS_KEEP_MEMORY;
 
@@ -237,6 +239,8 @@ static void validate_key_signatures(const ops_key_data_t *key,
     ops_parse(&opt);
 
     ops_public_key_free(&arg.pkey);
+    if(arg.subkey.version)
+	ops_public_key_free(&arg.subkey);
     ops_user_id_free(&arg.user_id);
     }
 

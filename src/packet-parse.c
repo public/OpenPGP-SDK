@@ -12,6 +12,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef DMALLOC
+# include <dmalloc.h>
+#endif
+
 typedef struct ops_region
     {
     struct ops_region *parent;
@@ -320,6 +324,12 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
     return limited_read_scalar(length,4,region,opt);
     }
 
+void ops_packet_free(ops_packet_t *packet)
+    {
+    free(packet->raw);
+    packet->raw=NULL;
+    }
+
 void ops_content_free_inner(ops_parser_content_t *c)
     {
     switch(c->tag)
@@ -344,8 +354,10 @@ void ops_content_free_inner(ops_parser_content_t *c)
 	break;
 
     case OPS_PARSER_PACKET_END:
-	free(c->content.packet.raw);
-	c->content.packet.raw=NULL;
+	ops_packet_free(&c->content.packet);
+	break;
+
+    case OPS_PARSER_ERROR:
 	break;
 
     default:

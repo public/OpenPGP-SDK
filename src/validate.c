@@ -5,6 +5,10 @@
 #include <assert.h>
 #include <openssl/md5.h>
 
+#ifdef DMALLOC
+# include <dmalloc.h>
+#endif
+
 typedef struct
     {
     ops_packet_parse_callback_t *cb;
