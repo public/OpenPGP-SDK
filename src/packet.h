@@ -157,8 +157,8 @@ typedef struct
     unsigned		length;		/*!< The length of the packet.  This value is set when we read and compute the
 					  length information, not at the same moment we create the packet tag structure.
 					  Only defined if #length_read is set. */  /* XXX: Ben, is this correct? */
-    unsigned		length_read;	/*!< How much bytes of this packet we have read so far - for internal use
-					  only. */
+    //    unsigned		length_read;	/*!< How much bytes of this packet we have read so far - for internal use
+    //					  only. */
     } ops_ptag_t;
 
 /** Public Key Algorithm Numbers.
