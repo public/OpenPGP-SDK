@@ -6,7 +6,7 @@
 
 void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
     {
-    if(key->version == 3)
+    if(key->version == 2 || key->version == 3)
 	{
 	unsigned char *bn;
 	int n;
@@ -54,7 +54,7 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
 
 void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key)
     {
-    if(key->version == 3)
+    if(key->version == 2 || key->version == 3)
 	{
 	unsigned char bn[8192];
 	int n=BN_num_bytes(key->key.rsa.n);

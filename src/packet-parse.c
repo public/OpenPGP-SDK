@@ -52,18 +52,22 @@ static void format_error(ops_parser_content_t *content,
 static ops_packet_reader_ret_t base_read(unsigned char *dest,unsigned length,
 					 ops_parse_options_t *opt)
     {
-    ops_packet_reader_ret_t ret=opt->_reader(dest,length,opt->cb_arg);
-    if(!opt->accumulate || ret != OPS_PR_OK)
+    ops_packet_reader_ret_t ret=opt->reader(dest,length,opt->cb_arg);
+    if(ret != OPS_PR_OK)
 	return ret;
 
-    assert(opt->asize >= opt->alength);
-    if(opt->alength+length > opt->asize)
+    if(opt->accumulate)
 	{
-	opt->asize=opt->asize*2+length;
-	opt->accumulated=realloc(opt->accumulated,opt->asize);
+	assert(opt->asize >= opt->alength);
+	if(opt->alength+length > opt->asize)
+	    {
+	    opt->asize=opt->asize*2+length;
+	    opt->accumulated=realloc(opt->accumulated,opt->asize);
+	    }
+	assert(opt->asize >= opt->alength+length);
+	memcpy(opt->accumulated+opt->alength,dest,length);
 	}
-    assert(opt->asize >= opt->alength+length);
-    memcpy(opt->accumulated+opt->alength,dest,length);
+    // we track length anyway, because it is used for packet offsets
     opt->alength+=length;
 
     return ret;
@@ -321,6 +325,9 @@ void ops_content_free_inner(ops_parser_content_t *c)
     switch(c->tag)
 	{
     case OPS_PARSER_PTAG:
+    case OPS_PTAG_SS_CREATION_TIME:
+    case OPS_PTAG_SS_TRUST:
+    case OPS_PTAG_SS_ISSUER_KEY_ID:
 	break;
 
     case OPS_PTAG_CT_SIGNATURE:
@@ -406,18 +413,14 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     if(!limited_read(c,1,region,opt))
 	return 0;
     C.public_key.version=c[0];
-    /* XXX:- Can this really be correct? What else is different with V2 keys? -- Ben
-     *     - David Shaw says the only difference is the version number, IIRC - I don't have email here - Peter */
-    if(C.public_key.version == 2)
-	C.public_key.version=3;
-    if(C.public_key.version != 3 && C.public_key.version != 4)
+    if(C.public_key.version < 2 || C.public_key.version > 4)
 	ERR1("Bad public key version (0x%02x)",C.public_key.version);
 
     if(!limited_read_time(&C.public_key.creation_time,region,opt))
 	return 0;
 
     C.public_key.days_valid=0;
-    if(C.public_key.version == 3
+    if((C.public_key.version == 2 || C.public_key.version == 3)
        && !limited_read_scalar(&C.public_key.days_valid,2,region,opt))
 	return 0;
 
@@ -612,13 +615,15 @@ static int parse_v3_signature(ops_region_t *region,ops_parse_options_t *opt)
  *
  * \see RFC2440bis-12 5.2.3
  */
-static int parse_one_signature_subpacket(ops_region_t *region,
+static int parse_one_signature_subpacket(ops_signature_t *sig,
+					 ops_region_t *region,
 					 ops_parse_options_t *opt)
     {
     ops_region_t subregion;
     char c[1];
     ops_parser_content_t content;
     unsigned t8,t7;
+    ops_boolean_t read=ops_true;
 
     init_subregion(&subregion,region);
     if(!limited_read_new_length(&subregion.length,region,opt))
@@ -645,17 +650,6 @@ static int parse_one_signature_subpacket(ops_region_t *region,
 	return 1;
 	}
 
-    /* Application doesn't want it delivered parsed */
-    if(!(opt->ss_parsed[t8]&t7))
-	{
-	if(content.critical)
-	    ERR1("Critical signature subpacket ignored (%d)",c[0]&0x7f);
-	if(!limited_skip(subregion.length-1,&subregion,opt))
-	    return 0;
-	//	printf("skipped %d length %d\n",c[0]&0x7f,subregion.length);
-	return 1;
-	}
-
     switch(content.tag)
 	{
     case OPS_PTAG_SS_CREATION_TIME:
@@ -670,11 +664,34 @@ static int parse_one_signature_subpacket(ops_region_t *region,
 	    return 0;
 	break;
 
+    case OPS_PTAG_SS_ISSUER_KEY_ID:
+	if(!limited_read(C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE,
+			 &subregion,opt))
+	    return 0;
+	memcpy(sig->signer_id,C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE);
+	break;
+
     default:
-	ERR1("Unknown signature subpacket type (%d)",c[0]&0x7f);
+	if(opt->ss_parsed[t8]&t7)
+	    ERR1("Unknown signature subpacket type (%d)",c[0]&0x7f);
+	read=ops_false;
+	break;
 	}
 
-    if(subregion.length_read != subregion.length)
+    /* Application doesn't want it delivered parsed */
+    if(!(opt->ss_parsed[t8]&t7))
+	{
+	if(content.critical)
+	    ERR1("Critical signature subpacket ignored (%d)",c[0]&0x7f);
+	if(!read && !limited_skip(subregion.length-1,&subregion,opt))
+	    return 0;
+	//	printf("skipped %d length %d\n",c[0]&0x7f,subregion.length);
+	if(read)
+	    ops_content_free_inner(&content);
+	return 1;
+	}
+
+    if(read && subregion.length_read != subregion.length)
 	ERR1("Unconsumed data (%d)", subregion.length-subregion.length_read);
  
     opt->cb(&content,opt->cb_arg);
@@ -697,7 +714,8 @@ static int parse_one_signature_subpacket(ops_region_t *region,
  *
  * \see RFC2440bis-12 5.2.3
  */
-static int parse_signature_subpackets(ops_region_t *region,
+static int parse_signature_subpackets(ops_signature_t *sig,
+				      ops_region_t *region,
 				      ops_parse_options_t *opt)
     {
     ops_region_t subregion;
@@ -707,7 +725,7 @@ static int parse_signature_subpackets(ops_region_t *region,
 	return 0;
 
     while(subregion.length_read < subregion.length)
-	if(!parse_one_signature_subpacket(&subregion,opt))
+	if(!parse_one_signature_subpacket(sig,&subregion,opt))
 	    return 0;
 
     assert(subregion.length_read == subregion.length);  /* XXX: this should not be an assert but a parse error.  It's not
@@ -729,12 +747,14 @@ static int parse_signature_subpackets(ops_region_t *region,
  *
  * \see RFC2440bis-12 5.2.3
  */
-static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt)
+static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
+			      size_t v4_hashed_data_start)
     {
     unsigned char c[1];
     ops_parser_content_t content;
 
     C.signature.version=OPS_SIG_V4;
+    C.signature.v4_hashed_data_start=v4_hashed_data_start;
 
     if(!limited_read(c,1,region,opt))
 	return 0;
@@ -750,11 +770,13 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt)
 	return 0;
     C.signature.hash_algorithm=c[0];
     /* XXX: check algorithm */
-    
-    if(!parse_signature_subpackets(region,opt))
-	return 0;
 
-    if(!parse_signature_subpackets(region,opt))
+    if(!parse_signature_subpackets(&C.signature,region,opt))
+	return 0;
+    C.signature.v4_hashed_data_length=opt->alength
+	-C.signature.v4_hashed_data_start;
+
+    if(!parse_signature_subpackets(&C.signature,region,opt))
 	return 0;
 
     if(!limited_read(C.signature.hash2,2,region,opt))
@@ -800,9 +822,13 @@ static int parse_signature(ops_region_t *region,ops_parse_options_t *opt)
     {
     unsigned char c[1];
     ops_parser_content_t content;
+    size_t v4_hashed_data_start;
 
     assert(region->length_read == 0);  /* We should not have read anything so far */
 
+    memset(&content,'\0',sizeof content);
+
+    v4_hashed_data_start=opt->alength;
     if(!limited_read(c,1,region,opt))
 	return 0;
 
@@ -811,7 +837,7 @@ static int parse_signature(ops_region_t *region,ops_parse_options_t *opt)
     if(c[0] == 2 || c[0] == 3)
 	return parse_v3_signature(region,opt);
     else if(c[0] == 4)
-	return parse_v4_signature(region,opt);
+	return parse_v4_signature(region,opt,v4_hashed_data_start);
     ERR1("Bad signature version (%d)",c[0]);
     }
 
@@ -907,9 +933,10 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	C.packet.length=opt->alength;
 	C.packet.raw=opt->accumulated;
 	opt->accumulated=NULL;
-	opt->asize=opt->alength=0;
+	opt->asize=0;
 	CB(OPS_PARSER_PACKET_END,&content);
 	}
+    opt->alength=0;
 	
     return r;
     }
@@ -929,6 +956,7 @@ void ops_parse(ops_parse_options_t *opt)
 	;
     }
 
+/* XXX: Make all packet types optional, not just subpackets */
 void ops_parse_options(ops_parse_options_t *opt,
 		       ops_content_tag_t tag,
 		       ops_parse_type_t type)

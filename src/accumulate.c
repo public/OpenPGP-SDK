@@ -2,15 +2,10 @@
 #include "packet-parse.h"
 #include "util.h"
 #include "accumulate.h"
+#include "keyring_local.h"
+#include "signature.h"
 #include <assert.h>
 #include <stdlib.h>
-
-#define DECLARE_ARRAY(type,arr)	unsigned n##arr; unsigned n##arr##_allocated; type *arr
-#define EXPAND_ARRAY(str,arr) do if(str->n##arr == str->n##arr##_allocated) \
-				{ \
-				str->n##arr##_allocated=str->n##arr##_allocated*2+10; \
-				str->arr=realloc(str->arr,str->n##arr##_allocated*sizeof *str->arr); \
-				} while(0)
 
 typedef struct
     {
@@ -18,14 +13,6 @@ typedef struct
     void *cb_arg;
     ops_keyring_t *keyring;
     } accumulate_arg_t;
-
-struct ops_key_data
-    {
-    DECLARE_ARRAY(ops_user_id_t,uids);
-    DECLARE_ARRAY(ops_packet_t,packets);
-    unsigned char keyid[8];
-    ops_fingerprint_t fingerprint;
-    };
 
 static ops_parse_callback_return_t
 accumulate_cb(const ops_parser_content_t *content_,void *arg_)
@@ -41,18 +28,22 @@ accumulate_cb(const ops_parser_content_t *content_,void *arg_)
 	//	printf("New key\n");
 	++keyring->nkeys;
 	EXPAND_ARRAY(keyring,keys);
+
 	memset(&keyring->keys[keyring->nkeys],'\0',
 	       sizeof keyring->keys[keyring->nkeys]);
+
 	ops_keyid(keyring->keys[keyring->nkeys].keyid,&content->public_key);
 	ops_fingerprint(&keyring->keys[keyring->nkeys].fingerprint,
 			&content->public_key);
-	break;
+
+	keyring->keys[keyring->nkeys].pkey=content->public_key;
+	return OPS_KEEP_MEMORY;
 
     case OPS_PTAG_CT_USER_ID:
 	//	printf("User ID: %s\n",content->user_id.user_id);
 	EXPAND_ARRAY(cur,uids);
 	cur->uids[cur->nuids++]=content->user_id;
-	break;
+	return OPS_KEEP_MEMORY;
 
     case OPS_PARSER_PACKET_END:
 	EXPAND_ARRAY(cur,packets);
@@ -67,6 +58,8 @@ accumulate_cb(const ops_parser_content_t *content_,void *arg_)
 	break;
 	}
 
+    // XXX: we now exclude so many things, we should either drop this or
+    // do something to pass on copies of the stuff we keep
     if(arg->cb)
 	return arg->cb(content_,arg->cb_arg);
     return OPS_RELEASE_MEMORY;
@@ -103,9 +96,132 @@ static void dump_key_data(const ops_keyring_t *keyring)
 	dump_one_key_data(&keyring->keys[n]);
     }
 
-static void validate_key_signatures(const ops_key_data_t *key,
-				    const ops_keyring_t *ring)
+/* XXX: because we might well use this reader with different callbacks
+   it would make sense to split the arguments for callbacks, one for the reader
+   and one for the callback */
+typedef struct
     {
+    // shared data
+    // reader data
+    const ops_key_data_t *key;
+    int packet;
+    int offset;
+    // validation data
+    ops_public_key_t pkey;
+    ops_user_id_t user_id;
+    const ops_keyring_t *keyring;
+    } validate_arg_t;
+
+static ops_packet_reader_ret_t
+key_data_reader(unsigned char *dest,unsigned length,void *arg_)
+    {
+    validate_arg_t *arg=arg_;
+
+    if(arg->offset == arg->key->packets[arg->packet].length)
+	{
+	++arg->packet;
+	arg->offset=0;
+	}
+
+    if(arg->packet == arg->key->npackets)
+	return OPS_PR_EOF;
+
+    // we should never be asked to cross a packet boundary in a single read
+    assert(arg->key->packets[arg->packet].length >= arg->offset+length);
+
+    memcpy(dest,&arg->key->packets[arg->packet].raw[arg->offset],length);
+    arg->offset+=length;
+
+    return OPS_PR_OK;
+    }
+
+static ops_parse_callback_return_t
+validate_cb(const ops_parser_content_t *content_,void *arg_)
+    {
+    const ops_parser_content_union_t *content=&content_->content;
+    validate_arg_t *arg=arg_;
+    const ops_key_data_t *signer;
+
+    switch(content_->tag)
+	{
+    case OPS_PTAG_CT_PUBLIC_KEY:
+	assert(arg->pkey.version == 0);
+	arg->pkey=content->public_key;
+	return OPS_KEEP_MEMORY;
+
+    case OPS_PTAG_CT_USER_ID:
+	printf("user id=%s\n",content->user_id.user_id);
+	if(arg->user_id.user_id)
+	    ops_user_id_free(&arg->user_id);
+	arg->user_id=content->user_id;
+	return OPS_KEEP_MEMORY;
+
+    case OPS_PTAG_CT_SIGNATURE:
+	printf("  type=%02x signer_id=",content->signature.type);
+	hexdump(content->signature.signer_id,
+		sizeof content->signature.signer_id);
+
+	signer=ops_keyring_find_key_by_id(arg->keyring,
+					  content->signature.signer_id);
+	if(!signer)
+	    {
+	    printf(" UNKNOWN SIGNER\n");
+	    break;
+	    }
+	switch(content->signature.type)
+	    {
+	case OPS_CERT_GENERIC:
+	case OPS_CERT_PERSONA:
+	case OPS_CERT_CASUAL:
+	case OPS_CERT_POSITIVE:
+	    if(ops_check_certification_signature(&arg->pkey,&arg->user_id,
+		 &content->signature,&signer->pkey,
+		 arg->key->packets[arg->packet].raw))
+		printf(" validated\n");
+	    else
+		printf(" BAD SIGNATURE\n");
+	    break;
+
+	default:
+	    fprintf(stderr,"Unexpected signature type=0x%02x\n",
+		    content->signature.type);
+	    exit(1);
+	    }
+	break;
+
+    default:
+	// XXX: reinstate when we can make packets optional
+	//	fprintf(stderr,"unexpected tag=%d\n",content_->tag);
+	break;
+	}
+    return OPS_RELEASE_MEMORY;
+    }
+
+static void validate_key_signatures(const ops_key_data_t *key,
+				    const ops_keyring_t *keyring)
+    {
+    ops_parse_options_t opt;
+    validate_arg_t arg;
+
+    memset(&arg,'\0',sizeof arg);
+
+    ops_parse_options_init(&opt);
+    //    ops_parse_options(&opt,OPS_PTAG_CT_SIGNATURE,OPS_PARSE_PARSED);
+    opt.cb=validate_cb;
+    opt.reader=key_data_reader;
+
+    arg.key=key;
+    arg.packet=0;
+    arg.offset=0;
+
+    arg.keyring=keyring;
+
+    opt.cb_arg=&arg;
+
+    ops_parse(&opt);
+
+    ops_public_key_free(&arg.pkey);
+    ops_user_id_free(&arg.user_id);
     }
 
 static void validate_all_signatures(const ops_keyring_t *ring)

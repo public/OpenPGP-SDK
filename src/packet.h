@@ -141,7 +141,8 @@ typedef enum
 							     values are relative to this value. */
     OPS_PTAG_SS_CREATION_TIME		=0x200+2,	/*!< signature creation time */
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
-    OPS_PTAG_SS_TRUST			=0x200+5	/*!< trust signature */
+    OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
+    OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16,
     } ops_content_tag_t;
 
 /** Structure to hold one parse error string. */
@@ -329,16 +330,19 @@ typedef union
  * \see RFC2440bis-12 5.2.2
  * \see RFC2440bis-12 5.2.3
  */
+#define OPS_KEY_ID_SIZE		8
 typedef struct
     {
     ops_sig_version_t		version;	/*!< signature version number */
     ops_sig_type_t		type;		/*!< signature type value */
     time_t			creation_time;	/*!< creation time of the signature - only with v3 signatures*/
-    unsigned char		signer_id[8];	/*!< Eight-octet key ID of signer*/
+    unsigned char		signer_id[OPS_KEY_ID_SIZE];	/*!< Eight-octet key ID of signer*/
     ops_public_key_algorithm_t	key_algorithm;	/*!< public key algorithm number */
     ops_hash_algorithm_t	hash_algorithm;	/*!< hashing algorithm number */
     unsigned char		hash2[2];	/*!< high 2 bytes of hashed value - for quick test */
     ops_signature_union_t	signature;	/*!< signature parameters */
+    size_t			v4_hashed_data_start; // only valid if accumulate is set
+    size_t			v4_hashed_data_length;
     } ops_signature_t;
 
 /** The raw bytes of a signature subpacket */
@@ -365,6 +369,11 @@ typedef struct
 
 typedef struct
     {
+    unsigned char		key_id[OPS_KEY_ID_SIZE];
+    } ops_ss_key_id_t;
+
+typedef struct
+    {
     size_t			length;
     unsigned char		*raw;
     } ops_packet_t;
@@ -379,6 +388,7 @@ typedef union
     ops_ss_raw_t		ss_raw;
     ops_ss_trust_t		ss_trust;
     ops_ss_time_t		ss_time;
+    ops_ss_key_id_t		ss_issuer_key_id;
     ops_packet_t		packet;
     } ops_parser_content_union_t;
 
@@ -395,7 +405,8 @@ typedef struct
     unsigned			length;
     } ops_fingerprint_t;
 
-void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key);
+void ops_keyid(unsigned char keyid[OPS_KEY_ID_SIZE],
+	       const ops_public_key_t *key);
 void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
 void ops_public_key_free(ops_public_key_t *key);
 void ops_user_id_free(ops_user_id_t *id);

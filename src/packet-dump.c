@@ -158,7 +158,7 @@ int main(int argc,char **argv)
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
     ops_parse_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     opt.cb=callback;
-    opt._reader=reader;
+    opt.reader=reader;
     ops_parse(&opt);
 
     return 0;

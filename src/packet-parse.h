@@ -30,7 +30,7 @@ typedef struct
     unsigned char ss_parsed[256/8];
     ops_packet_parse_callback_t *cb;
     void *cb_arg;
-    ops_packet_reader_t *_reader;
+    ops_packet_reader_t *reader;
     unsigned accumulate:1;	/*!< accumulate packet data */
     unsigned char *accumulated;	/*!< the accumulated data */
     unsigned asize;	/*!< size of the buffer */

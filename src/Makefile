@@ -5,15 +5,15 @@ LDFLAGS=-g
 
 all: .depend packet-dump verify
 
-packet-dump: packet-dump.o packet-parse.o util.o openssl_crypto.o
-	$(CC) $(LDFLAGS) -o packet-dump packet-dump.o packet-parse.o \
-		util.o openssl_crypto.o -lcrypto
+libops.a: packet-parse.o util.o openssl_crypto.o accumulate.o build.o \
+	memory.o fingerprint.o hash.o keyring.o signature.o
+	ar rc libops.a $>
 
-verify: verify.o accumulate.o packet-parse.o util.o openssl_crypto.o build.o \
-	memory.o fingerprint.o hash.o
-	$(CC) $(LDFLAGS) -o verify verify.o accumulate.o packet-parse.o \
-		util.o openssl_crypto.o build.o memory.o fingerprint.o \
-		hash.o -lcrypto
+packet-dump: packet-dump.o libops.a
+	$(CC) $(LDFLAGS) -o packet-dump packet-dump.o libops.a -lcrypto
+
+verify: verify.o libops.a
+	$(CC) $(LDFLAGS) -o verify verify.o libops.a -lcrypto
 clean:
 	rm -f packet-dump packet-dump.o packet-parse.o .depend
 
