@@ -43,7 +43,7 @@ static void bndump(const char *name,const BIGNUM *bn)
     putchar('\n');
     }
 
-static void callback(const ops_parser_content_t *content_)
+static void callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
 
@@ -154,12 +154,13 @@ static void callback(const ops_parser_content_t *content_)
 
 int main(int argc,char **argv)
     {
-    ops_parse_packet_options_t opt;
+    ops_parse_options_t opt;
 
-    ops_parse_packet_options_init(&opt);
+    ops_parse_options_init(&opt);
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
-    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    ops_parse_packet(reader,callback,&opt);
+    ops_parse_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    opt.cb=callback;
+    ops_parse_and_validate(reader,&opt);
 
     return 0;
     }
