@@ -56,7 +56,8 @@ typedef enum
     /* used by the parser */
     OPS_PARSER_ERROR			=0x100,
     OPS_PARSER_PTAG			=0x101,
-    OPS_PTAG_RAW_SS			=0x102,
+    OPS_PTAG_RAW_SS			=0x102, /* content is raw sig subtag */
+    OPS_PTAG_SS_ALL			=0x103, /* select all subtags */
 
     /* signature subpackets (0x200-2ff) (type+0x200) */
     /* only those we can parse are listed here */
@@ -103,10 +104,18 @@ typedef struct
     BIGNUM *e;
     } ops_rsa_public_key_t;
 
+typedef struct
+    {
+    BIGNUM *p;
+    BIGNUM *g;
+    BIGNUM *y;
+    } ops_elgamel_public_key_t;
+
 typedef union
     {
     ops_dsa_public_key_t	dsa;
     ops_rsa_public_key_t	rsa;
+    ops_elgamel_public_key_t	elgamel;
     } ops_public_key_union_t;
 
 typedef struct
@@ -196,6 +205,7 @@ typedef struct
 typedef struct
     {
     ops_content_tag_t		tag;
+    size_t			length;
     unsigned char		*raw;
     } ops_ss_raw_t;
 

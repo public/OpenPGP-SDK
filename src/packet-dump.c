@@ -53,11 +53,14 @@ static void callback(const ops_parser_content_t *content_)
 	break;
 
     case OPS_PTAG_CT_PUBLIC_KEY:
-	printf("public key version=%d creation_time=%ld (%.24s)\n",
+    case OPS_PTAG_CT_PUBLIC_SUBKEY:
+	printf("public %skey version=%d creation_time=%ld (%.24s)\n",
+	       content_->tag == OPS_PTAG_CT_PUBLIC_KEY ? "" : "sub",
 	       content->public_key.version,content->public_key.creation_time,
 	       ctime(&content->public_key.creation_time));
 	/* XXX: convert algorithm to string */
-	printf("           days_valid=%d algorithm=%d\n",
+	printf("           %sdays_valid=%d algorithm=%d\n",
+	       content_->tag == OPS_PTAG_CT_PUBLIC_KEY ? "" : "   ",
 	       content->public_key.days_valid,content->public_key.algorithm);
 	switch(content->public_key.algorithm)
 	    {
@@ -73,6 +76,12 @@ static void callback(const ops_parser_content_t *content_)
 	case OPS_PKA_RSA_SIGN_ONLY:
 	    bndump("n",content->public_key.key.rsa.n);
 	    bndump("e",content->public_key.key.rsa.e);
+	    break;
+
+	case OPS_PKA_ELGAMEL:
+	    bndump("p",content->public_key.key.elgamel.p);
+	    bndump("g",content->public_key.key.elgamel.g);
+	    bndump("y",content->public_key.key.elgamel.y);
 	    break;
 
 	default:
@@ -115,6 +124,14 @@ static void callback(const ops_parser_content_t *content_)
 	    }    
 	break;
 
+    case OPS_PTAG_RAW_SS:
+	assert(!content_->critical);
+	printf("raw signature subpacket tag=%d raw=",
+	       content->ss_raw.tag-OPS_PTAG_SIGNATURE_SUBPACKET_BASE);
+	hexdump(content->ss_raw.raw,content->ss_raw.length);
+	putchar('\n');
+	break;
+
     default:
 	fprintf(stderr,"unknown tag=%d\n",content_->tag);
 	exit(1);
@@ -126,6 +143,7 @@ int main(int argc,char **argv)
     ops_parse_packet_options_t opt;
 
     ops_parse_packet_options_init(&opt);
+    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
     ops_parse_packet(reader,callback,&opt);
 
     return 0;

@@ -199,6 +199,7 @@ static int parse_public_key(ops_ptag_t *ptag,ops_packet_reader_t *reader,
 	   || !limited_read_mpi(&C.public_key.key.dsa.y,ptag,reader,cb))
 	    return 0;
 	break;
+
     case OPS_PKA_RSA:
     case OPS_PKA_RSA_ENCRYPT_ONLY:
     case OPS_PKA_RSA_SIGN_ONLY:
@@ -207,13 +208,21 @@ static int parse_public_key(ops_ptag_t *ptag,ops_packet_reader_t *reader,
 	    return 0;
 	break;
 
-    default: assert(0);
+    case OPS_PKA_ELGAMEL:
+	if(!limited_read_mpi(&C.public_key.key.elgamel.p,ptag,reader,cb)
+	   || !limited_read_mpi(&C.public_key.key.elgamel.g,ptag,reader,cb)
+	   || !limited_read_mpi(&C.public_key.key.elgamel.y,ptag,reader,cb))
+	    return 0;
+	break;
+
+    default:
+	ERR1("Unknown public key algorithm (%d)",C.public_key.algorithm);
 	}
 
     if(ptag->length_read != ptag->length)
 	ERR1("Unconsumed data (%d)", ptag->length-ptag->length_read);
 
-    CB(OPS_PTAG_CT_PUBLIC_KEY,&content);
+    CB(ptag->content_tag,&content);
 
     return 1;
     }
@@ -321,8 +330,9 @@ static int parse_one_signature_subpacket(ops_ptag_t *ptag,
     if(opt->ss_raw[t8]&t7)
 	{
 	C.ss_raw.tag=content.tag;
-	C.ss_raw.raw=malloc(subptag.length-1);
-	if(!limited_read(C.ss_raw.raw,subptag.length-1,ptag,reader,cb))
+	C.ss_raw.length=subptag.length-1;
+	C.ss_raw.raw=malloc(C.ss_raw.length);
+	if(!limited_read(C.ss_raw.raw,C.ss_raw.length,&subptag,reader,cb))
 	    return 0;
 	ptag->length_read+=subptag.length;
 	CB(OPS_PTAG_RAW_SS,&content);
@@ -522,6 +532,7 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
 	break;
 
     case OPS_PTAG_CT_PUBLIC_KEY:
+    case OPS_PTAG_CT_PUBLIC_SUBKEY:
 	r=parse_public_key(&C.ptag,reader,cb);
 	break;
 
@@ -551,6 +562,16 @@ void ops_parse_packet_options(ops_parse_packet_options_t *opt,
 			      ops_parse_type_t type)
     {
     int t8,t7;
+
+    if(tag == OPS_PTAG_SS_ALL)
+	{
+	int n;
+
+	for(n=0 ; n < 256 ; ++n)
+	    ops_parse_packet_options(opt,OPS_PTAG_SIGNATURE_SUBPACKET_BASE+n,
+				     type);
+	return;
+	}
 
     assert(tag >= OPS_PTAG_SIGNATURE_SUBPACKET_BASE
 	   && tag <= OPS_PTAG_SIGNATURE_SUBPACKET_BASE+255);
