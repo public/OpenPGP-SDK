@@ -15,7 +15,8 @@ typedef enum
 typedef void ops_packet_parse_callback_t(const ops_parser_content_t *content,
 					 void *arg);
 typedef ops_packet_reader_ret_t ops_packet_reader_t(unsigned char *dest,
-						    unsigned length);
+						    unsigned length,
+						    void *arg);
 
 typedef struct
     {
@@ -23,13 +24,12 @@ typedef struct
     unsigned char ss_parsed[256/8];
     ops_packet_parse_callback_t *cb;
     void *cb_arg;
+    ops_packet_reader_t *reader;
     } ops_parse_options_t;
 
-void ops_parse(ops_packet_reader_t *reader,
-	       ops_parse_options_t *opt);
+void ops_parse(ops_parse_options_t *opt);
 
-void ops_parse_and_validate(ops_packet_reader_t *reader,
-			    ops_parse_options_t *opt);
+void ops_parse_and_validate(ops_parse_options_t *opt);
 
 typedef enum
     {

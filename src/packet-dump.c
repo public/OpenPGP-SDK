@@ -19,7 +19,8 @@ static void hexdump(const unsigned char *src,size_t length)
 	printf("%02X",*src++);
     }
 
-static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length)
+static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length,
+				      void *arg)
     {
     int n=read(0,dest,length);
 
@@ -160,7 +161,8 @@ int main(int argc,char **argv)
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
     ops_parse_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     opt.cb=callback;
-    ops_parse_and_validate(reader,&opt);
+    opt.reader=reader;
+    ops_parse_and_validate(&opt);
 
     return 0;
     }

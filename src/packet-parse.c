@@ -60,9 +60,8 @@ static void format_error(ops_parser_content_t *content,
  * \return		#OPS_PR_OK on success, reader's return value otherwise
  *
  */
-static ops_packet_reader_ret_t read_scalar(unsigned *result,
-					   ops_packet_reader_t *reader,
-					   unsigned length)
+static ops_packet_reader_ret_t read_scalar(unsigned *result,unsigned length,
+					   ops_parse_options_t *opt)
     {
     unsigned t=0;
     ops_packet_reader_ret_t ret;
@@ -73,7 +72,7 @@ static ops_packet_reader_ret_t read_scalar(unsigned *result,
 	{
 	unsigned char c[1];
 
-	ret=reader(c,1);
+	ret=opt->reader(c,1,opt->cb_arg);
 	if(ret != OPS_PR_OK)
 	    return ret;
 	t=(t << 8)+c[0];
@@ -100,15 +99,14 @@ static ops_packet_reader_ret_t read_scalar(unsigned *result,
  * \return		1 on success, 0 on error
  */
 static int limited_read(unsigned char *dest,unsigned length,
-			ops_region_t *region,ops_packet_reader_t *reader,
-			ops_parse_options_t *opt)
+			ops_region_t *region,ops_parse_options_t *opt)
     {
     ops_parser_content_t content;
 
     if(region->length_read+length > region->length)
 	ERR("Not enough data left");
 
-    if(reader(dest,length) != OPS_PR_OK)
+    if(opt->reader(dest,length,opt->cb_arg) != OPS_PR_OK)
 	ERR("Read failed");
 
     do
@@ -134,7 +132,6 @@ static int limited_read(unsigned char *dest,unsigned length,
  * \return		1 on success, 0 on error (calls the cb with #OPS_PARSER_ERROR in #limited_read).
  */
 static int limited_skip(unsigned length,ops_region_t *region,
-			ops_packet_reader_t *reader,
 			ops_parse_options_t *opt)
     {
     unsigned char buf[8192];
@@ -142,7 +139,7 @@ static int limited_skip(unsigned length,ops_region_t *region,
     while(length)
 	{
 	int n=length%8192;
-	if(!limited_read(buf,n,region,reader,opt))
+	if(!limited_read(buf,n,region,opt))
 	    return 0;
 	length-=n;
 	}
@@ -167,14 +164,13 @@ static int limited_skip(unsigned length,ops_region_t *region,
  */
 static int limited_read_scalar(unsigned *dest,unsigned length,
 			       ops_region_t *region,
-			       ops_packet_reader_t *reader,
 			       ops_parse_options_t *opt)
     {
     unsigned char c[4];
     unsigned t;
     int n;
 
-    if(!limited_read(c,length,region,reader,opt))
+    if(!limited_read(c,length,region,opt))
 	return 0;
 
     for(t=0,n=0 ; n < length ; ++n)
@@ -202,10 +198,9 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
  * \see RFC2440bis-12 3.5
  */
 static int limited_read_time(time_t *dest,ops_region_t *region,
-			     ops_packet_reader_t *reader,
 			     ops_parse_options_t *opt)
     {
-    return limited_read_scalar((unsigned *)dest,4,region,reader,opt);
+    return limited_read_scalar((unsigned *)dest,4,region,opt);
     }
 
 /** Read a multiprecision integer.
@@ -231,7 +226,6 @@ static int limited_read_time(time_t *dest,ops_region_t *region,
  * \see RFC2440bis-12 3.2
  */
 static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
-			    ops_packet_reader_t *reader,
 			    ops_parse_options_t *opt)
     {
     unsigned length;
@@ -241,7 +235,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
                                 ever need for the buffer is 8192 bytes. */
     ops_parser_content_t content;
 
-    if(!limited_read_scalar(&length,2,region,reader,opt))
+    if(!limited_read_scalar(&length,2,region,opt))
 	return 0;
 
     nonzero=length&7; /* there should be this many zero bits in the MS byte */
@@ -250,7 +244,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
     length=(length+7)/8;
 
     assert(length <= 8192);
-    if(!limited_read(buf,length,region,reader,opt))
+    if(!limited_read(buf,length,region,opt))
 	return 0;
 
     if((buf[0] >> nonzero) != 0 || !(buf[0]&(1 << (nonzero-1))))
@@ -278,12 +272,11 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
  * \see ops_ptag_t
  */
 static int limited_read_new_length(unsigned *length,ops_region_t *region,
-				   ops_packet_reader_t *reader,
 				   ops_parse_options_t *opt)
     {
     unsigned char c[1];
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     if(c[0] < 192)
 	{
@@ -294,12 +287,12 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
 	{
 	unsigned t=(c[0]-192) << 8;
 
-	if(!limited_read(c,1,region,reader,opt))
+	if(!limited_read(c,1,region,opt))
 	    return 0;
 	*length=t+c[1]+192;
 	return 1;
 	}
-    return limited_read_scalar(length,4,region,reader,opt);
+    return limited_read_scalar(length,4,region,opt);
     }
 
 /** Parse a public key packet.
@@ -316,7 +309,6 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
  * \see RFC2440bis-12 5.5.2
  */
 static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
-			    ops_packet_reader_t *reader,
 			    ops_parse_options_t *opt)
     {
     ops_parser_content_t content;
@@ -324,7 +316,7 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
 
     assert (region->length_read == 0);  /* We should not have read anything so far */
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     C.public_key.version=c[0];
     /* XXX:- Can this really be correct? What else is different with V2 keys? -- Ben
@@ -334,15 +326,15 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     if(C.public_key.version != 3 && C.public_key.version != 4)
 	ERR1("Bad public key version (0x%02x)",C.public_key.version);
 
-    if(!limited_read_time(&C.public_key.creation_time,region,reader,opt))
+    if(!limited_read_time(&C.public_key.creation_time,region,opt))
 	return 0;
 
     C.public_key.days_valid=0;
     if(C.public_key.version == 3
-       && !limited_read_scalar(&C.public_key.days_valid,2,region,reader,opt))
+       && !limited_read_scalar(&C.public_key.days_valid,2,region,opt))
 	return 0;
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
 
     C.public_key.algorithm=c[0];
@@ -350,25 +342,25 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     switch(C.public_key.algorithm)
 	{
     case OPS_PKA_DSA:
-	if(!limited_read_mpi(&C.public_key.key.dsa.p,region,reader,opt)
-	   || !limited_read_mpi(&C.public_key.key.dsa.q,region,reader,opt)
-	   || !limited_read_mpi(&C.public_key.key.dsa.g,region,reader,opt)
-	   || !limited_read_mpi(&C.public_key.key.dsa.y,region,reader,opt))
+	if(!limited_read_mpi(&C.public_key.key.dsa.p,region,opt)
+	   || !limited_read_mpi(&C.public_key.key.dsa.q,region,opt)
+	   || !limited_read_mpi(&C.public_key.key.dsa.g,region,opt)
+	   || !limited_read_mpi(&C.public_key.key.dsa.y,region,opt))
 	    return 0;
 	break;
 
     case OPS_PKA_RSA:
     case OPS_PKA_RSA_ENCRYPT_ONLY:
     case OPS_PKA_RSA_SIGN_ONLY:
-	if(!limited_read_mpi(&C.public_key.key.rsa.n,region,reader,opt)
-	   || !limited_read_mpi(&C.public_key.key.rsa.e,region,reader,opt))
+	if(!limited_read_mpi(&C.public_key.key.rsa.n,region,opt)
+	   || !limited_read_mpi(&C.public_key.key.rsa.e,region,opt))
 	    return 0;
 	break;
 
     case OPS_PKA_ELGAMAL:
-	if(!limited_read_mpi(&C.public_key.key.elgamel.p,region,reader,opt)
-	   || !limited_read_mpi(&C.public_key.key.elgamel.g,region,reader,opt)
-	   || !limited_read_mpi(&C.public_key.key.elgamel.y,region,reader,opt))
+	if(!limited_read_mpi(&C.public_key.key.elgamel.p,region,opt)
+	   || !limited_read_mpi(&C.public_key.key.elgamel.g,region,opt)
+	   || !limited_read_mpi(&C.public_key.key.elgamel.y,region,opt))
 	    return 0;
 	break;
 
@@ -401,8 +393,7 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
  *
  * \see RFC2440bis-12 5.11
  */
-static int parse_user_id(ops_region_t *region,ops_packet_reader_t *reader,
-			 ops_parse_options_t *opt)
+static int parse_user_id(ops_region_t *region,ops_parse_options_t *opt)
     {
     ops_parser_content_t content;
 
@@ -410,7 +401,7 @@ static int parse_user_id(ops_region_t *region,ops_packet_reader_t *reader,
 
     assert(region->length);
     C.user_id.user_id=malloc(region->length+1);  /* XXX should we not like check malloc's return value? */
-    if(!limited_read(C.user_id.user_id,region->length,region,reader,opt))
+    if(!limited_read(C.user_id.user_id,region->length,region,opt))
 	return 0;
     C.user_id.user_id[region->length] = 0; /* terminate the string */
 
@@ -432,8 +423,7 @@ static int parse_user_id(ops_region_t *region,ops_packet_reader_t *reader,
  *
  * \see RFC2440bis-12 5.2.2
  */
-static int parse_v3_signature(ops_region_t *region,ops_packet_reader_t *reader,
-			      ops_parse_options_t *opt)
+static int parse_v3_signature(ops_region_t *region,ops_parse_options_t *opt)
     {
     unsigned char c[1];
     ops_parser_content_t content;
@@ -441,46 +431,45 @@ static int parse_v3_signature(ops_region_t *region,ops_packet_reader_t *reader,
     C.signature.version=OPS_SIG_V3;
 
     /* hash info length */
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     if(c[0] != 5)
 	ERR("bad hash info length");
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     C.signature.type=c[0];
     /* XXX: check signature type */
 
-    if(!limited_read_time(&C.signature.creation_time,region,reader,opt))
+    if(!limited_read_time(&C.signature.creation_time,region,opt))
 	return 0;
 
-    if(!limited_read(C.signature.signer_id,8,region,reader,opt))
+    if(!limited_read(C.signature.signer_id,8,region,opt))
 	return 0;
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     C.signature.key_algorithm=c[0];
     /* XXX: check algorithm */
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     C.signature.hash_algorithm=c[0];
     /* XXX: check algorithm */
     
-    if(!limited_read(C.signature.hash2,2,region,reader,opt))
+    if(!limited_read(C.signature.hash2,2,region,opt))
 	return 0;
 
     switch(C.signature.key_algorithm)
 	{
     case OPS_PKA_RSA:
-	if(!limited_read_mpi(&C.signature.signature.rsa.sig,region,reader,opt))
+	if(!limited_read_mpi(&C.signature.signature.rsa.sig,region,opt))
 	    return 0;
 	break;
 
     case OPS_PKA_DSA:
-	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,reader,opt)
-	   || !limited_read_mpi(&C.signature.signature.dsa.s,region,reader,
-				opt))
+	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,opt)
+	   || !limited_read_mpi(&C.signature.signature.dsa.s,region,opt))
 	    return 0;
 	break;
 
@@ -513,7 +502,6 @@ static int parse_v3_signature(ops_region_t *region,ops_packet_reader_t *reader,
  * \see RFC2440bis-12 5.2.3
  */
 static int parse_one_signature_subpacket(ops_region_t *region,
-					 ops_packet_reader_t *reader,
 					 ops_parse_options_t *opt)
     {
     ops_region_t subregion;
@@ -522,10 +510,10 @@ static int parse_one_signature_subpacket(ops_region_t *region,
     unsigned t8,t7;
 
     init_subregion(&subregion,region);
-    if(!limited_read_new_length(&subregion.length,region,reader,opt))
+    if(!limited_read_new_length(&subregion.length,region,opt))
 	return 0;
 
-    if(!limited_read(c,1,&subregion,reader,opt))
+    if(!limited_read(c,1,&subregion,opt))
 	return 0;
 
     t8=(c[0]&0x7f)/8;
@@ -540,7 +528,7 @@ static int parse_one_signature_subpacket(ops_region_t *region,
 	C.ss_raw.tag=content.tag;
 	C.ss_raw.length=subregion.length-1;
 	C.ss_raw.raw=malloc(C.ss_raw.length);
-	if(!limited_read(C.ss_raw.raw,C.ss_raw.length,&subregion,reader,opt))
+	if(!limited_read(C.ss_raw.raw,C.ss_raw.length,&subregion,opt))
 	    return 0;
 	CB(OPS_PTAG_RAW_SS,&content);
 	return 1;
@@ -551,7 +539,7 @@ static int parse_one_signature_subpacket(ops_region_t *region,
 	{
 	if(content.critical)
 	    ERR1("Critical signature subpacket ignored (%d)",c[0]&0x7f);
-	if(!limited_skip(subregion.length-1,&subregion,reader,opt))
+	if(!limited_skip(subregion.length-1,&subregion,opt))
 	    return 0;
 	printf("skipped %d length %d\n",c[0]&0x7f,subregion.length);
 	return 1;
@@ -561,13 +549,13 @@ static int parse_one_signature_subpacket(ops_region_t *region,
 	{
     case OPS_PTAG_SS_CREATION_TIME:
     case OPS_PTAG_SS_EXPIRATION_TIME:
-	if(!limited_read_time(&C.ss_time.time,&subregion,reader,opt))
+	if(!limited_read_time(&C.ss_time.time,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_TRUST:
-	if(!limited_read(&C.ss_trust.level,1,&subregion,reader,opt)
-	   || !limited_read(&C.ss_trust.level,1,&subregion,reader,opt))
+	if(!limited_read(&C.ss_trust.level,1,&subregion,opt)
+	   || !limited_read(&C.ss_trust.level,1,&subregion,opt))
 	    return 0;
 	break;
 
@@ -599,17 +587,16 @@ static int parse_one_signature_subpacket(ops_region_t *region,
  * \see RFC2440bis-12 5.2.3
  */
 static int parse_signature_subpackets(ops_region_t *region,
-				      ops_packet_reader_t *reader,
 				      ops_parse_options_t *opt)
     {
     ops_region_t subregion;
 
     init_subregion(&subregion,region);
-    if(!limited_read_scalar(&subregion.length,2,region,reader,opt))
+    if(!limited_read_scalar(&subregion.length,2,region,opt))
 	return 0;
 
     while(subregion.length_read < subregion.length)
-	if(!parse_one_signature_subpacket(&subregion,reader,opt))
+	if(!parse_one_signature_subpacket(&subregion,opt))
 	    return 0;
 
     assert(subregion.length_read == subregion.length);  /* XXX: this should not be an assert but a parse error.  It's not
@@ -631,49 +618,47 @@ static int parse_signature_subpackets(ops_region_t *region,
  *
  * \see RFC2440bis-12 5.2.3
  */
-static int parse_v4_signature(ops_region_t *region,ops_packet_reader_t *reader,
-			      ops_parse_options_t *opt)
+static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt)
     {
     unsigned char c[1];
     ops_parser_content_t content;
 
     C.signature.version=OPS_SIG_V4;
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     C.signature.type=c[0];
     /* XXX: check signature type */
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     C.signature.key_algorithm=c[0];
     /* XXX: check algorithm */
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
     C.signature.hash_algorithm=c[0];
     /* XXX: check algorithm */
     
-    if(!parse_signature_subpackets(region,reader,opt))
+    if(!parse_signature_subpackets(region,opt))
 	return 0;
 
-    if(!parse_signature_subpackets(region,reader,opt))
+    if(!parse_signature_subpackets(region,opt))
 	return 0;
 
-    if(!limited_read(C.signature.hash2,2,region,reader,opt))
+    if(!limited_read(C.signature.hash2,2,region,opt))
 	return 0;
 
     switch(C.signature.key_algorithm)
 	{
     case OPS_PKA_RSA:
-	if(!limited_read_mpi(&C.signature.signature.rsa.sig,region,reader,opt))
+	if(!limited_read_mpi(&C.signature.signature.rsa.sig,region,opt))
 	    return 0;
 	break;
 
     case OPS_PKA_DSA:
-	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,reader,opt)
-	   || !limited_read_mpi(&C.signature.signature.dsa.s,region,reader,
-				opt))
+	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,opt)
+	   || !limited_read_mpi(&C.signature.signature.dsa.s,region,opt))
 	    return 0;
 	break;
 
@@ -700,23 +685,22 @@ static int parse_v4_signature(ops_region_t *region,ops_packet_reader_t *reader,
  * \param *cb		The callback
  * \return		1 on success, 0 on error
  */
-static int parse_signature(ops_region_t *region,ops_packet_reader_t *reader,
-			   ops_parse_options_t *opt)
+static int parse_signature(ops_region_t *region,ops_parse_options_t *opt)
     {
     unsigned char c[1];
     ops_parser_content_t content;
 
     assert(region->length_read == 0);  /* We should not have read anything so far */
 
-    if(!limited_read(c,1,region,reader,opt))
+    if(!limited_read(c,1,region,opt))
 	return 0;
 
     /* XXX: More V2 issues!  - Ben*/
     /* XXX: are there v2 signatures? - Peter */
     if(c[0] == 2 || c[0] == 3)
-	return parse_v3_signature(region,reader,opt);
+	return parse_v3_signature(region,opt);
     else if(c[0] == 4)
-	return parse_v4_signature(region,reader,opt);
+	return parse_v4_signature(region,opt);
     ERR1("Bad signature version (%d)",c[0]);
     }
 
@@ -730,8 +714,7 @@ static int parse_signature(ops_region_t *region,ops_packet_reader_t *reader,
  * \param *opt		Parsing options
  * \return		1 on success, 0 on error
  */
-static int ops_parse_one_packet(ops_packet_reader_t *reader,
-				ops_parse_options_t *opt)
+static int ops_parse_one_packet(ops_parse_options_t *opt)
     {
     char ptag[1];
     ops_packet_reader_ret_t ret;
@@ -739,7 +722,7 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
     int r;
     ops_region_t region;
 
-    ret=reader(ptag,1);
+    ret=opt->reader(ptag,1,opt->cb_arg);
     if(ret == OPS_PR_EOF)
 	return 0;
     assert(ret == OPS_PR_OK);
@@ -763,17 +746,17 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
 	switch(C.ptag.length_type)
 	    {
 	case OPS_PTAG_OF_LT_ONE_BYTE:
-	    ret=read_scalar(&C.ptag.length,reader,1);
+	    ret=read_scalar(&C.ptag.length,1,opt);
 	    assert(ret == OPS_PR_OK);
 	    break;
 
 	case OPS_PTAG_OF_LT_TWO_BYTE:
-	    ret=read_scalar(&C.ptag.length,reader,2);
+	    ret=read_scalar(&C.ptag.length,2,opt);
 	    assert(ret == OPS_PR_OK);
 	    break;
 
 	case OPS_PTAG_OF_LT_FOUR_BYTE:
-	    ret=read_scalar(&C.ptag.length,reader,4);
+	    ret=read_scalar(&C.ptag.length,4,opt);
 	    assert(ret == OPS_PR_OK);
 	    break;
 
@@ -790,16 +773,16 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
     switch(C.ptag.content_tag)
 	{
     case OPS_PTAG_CT_SIGNATURE:
-	r=parse_signature(&region,reader,opt);
+	r=parse_signature(&region,opt);
 	break;
 
     case OPS_PTAG_CT_PUBLIC_KEY:
     case OPS_PTAG_CT_PUBLIC_SUBKEY:
-	r=parse_public_key(C.ptag.content_tag,&region,reader,opt);
+	r=parse_public_key(C.ptag.content_tag,&region,opt);
 	break;
 
     case OPS_PTAG_CT_USER_ID:
-	r=parse_user_id(&region,reader,opt);
+	r=parse_user_id(&region,opt);
 	break;
 
     default:
@@ -820,10 +803,9 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
  * \param *opt		Parsing options
  * \return		1 on success, 0 on error
  */
-void ops_parse(ops_packet_reader_t *reader,
-	       ops_parse_options_t *opt)
+void ops_parse(ops_parse_options_t *opt)
     {
-    while(ops_parse_one_packet(reader,opt))
+    while(ops_parse_one_packet(opt))
 	;
     }
 
