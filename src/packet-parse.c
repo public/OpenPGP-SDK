@@ -143,6 +143,7 @@ static int parse_public_key(ops_ptag_t *ptag,ops_packet_reader_t *reader,
 
     if(!limited_read(c,1,ptag,reader,cb))
 	return 0;
+
     C.public_key.algorithm=c[0];
 
     switch(C.public_key.algorithm)
@@ -188,6 +189,77 @@ static int parse_user_id(ops_ptag_t *ptag,ops_packet_reader_t *reader,
     return 1;
     }
 
+static int parse_v3_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
+			      ops_packet_parse_callback_t *cb)
+    {
+    unsigned char c[1];
+    ops_parser_content_t content;
+
+    C.signature.version=OPS_SIG_V3;
+
+    /* hash info length */
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    if(c[0] != 5)
+	ERR("bad hash info length");
+
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    C.signature.type=c[0];
+    /* XXX: check signature type */
+
+    if(!limited_read_time(&C.signature.creation_time,ptag,reader,cb))
+	return 0;
+
+    if(!limited_read(C.signature.signer_id,8,ptag,reader,cb))
+	return 0;
+
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    C.signature.key_algorithm=c[0];
+    /* XXX: check algorithm */
+
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    C.signature.hash_algorithm=c[0];
+    /* XXX: check algorithm */
+    
+    if(!limited_read(C.signature.hash2,2,ptag,reader,cb))
+	return 0;
+
+    switch(C.signature.key_algorithm)
+	{
+    case OPS_PKA_RSA:
+	if(!limited_read_mpi(&C.signature.signature.rsa.sig,ptag,reader,cb))
+	    return 0;
+	break;
+
+    case OPS_PKA_DSA:
+	if(!limited_read_mpi(&C.signature.signature.dsa.r,ptag,reader,cb)
+	   || !limited_read_mpi(&C.signature.signature.dsa.s,ptag,reader,cb))
+	    return 0;
+	break;
+
+    default:
+	ERR1("Bad signature key algorithm (%d)",C.signature.key_algorithm);
+	}
+
+    if(ptag->length_read != ptag->length)
+	ERR1("Unconsumed data (%d)", ptag->length-ptag->length_read);
+
+    CB(OPS_PTAG_CT_SIGNATURE,&content);
+
+    return 1;
+    }
+
+static int parse_v4_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
+			      ops_packet_parse_callback_t *cb)
+    {
+    assert(0);
+
+    return 1;
+    }
+
 static int parse_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
 			   ops_packet_parse_callback_t *cb)
     {
@@ -196,15 +268,13 @@ static int parse_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
 
     if(!limited_read(c,1,ptag,reader,cb))
 	return 0;
-    C.signature.version=c[0];
+
     /* XXX: More V2 issues! */
-    if(C.signature.version == 2)
-	C.signature.version=3;
-
-    if(C.signature.version != OPS_SIG_V3)
-	ERR1("Bad signature version (%d)",C.signature.version);
-
-    return 1;
+    if(c[0] == 2 || c[0] == 3)
+	return parse_v3_signature(ptag,reader,cb);
+    else if(c[0] == 4)
+	return parse_v4_signature(ptag,reader,cb);
+    ERR1("Bad signature version (%d)",c[0]);
     }
 
 static int ops_parse_one_packet(ops_packet_reader_t *reader,

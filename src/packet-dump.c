@@ -18,9 +18,22 @@ static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length)
     return OPS_PR_OK;
     }
 
-void callback(ops_parser_content_t *content_)
+static void hexdump(const char *src,size_t length)
     {
-    ops_parser_content_union_t *content=&content_->content;
+    while(length--)
+	printf("%02X",*src++);
+    }
+
+static void bndump(const char *name,const BIGNUM *bn)
+    {
+    printf("    %s=",name);
+    BN_print_fp(stdout,bn);
+    putchar('\n');
+    }
+
+static void callback(const ops_parser_content_t *content_)
+    {
+    const ops_parser_content_union_t *content=&content_->content;
 
     switch(content_->tag)
 	{
@@ -45,33 +58,57 @@ void callback(ops_parser_content_t *content_)
 	switch(content->public_key.algorithm)
 	    {
 	case OPS_PKA_DSA:
-	    printf("  p=");
-	    BN_print_fp(stdout,content->public_key.key.dsa.p);
-	    printf("\n  q=");
-	    BN_print_fp(stdout,content->public_key.key.dsa.q);
-	    printf("\n  g=");
-	    BN_print_fp(stdout,content->public_key.key.dsa.g);
-	    printf("\n  y=");
-	    BN_print_fp(stdout,content->public_key.key.dsa.y);
+	    bndump("p",content->public_key.key.dsa.p);
+	    bndump("q",content->public_key.key.dsa.q);
+	    bndump("g",content->public_key.key.dsa.g);
+	    bndump("y",content->public_key.key.dsa.y);
 	    break;
+
 	case OPS_PKA_RSA:
 	case OPS_PKA_RSA_ENCRYPT_ONLY:
 	case OPS_PKA_RSA_SIGN_ONLY:
-	    printf("  n=");
-	    BN_print_fp(stdout,content->public_key.key.rsa.n);
-	    printf("\n  e=");
-	    BN_print_fp(stdout,content->public_key.key.rsa.e);
+	    bndump("n",content->public_key.key.rsa.n);
+	    bndump("e",content->public_key.key.rsa.e);
 	    break;
-	    
+
 	default:
 	    assert(0);
 	    }
-	putchar('\n');
 	break;
 
     case OPS_PTAG_CT_USER_ID:
 	/* XXX: how do we print UTF-8? */
 	printf("user id user_id=%s\n",content->user_id.user_id);
+	break;
+
+    case OPS_PTAG_CT_SIGNATURE:
+	printf("signature version=%d type=0x%02x\n",
+	       content->signature.version,content->signature.type);
+	printf("          creation_time=%ld (%.24s)\n",
+	       content->signature.creation_time,
+	       ctime(&content->signature.creation_time));
+	printf("          signer_id=");
+	hexdump(content->signature.signer_id,
+		sizeof content->signature.signer_id);
+	printf(" key_algorithm=%d hash_algorithm=%d\n",
+	       content->signature.key_algorithm,
+	       content->signature.hash_algorithm);
+	printf("          hash2=%02x%02x\n",content->signature.hash2[0],
+	       content->signature.hash2[1]);
+	switch(content->signature.key_algorithm)
+	    {
+	case OPS_PKA_RSA:
+	    bndump("sig",content->signature.signature.rsa.sig);
+	    break;
+
+	case OPS_PKA_DSA:
+	    bndump("r",content->signature.signature.dsa.r);
+	    bndump("s",content->signature.signature.dsa.s);
+	    break;
+
+	default:
+	    assert(0);
+	    }    
 	break;
 
     default:

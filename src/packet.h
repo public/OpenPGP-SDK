@@ -145,10 +145,44 @@ typedef enum
     OPS_SIG_3RD_PARTY	=0x50,
     } ops_sig_type_t;
 
+typedef enum
+    {
+    OPS_HASH_MD5	=1,
+    OPS_HASH_SHA1	=2,
+    OPS_HASH_RIPEMD	=3,
+
+    OPS_HASH_SHA256	=8,
+    OPS_HASH_SHA384	=9,
+    OPS_HASH_SHA512	=10,
+    } ops_hash_algorithm_t;
+
+typedef struct
+    {
+    BIGNUM			*sig;
+    } ops_rsa_signature_t;
+
+typedef struct
+    {
+    BIGNUM			*r;
+    BIGNUM			*s;
+    } ops_dsa_signature_t;
+
+typedef union
+    {
+    ops_rsa_signature_t		rsa;
+    ops_dsa_signature_t		dsa;
+    } ops_signature_union_t;
+
 typedef struct
     {
     ops_sig_version_t		version;
     ops_sig_type_t		type;
+    time_t			creation_time;
+    unsigned char		signer_id[8];
+    ops_public_key_algorithm_t	key_algorithm;
+    ops_hash_algorithm_t	hash_algorithm;
+    unsigned char		hash2[2]; /* high 2 bytes of hashed value */
+    ops_signature_union_t	signature;
     } ops_signature_t;
 
 typedef union
