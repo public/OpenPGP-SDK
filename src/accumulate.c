@@ -1,6 +1,7 @@
 #include "packet.h"
 #include "packet-parse.h"
 #include "util.h"
+#include "accumulate.h"
 #include <assert.h>
 #include <stdlib.h>
 
@@ -13,37 +14,37 @@
 
 typedef struct
     {
+    ops_packet_parse_callback_t *cb;
+    void *cb_arg;
+    ops_keyring_t *keyring;
+    } accumulate_arg_t;
+
+struct ops_key_data
+    {
     DECLARE_ARRAY(ops_user_id_t,uids);
     DECLARE_ARRAY(ops_packet_t,packets);
     unsigned char keyid[8];
     ops_fingerprint_t fingerprint;
-    } key_data_t;
-
-typedef struct
-    {
-    ops_packet_parse_callback_t *cb;
-    void *cb_arg;
-    int nkeys; // while we are constructing a key, this is the offset
-    int nkeys_allocated;
-    key_data_t *keys;
-    } ops_keyring_t;    
+    };
 
 static ops_parse_callback_return_t
 accumulate_cb(const ops_parser_content_t *content_,void *arg_)
     {
-    ops_keyring_t *arg=arg_;
+    accumulate_arg_t *arg=arg_;
     const ops_parser_content_union_t *content=&content_->content;
-    key_data_t *cur=&arg->keys[arg->nkeys];
+    ops_keyring_t *keyring=arg->keyring;
+    ops_key_data_t *cur=&keyring->keys[keyring->nkeys];
 
     switch(content_->tag)
 	{
     case OPS_PTAG_CT_PUBLIC_KEY:
 	//	printf("New key\n");
-	++arg->nkeys;
-	EXPAND_ARRAY(arg,keys);
-	memset(&arg->keys[arg->nkeys],'\0',sizeof arg->keys[arg->nkeys]);
-	ops_keyid(arg->keys[arg->nkeys].keyid,&content->public_key);
-	ops_fingerprint(&arg->keys[arg->nkeys].fingerprint,
+	++keyring->nkeys;
+	EXPAND_ARRAY(keyring,keys);
+	memset(&keyring->keys[keyring->nkeys],'\0',
+	       sizeof keyring->keys[keyring->nkeys]);
+	ops_keyid(keyring->keys[keyring->nkeys].keyid,&content->public_key);
+	ops_fingerprint(&keyring->keys[keyring->nkeys].fingerprint,
 			&content->public_key);
 	break;
 
@@ -71,7 +72,7 @@ accumulate_cb(const ops_parser_content_t *content_,void *arg_)
     return OPS_RELEASE_MEMORY;
     }
 
-static void dump_one_key_data(const key_data_t *key)
+static void dump_one_key_data(const ops_key_data_t *key)
     {
     int n;
 
@@ -94,15 +95,15 @@ static void dump_one_key_data(const key_data_t *key)
     printf("\n\n");
     }
 
-static void dump_key_data(const key_data_t *keys,int nkeys)
+static void dump_key_data(const ops_keyring_t *keyring)
     {
     int n;
 
-    for(n=0 ; n < nkeys ; ++n)
-	dump_one_key_data(&keys[n]);
+    for(n=0 ; n < keyring->nkeys ; ++n)
+	dump_one_key_data(&keyring->keys[n]);
     }
 
-static void validate_key_signatures(const key_data_t *key,
+static void validate_key_signatures(const ops_key_data_t *key,
 				    const ops_keyring_t *ring)
     {
     }
@@ -115,15 +116,17 @@ static void validate_all_signatures(const ops_keyring_t *ring)
 	validate_key_signatures(&ring->keys[n],ring);
     }
 
-void ops_parse_and_accumulate(ops_parse_options_t *opt)
+void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_options_t *opt)
     {
-    ops_keyring_t arg;
+    accumulate_arg_t arg;
 
     assert(!opt->accumulate);
 
     memset(&arg,'\0',sizeof arg);
 
-    arg.nkeys=-1;
+    arg.keyring=keyring;
+    /* Kinda weird, but to do with counting, and we put it back after */
+    --keyring->nkeys;
     arg.cb=opt->cb;
     arg.cb_arg=opt->cb_arg;
 
@@ -131,8 +134,8 @@ void ops_parse_and_accumulate(ops_parse_options_t *opt)
     opt->cb_arg=&arg;
     opt->accumulate=1;
     ops_parse(opt);
-    ++arg.nkeys;
+    ++keyring->nkeys;
 
-    dump_key_data(arg.keys,arg.nkeys);
-    validate_all_signatures(&arg);
+    dump_key_data(keyring);
+    validate_all_signatures(keyring);
     }

@@ -1,5 +1,6 @@
 #include "packet.h"
 #include "packet-parse.h"
+#include "accumulate.h"
 #include <unistd.h>
 
 static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length,
@@ -23,13 +24,15 @@ static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length,
 int main(int argc,char **argv)
     {
     ops_parse_options_t opt;
+    ops_keyring_t keyring;
 
+    memset(&keyring,'\0',sizeof keyring);
     ops_parse_options_init(&opt);
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
     //    ops_parse_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     //    opt.cb=callback;
     opt._reader=reader;
-    ops_parse_and_accumulate(&opt);
+    ops_parse_and_accumulate(&keyring,&opt);
 
     return 0;
     }

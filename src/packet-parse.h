@@ -39,7 +39,6 @@ typedef struct
 
 void ops_parse(ops_parse_options_t *opt);
 void ops_parse_and_validate(ops_parse_options_t *opt);
-void ops_parse_and_accumulate(ops_parse_options_t *opt);
 
 typedef enum
     {
