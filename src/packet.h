@@ -4,6 +4,9 @@
  * $Id$
  */
 
+#ifndef OPS_PACKET_H
+#define OPS_PACKET_H
+
 #include <time.h>
 #include <openssl/bn.h>
 
@@ -209,14 +212,14 @@ typedef struct
     BIGNUM *p;	/*!< ElGamal prime p */
     BIGNUM *g;	/*!< ElGamal group generator g */
     BIGNUM *y;	/*!< ElGamal public key value y (= g^x mod p with x being the secret) */
-    } ops_elgamel_public_key_t;
+    } ops_elgamal_public_key_t;
 
 /** Union to hold public key parameters of any algorithm */
 typedef union
     {
     ops_dsa_public_key_t	dsa;		/*!< A DSA public key */
     ops_rsa_public_key_t	rsa;		/*!< An RSA public key */
-    ops_elgamel_public_key_t	elgamel;	/*!< An ElGamal public key */
+    ops_elgamal_public_key_t	elgamal;	/*!< An ElGamal public key */
     } ops_public_key_union_t;
 
 /** Struture to hold one pgp public key */
@@ -397,3 +400,5 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */
+
+#endif

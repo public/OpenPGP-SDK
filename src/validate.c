@@ -42,54 +42,6 @@ static ops_packet_reader_ret_t val_reader(unsigned char *dest,unsigned length,
     return ret;
     }
 
-#define MAX_HASH	(512/8)
-
-typedef struct _hash_t hash_t;
-
-typedef void hash_init_t(hash_t *hash);
-typedef void hash_add_t(hash_t *hash,const unsigned char *data,
-			unsigned length);
-typedef unsigned hash_finish_t(hash_t *hash,unsigned char *out);
-
-struct _hash_t
-    {
-    hash_init_t *init;
-    hash_add_t *add;
-    hash_finish_t *finish;
-    void *data;
-    };
-
-void md5_init(hash_t *hash)
-    {
-    hash->data=malloc(sizeof(MD5_CTX));
-    MD5_Init(hash->data);
-    }
-
-void md5_add(hash_t *hash,const unsigned char *data,unsigned length)
-    {
-    MD5_Update(hash->data,data,length);
-    }
-
-unsigned md5_finish(hash_t *hash,unsigned char *out)
-    {
-    MD5_Final(out,hash->data);
-    free(hash->data);
-    return 16;
-    }
-
-hash_t md5={md5_init,md5_add,md5_finish};
-
-void hash_add_int(hash_t *hash,unsigned n,unsigned length)
-    {
-    while(length--)
-	{
-	unsigned char c[1];
-
-	c[0]=n >> (length*8);
-	hash->add(hash,c,1);
-	}
-    }
-
 static void verify(const ops_signature_t *sig,validate_arg_t *arg)
     {
     hash_t *hash=&md5;

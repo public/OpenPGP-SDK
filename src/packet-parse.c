@@ -6,6 +6,7 @@
 
 #include "packet.h"
 #include "packet-parse.h"
+#include "util.h"
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -55,11 +56,13 @@ static ops_packet_reader_ret_t base_read(unsigned char *dest,unsigned length,
     if(!opt->accumulate || ret != OPS_PR_OK)
 	return ret;
 
+    assert(opt->asize >= opt->alength);
     if(opt->alength+length > opt->asize)
 	{
 	opt->asize=opt->asize*2+length;
 	opt->accumulated=realloc(opt->accumulated,opt->asize);
 	}
+    assert(opt->asize >= opt->alength+length);
     memcpy(opt->accumulated+opt->alength,dest,length);
     opt->alength+=length;
 
@@ -266,7 +269,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
 	return 0;
 
     if((buf[0] >> nonzero) != 0 || !(buf[0]&(1 << (nonzero-1))))
-	ERR("MPI format error");  /* XXX: Ben, one part of this constaint does not apply to encrypted MPIs the draft says. -- peter */
+	ERR("MPI format error");  /* XXX: Ben, one part of this constraint does not apply to encrypted MPIs the draft says. -- peter */
 
     *pbn=BN_bin2bn(buf,length,NULL);
     return 1;
@@ -376,9 +379,9 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
 	break;
 
     case OPS_PKA_ELGAMAL:
-	if(!limited_read_mpi(&C.public_key.key.elgamel.p,region,opt)
-	   || !limited_read_mpi(&C.public_key.key.elgamel.g,region,opt)
-	   || !limited_read_mpi(&C.public_key.key.elgamel.y,region,opt))
+	if(!limited_read_mpi(&C.public_key.key.elgamal.p,region,opt)
+	   || !limited_read_mpi(&C.public_key.key.elgamal.g,region,opt)
+	   || !limited_read_mpi(&C.public_key.key.elgamal.y,region,opt))
 	    return 0;
 	break;
 

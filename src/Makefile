@@ -9,9 +9,11 @@ packet-dump: packet-dump.o packet-parse.o util.o openssl_crypto.o
 	$(CC) $(LDFLAGS) -o packet-dump packet-dump.o packet-parse.o \
 		util.o openssl_crypto.o -lcrypto
 
-verify: verify.o accumulate.o packet-parse.o util.o openssl_crypto.o
+verify: verify.o accumulate.o packet-parse.o util.o openssl_crypto.o build.o \
+	memory.o fingerprint.o hash.o
 	$(CC) $(LDFLAGS) -o verify verify.o accumulate.o packet-parse.o \
-		util.o openssl_crypto.o -lcrypto
+		util.o openssl_crypto.o build.o memory.o fingerprint.o \
+		hash.o -lcrypto
 clean:
 	rm -f packet-dump packet-dump.o packet-parse.o .depend
 

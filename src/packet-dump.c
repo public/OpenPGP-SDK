@@ -83,9 +83,9 @@ static void callback(const ops_parser_content_t *content_,void *arg_)
 	    break;
 
 	case OPS_PKA_ELGAMAL:
-	    bndump("p",content->public_key.key.elgamel.p);
-	    bndump("g",content->public_key.key.elgamel.g);
-	    bndump("y",content->public_key.key.elgamel.y);
+	    bndump("p",content->public_key.key.elgamal.p);
+	    bndump("g",content->public_key.key.elgamal.g);
+	    bndump("y",content->public_key.key.elgamal.y);
 	    break;
 
 	default:

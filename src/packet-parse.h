@@ -27,8 +27,8 @@ typedef struct
     ops_packet_reader_t *_reader;
     unsigned accumulate:1;	/*!< accumulate packet data */
     unsigned char *accumulated;	/*!< the accumulated data */
-    unsigned char asize;	/*!< size of the buffer */
-    unsigned char alength;	/*!< used buffer */
+    unsigned asize;	/*!< size of the buffer */
+    unsigned alength;	/*!< used buffer */
     } ops_parse_options_t;
 
 void ops_parse(ops_parse_options_t *opt);

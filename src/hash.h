@@ -14,3 +14,6 @@ struct _ops_hash_t
     };
 
 void ops_hash_md5(ops_hash_t *hash);
+void ops_hash_sha1(ops_hash_t *hash);
+
+void hash_add_int(ops_hash_t *hash,unsigned n,unsigned length);
