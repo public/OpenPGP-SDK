@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define CB(t,pc)	do { (pc)->tag=(t); cb(pc); } while(0)
 #define C		content.content
