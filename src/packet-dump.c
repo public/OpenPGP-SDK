@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 
 static ops_packet_reader_ret reader(unsigned char *dest,unsigned length)
     {
