@@ -53,12 +53,7 @@ static void accumulate_cb(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PARSER_PACKET_END:
-	if(cur->npackets_allocated == cur->npackets)
-	    {
-	    cur->npackets_allocated=cur->npackets_allocated*2+10;
-	    cur->packets=realloc(cur->packets,cur->npackets_allocated
-				 *sizeof *cur->packets);
-	    }
+	EXPAND_ARRAY(cur,packets);
 	cur->packets[cur->npackets++]=content->packet;
 	break;
 
