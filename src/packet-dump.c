@@ -51,6 +51,14 @@ void callback(ops_content_tag tag,ops_parser_content *content)
 	    printf("\n  y=");
 	    BN_print_fp(stdout,content->public_key.key.dsa.y);
 	    break;
+	case OPS_PKA_RSA:
+	case OPS_PKA_RSA_ENCRYPT_ONLY:
+	case OPS_PKA_RSA_SIGN_ONLY:
+	    printf("  n=");
+	    BN_print_fp(stdout,content->public_key.key.rsa.n);
+	    printf("\n  e=");
+	    BN_print_fp(stdout,content->public_key.key.rsa.e);
+	    break;
 	    
 	default:
 	    assert(0);

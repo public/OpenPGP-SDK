@@ -78,7 +78,9 @@ static int limited_read_mpi(BIGNUM **pbn,ops_parser_ptag *ptag,
     {
     unsigned length;
     unsigned nonzero;
-    unsigned char buf[65535];
+    unsigned char buf[8192]; /* an MPI has a 2 byte length part.  Length
+                                is given in bits, so the largest we should
+                                ever need for the buffer is 8192 bytes. */
     ops_parser_content content;
 
     if(!limited_read_scalar(&length,2,ptag,reader,cb))
@@ -89,6 +91,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_parser_ptag *ptag,
 	nonzero=8;
     length=(length+7)/8;
 
+    assert(length <= 8192);
     if(!limited_read(buf,length,ptag,reader,cb))
 	return 0;
 
@@ -133,6 +136,13 @@ static int parse_public_key(ops_parser_ptag *ptag,ops_packet_reader *reader,
 	   || !limited_read_mpi(&content.public_key.key.dsa.q,ptag,reader,cb)
 	   || !limited_read_mpi(&content.public_key.key.dsa.g,ptag,reader,cb)
 	   || !limited_read_mpi(&content.public_key.key.dsa.y,ptag,reader,cb))
+	    return 0;
+	break;
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	if(!limited_read_mpi(&content.public_key.key.rsa.n,ptag,reader,cb)
+	   || !limited_read_mpi(&content.public_key.key.rsa.e,ptag,reader,cb))
 	    return 0;
 	break;
 

@@ -89,9 +89,16 @@ typedef struct
     BIGNUM *y;
     } ops_dsa_public_key;
 
+typedef struct
+    {
+    BIGNUM *n;
+    BIGNUM *e;
+    } ops_rsa_public_key;
+
 typedef union
     {
     ops_dsa_public_key dsa;
+    ops_rsa_public_key rsa;
     } ops_public_key;
 
 typedef struct
