@@ -540,6 +540,12 @@ static int parse_one_signature_subpacket(ops_ptag_t *ptag,
 
     switch(content.tag)
 	{
+    case OPS_PTAG_SS_CREATION_TIME:
+    case OPS_PTAG_SS_EXPIRATION_TIME:
+	if(!limited_read_time(&C.ss_time.time,&subptag,reader,cb))
+	    return 0;
+	break;
+
     case OPS_PTAG_SS_TRUST:
 	if(!limited_read(&C.ss_trust.level,1,&subptag,reader,cb)
 	   || !limited_read(&C.ss_trust.level,1,&subptag,reader,cb))

@@ -337,6 +337,8 @@ typedef struct
     ops_signature_union_t	signature;	/*!< signature parameters */
     } ops_signature_t;
 
+/** The raw bytes of a signature subpacket */
+
 typedef struct
     {
     ops_content_tag_t		tag;
@@ -344,11 +346,18 @@ typedef struct
     unsigned char		*raw;
     } ops_ss_raw_t;
 
+/** Signature Subpacket Type 5, Trust Level */
+
 typedef struct
     {
     unsigned char		level;
     unsigned char		amount;
     } ops_ss_trust_t;
+
+typedef struct
+    {
+    time_t			time;
+    } ops_ss_time_t;
 
 typedef union
     {
@@ -359,6 +368,7 @@ typedef union
     ops_signature_t		signature;
     ops_ss_raw_t		ss_raw;
     ops_ss_trust_t		ss_trust;
+    ops_ss_time_t		ss_time;
     } ops_parser_content_union_t;
 
 typedef struct

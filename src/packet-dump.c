@@ -8,6 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void showtime(const unsigned char *name,time_t t)
+    {
+    printf("%s=%ld (%.24s)",name,t,ctime(&t));
+    }
+
 static void hexdump(const unsigned char *src,size_t length)
     {
     while(length--)
@@ -129,9 +134,15 @@ static void callback(const ops_parser_content_t *content_)
 
     case OPS_PTAG_RAW_SS:
 	assert(!content_->critical);
-	printf("raw signature subpacket tag=%d raw=",
+	printf("  raw signature subpacket tag=%d raw=",
 	       content->ss_raw.tag-OPS_PTAG_SIGNATURE_SUBPACKET_BASE);
 	hexdump(content->ss_raw.raw,content->ss_raw.length);
+	putchar('\n');
+	break;
+
+    case OPS_PTAG_SS_CREATION_TIME:
+	fputs("  creation time ",stdout);
+	showtime("time",content->ss_time.time);
 	putchar('\n');
 	break;
 
@@ -146,7 +157,8 @@ int main(int argc,char **argv)
     ops_parse_packet_options_t opt;
 
     ops_parse_packet_options_init(&opt);
-    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
+    //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
+    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     ops_parse_packet(reader,callback,&opt);
 
     return 0;
