@@ -74,6 +74,10 @@ a to-do item, since we can always use GPG externally to do it.
 Also, "save/load/find/add/import/export keyring" will be pluggable, so
 we can use databases instead of flat files and in-memory keyrings.
 
+We will support verification of signatures using v3 keys, and
+decryption of messages encrypted to v3 keys, but not signing or
+encryption.
+
 Command-line
 ------------
 
