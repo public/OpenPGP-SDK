@@ -9,7 +9,7 @@
 
 /* Note that this makes the parser non-reentrant, in a limited way */
 /* It is the caller's responsibility to avoid overflow in the buffer */
-static void format_error(ops_parser_content *content,
+static void format_error(ops_parser_content_t *content,
 			 const char * const fmt,...)
     {
     va_list va;
@@ -21,12 +21,12 @@ static void format_error(ops_parser_content *content,
     content->content.error.error=buf;
     }
 
-static ops_packet_reader_ret read_scalar(unsigned *result,
-					 ops_packet_reader *reader,
-					 unsigned length)
+static ops_packet_reader_ret_t read_scalar(unsigned *result,
+					   ops_packet_reader_t *reader,
+					   unsigned length)
     {
     unsigned t=0;
-    ops_packet_reader_ret ret;
+    ops_packet_reader_ret_t ret;
 
     while(length--)
 	{
@@ -42,10 +42,10 @@ static ops_packet_reader_ret read_scalar(unsigned *result,
     }
 
 static int limited_read(unsigned char *dest,unsigned length,
-			ops_parser_ptag *ptag,ops_packet_reader *reader,
-			ops_packet_parse_callback *cb)
+			ops_ptag_t *ptag,ops_packet_reader_t *reader,
+			ops_packet_parse_callback_t *cb)
     {
-    ops_parser_content content;
+    ops_parser_content_t content;
 
     if(ptag->length_read+length > ptag->length)
 	{
@@ -67,8 +67,8 @@ static int limited_read(unsigned char *dest,unsigned length,
     }
     
 static int limited_read_scalar(unsigned *dest,unsigned length,
-			       ops_parser_ptag *ptag,ops_packet_reader *reader,
-			       ops_packet_parse_callback *cb)
+			       ops_ptag_t *ptag,ops_packet_reader_t *reader,
+			       ops_packet_parse_callback_t *cb)
     {
     unsigned char c[4];
     unsigned t;
@@ -84,23 +84,23 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
     return 1;
     }
 
-static int limited_read_time(time_t *dest,ops_parser_ptag *ptag,
-			     ops_packet_reader *reader,
-			     ops_packet_parse_callback *cb)
+static int limited_read_time(time_t *dest,ops_ptag_t *ptag,
+			     ops_packet_reader_t *reader,
+			     ops_packet_parse_callback_t *cb)
     {
     return limited_read_scalar((unsigned *)dest,4,ptag,reader,cb);
     }
 
-static int limited_read_mpi(BIGNUM **pbn,ops_parser_ptag *ptag,
-			    ops_packet_reader *reader,
-			    ops_packet_parse_callback *cb)
+static int limited_read_mpi(BIGNUM **pbn,ops_ptag_t *ptag,
+			    ops_packet_reader_t *reader,
+			    ops_packet_parse_callback_t *cb)
     {
     unsigned length;
     unsigned nonzero;
     unsigned char buf[8192]; /* an MPI has a 2 byte length part.  Length
                                 is given in bits, so the largest we should
                                 ever need for the buffer is 8192 bytes. */
-    ops_parser_content content;
+    ops_parser_content_t content;
 
     if(!limited_read_scalar(&length,2,ptag,reader,cb))
 	return 0;
@@ -125,10 +125,10 @@ static int limited_read_mpi(BIGNUM **pbn,ops_parser_ptag *ptag,
     return 1;
     }
 
-static int parse_public_key(ops_parser_ptag *ptag,ops_packet_reader *reader,
-			     ops_packet_parse_callback *cb)
+static int parse_public_key(ops_ptag_t *ptag,ops_packet_reader_t *reader,
+			     ops_packet_parse_callback_t *cb)
     {
-    ops_parser_content content;
+    ops_parser_content_t content;
     unsigned char c[1];
 
     if(!limited_read(c,1,ptag,reader,cb))
@@ -190,10 +190,10 @@ static int parse_public_key(ops_parser_ptag *ptag,ops_packet_reader *reader,
     return 1;
     }
 
-static int parse_user_id(ops_parser_ptag *ptag,ops_packet_reader *reader,
-			 ops_packet_parse_callback *cb)
+static int parse_user_id(ops_ptag_t *ptag,ops_packet_reader_t *reader,
+			 ops_packet_parse_callback_t *cb)
     {
-    ops_parser_content content;
+    ops_parser_content_t content;
 
     assert(ptag->length);
     C.user_id.user_id=malloc(ptag->length);
@@ -205,12 +205,12 @@ static int parse_user_id(ops_parser_ptag *ptag,ops_packet_reader *reader,
     return 1;
     }
 
-static int ops_parse_one_packet(ops_packet_reader *reader,
-				ops_packet_parse_callback *cb)
+static int ops_parse_one_packet(ops_packet_reader_t *reader,
+				ops_packet_parse_callback_t *cb)
     {
     char ptag[1];
-    ops_packet_reader_ret ret;
-    ops_parser_content content;
+    ops_packet_reader_ret_t ret;
+    ops_parser_content_t content;
     int r;
 
     ret=reader(ptag,1);
@@ -279,7 +279,8 @@ static int ops_parse_one_packet(ops_packet_reader *reader,
     return r;
     }
 
-void ops_parse_packet(ops_packet_reader *reader,ops_packet_parse_callback *cb)
+void ops_parse_packet(ops_packet_reader_t *reader,
+		      ops_packet_parse_callback_t *cb)
     {
     while(ops_parse_one_packet(reader,cb))
 	;

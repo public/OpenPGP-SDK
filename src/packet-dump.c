@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-static ops_packet_reader_ret reader(unsigned char *dest,unsigned length)
+static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length)
     {
     int n=read(0,dest,length);
 
@@ -18,9 +18,9 @@ static ops_packet_reader_ret reader(unsigned char *dest,unsigned length)
     return OPS_PR_OK;
     }
 
-void callback(ops_parser_content *content_)
+void callback(ops_parser_content_t *content_)
     {
-    ops_parser_content_union *content=&content_->content;
+    ops_parser_content_union_t *content=&content_->content;
 
     switch(content_->tag)
 	{

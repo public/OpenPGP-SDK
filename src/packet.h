@@ -20,7 +20,7 @@ typedef enum
     OPS_PTAG_OF_LT_TWO_BYTE		=0x01,
     OPS_PTAG_OF_LT_FOUR_BYTE		=0x02,
     OPS_PTAG_OF_LT_INDETERMINATE	=0x03,
-    } ops_ptag_of_lt;
+    } ops_ptag_of_lt_t;
 
 /* PTag New Format */
 
@@ -56,21 +56,21 @@ typedef enum
     /* used by the parser */
     OPS_PARSER_ERROR			=0x100,
     OPS_PARSER_PTAG			=0x101,
-    } ops_content_tag;
+    } ops_content_tag_t;
 
 typedef struct
     {
     const char *error;
-    } ops_parser_error;
+    } ops_parser_error_t;
 
 typedef struct
     {
-    unsigned new_format;
-    unsigned content_tag;
-    ops_ptag_of_lt length_type; /* only if new_format not set */
-    unsigned length;
-    unsigned length_read; /* internal use only */
-    } ops_parser_ptag;
+    unsigned		new_format;
+    unsigned		content_tag;
+    ops_ptag_of_lt_t	length_type; /* only if new_format not set */
+    unsigned		length;
+    unsigned		length_read; /* internal use only */
+    } ops_ptag_t;
 
 typedef enum
     {
@@ -79,7 +79,7 @@ typedef enum
     OPS_PKA_RSA_SIGN_ONLY	=3,
     OPS_PKA_ELGAMEL		=16,
     OPS_PKA_DSA			=17
-    } ops_public_key_algorithm;
+    } ops_public_key_algorithm_t;
 
 typedef struct
     {
@@ -87,45 +87,45 @@ typedef struct
     BIGNUM *q;
     BIGNUM *g;
     BIGNUM *y;
-    } ops_dsa_public_key;
+    } ops_dsa_public_key_t;
 
 typedef struct
     {
     BIGNUM *n;
     BIGNUM *e;
-    } ops_rsa_public_key;
+    } ops_rsa_public_key_t;
 
 typedef union
     {
-    ops_dsa_public_key dsa;
-    ops_rsa_public_key rsa;
-    } ops_public_key;
+    ops_dsa_public_key_t	dsa;
+    ops_rsa_public_key_t	rsa;
+    } ops_public_key_union_t;
 
 typedef struct
     {
     unsigned 			version;
     time_t			creation_time;
     unsigned			days_valid; /* 0 means forever */
-    ops_public_key_algorithm	algorithm;
-    ops_public_key		key;
-    } ops_parser_public_key;
+    ops_public_key_algorithm_t	algorithm;
+    ops_public_key_union_t	key;
+    } ops_public_key_t;
 
 typedef struct
     {
     char *			user_id;
-    } ops_parser_user_id;
+    } ops_user_id_t;
 
 typedef union
     {
-    ops_parser_error		error;
-    ops_parser_ptag		ptag;
-    ops_parser_public_key	public_key;
-    ops_parser_user_id		user_id;
-    } ops_parser_content_union;
+    ops_parser_error_t		error;
+    ops_ptag_t			ptag;
+    ops_public_key_t		public_key;
+    ops_user_id_t		user_id;
+    } ops_parser_content_union_t;
 
 typedef struct
     {
-    ops_content_tag		tag;
-    ops_parser_content_union 	content;
-    } ops_parser_content;
+    ops_content_tag_t		tag;
+    ops_parser_content_union_t 	content;
+    } ops_parser_content_t;
 
