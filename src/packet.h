@@ -115,12 +115,49 @@ typedef struct
     char *			user_id;
     } ops_user_id_t;
 
+typedef enum
+    {
+    OPS_SIG_V3=3,
+    OPS_SIG_V4=4,
+    } ops_sig_version_t;
+
+typedef enum
+    {
+    OPS_SIG_BINARY	=0x00,
+    OPS_SIG_TEXT	=0x01,
+    OPS_SIG_STANDALONE	=0x02,
+
+    OPS_CERT_GENERIC	=0x10,
+    OPS_CERT_PERSONA	=0x11,
+    OPS_CERT_CASUAL	=0x12,
+    OPS_CERT_POSITIVE	=0x13,
+
+    OPS_SIG_SUBKEY	=0x18,
+    OPS_SIG_PRIMARY	=0x19,
+    OPS_SIG_DIRECT	=0x1f,
+
+    OPS_SIG_REV_KEY	=0x20,
+    OPS_SIG_REV_SUBKEY	=0x28,
+    OPS_SIG_REV_CERT	=0x30,
+
+    OPS_SIG_TIMESTAMP	=0x40,
+
+    OPS_SIG_3RD_PARTY	=0x50,
+    } ops_sig_type_t;
+
+typedef struct
+    {
+    ops_sig_version_t		version;
+    ops_sig_type_t		type;
+    } ops_signature_t;
+
 typedef union
     {
     ops_parser_error_t		error;
     ops_ptag_t			ptag;
     ops_public_key_t		public_key;
     ops_user_id_t		user_id;
+    ops_signature_t		signature;
     } ops_parser_content_union_t;
 
 typedef struct

@@ -7,6 +7,10 @@
 #define CB(t,pc)	do { (pc)->tag=(t); cb(pc); } while(0)
 #define C		content.content
 
+#define E		CB(OPS_PARSER_ERROR,&content); return 0
+#define ERR(err)	do { C.error.error=err; E; } while(0)
+#define ERR1(fmt,x)	do { format_error(&content,(fmt),(x)); E; } while(0)
+
 /* Note that this makes the parser non-reentrant, in a limited way */
 /* It is the caller's responsibility to avoid overflow in the buffer */
 static void format_error(ops_parser_content_t *content,
@@ -48,18 +52,10 @@ static int limited_read(unsigned char *dest,unsigned length,
     ops_parser_content_t content;
 
     if(ptag->length_read+length > ptag->length)
-	{
-	C.error.error="Not enough data left";
-	CB(OPS_PARSER_ERROR,&content);
-	return 0;
-	}
+	ERR("Not enough data left");
 
     if(reader(dest,length) != OPS_PR_OK)
-	{
-	C.error.error="Read failed";
-	CB(OPS_PARSER_ERROR,&content);
-	return 0;
-	}
+	ERR("Read failed");
 
     ptag->length_read+=length;
 
@@ -115,11 +111,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_ptag_t *ptag,
 	return 0;
 
     if((buf[0] >> nonzero) != 0 || !(buf[0]&(1 << (nonzero-1))))
-	{
-	C.error.error="MPI format error";
-	CB(OPS_PARSER_ERROR,&content);
-	return 0;
-	}
+	ERR("MPI format error");
 
     *pbn=BN_bin2bn(buf,length,NULL);
     return 1;
@@ -138,12 +130,7 @@ static int parse_public_key(ops_ptag_t *ptag,ops_packet_reader_t *reader,
     if(C.public_key.version == 2)
 	C.public_key.version=3;
     if(C.public_key.version != 3 && C.public_key.version != 4)
-	{
-	format_error(&content,"Bad public key version (0x%02x)",
-		     C.public_key.version);
-	CB(OPS_PARSER_ERROR,&content);
-	return 0;
-	}
+	ERR1("Bad public key version (0x%02x)",C.public_key.version);
 
     if(!limited_read_time(&C.public_key.creation_time,ptag,reader,cb))
 	return 0;
@@ -179,11 +166,7 @@ static int parse_public_key(ops_ptag_t *ptag,ops_packet_reader_t *reader,
 	}
 
     if(ptag->length_read != ptag->length)
-	{
-	format_error(&content,"Unconsumed data (%d)",
-		     ptag->length-ptag->length_read);
-	CB(OPS_PARSER_ERROR,&content);
-	}
+	ERR1("Unconsumed data (%d)", ptag->length-ptag->length_read);
 
     CB(OPS_PTAG_CT_PUBLIC_KEY,&content);
 
@@ -201,6 +184,25 @@ static int parse_user_id(ops_ptag_t *ptag,ops_packet_reader_t *reader,
 	return 0;
 
     CB(OPS_PTAG_CT_USER_ID,&content);
+
+    return 1;
+    }
+
+static int parse_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
+			   ops_packet_parse_callback_t *cb)
+    {
+    unsigned char c[1];
+    ops_parser_content_t content;
+
+    if(!limited_read(c,1,ptag,reader,cb))
+	return 0;
+    C.signature.version=c[0];
+    /* XXX: More V2 issues! */
+    if(C.signature.version == 2)
+	C.signature.version=3;
+
+    if(C.signature.version != OPS_SIG_V3)
+	ERR1("Bad signature version (%d)",C.signature.version);
 
     return 1;
     }
@@ -262,6 +264,10 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
 
     switch(C.ptag.content_tag)
 	{
+    case OPS_PTAG_CT_SIGNATURE:
+	r=parse_signature(&C.ptag,reader,cb);
+	break;
+
     case OPS_PTAG_CT_PUBLIC_KEY:
 	r=parse_public_key(&C.ptag,reader,cb);
 	break;

@@ -70,6 +70,7 @@ void callback(ops_parser_content_t *content_)
 	break;
 
     case OPS_PTAG_CT_USER_ID:
+	/* XXX: how do we print UTF-8? */
 	printf("user id user_id=%s\n",content->user_id.user_id);
 	break;
 
