@@ -1,3 +1,26 @@
+An open source library and command-line tools, licensed under the BSD
+licence, written in C, using the OpenSSL library and providing
+approximately the functionality specified below.
+
+The libraries and tools will compile and run on the following
+operating systems:
+
+FreeBSD
+Linux (Debian and Red Hat)
+Solaris
+
+but will be written such that porting to other operating systems
+supported by OpenSSL will be possible.
+
+As is usual with software, there will be no guarantee of 100% correct
+functionality, but the software will be written to professional
+standards. This specification does not constitute a commitment to
+fixing bugs or adding enhancements once the initial version is
+complete.
+
+The library will comply with the IETF specification currently known as
+RFC2440bis.
+
 API
 ---
 
