@@ -378,6 +378,21 @@ typedef struct
     unsigned char		*raw;
     } ops_packet_t;
 
+typedef enum
+    {
+    OPS_C_NONE=0,
+    OPS_C_ZIP=1,
+    OPS_C_ZLIB=2,
+    OPS_C_BZIP2=3,
+    } ops_compression_type_t;
+
+// unlike most structures, this will feed its data as a stream
+// to the application instead of directly including it
+typedef struct
+    {
+    ops_compression_type_t	type;
+    } ops_compressed_t;
+
 typedef union
     {
     ops_parser_error_t		error;
@@ -390,6 +405,7 @@ typedef union
     ops_ss_time_t		ss_time;
     ops_ss_key_id_t		ss_issuer_key_id;
     ops_packet_t		packet;
+    ops_compressed_t		compressed;
     } ops_parser_content_union_t;
 
 typedef struct
@@ -414,6 +430,8 @@ void ops_public_key_free(ops_public_key_t *key);
 void ops_user_id_free(ops_user_id_t *id);
 void ops_signature_free(ops_signature_t *sig);
 void ops_packet_free(ops_packet_t *packet);
+
+void ops_parser_content_free(ops_parser_content_t *c);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

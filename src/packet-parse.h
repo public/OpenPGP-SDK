@@ -31,6 +31,7 @@ typedef struct
     ops_packet_parse_callback_t *cb;
     void *cb_arg;
     ops_packet_reader_t *reader;
+    void *reader_arg;
     unsigned accumulate:1;	/*!< accumulate packet data */
     unsigned char *accumulated;	/*!< the accumulated data */
     unsigned asize;	/*!< size of the buffer */
@@ -51,8 +52,6 @@ typedef enum
 
 void ops_parse_options(ops_parse_options_t *opt,ops_content_tag_t tag,
 		       ops_parse_type_t type);
-
-void ops_content_free_inner(ops_parser_content_t *c);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

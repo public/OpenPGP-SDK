@@ -29,7 +29,7 @@ static void init_subregion(ops_region_t *subregion,ops_region_t *region)
     subregion->parent=region;
     }
 
-#define CB(t,pc)	do { (pc)->tag=(t); if(opt->cb(pc,opt->cb_arg) == OPS_RELEASE_MEMORY) ops_content_free_inner(pc); } while(0)
+#define CB(t,pc)	do { (pc)->tag=(t); if(opt->cb(pc,opt->cb_arg) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
 #define C		content.content
 
 #define E		CB(OPS_PARSER_ERROR,&content); return 0
@@ -56,7 +56,7 @@ static void format_error(ops_parser_content_t *content,
 static ops_packet_reader_ret_t base_read(unsigned char *dest,unsigned length,
 					 ops_parse_options_t *opt)
     {
-    ops_packet_reader_ret_t ret=opt->reader(dest,length,opt->cb_arg);
+    ops_packet_reader_ret_t ret=opt->reader(dest,length,opt->reader_arg);
     if(ret != OPS_PR_OK)
 	return ret;
 
@@ -330,11 +330,12 @@ void ops_packet_free(ops_packet_t *packet)
     packet->raw=NULL;
     }
 
-void ops_content_free_inner(ops_parser_content_t *c)
+void ops_parser_content_free(ops_parser_content_t *c)
     {
     switch(c->tag)
 	{
     case OPS_PARSER_PTAG:
+    case OPS_PTAG_CT_COMPRESSED:
     case OPS_PTAG_SS_CREATION_TIME:
     case OPS_PTAG_SS_TRUST:
     case OPS_PTAG_SS_ISSUER_KEY_ID:
@@ -699,7 +700,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	//	printf("skipped %d length %d\n",c[0]&0x7f,subregion.length);
 	if(read)
-	    ops_content_free_inner(&content);
+	    ops_parser_content_free(&content);
 	return 1;
 	}
 
@@ -853,6 +854,25 @@ static int parse_signature(ops_region_t *region,ops_parse_options_t *opt)
     ERR1("Bad signature version (%d)",c[0]);
     }
 
+static int parse_compressed(ops_region_t *region,ops_parse_options_t *opt)
+    {
+    unsigned char c[1];
+    ops_parser_content_t content;
+
+    if(!limited_read(c,1,region,opt))
+	return 0;
+
+    C.compressed.type=c[0];
+
+    CB(OPS_PTAG_CT_COMPRESSED,&content);
+
+    /* The content of a compressed data packet is more OpenPGP packets
+       once decmppressed, so recursively handle them */
+
+    //    return ops_decompress(region,opt);
+    return 1;
+    }
+
 /** Parse one packet.
  *
  * This function parses the packet tag.  It computes the value of the content tag and then calls the appropriate
@@ -932,6 +952,10 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 
     case OPS_PTAG_CT_USER_ID:
 	r=parse_user_id(&region,opt);
+	break;
+
+    case OPS_PTAG_CT_COMPRESSED:
+	r=parse_compressed(&region,opt);
 	break;
 
     default:

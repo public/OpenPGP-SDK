@@ -129,6 +129,10 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    }    
 	break;
 
+    case OPS_PTAG_CT_COMPRESSED:
+	printf("  compressed data type=%d\n",content->compressed.type);
+	break;
+
     case OPS_PTAG_RAW_SS:
 	assert(!content_->critical);
 	printf("  raw signature subpacket tag=%d raw=",

@@ -101,22 +101,24 @@ static void dump_key_data(const ops_keyring_t *keyring)
    and one for the callback */
 typedef struct
     {
-    // shared data
-    // reader data
     const ops_key_data_t *key;
     int packet;
     int offset;
-    // validation data
+    } validate_reader_arg_t;
+
+typedef struct
+    {
     ops_public_key_t pkey;
     ops_public_key_t subkey;
     ops_user_id_t user_id;
     const ops_keyring_t *keyring;
-    } validate_arg_t;
+    validate_reader_arg_t *rarg;
+    } validate_cb_arg_t;
 
 static ops_packet_reader_ret_t
 key_data_reader(unsigned char *dest,unsigned length,void *arg_)
     {
-    validate_arg_t *arg=arg_;
+    validate_reader_arg_t *arg=arg_;
 
     if(arg->offset == arg->key->packets[arg->packet].length)
 	{
@@ -140,7 +142,7 @@ static ops_parse_callback_return_t
 validate_cb(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
-    validate_arg_t *arg=arg_;
+    validate_cb_arg_t *arg=arg_;
     const ops_key_data_t *signer;
     ops_boolean_t valid;
 
@@ -186,14 +188,14 @@ validate_cb(const ops_parser_content_t *content_,void *arg_)
 	case OPS_SIG_REV_CERT:
 	    valid=ops_check_certification_signature(&arg->pkey,&arg->user_id,
 		    &content->signature,&signer->pkey,
-		    arg->key->packets[arg->packet].raw);
+		    arg->rarg->key->packets[arg->rarg->packet].raw);
 	    break;
 
 	case OPS_SIG_SUBKEY:
 	    // XXX: we should also check that the signer is the key we are validating, I think.
 	    valid=ops_check_subkey_signature(&arg->pkey,&arg->subkey,
 		    &content->signature,&signer->pkey,
-		    arg->key->packets[arg->packet].raw);
+		    arg->rarg->key->packets[arg->rarg->packet].raw);
 	    break;
 
 	default:
@@ -219,29 +221,33 @@ static void validate_key_signatures(const ops_key_data_t *key,
 				    const ops_keyring_t *keyring)
     {
     ops_parse_options_t opt;
-    validate_arg_t arg;
+    validate_cb_arg_t carg;
+    validate_reader_arg_t rarg;
 
-    memset(&arg,'\0',sizeof arg);
+    memset(&rarg,'\0',sizeof rarg);
+    memset(&carg,'\0',sizeof carg);
 
     ops_parse_options_init(&opt);
     //    ops_parse_options(&opt,OPS_PTAG_CT_SIGNATURE,OPS_PARSE_PARSED);
     opt.cb=validate_cb;
     opt.reader=key_data_reader;
 
-    arg.key=key;
-    arg.packet=0;
-    arg.offset=0;
+    rarg.key=key;
+    rarg.packet=0;
+    rarg.offset=0;
 
-    arg.keyring=keyring;
+    carg.keyring=keyring;
+    carg.rarg=&rarg;
 
-    opt.cb_arg=&arg;
+    opt.cb_arg=&carg;
+    opt.reader_arg=&rarg;
 
     ops_parse(&opt);
 
-    ops_public_key_free(&arg.pkey);
-    if(arg.subkey.version)
-	ops_public_key_free(&arg.subkey);
-    ops_user_id_free(&arg.user_id);
+    ops_public_key_free(&carg.pkey);
+    if(carg.subkey.version)
+	ops_public_key_free(&carg.subkey);
+    ops_user_id_free(&carg.user_id);
     }
 
 static void validate_all_signatures(const ops_keyring_t *ring)
