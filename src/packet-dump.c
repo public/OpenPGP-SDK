@@ -38,7 +38,8 @@ void callback(ops_content_tag tag,ops_parser_content *content)
 	printf("public key version=%d creation_time=%ld (%.24s)\n",
 	       content->public_key.version,content->public_key.creation_time,
 	       ctime(&content->public_key.creation_time));
-	printf("           algorithm=%d\n",content->public_key.algorithm);
+	printf("           days_valid=%d algorithm=%d\n",
+	       content->public_key.days_valid,content->public_key.algorithm);
 	switch(content->public_key.algorithm)
 	    {
 	case OPS_PKA_DSA:
@@ -63,6 +64,7 @@ void callback(ops_content_tag tag,ops_parser_content *content)
 	default:
 	    assert(0);
 	    }
+	putchar('\n');
 	break;
 
     default:
@@ -77,5 +79,3 @@ int main(int argc,char **argv)
 
     return 0;
     }
-
-

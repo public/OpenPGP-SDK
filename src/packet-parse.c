@@ -1,6 +1,21 @@
 #include "packet.h"
 #include "packet-parse.h"
 #include <assert.h>
+#include <stdarg.h>
+
+/* Note that this makes the parser non-reentrant, in a limited way */
+/* It is the caller's responsibility to avoid overflow in the buffer */
+static void format_error(ops_parser_content *content,
+			 const char * const fmt,...)
+    {
+    va_list va;
+    static char buf[8192];
+
+    va_start(va,fmt);
+    vsprintf(buf,fmt,va);
+    va_end(va);
+    content->error.error=buf;
+    }
 
 static ops_packet_reader_ret read_scalar(unsigned *result,
 					 ops_packet_reader *reader,
@@ -114,15 +129,25 @@ static int parse_public_key(ops_parser_ptag *ptag,ops_packet_reader *reader,
 
     if(!limited_read(c,1,ptag,reader,cb))
 	return 0;
-    if(c[0] != 4)
+    content.public_key.version=c[0];
+    /* XXX: Can this really be correct? What else is different with V2 keys? */
+    if(content.public_key.version == 2)
+	content.public_key.version=3;
+    if(content.public_key.version != 3 && content.public_key.version != 4)
 	{
-	content.error.error="Bad public key version";
+	format_error(&content,"Bad public key version (0x%02x)",
+		     content.public_key.version);
 	cb(OPS_PARSER_ERROR,&content);
 	return 0;
 	}
-    content.public_key.version=c[0];
 
     if(!limited_read_time(&content.public_key.creation_time,ptag,reader,cb))
+	return 0;
+
+    content.public_key.days_valid=0;
+    if(content.public_key.version == 3
+       && !limited_read_scalar(&content.public_key.days_valid,2,ptag,reader,
+			       cb))
 	return 0;
 
     if(!limited_read(c,1,ptag,reader,cb))
@@ -154,19 +179,22 @@ static int parse_public_key(ops_parser_ptag *ptag,ops_packet_reader *reader,
     return 1;
     }
 
-void ops_parse_packet(ops_packet_reader *reader,ops_packet_parse_callback *cb)
+static int ops_parse_one_packet(ops_packet_reader *reader,
+				ops_packet_parse_callback *cb)
     {
     char ptag[1];
     ops_packet_reader_ret ret;
     ops_parser_content content;
 
     ret=reader(ptag,1);
+    if(ret == OPS_PR_EOF)
+	return 0;
     assert(ret == OPS_PR_OK);
     if(!(*ptag&OPS_PTAG_ALWAYS_SET))
 	{
 	content.error.error="Format error (ptag bit not set)";
 	cb(OPS_PARSER_ERROR,&content);
-	return;
+	return 0;
 	}
     content.ptag.new_format=!!(*ptag&OPS_PTAG_NEW_FORMAT);
     if(content.ptag.new_format)
@@ -212,11 +240,16 @@ void ops_parse_packet(ops_packet_reader *reader,ops_packet_parse_callback *cb)
 	break;
 
     default:
-	content.error.error="Format error (unknown content tag)";
+	format_error(&content,"Format error (unknown content tag %d)",
+		     content.ptag.content_tag);
 	cb(OPS_PARSER_ERROR,&content);
-	return;
+	return 0;
 	}
+    return 1;
     }
 
-
-
+void ops_parse_packet(ops_packet_reader *reader,ops_packet_parse_callback *cb)
+    {
+    while(ops_parse_one_packet(reader,cb))
+	;
+    }

@@ -105,6 +105,7 @@ typedef struct
     {
     unsigned 			version;
     time_t			creation_time;
+    unsigned			days_valid; /* 0 means forever */
     ops_public_key_algorithm	algorithm;
     ops_public_key		key;
     } ops_parser_public_key;
