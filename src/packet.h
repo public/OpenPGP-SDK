@@ -153,7 +153,7 @@ typedef struct
     {
     unsigned		new_format;	/*!< Whether this packet tag is new (true) or old format (false) */
     unsigned		content_tag;	/*!< content_tag value - See #ops_content_tag_t for meanings */
-    ops_ptag_of_lt_t	length_type;	/*!< Length type (#ops_ptag_of_lt_t) - only if this packet tag is old format */
+    ops_ptag_of_lt_t	length_type;	/*!< Length type (#ops_ptag_of_lt_t) - only if this packet tag is old format.  Set to 0 if new format. */
     unsigned		length;		/*!< The length of the packet.  This value is set when we read and compute the
 					  length information, not at the same moment we create the packet tag structure.
 					  Only defined if #length_read is set. */  /* XXX: Ben, is this correct? */

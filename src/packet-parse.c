@@ -709,6 +709,16 @@ static int parse_signature(ops_ptag_t *ptag,ops_packet_reader_t *reader,
     ERR1("Bad signature version (%d)",c[0]);
     }
 
+/** Parse one packet.
+ *
+ * This function parses the packet tag.  It computes the value of the content tag and then calls the appropriate
+ * function to handle the content.
+ *
+ * \param *reader	Our reader
+ * \param *cb		The callback
+ * \param *opt		Parsing options
+ * \return		1 on success, 0 on error
+ */
 static int ops_parse_one_packet(ops_packet_reader_t *reader,
 				ops_packet_parse_callback_t *cb,
 				ops_parse_packet_options_t *opt)
@@ -738,7 +748,7 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
 	{
 	C.ptag.content_tag=(*ptag&OPS_PTAG_OF_CONTENT_TAG_MASK)
 	    >> OPS_PTAG_OF_CONTENT_TAG_SHIFT;
-	C.ptag.length_type=*ptag&0x03;
+	C.ptag.length_type=*ptag&OPS_PTAG_OF_LENGTH_TYPE_MASK;
 	switch(C.ptag.length_type)
 	    {
 	case OPS_PTAG_OF_LT_ONE_BYTE:
@@ -757,7 +767,7 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
 	    break;
 
 	case OPS_PTAG_OF_LT_INDETERMINATE:
-	    C.ptag.length=-1;
+	    C.ptag.length=-1; /* XXX BUG: length is declared unsigned. -- Peter */
 	    break;
 	    }
 	}
@@ -789,6 +799,15 @@ static int ops_parse_one_packet(ops_packet_reader_t *reader,
     return r;
     }
 
+/** Parse packets.
+ *
+ * Parses packets calling #ops_parse_one_packet until an error occurs or until EOF (which is just another error anyway).
+ *
+ * \param *reader	Our reader
+ * \param *cb		The callback
+ * \param *opt		Parsing options
+ * \return		1 on success, 0 on error
+ */
 void ops_parse_packet(ops_packet_reader_t *reader,
 		      ops_packet_parse_callback_t *cb,
 		      ops_parse_packet_options_t *opt)
