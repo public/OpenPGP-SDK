@@ -1,3 +1,5 @@
+# $Id$
+
 CFLAGS=-Wall -Werror -g
 LDFLAGS=-g
 
