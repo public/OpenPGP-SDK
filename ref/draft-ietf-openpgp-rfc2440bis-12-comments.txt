@@ -1,0 +1,39 @@
+3.2 (MPI) doesn't specify what the unused bits should be set
+  to. This may be deliberate but I think it should either say they MUST
+  be zero (which I prefer) or that their content is unspecified.
+
+4.2 refers to Content Tags, but 4.3 calls them Packet Tags.
+
+5.5.2 doesn't mention V2 keys.
+
+In section 9.1, Schneier is given as the reference for DSA - why not refer to FIPS 186-2, which is freely available? Or, indeed, HAC 11.5.1, available here: http://www.cacr.math.uwaterloo.ca/hac/about/chap11.pdf.
+
+Similarly 9.2, TripleDES (which, presumably is EDE 3DES - it'd be good
+to be specific) is on some FIPS document which I forget or in HAC
+chapter 7 (7.32 in 7.2.3 and 7.4.2).
+
+----
+
+In 5.2.1:
+
+"0x10: Generic certification of a User ID and Public Key packet."
+
+Does this mean that the signature is over the User ID packet and the Public Key packet, concatenated, in that order? Or what?
+
+Also, what on earth does:
+
+       Note that all PGP "key signatures" are this type of
+       certification.
+
+mean?
+
+In 5.2.2:
+
+   "The data being signed is hashed, and then the signature type and
+   creation time from the signature packet are hashed (5 additional
+   octets)."
+
+is unclear, suggest:
+
+"The concatenation of the data to be signed, the signature type and
+creation time from the signature packet (5 additional octets) is hashed."
