@@ -4,6 +4,18 @@
  * $Id$
  */
 
+#ifndef OPS_PACKET_PARSE_H
+#define OPS_PACKET_PARSE_H
+
+#include "packet.h"
+
+typedef struct ops_region
+    {
+    struct ops_region *parent;
+    unsigned length;
+    unsigned length_read;
+    } ops_region_t;
+
 /** Return values for #ops_packet_reader_t. */
 typedef enum
     {
@@ -28,17 +40,20 @@ typedef struct
     {
     unsigned char ss_raw[256/8];
     unsigned char ss_parsed[256/8];
+
     ops_packet_parse_callback_t *cb;
     void *cb_arg;
+
     ops_packet_reader_t *reader;
     void *reader_arg;
+
     unsigned accumulate:1;	/*!< accumulate packet data */
     unsigned char *accumulated;	/*!< the accumulated data */
     unsigned asize;	/*!< size of the buffer */
     unsigned alength;	/*!< used buffer */
     } ops_parse_options_t;
 
-void ops_parse(ops_parse_options_t *opt);
+int ops_parse(ops_parse_options_t *opt);
 void ops_parse_and_validate(ops_parse_options_t *opt);
 
 typedef enum
@@ -53,5 +68,10 @@ typedef enum
 void ops_parse_options(ops_parse_options_t *opt,ops_content_tag_t tag,
 		       ops_parse_type_t type);
 
+int ops_limited_read(unsigned char *dest,unsigned length,
+		     ops_region_t *region,ops_parse_options_t *opt);
+
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */
+
+#endif
