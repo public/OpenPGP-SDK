@@ -129,6 +129,13 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	putchar('\n');
 	break;
 
+    case OPS_PTAG_SS_ISSUER_KEY_ID:
+	fputs("  issuer key id id=",stdout);
+	hexdump(content->ss_issuer_key_id.key_id,
+		sizeof content->ss_issuer_key_id.key_id);
+	putchar('\n');
+	break;
+
     default:
 	fprintf(stderr,"unknown tag=%d\n",content_->tag);
 	exit(1);
