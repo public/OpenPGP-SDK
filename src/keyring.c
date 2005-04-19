@@ -1,6 +1,7 @@
 #include "keyring.h"
 #include "keyring_local.h"
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef DMALLOC
 # include <dmalloc.h>

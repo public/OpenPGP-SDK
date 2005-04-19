@@ -3,6 +3,7 @@
 #include "util.h"
 #include "accumulate.h"
 #include <unistd.h>
+#include <string.h>
 
 int main(int argc,char **argv)
     {

@@ -3,6 +3,7 @@
 #include "memory.h"
 #include "build.h"
 #include <assert.h>
+#include <string.h>
 
 #ifdef DMALLOC
 # include <dmalloc.h>

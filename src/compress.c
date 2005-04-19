@@ -1,6 +1,7 @@
 #include "compress.h"
 #include <zlib.h>
 #include <assert.h>
+#include <string.h>
 
 #define DECOMPRESS_BUFFER	1024
 
