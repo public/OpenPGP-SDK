@@ -47,28 +47,28 @@ static void format_error(ops_parser_content_t *content,
     content->content.error.error=buf;
     }
 
-static ops_packet_reader_ret_t base_read(unsigned char *dest,unsigned *length,
-					 ops_parse_options_t *opt)
+static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
+				  ops_reader_flags_t flags,
+				  ops_parse_options_t *opt)
     {
-    unsigned l=*length;
-    ops_packet_reader_ret_t ret=opt->reader(dest,length,opt->reader_arg);
-    if(ret != OPS_PR_OK
-       && !(ret == OPS_PR_EOF && l != OPS_INDETERMINATE_LENGTH))
+    ops_reader_ret_t ret=opt->reader(dest,plength,flags,opt->reader_arg);
+    if(ret != OPS_R_OK
+       && !(ret == OPS_R_EOF && !(flags&OPS_RETURN_LENGTH)))
 	return ret;
 
     if(opt->accumulate)
 	{
 	assert(opt->asize >= opt->alength);
-	if(opt->alength+*length > opt->asize)
+	if(opt->alength+*plength > opt->asize)
 	    {
-	    opt->asize=opt->asize*2+*length;
+	    opt->asize=opt->asize*2+*plength;
 	    opt->accumulated=realloc(opt->accumulated,opt->asize);
 	    }
-	assert(opt->asize >= opt->alength+*length);
-	memcpy(opt->accumulated+opt->alength,dest,*length);
+	assert(opt->asize >= opt->alength+*plength);
+	memcpy(opt->accumulated+opt->alength,dest,*plength);
 	}
     // we track length anyway, because it is used for packet offsets
-    opt->alength+=*length;
+    opt->alength+=*plength;
 
     return ret;
     }
@@ -85,11 +85,11 @@ static ops_packet_reader_ret_t base_read(unsigned char *dest,unsigned *length,
  * \return		#OPS_PR_OK on success, reader's return value otherwise
  *
  */
-static ops_packet_reader_ret_t read_scalar(unsigned *result,unsigned length,
+static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
 					   ops_parse_options_t *opt)
     {
     unsigned t=0;
-    ops_packet_reader_ret_t ret;
+    ops_reader_ret_t ret;
 
     assert (length <= sizeof(*result));
 
@@ -98,13 +98,13 @@ static ops_packet_reader_ret_t read_scalar(unsigned *result,unsigned length,
 	unsigned char c[1];
 	unsigned one=1;
 
-	ret=base_read(c,&one,opt);
-	if(ret != OPS_PR_OK)
+	ret=base_read(c,&one,0,opt);
+	if(ret != OPS_R_OK)
 	    return ret;
 	t=(t << 8)+c[0];
 	}
     *result=t;
-    return OPS_PR_OK;
+    return OPS_R_OK;
     }
 
 /** Read bytes from reader.
@@ -132,7 +132,8 @@ int ops_limited_read(unsigned char *dest,unsigned length,
     if(region->length_read+length > region->length)
 	ERR("Not enough data left");
 
-    if(base_read(dest,&length,opt) != OPS_PR_OK)
+    if(base_read(dest,&length,region->indeterminate ? OPS_RETURN_LENGTH: 0,opt)
+       != OPS_R_OK)
 	ERR("Read failed");
 
     region->last_read=length;
@@ -918,17 +919,18 @@ static int parse_one_pass(ops_region_t *region,ops_parse_options_t *opt)
 static int ops_parse_one_packet(ops_parse_options_t *opt)
     {
     char ptag[1];
-    ops_packet_reader_ret_t ret;
+    ops_reader_ret_t ret;
     ops_parser_content_t content;
     int r;
     ops_region_t region;
     unsigned one=1;
+    ops_boolean_t indeterminate=ops_false;
 
-    ret=base_read(ptag,&one,opt);
-    if(ret == OPS_PR_EOF)
+    ret=base_read(ptag,&one,0,opt);
+    if(ret == OPS_R_EOF)
 	return 0;
 
-    assert(ret == OPS_PR_OK);
+    assert(ret == OPS_R_OK);
     if(!(*ptag&OPS_PTAG_ALWAYS_SET))
 	{
 	C.error.error="Format error (ptag bit not set)";
@@ -950,21 +952,22 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	    {
 	case OPS_PTAG_OF_LT_ONE_BYTE:
 	    ret=read_scalar(&C.ptag.length,1,opt);
-	    assert(ret == OPS_PR_OK);
+	    assert(ret == OPS_R_OK);
 	    break;
 
 	case OPS_PTAG_OF_LT_TWO_BYTE:
 	    ret=read_scalar(&C.ptag.length,2,opt);
-	    assert(ret == OPS_PR_OK);
+	    assert(ret == OPS_R_OK);
 	    break;
 
 	case OPS_PTAG_OF_LT_FOUR_BYTE:
 	    ret=read_scalar(&C.ptag.length,4,opt);
-	    assert(ret == OPS_PR_OK);
+	    assert(ret == OPS_R_OK);
 	    break;
 
 	case OPS_PTAG_OF_LT_INDETERMINATE:
-	    C.ptag.length=OPS_INDETERMINATE_LENGTH;
+	    C.ptag.length=0;
+	    indeterminate=ops_true;
 	    break;
 	    }
 	}
@@ -973,6 +976,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 
     init_subregion(&region,NULL);
     region.length=C.ptag.length;
+    region.indeterminate=indeterminate;
     switch(C.ptag.content_tag)
 	{
     case OPS_PTAG_CT_SIGNATURE:

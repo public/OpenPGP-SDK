@@ -115,8 +115,8 @@ typedef struct
     validate_reader_arg_t *rarg;
     } validate_cb_arg_t;
 
-static ops_packet_reader_ret_t
-key_data_reader(unsigned char *dest,unsigned *length,void *arg_)
+static ops_reader_ret_t key_data_reader(unsigned char *dest,unsigned *plength,
+					ops_reader_flags_t flags,void *arg_)
     {
     validate_reader_arg_t *arg=arg_;
 
@@ -127,15 +127,15 @@ key_data_reader(unsigned char *dest,unsigned *length,void *arg_)
 	}
 
     if(arg->packet == arg->key->npackets)
-	return OPS_PR_EOF;
+	return OPS_R_EOF;
 
     // we should never be asked to cross a packet boundary in a single read
-    assert(arg->key->packets[arg->packet].length >= arg->offset+*length);
+    assert(arg->key->packets[arg->packet].length >= arg->offset+*plength);
 
-    memcpy(dest,&arg->key->packets[arg->packet].raw[arg->offset],*length);
-    arg->offset+=*length;
+    memcpy(dest,&arg->key->packets[arg->packet].raw[arg->offset],*plength);
+    arg->offset+=*plength;
 
-     return OPS_PR_OK;
+     return OPS_R_OK;
      }
 
  static ops_parse_callback_return_t

@@ -7,6 +7,7 @@
 #ifndef OPS_PACKET_PARSE_H
 #define OPS_PACKET_PARSE_H
 
+#include "types.h"
 #include "packet.h"
 
 typedef struct ops_region
@@ -15,17 +16,16 @@ typedef struct ops_region
     unsigned length;
     unsigned length_read;
     unsigned last_read; /*!< length of last read, only valid in deepest child */
+    ops_boolean_t indeterminate:1;
     } ops_region_t;
 
-#define OPS_INDETERMINATE_LENGTH	((unsigned)-1)
-
 /** Return values for #ops_packet_reader_t. */
-typedef enum
+enum ops_reader_ret_t
     {
-    OPS_PR_OK		=0,	/*!< success */
-    OPS_PR_EOF		=1,	/*!< reached end of file, no data has been returned */
-    OPS_PR_EARLY_EOF	=2,	/*!< could not read the requested amount of bytes */  /* XXX: How do we tell how many? */
-    } ops_packet_reader_ret_t;
+    OPS_R_OK		=0,	/*!< success */
+    OPS_R_EOF		=1,	/*!< reached end of file, no data has been returned */
+    OPS_R_EARLY_EOF	=2,	/*!< could not read the requested amount of bytes */  /* XXX: How do we tell how many? */
+    };
 
 typedef enum
     {
@@ -35,9 +35,10 @@ typedef enum
 
 typedef ops_parse_callback_return_t
 ops_packet_parse_callback_t(const ops_parser_content_t *content,void *arg);
-typedef ops_packet_reader_ret_t ops_packet_reader_t(unsigned char *dest,
-						    unsigned *length,
-						    void *arg);
+typedef ops_reader_ret_t ops_packet_reader_t(unsigned char *dest,
+					     unsigned *plength,
+					     ops_reader_flags_t flags,
+					     void *arg);
 
 typedef struct
     {
@@ -59,12 +60,12 @@ typedef struct
 int ops_parse(ops_parse_options_t *opt);
 void ops_parse_and_validate(ops_parse_options_t *opt);
 
-typedef enum
+enum ops_parse_type_t
     {
     OPS_PARSE_RAW,
     OPS_PARSE_PARSED,
     OPS_PARSE_IGNORE
-    } ops_parse_type_t;
+    };
 
 #define ops_parse_options_init(opt) memset(opt,'\0',sizeof *opt)
 

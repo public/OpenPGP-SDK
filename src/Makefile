@@ -5,8 +5,8 @@ DM_LIB=/usr/local/lib/libdmalloc.a
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS)
 LDFLAGS=-g
-#LIBS=-lz $(DM_LIB)
-LIBS=/home/ben/software/unpacked/zlib-1.2.2/libz.a $(DM_LIB)
+LIBS=-lz $(DM_LIB)
+#LIBS=/home/ben/software/unpacked/zlib-1.2.2/libz.a $(DM_LIB)
 
 all: .depend packet-dump verify
 

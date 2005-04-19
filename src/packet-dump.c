@@ -14,34 +14,6 @@ static void showtime(const unsigned char *name,time_t t)
     printf("%s=%ld (%.24s)",name,t,ctime(&t));
     }
 
-// XXX: make this a standard ops_file_reader (or ops_reader_fd?)
-static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned *length,
-				      void *arg)
-    {
-#error now we don't know the buffer size!
-    int n=read(0,dest,*length);
-
-    if(n == 0)
-	return OPS_PR_EOF;
-
-    if(n != *length)
-	{
-	if(*length == OPS_INDETERMINATE_LENGTH)
-	    {
-	    *length=n;
-	    return OPS_PR_EOF;
-	    }
-	else
-	    return OPS_PR_EARLY_EOF;
-	}
-#if 0
-    printf("[read 0x%x: ",length);
-    hexdump(dest,length);
-    putchar(']');
-#endif
-    return OPS_PR_OK;
-    }
-
 static void bndump(const char *name,const BIGNUM *bn)
     {
     printf("    %s=",name);
@@ -167,12 +139,17 @@ callback(const ops_parser_content_t *content_,void *arg_)
 int main(int argc,char **argv)
     {
     ops_parse_options_t opt;
+    ops_reader_fd_arg_t arg;
 
     ops_parse_options_init(&opt);
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
     ops_parse_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     opt.cb=callback;
-    opt.reader=reader;
+
+    arg.fd=0;
+    opt.reader_arg=&arg;
+    opt.reader=ops_reader_fd;
+
     ops_parse(&opt);
 
     return 0;

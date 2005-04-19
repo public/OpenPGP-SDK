@@ -9,7 +9,7 @@
 
 #include <time.h>
 #include <openssl/bn.h>
-#include "util.h"
+#include "types.h"
 
 /************************************/
 /* Packet Tags - RFC2440bis-12, 4.2 */
@@ -106,7 +106,7 @@ typedef enum
  * \see RFC2440bis-12 4.3
  * \see RFC2440bis-12 5.2.3.1
  */
-typedef enum
+enum ops_content_tag_t
     {
     OPS_PTAG_CT_RESERVED		= 0,	/*!< Reserved - a packet tag must not have this value */
     OPS_PTAG_CT_PK_SESSION_KEY		= 1,	/*!< Public-Key Encrypted Session Key Packet */
@@ -144,7 +144,7 @@ typedef enum
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
     OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16,
-    } ops_content_tag_t;
+    };
 
 /** Structure to hold one parse error string. */
 typedef struct
@@ -420,12 +420,12 @@ typedef union
     ops_one_pass_signature_t	one_pass_signature;
     } ops_parser_content_union_t;
 
-typedef struct
+struct ops_parser_content_t
     {
     ops_content_tag_t		tag;
     unsigned char		critical; /* for signature subpackets */
     ops_parser_content_union_t 	content;
-    } ops_parser_content_t;
+    };
 
 typedef struct
     {
