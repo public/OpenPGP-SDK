@@ -1,5 +1,6 @@
 #include "compress.h"
 #include <zlib.h>
+#include <assert.h>
 
 #define DECOMPRESS_BUFFER	1024
 
@@ -19,10 +20,11 @@ typedef struct
 #define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; arg->opt->cb(&content,arg->opt->cb_arg); return OPS_PR_EARLY_EOF; } while(0)
 
 static ops_packet_reader_ret_t
-compressed_data_reader(unsigned char *dest,unsigned length,void *arg_)
+compressed_data_reader(unsigned char *dest,unsigned *plength,void *arg_)
     {
     decompress_arg_t *arg=arg_;
     ops_parser_content_t content;
+    unsigned length=*plength;
 
     if(arg->region->length_read == arg->region->length)
 	{
@@ -42,9 +44,13 @@ compressed_data_reader(unsigned char *dest,unsigned length,void *arg_)
 
 	    arg->stream.next_out=arg->out;
 	    arg->stream.avail_out=sizeof arg->out;
+	    arg->offset=0;
 	    if(arg->stream.avail_in == 0)
 		{
-		int n=arg->region->length_read-arg->region->length;
+		unsigned n=arg->region->length;
+
+		if(n != OPS_INDETERMINATE_LENGTH)
+		    n-=arg->region->length_read;
 
 		if(n > sizeof arg->in)
 		    n=sizeof arg->in;
@@ -67,14 +73,19 @@ compressed_data_reader(unsigned char *dest,unsigned length,void *arg_)
 	       && arg->region->length_read != arg->region->length)
 		ERR("Compressed stream ended before packet end.");
 	    else if(ret != Z_OK)
+		{
+		fprintf(stderr,"ret=%d\n",ret);
 		ERR("Decompression error.");
+		}
 	    arg->inflate_ret=ret;
 	    }
-	len=arg->offset-(arg->stream.next_out-arg->out);
+	len=(arg->stream.next_out-arg->out)-arg->offset;
+	assert(len >= 0);
 	if(len > length)
 	    len=length;
 	memcpy(dest,arg->out,len);
 	arg->offset+=len;
+	length-=len;
 	}
 
     return OPS_PR_OK;
@@ -83,6 +94,7 @@ compressed_data_reader(unsigned char *dest,unsigned length,void *arg_)
 int ops_decompress(ops_region_t *region,ops_parse_options_t *opt)
     {
     decompress_arg_t arg;
+    int ret;
 
     memset(&arg,'\0',sizeof arg);
 
@@ -98,7 +110,12 @@ int ops_decompress(ops_region_t *region,ops_parse_options_t *opt)
     arg.stream.zalloc=Z_NULL;
     arg.stream.zfree=Z_NULL;
 
-    inflateInit(&arg.stream);
+    ret=inflateInit2(&arg.stream,-15);
+    if(ret != Z_OK)
+	{
+	fprintf(stderr,"ret=%d\n",ret);
+	return 0;
+	}
 
     opt->reader=compressed_data_reader;
     opt->reader_arg=&arg;

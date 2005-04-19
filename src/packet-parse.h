@@ -14,7 +14,10 @@ typedef struct ops_region
     struct ops_region *parent;
     unsigned length;
     unsigned length_read;
+    unsigned last_read; /*!< length of last read, only valid in deepest child */
     } ops_region_t;
+
+#define OPS_INDETERMINATE_LENGTH	((unsigned)-1)
 
 /** Return values for #ops_packet_reader_t. */
 typedef enum
@@ -33,7 +36,7 @@ typedef enum
 typedef ops_parse_callback_return_t
 ops_packet_parse_callback_t(const ops_parser_content_t *content,void *arg);
 typedef ops_packet_reader_ret_t ops_packet_reader_t(unsigned char *dest,
-						    unsigned length,
+						    unsigned *length,
 						    void *arg);
 
 typedef struct

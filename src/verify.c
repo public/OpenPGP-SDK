@@ -3,16 +3,24 @@
 #include "accumulate.h"
 #include <unistd.h>
 
-static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned length,
+static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned *length,
 				      void *arg)
     {
-    int n=read(0,dest,length);
+    int n=read(0,dest,*length);
 
     if(n == 0)
 	return OPS_PR_EOF;
 
-    if(n != length)
-	return OPS_PR_EARLY_EOF;
+    if(n != *length)
+	{
+	if(*length == OPS_INDETERMINATE_LENGTH)
+	    {
+	    *length=n;
+	    return OPS_PR_EOF;
+	    }
+	else
+	    return OPS_PR_EARLY_EOF;
+	}
 #if 0
     printf("[read 0x%x: ",length);
     hexdump(dest,length);

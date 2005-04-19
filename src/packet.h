@@ -9,6 +9,7 @@
 
 #include <time.h>
 #include <openssl/bn.h>
+#include "util.h"
 
 /************************************/
 /* Packet Tags - RFC2440bis-12, 4.2 */
@@ -393,6 +394,16 @@ typedef struct
     ops_compression_type_t	type;
     } ops_compressed_t;
 
+typedef struct
+    {
+    unsigned char		version;
+    ops_sig_type_t		sig_type;
+    ops_hash_algorithm_t	hash_algorithm;
+    ops_public_key_algorithm_t	key_algorithm;
+    unsigned char		keyid;
+    ops_boolean_t		nested;
+    } ops_one_pass_signature_t;
+
 typedef union
     {
     ops_parser_error_t		error;
@@ -406,6 +417,7 @@ typedef union
     ops_ss_key_id_t		ss_issuer_key_id;
     ops_packet_t		packet;
     ops_compressed_t		compressed;
+    ops_one_pass_signature_t	one_pass_signature;
     } ops_parser_content_union_t;
 
 typedef struct

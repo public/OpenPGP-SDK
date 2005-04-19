@@ -47,26 +47,28 @@ static void format_error(ops_parser_content_t *content,
     content->content.error.error=buf;
     }
 
-static ops_packet_reader_ret_t base_read(unsigned char *dest,unsigned length,
+static ops_packet_reader_ret_t base_read(unsigned char *dest,unsigned *length,
 					 ops_parse_options_t *opt)
     {
+    unsigned l=*length;
     ops_packet_reader_ret_t ret=opt->reader(dest,length,opt->reader_arg);
-    if(ret != OPS_PR_OK)
+    if(ret != OPS_PR_OK
+       && !(ret == OPS_PR_EOF && l != OPS_INDETERMINATE_LENGTH))
 	return ret;
 
     if(opt->accumulate)
 	{
 	assert(opt->asize >= opt->alength);
-	if(opt->alength+length > opt->asize)
+	if(opt->alength+*length > opt->asize)
 	    {
-	    opt->asize=opt->asize*2+length;
+	    opt->asize=opt->asize*2+*length;
 	    opt->accumulated=realloc(opt->accumulated,opt->asize);
 	    }
-	assert(opt->asize >= opt->alength+length);
-	memcpy(opt->accumulated+opt->alength,dest,length);
+	assert(opt->asize >= opt->alength+*length);
+	memcpy(opt->accumulated+opt->alength,dest,*length);
 	}
     // we track length anyway, because it is used for packet offsets
-    opt->alength+=length;
+    opt->alength+=*length;
 
     return ret;
     }
@@ -94,8 +96,9 @@ static ops_packet_reader_ret_t read_scalar(unsigned *result,unsigned length,
     while(length--)
 	{
 	unsigned char c[1];
+	unsigned one=1;
 
-	ret=base_read(c,1,opt);
+	ret=base_read(c,&one,opt);
 	if(ret != OPS_PR_OK)
 	    return ret;
 	t=(t << 8)+c[0];
@@ -129,7 +132,7 @@ int ops_limited_read(unsigned char *dest,unsigned length,
     if(region->length_read+length > region->length)
 	ERR("Not enough data left");
 
-    if(base_read(dest,length,opt) != OPS_PR_OK)
+    if(base_read(dest,&length,opt) != OPS_PR_OK)
 	ERR("Read failed");
 
     do
@@ -138,6 +141,7 @@ int ops_limited_read(unsigned char *dest,unsigned length,
 	assert(!region->parent || region->length <= region->parent->length);
 	}
     while((region=region->parent));
+    region->last_read=length;
 
     return 1;
     }
@@ -866,6 +870,41 @@ static int parse_compressed(ops_region_t *region,ops_parse_options_t *opt)
     return ops_decompress(region,opt);
     }
 
+static int parse_one_pass(ops_region_t *region,ops_parse_options_t *opt)
+    {
+    unsigned char c[1];
+    ops_parser_content_t content;
+
+    if(!ops_limited_read(&C.one_pass_signature.version,1,region,opt))
+	return 0;
+    if(C.one_pass_signature.version != 3)
+	ERR1("Bad one-pass signature version (%d)",
+	     C.one_pass_signature.version);
+
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+    C.one_pass_signature.sig_type=c[0];
+
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+    C.one_pass_signature.hash_algorithm=c[0];
+
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+    C.one_pass_signature.key_algorithm=c[0];
+
+    if(!ops_limited_read(&C.one_pass_signature.keyid,8,region,opt))
+	return 0;
+
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+    C.one_pass_signature.nested=!!c[0];
+
+    CB(OPS_PTAG_CT_ONE_PASS_SIGNATURE,&content);
+
+    return 1;
+    }
+
 /** Parse one packet.
  *
  * This function parses the packet tag.  It computes the value of the content tag and then calls the appropriate
@@ -883,8 +922,9 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
     ops_parser_content_t content;
     int r;
     ops_region_t region;
+    unsigned one=1;
 
-    ret=base_read(ptag,1,opt);
+    ret=base_read(ptag,&one,opt);
     if(ret == OPS_PR_EOF)
 	return 0;
 
@@ -924,7 +964,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	    break;
 
 	case OPS_PTAG_OF_LT_INDETERMINATE:
-	    C.ptag.length=-1; /* XXX BUG: length is declared unsigned. -- Peter */
+	    C.ptag.length=OPS_INDETERMINATE_LENGTH;
 	    break;
 	    }
 	}
@@ -950,6 +990,10 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 
     case OPS_PTAG_CT_COMPRESSED:
 	r=parse_compressed(&region,opt);
+	break;
+
+    case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
+	r=parse_one_pass(&region,opt);
 	break;
 
     default:
