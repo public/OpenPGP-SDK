@@ -135,13 +135,13 @@ int ops_limited_read(unsigned char *dest,unsigned length,
     if(base_read(dest,&length,opt) != OPS_PR_OK)
 	ERR("Read failed");
 
+    region->last_read=length;
     do
 	{
 	region->length_read+=length;
 	assert(!region->parent || region->length <= region->parent->length);
 	}
     while((region=region->parent));
-    region->last_read=length;
 
     return 1;
     }

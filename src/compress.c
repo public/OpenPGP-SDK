@@ -50,10 +50,11 @@ compressed_data_reader(unsigned char *dest,unsigned *plength,void *arg_)
 		unsigned n=arg->region->length;
 
 		if(n != OPS_INDETERMINATE_LENGTH)
+		    {
 		    n-=arg->region->length_read;
-
-		if(n > sizeof arg->in)
-		    n=sizeof arg->in;
+		    if(n > sizeof arg->in)
+			n=sizeof arg->in;
+		    }
 
 		arg->opt->reader=arg->reader;
 		arg->opt->reader_arg=arg->reader_arg;
@@ -65,7 +66,8 @@ compressed_data_reader(unsigned char *dest,unsigned *plength,void *arg_)
 		arg->opt->reader_arg=arg;
 
 		arg->stream.next_in=arg->in;
-		arg->stream.avail_in=n;
+		arg->stream.avail_in=n == OPS_INDETERMINATE_LENGTH
+		  ? arg->region->last_read : n;
 		}
 
 	    ret=inflate(&arg->stream,Z_SYNC_FLUSH);

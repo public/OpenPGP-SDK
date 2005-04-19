@@ -18,6 +18,7 @@ static void showtime(const unsigned char *name,time_t t)
 static ops_packet_reader_ret_t reader(unsigned char *dest,unsigned *length,
 				      void *arg)
     {
+#error now we don't know the buffer size!
     int n=read(0,dest,*length);
 
     if(n == 0)
