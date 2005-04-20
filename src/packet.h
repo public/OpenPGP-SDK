@@ -143,6 +143,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_CREATION_TIME		=0x200+2,	/*!< signature creation time */
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
+    OPS_PTAG_SS_PREFERRED_SKA = 0x200+11,	/*!< preferred symmetric algorithms */
     OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16,
     };
 
@@ -170,7 +171,7 @@ typedef struct
 /** Public Key Algorithm Numbers.
  * OpenPGP assigns a unique Algorithm Number to each algorithm that is part of OpenPGP.
  *
- * This lists algorith numbers for public key algorithms.
+ * This lists algorithm numbers for public key algorithms.
  * 
  * \see RFC2440bis-12 9.1
  */
@@ -224,7 +225,7 @@ typedef union
     ops_elgamal_public_key_t	elgamal;	/*!< An ElGamal public key */
     } ops_public_key_union_t;
 
-/** Struture to hold one pgp public key */
+/** Structure to hold one pgp public key */
 typedef struct
     {
     unsigned 			version;	/*!< version of the key (v3, v4...) */
@@ -237,7 +238,28 @@ typedef struct
     ops_public_key_union_t	key;		/*!< Public Key Parameters */
     } ops_public_key_t;
 
-/** Struture to hold one user id */
+/** Symmetric Key Algorithm Numbers.
+ * OpenPGP assigns a unique Algorithm Number to each algorithm that is part of OpenPGP.
+ *
+ * This lists algorithm numbers for symmetric key algorithms.
+ * 
+ * \see RFC2440bis-12 9.2
+ */
+typedef enum
+    {
+    OPS_SKA_PLAINTEXT			=0,	/*!< Plaintext or unencrypted data */
+    OPS_SKA_IDEA				=1, /*!< IDEA */
+    OPS_SKA_TRIPLEDES			=2, /*!< TripleDES */
+    OPS_SKA_CAST5				=3, /*!< CAST5 */
+    OPS_SKA_BLOWFISH			=4, /*!< Blowfish */
+    OPS_SKA_AES_128				=7, /*!< AES with 128-bit key (AES) */
+    OPS_SKA_AES_192				=8, /*!< AES with 192-bit key */
+    OPS_SKA_AES_256				=9, /*!< AES with 256-bit key */
+    OPS_SKA_TWOFISH				=10, /*!< Twofish with 256-bit key (TWOFISH) */
+
+    } ops_symmetric_key_algorithm_t;
+
+/** Structure to hold one user id */
 typedef struct
     {
     char *			user_id;	/*!< User ID string */
@@ -291,9 +313,9 @@ typedef enum
 /** Hashing Algorithm Numbers.
  * OpenPGP assigns a unique Algorithm Number to each algorithm that is part of OpenPGP.
  * 
- * This lists algorith numbers for hash algorithms.
+ * This lists algorithm numbers for hash algorithms.
  *
- * \see RFC2440bis-12 9.1
+ * \see RFC2440bis-12 9.4
  */
 typedef enum
     {
@@ -373,6 +395,23 @@ typedef struct
     unsigned char		key_id[OPS_KEY_ID_SIZE];
     } ops_ss_key_id_t;
 
+/* MAX PREFERRED ALGORITHMS is defined to provide an upper bound
+ * on the size of array to be used to stored the array given in the
+ * Preferred Symmetric Algorithms signature sub-packet.
+ * The value has been arbitrarily chosen to allow for an array
+ * which includes each SKA currently defined in rfc2440bis
+ */
+
+#define MAX_PREFERRED_SKA 22
+typedef struct
+	{
+		size_t	len;	/* must use a length field in structure to 
+							determine where the algorithms stop. 
+							The value 0 may represent the plaintext algorithm
+							so we cannot expect a null-terminated list */
+		unsigned char data[MAX_PREFERRED_SKA];
+	} ops_ss_preferred_ska_t;
+
 typedef struct
     {
     size_t			length;
@@ -418,6 +457,7 @@ typedef union
     ops_packet_t		packet;
     ops_compressed_t		compressed;
     ops_one_pass_signature_t	one_pass_signature;
+    ops_ss_preferred_ska_t	ss_preferred_ska;
     } ops_parser_content_union_t;
 
 struct ops_parser_content_t

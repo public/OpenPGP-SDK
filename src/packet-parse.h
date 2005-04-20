@@ -64,7 +64,7 @@ enum ops_parse_type_t
     {
     OPS_PARSE_RAW,
     OPS_PARSE_PARSED,
-    OPS_PARSE_IGNORE
+    OPS_PARSE_IGNORE 
     };
 
 #define ops_parse_options_init(opt) memset(opt,'\0',sizeof *opt)

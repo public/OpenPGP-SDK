@@ -25,7 +25,8 @@ static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
-
+	int i=0; 	/* loop counter */
+	
     switch(content_->tag)
 	{
     case OPS_PARSER_ERROR:
@@ -136,6 +137,44 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	putchar('\n');
 	break;
 
+    case OPS_PTAG_SS_PREFERRED_SKA:
+    printf("  preferred symmetric algorithms=");
+    for (i=0; i<content->ss_preferred_ska.len; i++) {
+    	switch (content->ss_preferred_ska.data[i]) {
+    		case OPS_SKA_PLAINTEXT:
+    			printf("Plaintext ");
+    			break;
+    		case OPS_SKA_IDEA:
+    			printf("IDEA ");
+    			break;
+    		case OPS_SKA_TRIPLEDES:
+    			printf("TripleDES ");
+    			break;
+    		case OPS_SKA_CAST5:
+    			printf("CAST5 ");
+    			break;
+    		case OPS_SKA_BLOWFISH:
+    			printf("Blowfish ");
+    			break;
+    		case OPS_SKA_AES_128:
+    			printf("AES(128-bit) ");
+    			break;
+    		case OPS_SKA_AES_192:
+    			printf("AES(192-bit) ");
+    			break;
+    		case OPS_SKA_AES_256:
+    			printf("AES(256-bit) ");
+    			break;
+    		case OPS_SKA_TWOFISH:
+    			printf("Twofish ");
+    			break;
+    		default:
+    			printf("Unknown SKA: %d ",content->ss_preferred_ska.data[i]);
+    	}
+    }
+	printf ("\n");
+   	break;
+    
     default:
 	fprintf(stderr,"unknown tag=%d\n",content_->tag);
 	exit(1);
