@@ -143,6 +143,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_CREATION_TIME		=0x200+2,	/*!< signature creation time */
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
+    OPS_PTAG_SS_REVOCABLE		=0x200+7,	/*!< revocable */
     OPS_PTAG_SS_PREFERRED_SKA = 0x200+11,	/*!< preferred symmetric algorithms */
     OPS_PTAG_SS_REVOCATION_KEY = 0x200+12,	/*!< revocation key */
     OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16, /*!< issuer key ID */
@@ -261,6 +262,16 @@ typedef enum
 
     } ops_symmetric_key_algorithm_t;
 
+/** Structure to hold one trust packet's data */
+
+/** Probably want to do this with malloc, ask Ben - Rachel */
+#define MAX_TRUST_DATA	10
+typedef struct
+	{
+		int len;	/* length of data */
+		unsigned char data[MAX_TRUST_DATA];
+	} ops_trust_t;
+	
 /** Structure to hold one user id */
 typedef struct
     {
@@ -388,6 +399,11 @@ typedef struct
     } ops_ss_trust_t;
 
 typedef struct
+	{
+	ops_boolean_t	revocable;
+	} ops_ss_revocable_t;
+	
+typedef struct
     {
     time_t			time;
     } ops_ss_time_t;
@@ -462,10 +478,12 @@ typedef union
     ops_parser_error_t		error;
     ops_ptag_t			ptag;
     ops_public_key_t		public_key;
+    ops_trust_t			trust;
     ops_user_id_t		user_id;
     ops_signature_t		signature;
     ops_ss_raw_t		ss_raw;
     ops_ss_trust_t		ss_trust;
+    ops_ss_revocable_t	ss_revocable;
     ops_ss_time_t		ss_time;
     ops_ss_key_id_t		ss_issuer_key_id;
     ops_packet_t		packet;

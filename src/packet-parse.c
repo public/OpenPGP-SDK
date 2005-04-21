@@ -343,6 +343,7 @@ ops_parser_content_free (ops_parser_content_t * c)
     {
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_COMPRESSED:
+    case OPS_PTAG_CT_TRUST:
     case OPS_PTAG_SS_CREATION_TIME:
     case OPS_PTAG_SS_TRUST:
     case OPS_PTAG_SS_ISSUER_KEY_ID:
@@ -689,10 +690,16 @@ parse_one_signature_subpacket (ops_signature_t * sig,
 
     case OPS_PTAG_SS_TRUST:
       if (!ops_limited_read (&C.ss_trust.level, 1, &subregion, opt)
-	  || !ops_limited_read (&C.ss_trust.level, 1, &subregion, opt))
+	  || !ops_limited_read (&C.ss_trust.amount, 1, &subregion, opt))
 	return 0;
       break;
 
+    case OPS_PTAG_SS_REVOCABLE:
+      if (!ops_limited_read (&bool, 1, &subregion, opt))
+  		return 0;
+      C.ss_revocable.revocable = !!bool;
+      break;
+    	
     case OPS_PTAG_SS_ISSUER_KEY_ID:
       if (!ops_limited_read (C.ss_issuer_key_id.key_id, OPS_KEY_ID_SIZE,
 			     &subregion, opt))
@@ -720,7 +727,7 @@ parse_one_signature_subpacket (ops_signature_t * sig,
 
     case OPS_PTAG_SS_PRIMARY_USER_ID:
       if (!ops_limited_read (&bool, 1, &subregion, opt))
-	return 0;
+  		return 0;
       C.ss_primary_user_id.primary_user_id = !!bool;
       break;
 
@@ -940,6 +947,26 @@ parse_compressed (ops_region_t * region, ops_parse_options_t * opt)
 }
 
 static int
+parse_trust (ops_region_t * region, ops_parse_options_t * opt)
+{
+	ops_parser_content_t content;
+
+	C.trust.len = region->length - region->length_read;
+	if (C.trust.len > MAX_TRUST_DATA) {
+		ERR1("Warning: MAX_TRUST_LEN not long enough, need at least %d\n", 
+			C.trust.len);
+		return 0;
+	}
+	
+	if (!ops_limited_read ((unsigned char *)&C.trust.data, C.trust.len, region, opt))
+		return 0;
+
+	CB (OPS_PTAG_CT_TRUST, &content);
+
+	return 1;
+}
+
+static int
 parse_one_pass (ops_region_t * region, ops_parse_options_t * opt)
 {
   unsigned char c[1];
@@ -1058,9 +1085,14 @@ ops_parse_one_packet (ops_parse_options_t * opt)
       r = parse_public_key (C.ptag.content_tag, &region, opt);
       break;
 
+    case OPS_PTAG_CT_TRUST:
+      r = parse_trust(&region, opt);
+      break;
+      
     case OPS_PTAG_CT_USER_ID:
       r = parse_user_id (&region, opt);
       break;
+
 
     case OPS_PTAG_CT_COMPRESSED:
       r = parse_compressed (&region, opt);

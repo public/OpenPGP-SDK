@@ -77,6 +77,12 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    }
 	break;
 
+	case OPS_PTAG_CT_TRUST:
+	printf("Trust: "); 
+	hexdump(content->trust.data,content->trust.len);
+	printf("\n");
+	break;
+	
     case OPS_PTAG_CT_USER_ID:
 	/* XXX: how do we print UTF-8? */
 	printf("user id user_id=%s\n",content->user_id.user_id);
@@ -130,12 +136,39 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	putchar('\n');
 	break;
 
+    case OPS_PTAG_SS_EXPIRATION_TIME:
+	fputs("  expiration time ",stdout);
+	showtime("time",content->ss_time.time);
+	putchar('\n');
+	break;
+
+	case OPS_PTAG_SS_TRUST:
+	printf ("  trust signature: level=%d, amount=%d\n",
+		content->ss_trust.level,
+		content->ss_trust.amount);
+	break;
+		
+   	case OPS_PTAG_SS_REVOCABLE:
+   		printf("  Revocable: ");
+   		if (content->ss_revocable.revocable)
+   		{
+   			printf("YES\n");
+   		} 
+   		else 
+		{
+			printf("NO\n");
+		}
+	break;      
+
     case OPS_PTAG_SS_REVOCATION_KEY:
     /* not yet tested */
-    printf ("  revocation key: class=%x, algid=%x, fingerprint=%s\n",
-    	content->ss_revocation_key.class,
-    	content->ss_revocation_key.algid,
-    	content->ss_revocation_key.fingerprint);
+    printf ("  revocation key: class=0x%x",
+    	content->ss_revocation_key.class);
+    if (content->ss_revocation_key.class&0x40)
+    	printf (" (sensitive)");
+    printf (", algid=0x%x",
+    	content->ss_revocation_key.algid);
+    printf(", fingerprint=");
     hexdump(content->ss_revocation_key.fingerprint,20);
     printf("\n");
     break;
@@ -198,7 +231,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;      
 
     default:
-	fprintf(stderr,"unknown tag=%d\n",content_->tag);
+	fprintf(stderr,"packet-dump: unknown tag=%d\n",content_->tag);
 	exit(1);
 	}
     return OPS_RELEASE_MEMORY;
