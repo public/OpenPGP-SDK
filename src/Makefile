@@ -1,13 +1,13 @@
 # $Id$
 
-DM_FLAGS=-DDMALLOC -I/usr/local/include
-#DM_FLAGS= -I/usr/local/include
-DM_LIB=/usr/local/lib/libdmalloc.a
+#DM_FLAGS=-DDMALLOC -I/usr/local/include
+DM_FLAGS= -I/usr/local/include
+#DM_LIB=/usr/local/lib/libdmalloc.a
+DM_LIB=
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS)
 LDFLAGS=-g
 LIBS=-lz $(DM_LIB)
-#LIBS=-lz 
 #LIBS=/home/ben/software/unpacked/zlib-1.2.2/libz.a $(DM_LIB)
 
 all: .depend packet-dump verify
@@ -35,3 +35,5 @@ clean:
 
 .depend: *.[ch]
 	$(CC) -E -MM *.[ch] > .depend
+
+include .depend

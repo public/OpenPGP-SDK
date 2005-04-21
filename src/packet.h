@@ -144,7 +144,9 @@ enum ops_content_tag_t
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
     OPS_PTAG_SS_PREFERRED_SKA = 0x200+11,	/*!< preferred symmetric algorithms */
-    OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16,
+    OPS_PTAG_SS_REVOCATION_KEY = 0x200+12,	/*!< revocation key */
+    OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16, /*!< issuer key ID */
+    OPS_PTAG_SS_PRIMARY_USER_ID	= 0x200+25,	/*!< primary User ID */
     };
 
 /** Structure to hold one parse error string. */
@@ -443,6 +445,18 @@ typedef struct
     ops_boolean_t		nested;
     } ops_one_pass_signature_t;
 
+typedef struct
+	{
+	ops_boolean_t	primary_user_id;
+	} ops_ss_primary_user_id_t;
+
+typedef struct
+	{
+	unsigned char	class;
+	unsigned char	algid;
+	unsigned char fingerprint[20];
+	} ops_ss_revocation_key_t;
+	
 typedef union
     {
     ops_parser_error_t		error;
@@ -458,6 +472,8 @@ typedef union
     ops_compressed_t		compressed;
     ops_one_pass_signature_t	one_pass_signature;
     ops_ss_preferred_ska_t	ss_preferred_ska;
+    ops_ss_primary_user_id_t	ss_primary_user_id;
+    ops_ss_revocation_key_t	ss_revocation_key;
     } ops_parser_content_union_t;
 
 struct ops_parser_content_t

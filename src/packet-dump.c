@@ -130,6 +130,16 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	putchar('\n');
 	break;
 
+    case OPS_PTAG_SS_REVOCATION_KEY:
+    /* not yet tested */
+    printf ("  revocation key: class=%x, algid=%x, fingerprint=%s\n",
+    	content->ss_revocation_key.class,
+    	content->ss_revocation_key.algid,
+    	content->ss_revocation_key.fingerprint);
+    hexdump(content->ss_revocation_key.fingerprint,20);
+    printf("\n");
+    break;
+    
     case OPS_PTAG_SS_ISSUER_KEY_ID:
 	fputs("  issuer key id id=",stdout);
 	hexdump(content->ss_issuer_key_id.key_id,
@@ -138,7 +148,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
-    printf("  preferred symmetric algorithms=");
+    printf("  Preferred Symmetric Algorithms: ");
     for (i=0; i<content->ss_preferred_ska.len; i++) {
     	switch (content->ss_preferred_ska.data[i]) {
     		case OPS_SKA_PLAINTEXT:
@@ -174,7 +184,19 @@ callback(const ops_parser_content_t *content_,void *arg_)
     }
 	printf ("\n");
    	break;
-    
+
+   	case OPS_PTAG_SS_PRIMARY_USER_ID:
+   		printf("  Primary User ID: ");
+   		if (content->ss_primary_user_id.primary_user_id)
+   		{
+   			printf("YES\n");
+   		} 
+   		else 
+		{
+			printf("NO\n");
+		}
+	break;      
+
     default:
 	fprintf(stderr,"unknown tag=%d\n",content_->tag);
 	exit(1);
