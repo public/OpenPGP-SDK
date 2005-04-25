@@ -35,7 +35,7 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 	if(flags&OPS_RETURN_LENGTH)
 	    {
 	    *plength=n;
-	    return OPS_R_EOF;
+	    return OPS_R_PARTIAL_READ;
 	    }
 	else
 	    return OPS_R_EARLY_EOF;

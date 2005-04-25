@@ -41,7 +41,7 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 	{
 	int len;
 
-	if(arg->out+arg->offset == arg->stream.next_out)
+	if(&arg->out[arg->offset] == arg->stream.next_out)
 	    {
 	    int ret;
 
@@ -76,9 +76,12 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 		}
 
 	    ret=inflate(&arg->stream,Z_SYNC_FLUSH);
-	    if(ret == Z_STREAM_END
-	       && arg->region->length_read != arg->region->length)
-		ERR("Compressed stream ended before packet end.");
+	    if(ret == Z_STREAM_END)
+		{
+		if(!arg->region->indeterminate
+		   && arg->region->length_read != arg->region->length)
+		    ERR("Compressed stream ended before packet end.");
+		}
 	    else if(ret != Z_OK)
 		{
 		fprintf(stderr,"ret=%d\n",ret);
@@ -86,11 +89,11 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 		}
 	    arg->inflate_ret=ret;
 	    }
-	len=(arg->stream.next_out-arg->out)-arg->offset;
+	len=arg->stream.next_out-&arg->out[arg->offset];
 	assert(len >= 0);
 	if(len > length)
 	    len=length;
-	memcpy(dest,arg->out,len);
+	memcpy(dest,&arg->out[arg->offset],len);
 	arg->offset+=len;
 	length-=len;
 	}

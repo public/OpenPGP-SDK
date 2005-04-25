@@ -52,8 +52,7 @@ static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
 				  ops_parse_options_t *opt)
     {
     ops_reader_ret_t ret=opt->reader(dest,plength,flags,opt->reader_arg);
-    if(ret != OPS_R_OK
-       && !(ret == OPS_R_EOF && !(flags&OPS_RETURN_LENGTH)))
+    if(ret != OPS_R_OK && ret != OPS_R_PARTIAL_READ)
 	return ret;
 
     if(opt->accumulate)
@@ -128,12 +127,15 @@ int ops_limited_read(unsigned char *dest,unsigned length,
 		     ops_region_t *region,ops_parse_options_t *opt)
     {
     ops_parser_content_t content;
+    ops_reader_ret_t ret;
 
     if(!region->indeterminate && region->length_read+length > region->length)
 	ERR("Not enough data left");
 
-    if(base_read(dest,&length,region->indeterminate ? OPS_RETURN_LENGTH: 0,opt)
-       != OPS_R_OK)
+    ret=base_read(dest,&length,region->indeterminate ? OPS_RETURN_LENGTH : 0,
+		  opt);
+
+    if(ret != OPS_R_OK && ret != OPS_R_PARTIAL_READ)
 	ERR("Read failed");
 
     region->last_read=length;
