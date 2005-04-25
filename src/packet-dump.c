@@ -141,7 +141,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
     case OPS_PTAG_SS_EXPIRATION_TIME:
 	fputs("  expiration time ",stdout);
-	showtime("time",content->ss_time.time);
+	printf ("%ld seconds after creation", content->ss_time.time);
 	putchar('\n');
 	break;
 
