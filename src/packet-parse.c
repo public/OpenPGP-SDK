@@ -639,7 +639,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     ops_parser_content_t content;
     unsigned t8,t7;
     ops_boolean_t read=ops_true;
-    unsigned char bool;
+    unsigned char bool[1];
 
     init_subregion(&subregion,region);
     if(!limited_read_new_length(&subregion.length,region,opt))
@@ -681,7 +681,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	break;
 
     case OPS_PTAG_SS_REVOCABLE:
-	if (!ops_limited_read (&bool, 1, &subregion, opt))
+	if (!ops_limited_read (bool, 1, &subregion, opt))
 	    return 0;
 	C.ss_revocable.revocable = !!bool;
 	break;
@@ -710,13 +710,12 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	break;
 			    	
     case OPS_PTAG_SS_PRIMARY_USER_ID:
-	if (!ops_limited_read (&bool, 1, &subregion, opt))
+	if (!ops_limited_read (bool, 1, &subregion, opt))
 	    return 0;
 	C.ss_primary_user_id.primary_user_id = !!bool;
 	break;
  
     case OPS_PTAG_SS_REVOCATION_KEY:
-	printf ("Sizeof struct is %d\n", sizeof (ops_ss_revocation_key_t));
  
 	/* octet 0 = class. Bit 0x80 must be set */
 	if (!ops_limited_read (&C.ss_revocation_key.class, 1, &subregion, opt))
