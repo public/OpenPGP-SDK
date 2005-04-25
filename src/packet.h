@@ -250,15 +250,15 @@ typedef struct
  */
 typedef enum
     {
-    OPS_SKA_PLAINTEXT			=0,	/*!< Plaintext or unencrypted data */
-    OPS_SKA_IDEA				=1, /*!< IDEA */
-    OPS_SKA_TRIPLEDES			=2, /*!< TripleDES */
-    OPS_SKA_CAST5				=3, /*!< CAST5 */
-    OPS_SKA_BLOWFISH			=4, /*!< Blowfish */
-    OPS_SKA_AES_128				=7, /*!< AES with 128-bit key (AES) */
-    OPS_SKA_AES_192				=8, /*!< AES with 192-bit key */
-    OPS_SKA_AES_256				=9, /*!< AES with 256-bit key */
-    OPS_SKA_TWOFISH				=10, /*!< Twofish with 256-bit key (TWOFISH) */
+    OPS_SKA_PLAINTEXT	=0, /*!< Plaintext or unencrypted data */
+    OPS_SKA_IDEA	=1, /*!< IDEA */
+    OPS_SKA_TRIPLEDES	=2, /*!< TripleDES */
+    OPS_SKA_CAST5	=3, /*!< CAST5 */
+    OPS_SKA_BLOWFISH	=4, /*!< Blowfish */
+    OPS_SKA_AES_128	=7, /*!< AES with 128-bit key (AES) */
+    OPS_SKA_AES_192	=8, /*!< AES with 192-bit key */
+    OPS_SKA_AES_256	=9, /*!< AES with 256-bit key */
+    OPS_SKA_TWOFISH	=10, /*!< Twofish with 256-bit key (TWOFISH) */
 
     } ops_symmetric_key_algorithm_t;
 
@@ -267,10 +267,10 @@ typedef enum
 /** Probably want to do this with malloc, ask Ben - Rachel */
 #define MAX_TRUST_DATA	10
 typedef struct
-	{
-		int len;	/* length of data */
-		unsigned char data[MAX_TRUST_DATA];
-	} ops_trust_t;
+    {
+    int len;	/* length of data */
+    unsigned char data[MAX_TRUST_DATA];
+    } ops_trust_t;
 	
 /** Structure to hold one user id */
 typedef struct
@@ -422,13 +422,13 @@ typedef struct
 
 #define MAX_PREFERRED_SKA 22
 typedef struct
-	{
-		size_t	len;	/* must use a length field in structure to 
-							determine where the algorithms stop. 
-							The value 0 may represent the plaintext algorithm
-							so we cannot expect a null-terminated list */
-		unsigned char data[MAX_PREFERRED_SKA];
-	} ops_ss_preferred_ska_t;
+    {
+    size_t	len;	/* must use a length field in structure to 
+			   determine where the algorithms stop. 
+			   The value 0 may represent the plaintext algorithm
+			   so we cannot expect a null-terminated list */
+    unsigned char data[MAX_PREFERRED_SKA];
+    } ops_ss_preferred_ska_t;
 
 typedef struct
     {
@@ -462,16 +462,16 @@ typedef struct
     } ops_one_pass_signature_t;
 
 typedef struct
-	{
-	ops_boolean_t	primary_user_id;
-	} ops_ss_primary_user_id_t;
+    {
+    ops_boolean_t	primary_user_id;
+    } ops_ss_primary_user_id_t;
 
 typedef struct
-	{
-	unsigned char	class;
-	unsigned char	algid;
-	unsigned char fingerprint[20];
-	} ops_ss_revocation_key_t;
+    {
+    unsigned char	class;
+    unsigned char	algid;
+    unsigned char fingerprint[20];
+    } ops_ss_revocation_key_t;
 	
 typedef union
     {
