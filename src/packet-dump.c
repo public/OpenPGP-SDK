@@ -25,7 +25,7 @@ static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
-	int i=0; 	/* loop counter */
+    int i=0; 	/* loop counter */
 	
     switch(content_->tag)
 	{
@@ -77,7 +77,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    }
 	break;
 
-	case OPS_PTAG_CT_TRUST:
+    case OPS_PTAG_CT_TRUST:
 	printf("Trust: "); 
 	hexdump(content->trust.data,content->trust.len);
 	printf("\n");
@@ -142,36 +142,36 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	putchar('\n');
 	break;
 
-	case OPS_PTAG_SS_TRUST:
+    case OPS_PTAG_SS_TRUST:
 	printf ("  trust signature: level=%d, amount=%d\n",
 		content->ss_trust.level,
 		content->ss_trust.amount);
 	break;
 		
-   	case OPS_PTAG_SS_REVOCABLE:
-   		printf("  Revocable: ");
-   		if (content->ss_revocable.revocable)
-   		{
-   			printf("YES\n");
-   		} 
-   		else 
-		{
-			printf("NO\n");
-		}
+    case OPS_PTAG_SS_REVOCABLE:
+	printf("  Revocable: ");
+	if (content->ss_revocable.revocable)
+	    {
+	    printf("YES\n");
+	    } 
+	else 
+	    {
+	    printf("NO\n");
+	    }
 	break;      
 
     case OPS_PTAG_SS_REVOCATION_KEY:
-    /* not yet tested */
-    printf ("  revocation key: class=0x%x",
-    	content->ss_revocation_key.class);
-    if (content->ss_revocation_key.class&0x40)
-    	printf (" (sensitive)");
-    printf (", algid=0x%x",
-    	content->ss_revocation_key.algid);
-    printf(", fingerprint=");
-    hexdump(content->ss_revocation_key.fingerprint,20);
-    printf("\n");
-    break;
+	/* not yet tested */
+	printf ("  revocation key: class=0x%x",
+		content->ss_revocation_key.class);
+	if (content->ss_revocation_key.class&0x40)
+	    printf (" (sensitive)");
+	printf (", algid=0x%x",
+		content->ss_revocation_key.algid);
+	printf(", fingerprint=");
+	hexdump(content->ss_revocation_key.fingerprint,20);
+	printf("\n");
+	break;
     
     case OPS_PTAG_SS_ISSUER_KEY_ID:
 	fputs("  issuer key id id=",stdout);
@@ -181,53 +181,53 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
-    printf("  Preferred Symmetric Algorithms: ");
-    for (i=0; i<content->ss_preferred_ska.len; i++) {
+	printf("  Preferred Symmetric Algorithms: ");
+	for (i=0; i<content->ss_preferred_ska.len; i++) {
     	switch (content->ss_preferred_ska.data[i]) {
-    		case OPS_SKA_PLAINTEXT:
-    			printf("Plaintext ");
-    			break;
-    		case OPS_SKA_IDEA:
-    			printf("IDEA ");
-    			break;
-    		case OPS_SKA_TRIPLEDES:
-    			printf("TripleDES ");
-    			break;
-    		case OPS_SKA_CAST5:
-    			printf("CAST5 ");
-    			break;
-    		case OPS_SKA_BLOWFISH:
-    			printf("Blowfish ");
-    			break;
-    		case OPS_SKA_AES_128:
-    			printf("AES(128-bit) ");
-    			break;
-    		case OPS_SKA_AES_192:
-    			printf("AES(192-bit) ");
-    			break;
-    		case OPS_SKA_AES_256:
-    			printf("AES(256-bit) ");
-    			break;
-    		case OPS_SKA_TWOFISH:
-    			printf("Twofish ");
-    			break;
-    		default:
-    			printf("Unknown SKA: %d ",content->ss_preferred_ska.data[i]);
+    case OPS_SKA_PLAINTEXT:
+	printf("Plaintext ");
+	break;
+    case OPS_SKA_IDEA:
+	printf("IDEA ");
+	break;
+    case OPS_SKA_TRIPLEDES:
+	printf("TripleDES ");
+	break;
+    case OPS_SKA_CAST5:
+	printf("CAST5 ");
+	break;
+    case OPS_SKA_BLOWFISH:
+	printf("Blowfish ");
+	break;
+    case OPS_SKA_AES_128:
+	printf("AES(128-bit) ");
+	break;
+    case OPS_SKA_AES_192:
+	printf("AES(192-bit) ");
+	break;
+    case OPS_SKA_AES_256:
+	printf("AES(256-bit) ");
+	break;
+    case OPS_SKA_TWOFISH:
+	printf("Twofish ");
+	break;
+    default:
+	printf("Unknown SKA: %d ",content->ss_preferred_ska.data[i]);
     	}
-    }
+	}
 	printf ("\n");
    	break;
 
-   	case OPS_PTAG_SS_PRIMARY_USER_ID:
-   		printf("  Primary User ID: ");
-   		if (content->ss_primary_user_id.primary_user_id)
-   		{
-   			printf("YES\n");
-   		} 
-   		else 
-		{
-			printf("NO\n");
-		}
+    case OPS_PTAG_SS_PRIMARY_USER_ID:
+	printf("  Primary User ID: ");
+	if (content->ss_primary_user_id.primary_user_id)
+	    {
+	    printf("YES\n");
+	    } 
+	else 
+	    {
+	    printf("NO\n");
+	    }
 	break;      
 
     default:
