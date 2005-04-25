@@ -86,7 +86,7 @@ static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
  *
  */
 static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
-					   ops_parse_options_t *opt)
+				    ops_parse_options_t *opt)
     {
     unsigned t=0;
     ops_reader_ret_t ret;
@@ -686,7 +686,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 
     case OPS_PTAG_SS_ISSUER_KEY_ID:
 	if(!ops_limited_read(C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE,
-			 &subregion,opt))
+			     &subregion,opt))
 	    return 0;
 	memcpy(sig->signer_id,C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE);
 	break;
@@ -795,7 +795,7 @@ static int parse_signature_subpackets(ops_signature_t *sig,
 	    return 0;
 
     assert(subregion.length_read == subregion.length);  /* XXX: this should not be an assert but a parse error.  It's not
-						       our fault if the packet is inconsistent with itself. */
+							   our fault if the packet is inconsistent with itself. */
 
     return 1;
     }
