@@ -337,10 +337,13 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	{
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_COMPRESSED:
-    case OPS_PTAG_CT_TRUST:
     case OPS_PTAG_SS_CREATION_TIME:
     case OPS_PTAG_SS_TRUST:
     case OPS_PTAG_SS_ISSUER_KEY_ID:
+	break;
+
+    case OPS_PTAG_CT_TRUST:
+	ops_trust_free(&c->content.trust);
 	break;
 
     case OPS_PTAG_CT_SIGNATURE:
@@ -969,19 +972,23 @@ static int parse_one_pass(ops_region_t *region,ops_parse_options_t *opt)
     return 1;
     }
 
+void ops_trust_free(ops_trust_t * trust)
+    {
+    free(trust->data);
+    trust->data=NULL;
+    trust->len=0;
+    }
+
 static int
 parse_trust (ops_region_t * region, ops_parse_options_t * opt)
     {
     ops_parser_content_t content;
 
     C.trust.len = region->length - region->length_read;
-    if (C.trust.len > MAX_TRUST_DATA) {
-    ERR1("Warning: MAX_TRUST_LEN not long enough, need at least %d\n", 
-	 C.trust.len);
-    return 0;
-    }
+    C.trust.data = malloc(C.trust.len);
 	
-    if (!ops_limited_read ((unsigned char *)&C.trust.data, C.trust.len, region, opt))
+    if (!ops_limited_read ((unsigned char *)&C.trust.data, C.trust.len, 
+			   region, opt))
 	return 0;
 
     CB (OPS_PTAG_CT_TRUST, &content);

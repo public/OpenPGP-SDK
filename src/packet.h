@@ -269,7 +269,7 @@ typedef enum
 typedef struct
     {
     int len;	/* length of data */
-    unsigned char data[MAX_TRUST_DATA];
+    unsigned char * data;
     } ops_trust_t;
 	
 /** Structure to hold one user id */
@@ -507,6 +507,7 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
 void ops_public_key_free(ops_public_key_t *key);
 void ops_user_id_free(ops_user_id_t *id);
 void ops_signature_free(ops_signature_t *sig);
+void ops_trust_free(ops_trust_t * trust);
 void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska);
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
