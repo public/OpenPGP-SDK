@@ -16,7 +16,7 @@
 #ifdef DMALLOC
 # include <dmalloc.h>
 #endif
-
+ 
 static void init_subregion(ops_region_t *subregion,ops_region_t *region)
     {
     memset(subregion,'\0',sizeof *subregion);
@@ -176,7 +176,7 @@ static int limited_skip(unsigned length,ops_region_t *region,
 
 /** Read a scalar.
  *
- * Read a Big Endian scalar of length bytes, respecing packet boundaries (by calling #limited_read to read the raw
+ * Read a Big Endian scalar of length bytes, respecting packet boundaries (by calling #limited_read to read the raw
  * data).
  *
  * This function makes sure to respect packet boundaries.
@@ -683,6 +683,14 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	memcpy(sig->signer_id,C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE);
 	break;
 
+    case OPS_PTAG_SS_PREFERRED_SKA:
+
+	C.ss_preferred_ska.len = subregion.length - subregion.length_read;    	 
+	if (!ops_limited_read(C.ss_preferred_ska.data,
+			      C.ss_preferred_ska.len, &subregion, opt))
+	    return 0;
+	break;
+			    	
     default:
 	if(opt->ss_parsed[t8]&t7)
 	    ERR1("Unknown signature subpacket type (%d)",c[0]&0x7f);
