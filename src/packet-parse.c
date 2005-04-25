@@ -636,6 +636,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     ops_parser_content_t content;
     unsigned t8,t7;
     ops_boolean_t read=ops_true;
+    unsigned char bool;
 
     init_subregion(&subregion,region);
     if(!limited_read_new_length(&subregion.length,region,opt))
@@ -686,11 +687,49 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     case OPS_PTAG_SS_PREFERRED_SKA:
 
 	C.ss_preferred_ska.len = subregion.length - subregion.length_read;    	 
+	/* Do sanity check on length */
+	if (C.ss_preferred_ska.len > MAX_PREFERRED_SKA)
+	    {
+	    ERR1
+		("Warning: Truncated Preferred Symmetric Algorithm - subpacket %d octets",
+		 C.ss_preferred_ska.len);
+	    C.ss_preferred_ska.len = MAX_PREFERRED_SKA;
+	    }
 	if (!ops_limited_read(C.ss_preferred_ska.data,
 			      C.ss_preferred_ska.len, &subregion, opt))
 	    return 0;
 	break;
 			    	
+    case OPS_PTAG_SS_PRIMARY_USER_ID:
+	if (!ops_limited_read (&bool, 1, &subregion, opt))
+	    return 0;
+	C.ss_primary_user_id.primary_user_id = !!bool;
+	break;
+ 
+    case OPS_PTAG_SS_REVOCATION_KEY:
+	printf ("Sizeof struct is %d\n", sizeof (ops_ss_revocation_key_t));
+ 
+	/* octet 0 = class. Bit 0x80 must be set */
+	if (!ops_limited_read (&C.ss_revocation_key.class, 1, &subregion, opt))
+	    return 0;
+	if (!(C.ss_revocation_key.class & 0x80))
+	    {
+	    printf
+		("Warning: OPS_PTAG_SS_REVOCATION_KEY class: Bit 0x80 should be set\n");
+	    return 0;
+	    }
+ 
+	/* octet 1 = algid */
+	if (!ops_limited_read (&C.ss_revocation_key.algid, 1, &subregion, opt))
+	    return 0;
+ 
+	/* octets 2-21 = fingerprint */
+	if (!ops_limited_read
+	    ((unsigned char *) &C.ss_revocation_key.fingerprint, 20, &subregion,
+	     opt))
+	    return 0;
+	break;
+ 
     default:
 	if(opt->ss_parsed[t8]&t7)
 	    ERR1("Unknown signature subpacket type (%d)",c[0]&0x7f);
