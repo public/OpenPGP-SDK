@@ -413,21 +413,13 @@ typedef struct
     unsigned char		key_id[OPS_KEY_ID_SIZE];
     } ops_ss_key_id_t;
 
-/* MAX PREFERRED ALGORITHMS is defined to provide an upper bound
- * on the size of array to be used to stored the array given in the
- * Preferred Symmetric Algorithms signature sub-packet.
- * The value has been arbitrarily chosen to allow for an array
- * which includes each SKA currently defined in rfc2440bis
- */
-
-#define MAX_PREFERRED_SKA 22
 typedef struct
     {
     size_t	len;	/* must use a length field in structure to 
 			   determine where the algorithms stop. 
 			   The value 0 may represent the plaintext algorithm
 			   so we cannot expect a null-terminated list */
-    unsigned char data[MAX_PREFERRED_SKA];
+    unsigned char * data;
     } ops_ss_preferred_ska_t;
 
 typedef struct
@@ -515,8 +507,8 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
 void ops_public_key_free(ops_public_key_t *key);
 void ops_user_id_free(ops_user_id_t *id);
 void ops_signature_free(ops_signature_t *sig);
+void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska);
 void ops_packet_free(ops_packet_t *packet);
-
 void ops_parser_content_free(ops_parser_content_t *c);
 
 /* vim:set textwidth=120: */

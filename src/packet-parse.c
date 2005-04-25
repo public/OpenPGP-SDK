@@ -356,6 +356,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_user_id_free(&c->content.user_id);
 	break;
 
+    case OPS_PTAG_SS_PREFERRED_SKA:
+	ops_ss_preferred_ska_free(&c->content.ss_preferred_ska);
+	break;
+
     case OPS_PARSER_PACKET_END:
 	ops_packet_free(&c->content.packet);
 	break;
@@ -696,14 +700,8 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     case OPS_PTAG_SS_PREFERRED_SKA:
 
 	C.ss_preferred_ska.len = subregion.length - subregion.length_read;    	 
-	/* Do sanity check on length */
-	if (C.ss_preferred_ska.len > MAX_PREFERRED_SKA)
-	    {
-	    ERR1
-		("Warning: Truncated Preferred Symmetric Algorithm - subpacket %d octets",
-		 C.ss_preferred_ska.len);
-	    C.ss_preferred_ska.len = MAX_PREFERRED_SKA;
-	    }
+	C.ss_preferred_ska.data = malloc(C.ss_preferred_ska.len);
+
 	if (!ops_limited_read(C.ss_preferred_ska.data,
 			      C.ss_preferred_ska.len, &subregion, opt))
 	    return 0;
@@ -764,6 +762,16 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     opt->cb(&content,opt->cb_arg);
 
     return 1;
+    }
+
+/** ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
+ */
+
+void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
+    {
+    free(ss_preferred_ska->data);
+    ss_preferred_ska->data=NULL;
+    ss_preferred_ska->len=0;
     }
 
 /** Parse several signature subpackets.
