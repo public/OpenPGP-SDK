@@ -987,7 +987,7 @@ parse_trust (ops_region_t * region, ops_parse_options_t * opt)
     C.trust.len = region->length - region->length_read;
     C.trust.data = malloc(C.trust.len);
 	
-    if (!ops_limited_read ((unsigned char *)&C.trust.data, C.trust.len, 
+    if (!ops_limited_read (C.trust.data, C.trust.len, 
 			   region, opt))
 	return 0;
 

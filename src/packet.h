@@ -264,8 +264,6 @@ typedef enum
 
 /** Structure to hold one trust packet's data */
 
-/** Probably want to do this with malloc, ask Ben - Rachel */
-#define MAX_TRUST_DATA	10
 typedef struct
     {
     int len;	/* length of data */
