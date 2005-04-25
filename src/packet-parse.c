@@ -129,7 +129,7 @@ int ops_limited_read(unsigned char *dest,unsigned length,
     {
     ops_parser_content_t content;
 
-    if(region->length_read+length > region->length)
+    if(!region->indeterminate && region->length_read+length > region->length)
 	ERR("Not enough data left");
 
     if(base_read(dest,&length,region->indeterminate ? OPS_RETURN_LENGTH: 0,opt)
