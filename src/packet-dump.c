@@ -91,9 +91,12 @@ callback(const ops_parser_content_t *content_,void *arg_)
     case OPS_PTAG_CT_SIGNATURE:
 	printf("signature version=%d type=0x%02x\n",
 	       content->signature.version,content->signature.type);
-	printf("          creation_time=%ld (%.24s)\n",
-	       content->signature.creation_time,
-	       ctime(&content->signature.creation_time));
+	if (content->signature.version == 3) 
+	    {
+	    printf("          creation_time=%ld (%.24s)\n",
+		   content->signature.creation_time,
+		   ctime(&content->signature.creation_time));
+	    }
 	printf("          signer_id=");
 	hexdump(content->signature.signer_id,
 		sizeof content->signature.signer_id);
