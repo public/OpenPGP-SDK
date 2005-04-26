@@ -144,13 +144,13 @@ enum ops_content_tag_t
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
     OPS_PTAG_SS_REVOCABLE		=0x200+7,	/*!< revocable */
-    OPS_PTAG_SS_PREFERRED_SKA = 0x200+11,	/*!< preferred symmetric algorithms */
-    OPS_PTAG_SS_REVOCATION_KEY = 0x200+12,	/*!< revocation key */
+    OPS_PTAG_SS_PREFERRED_SKA 		=0x200+11,	/*!< preferred symmetric algorithms */
+    OPS_PTAG_SS_REVOCATION_KEY 		=0x200+12,	/*!< revocation key */
     OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16, /*!< issuer key ID */
     OPS_PTAG_SS_PREFERRED_HASH          =0x200+21, /*!< preferred hash algorithms */
     OPS_PTAG_SS_PREFERRED_COMPRESSION	=0x200+22, /*!< preferred compression algorithms */
-    OPS_PTAG_SS_PRIMARY_USER_ID	= 0x200+25,	/*!< primary User ID */
-    OPS_PTAG_SS_KEY_FLAGS = 0x200+27, /*!< key flags */
+    OPS_PTAG_SS_PRIMARY_USER_ID		=0x200+25, /*!< primary User ID */
+    OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
     };
 
 /** Structure to hold one parse error string. */

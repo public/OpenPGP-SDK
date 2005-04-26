@@ -845,7 +845,6 @@ void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t * ss_prefe
 
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags)
     {
-    printf("ops_ss_key_flags_free called\n");
     free(ss_key_flags->data);
     ss_key_flags->data=NULL;
     ss_key_flags->len=0;
