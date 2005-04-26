@@ -292,6 +292,41 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf("\n");
 	break;
 
+    case OPS_PTAG_SS_PREFERRED_COMPRESSION:
+	printf("  Preferred Compression Algorithms: \n    ");
+	for (i=0; i<content->ss_preferred_compression.len; i++) 
+	    {
+	    switch (content->ss_preferred_compression.data[i]) 
+		{
+	    case OPS_C_NONE:
+		printf("Uncompressed");
+		break;
+
+	    case OPS_C_ZIP:
+		printf("ZIP(RFC1951)");
+		break;
+
+	    case OPS_C_ZLIB:
+		printf("ZLIB(RFC1950)");
+		break;
+
+	    case OPS_C_BZIP2:
+		printf("BZip2(BZ2)");
+		break;
+
+	    default:
+		if (content->ss_preferred_compression.data[i] >= 100 && 
+			 content->ss_preferred_compression.data[i] <= 110)
+		    printf("Private/Experimental (%d)",
+			   content->ss_preferred_compression.data[i]);	       
+		else
+		    printf("Unknown (%d)",content->ss_preferred_compression.data[i]);
+		}
+	    printf(" ");
+	    }
+	printf("\n");
+	break;
+
     case OPS_PTAG_SS_KEY_FLAGS:
 	printf("  Key Flags: len=%d, data=",content->ss_key_flags.len);
 	hexdump(content->ss_key_flags.data,content->ss_key_flags.len);

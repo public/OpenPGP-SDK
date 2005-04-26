@@ -371,6 +371,10 @@ Waiting for Ben to tell me whether he has a preferred way of tying subpackets to
 	ops_ss_preferred_hash_free(&c->content.ss_preferred_hash);
 	break;
 
+    case OPS_PTAG_SS_PREFERRED_COMPRESSION:
+	ops_ss_preferred_compression_free(&c->content.ss_preferred_compression);
+	break;
+
     case OPS_PTAG_SS_KEY_FLAGS:
 	ops_ss_key_flags_free(&c->content.ss_key_flags);
 	break;
@@ -734,6 +738,16 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	break;
 			    	
+    case OPS_PTAG_SS_PREFERRED_COMPRESSION:
+
+	C.ss_preferred_compression.len = subregion.length - subregion.length_read;
+	C.ss_preferred_compression.data = malloc(C.ss_preferred_compression.len);
+
+	if (!ops_limited_read(C.ss_preferred_compression.data,
+			      C.ss_preferred_compression.len, &subregion, opt))
+	    return 0;
+	break;
+			    	
     case OPS_PTAG_SS_PRIMARY_USER_ID:
 	if (!ops_limited_read (bool, 1, &subregion, opt))
 	    return 0;
@@ -817,6 +831,16 @@ void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
     free(ss_preferred_hash->data);
     ss_preferred_hash->data=NULL;
     ss_preferred_hash->len=0;
+    }
+
+/** ops_ss_preferred_compression_free(ops_ss_preferred_compression_t * ss_preferred_compression)
+ */
+
+void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t * ss_preferred_compression)
+    {
+    free(ss_preferred_compression->data);
+    ss_preferred_compression->data=NULL;
+    ss_preferred_compression->len=0;
     }
 
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags)
