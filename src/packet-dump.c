@@ -125,6 +125,17 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf("  compressed data type=%d\n",content->compressed.type);
 	break;
 
+    case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
+	printf("  one-pass signature version=%d sig_type=%d hash_algorith=%d"
+	       " key_algorithm=%d",content->one_pass_signature.version,
+	       content->one_pass_signature.sig_type,
+	       content->one_pass_signature.hash_algorithm,
+	       content->one_pass_signature.key_algorithm);
+	hexdump(content->one_pass_signature.keyid,
+		sizeof content->one_pass_signature.keyid);
+	printf(" nested=%d\n",content->one_pass_signature.nested);
+	break;
+
     case OPS_PTAG_RAW_SS:
 	assert(!content_->critical);
 	printf("  raw signature subpacket tag=%d raw=",

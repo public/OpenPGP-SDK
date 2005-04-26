@@ -468,7 +468,7 @@ typedef struct
     ops_sig_type_t		sig_type;
     ops_hash_algorithm_t	hash_algorithm;
     ops_public_key_algorithm_t	key_algorithm;
-    unsigned char		keyid;
+    unsigned char		keyid[OPS_KEY_ID_SIZE];
     ops_boolean_t		nested;
     } ops_one_pass_signature_t;
 

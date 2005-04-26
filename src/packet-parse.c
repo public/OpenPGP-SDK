@@ -340,6 +340,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_SS_CREATION_TIME:
     case OPS_PTAG_SS_TRUST:
     case OPS_PTAG_SS_ISSUER_KEY_ID:
+    case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -1033,7 +1034,8 @@ static int parse_one_pass(ops_region_t *region,ops_parse_options_t *opt)
 	return 0;
     C.one_pass_signature.key_algorithm=c[0];
 
-    if(!ops_limited_read(&C.one_pass_signature.keyid,8,region,opt))
+    if(!ops_limited_read(C.one_pass_signature.keyid,
+			 sizeof C.one_pass_signature.keyid,region,opt))
 	return 0;
 
     if(!ops_limited_read(c,1,region,opt))
