@@ -36,6 +36,5 @@ clean:
 .depend: *.[ch]
 	$(CC) -E -MM *.[ch] > .depend
 
-# memo to self: astyle --indent-brackets
-#
+# need to explicitly include .depend on Ubuntu
 include .depend
