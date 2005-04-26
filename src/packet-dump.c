@@ -184,7 +184,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
-	printf("  Preferred Symmetric Algorithms: ");
+	printf("  Preferred Symmetric Algorithms: \n    ");
 	for (i=0; i<content->ss_preferred_ska.len; i++) 
 	    {
 	    switch (content->ss_preferred_ska.data[i]) 
@@ -228,13 +228,33 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf("  Primary User ID: ");
 	if (content->ss_primary_user_id.primary_user_id)
 	    {
-	    printf("YES\n");
+	    printf("Yes\n");
 	    } 
 	else 
 	    {
-	    printf("NO\n");
+	    printf("No\n");
 	    }
 	break;      
+
+    case OPS_PTAG_SS_KEY_FLAGS:
+	printf("  Key Flags: len=%d, data=",content->ss_key_flags.len);
+	hexdump(content->ss_key_flags.data,content->ss_key_flags.len);
+	printf("\n");
+	if (content->ss_key_flags.data[0] & 0x01)
+	    printf("    May be used to certify other keys\n");
+	if (content->ss_key_flags.data[0] & 0x02)
+	    printf("    May be used to sign data\n");
+	if (content->ss_key_flags.data[0] & 0x04)
+	    printf("    May be used to encrypt communications\n");
+	if (content->ss_key_flags.data[0] & 0x08)
+	    printf("    May be used to encrypt storage\n");
+	if (content->ss_key_flags.data[0] & 0x10)
+	    printf("    Private component may have been split by a secret-sharing mechanism\n");
+	if (content->ss_key_flags.data[0] & 0x40)
+	    printf("    Flag 0x40 not defined\n");
+	if (content->ss_key_flags.data[0] & 0x80)
+	    printf("    Private component may be in possession of more than one person\n");
+	break;
 
     default:
 	fprintf(stderr,"packet-dump: unknown tag=%d\n",content_->tag);

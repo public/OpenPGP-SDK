@@ -148,6 +148,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_REVOCATION_KEY = 0x200+12,	/*!< revocation key */
     OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16, /*!< issuer key ID */
     OPS_PTAG_SS_PRIMARY_USER_ID	= 0x200+25,	/*!< primary User ID */
+    OPS_PTAG_SS_KEY_FLAGS = 0x200+27, /*!< key flags */
     };
 
 /** Structure to hold one parse error string. */
@@ -422,6 +423,12 @@ typedef struct
 
 typedef struct
     {
+    size_t len;
+    unsigned char * data;
+    } ops_ss_key_flags_t;
+
+typedef struct
+    {
     size_t			length;
     unsigned char		*raw;
     } ops_packet_t;
@@ -480,6 +487,7 @@ typedef union
     ops_compressed_t		compressed;
     ops_one_pass_signature_t	one_pass_signature;
     ops_ss_preferred_ska_t	ss_preferred_ska;
+    ops_ss_key_flags_t ss_key_flags;
     ops_ss_primary_user_id_t	ss_primary_user_id;
     ops_ss_revocation_key_t	ss_revocation_key;
     } ops_parser_content_union_t;
@@ -507,6 +515,7 @@ void ops_user_id_free(ops_user_id_t *id);
 void ops_signature_free(ops_signature_t *sig);
 void ops_trust_free(ops_trust_t * trust);
 void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska);
+void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags);
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
 
