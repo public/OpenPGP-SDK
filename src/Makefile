@@ -36,4 +36,6 @@ clean:
 .depend: *.[ch]
 	$(CC) -E -MM *.[ch] > .depend
 
+# memo to self: astyle --indent-brackets
+#
 include .depend

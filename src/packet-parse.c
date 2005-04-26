@@ -367,6 +367,10 @@ Waiting for Ben to tell me whether he has a preferred way of tying subpackets to
 	ops_ss_preferred_ska_free(&c->content.ss_preferred_ska);
 	break;
 
+    case OPS_PTAG_SS_PREFERRED_HASH:
+	ops_ss_preferred_hash_free(&c->content.ss_preferred_hash);
+	break;
+
     case OPS_PTAG_SS_KEY_FLAGS:
 	ops_ss_key_flags_free(&c->content.ss_key_flags);
 	break;
@@ -720,6 +724,16 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	break;
 			    	
+    case OPS_PTAG_SS_PREFERRED_HASH:
+
+	C.ss_preferred_hash.len = subregion.length - subregion.length_read;
+	C.ss_preferred_hash.data = malloc(C.ss_preferred_hash.len);
+
+	if (!ops_limited_read(C.ss_preferred_hash.data,
+			      C.ss_preferred_hash.len, &subregion, opt))
+	    return 0;
+	break;
+			    	
     case OPS_PTAG_SS_PRIMARY_USER_ID:
 	if (!ops_limited_read (bool, 1, &subregion, opt))
 	    return 0;
@@ -793,6 +807,16 @@ void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
     free(ss_preferred_ska->data);
     ss_preferred_ska->data=NULL;
     ss_preferred_ska->len=0;
+    }
+
+/** ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
+ */
+
+void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
+    {
+    free(ss_preferred_hash->data);
+    ss_preferred_hash->data=NULL;
+    ss_preferred_hash->len=0;
     }
 
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags)

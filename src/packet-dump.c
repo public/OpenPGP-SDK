@@ -193,30 +193,39 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    case OPS_SKA_PLAINTEXT:
 		printf("Plaintext ");
 		break;
+
 	    case OPS_SKA_IDEA:
 		printf("IDEA ");
 		break;
+
 	    case OPS_SKA_TRIPLEDES:
 		printf("TripleDES ");
 		break;
+
 	    case OPS_SKA_CAST5:
 		printf("CAST5 ");
 		break;
+
 	    case OPS_SKA_BLOWFISH:
 		printf("Blowfish ");
 		break;
+
 	    case OPS_SKA_AES_128:
 		printf("AES(128-bit) ");
 		break;
+
 	    case OPS_SKA_AES_192:
 		printf("AES(192-bit) ");
 		break;
+
 	    case OPS_SKA_AES_256:
 		printf("AES(256-bit) ");
 		break;
+
 	    case OPS_SKA_TWOFISH:
 		printf("Twofish ");
 		break;
+
 	    default:
 		printf("Unknown SKA: %d ",content->ss_preferred_ska.data[i]);
 		}
@@ -235,6 +244,53 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    printf("No\n");
 	    }
 	break;      
+
+    case OPS_PTAG_SS_PREFERRED_HASH:
+	printf("  Preferred Hash Algorithms: \n    ");
+	for (i=0; i<content->ss_preferred_hash.len; i++) 
+	    {
+	    switch (content->ss_preferred_hash.data[i]) 
+		{
+	    case OPS_HASH_MD5:
+		printf("MD5");
+		break;
+
+	    case OPS_HASH_SHA1:
+		printf("SHA1");
+		break;
+
+	    case OPS_HASH_RIPEMD:
+		printf("RIPEMD160");
+		break;
+
+	    case OPS_HASH_SHA256:
+		printf("SHA256");
+		break;
+
+	    case OPS_HASH_SHA384:
+		printf("SHA384");
+		break;
+
+	    case OPS_HASH_SHA512:
+		printf("SHA512");
+		break;
+
+	    default:
+		if (content->ss_preferred_hash.data[i] >= 4 && 
+		    content->ss_preferred_hash.data[i] <= 7)
+		    printf("Reserved (%d)",
+			   content->ss_preferred_hash.data[i]);
+		else if (content->ss_preferred_hash.data[i] >= 100 && 
+			 content->ss_preferred_hash.data[i] <= 110)
+		    printf("Private/Experimental (%d)",
+			   content->ss_preferred_hash.data[i]);	       
+		else
+		    printf("Unknown (%d)",content->ss_preferred_hash.data[i]);
+		}
+	    printf(" ");
+	    }
+	printf("\n");
+	break;
 
     case OPS_PTAG_SS_KEY_FLAGS:
 	printf("  Key Flags: len=%d, data=",content->ss_key_flags.len);
