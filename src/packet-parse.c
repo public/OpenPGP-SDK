@@ -794,7 +794,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     if(read && subregion.length_read != subregion.length)
 	ERR1("Unconsumed data (%d)", subregion.length-subregion.length_read);
  
-    opt->cb(&content,opt->cb_arg);
+    CB(content.tag,&content);
 
     return 1;
     }
