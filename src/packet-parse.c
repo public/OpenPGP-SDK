@@ -338,9 +338,13 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_COMPRESSED:
     case OPS_PTAG_SS_CREATION_TIME:
+    case OPS_PTAG_SS_EXPIRATION_TIME:
     case OPS_PTAG_SS_TRUST:
     case OPS_PTAG_SS_ISSUER_KEY_ID:
     case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
+    case OPS_PTAG_SS_PRIMARY_USER_ID:
+    case OPS_PTAG_SS_REVOCABLE:
+    case OPS_PTAG_SS_REVOCATION_KEY:
 	break;
 
     case OPS_PTAG_CT_TRUST:
