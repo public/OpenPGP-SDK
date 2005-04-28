@@ -2,6 +2,7 @@
 
 #include "packet.h"
 #include "packet-parse.h"
+#include "packet-decode.h"
 #include "util.h"
 #include <unistd.h>
 #include <stdio.h>
@@ -21,12 +22,20 @@ static void bndump(const char *name,const BIGNUM *bn)
     putchar('\n');
     }
 
+static void indent(int indent_level)
+    {
+    int i=0;
+    for (i=0;i<indent_level;i++)
+	printf("  ");
+    }
+
 static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
     int i=0; 	/* loop counter */
-	
+    decoded_t * decoded;
+
     switch(content_->tag)
 	{
     case OPS_PARSER_ERROR:
@@ -195,53 +204,20 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
+
 	printf("  Preferred Symmetric Algorithms: \n    ");
-	for (i=0; i<content->ss_preferred_ska.len; i++) 
-	    {
-	    switch (content->ss_preferred_ska.data[i]) 
-		{
+
+	decoded = decode_ss_preferred_ska(content->ss_preferred_ska);
+
+	for ( i=0; i < decoded->known.used; i++) 
+	    printf("%s ",decoded->known.strings[i]);
+
+	for ( i=0; i < decoded->unknown.used; i++) 
+	    printf("%s ",decoded->unknown.strings[i]);
 	
-	    case OPS_SKA_PLAINTEXT:
-		printf("Plaintext ");
-		break;
-
-	    case OPS_SKA_IDEA:
-		printf("IDEA ");
-		break;
-
-	    case OPS_SKA_TRIPLEDES:
-		printf("TripleDES ");
-		break;
-
-	    case OPS_SKA_CAST5:
-		printf("CAST5 ");
-		break;
-
-	    case OPS_SKA_BLOWFISH:
-		printf("Blowfish ");
-		break;
-
-	    case OPS_SKA_AES_128:
-		printf("AES(128-bit) ");
-		break;
-
-	    case OPS_SKA_AES_192:
-		printf("AES(192-bit) ");
-		break;
-
-	    case OPS_SKA_AES_256:
-		printf("AES(256-bit) ");
-		break;
-
-	    case OPS_SKA_TWOFISH:
-		printf("Twofish ");
-		break;
-
-	    default:
-		printf("Unknown SKA: %d ",content->ss_preferred_ska.data[i]);
-		}
-	    }
 	printf ("\n");
+	decoded_free(decoded);
+
    	break;
 
     case OPS_PTAG_SS_PRIMARY_USER_ID:
@@ -342,20 +318,44 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf("  Key Flags: len=%d, data=",content->ss_key_flags.len);
 	hexdump(content->ss_key_flags.data,content->ss_key_flags.len);
 	printf("\n");
-	if (content->ss_key_flags.data[0] & 0x01)
-	    printf("    May be used to certify other keys\n");
-	if (content->ss_key_flags.data[0] & 0x02)
-	    printf("    May be used to sign data\n");
-	if (content->ss_key_flags.data[0] & 0x04)
-	    printf("    May be used to encrypt communications\n");
-	if (content->ss_key_flags.data[0] & 0x08)
-	    printf("    May be used to encrypt storage\n");
-	if (content->ss_key_flags.data[0] & 0x10)
-	    printf("    Private component may have been split by a secret-sharing mechanism\n");
-	if (content->ss_key_flags.data[0] & 0x40)
-	    printf("    Flag 0x40 not defined\n");
-	if (content->ss_key_flags.data[0] & 0x80)
-	    printf("    Private component may be in possession of more than one person\n");
+
+	decoded = decode_ss_key_flags(content->ss_key_flags);
+	for ( i=0; i < decoded->known.used; i++)
+	    {
+	    indent(2);
+	    printf("%s\n",decoded->known.strings[i]);
+	    }
+
+	for ( i=0; i < decoded->unknown.used; i++) 
+	    {
+	    indent (2);
+	    printf("%s\n",decoded->unknown.strings[i]);
+	    }
+	
+	decoded_free(decoded);
+
+	break;
+
+    case OPS_PTAG_SS_FEATURES:
+	printf("  Features: len=%d, data=",content->ss_features.len);
+	hexdump(content->ss_features.data,content->ss_features.len);
+	printf("\n");
+
+	decoded = decode_ss_features(content->ss_features);
+	for ( i=0; i < decoded->known.used; i++)
+	    {
+	    indent(2);
+	    printf("%s\n",decoded->known.strings[i]);
+	    }
+
+	for ( i=0; i < decoded->unknown.used; i++) 
+	    {
+	    indent (2);
+	    printf("%s\n",decoded->unknown.strings[i]);
+	    }
+	
+	decoded_free(decoded);
+
 	break;
 
     default:

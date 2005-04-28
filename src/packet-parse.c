@@ -360,10 +360,6 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_user_id_free(&c->content.user_id);
 	break;
 
-	/* this doesn't get called at the moment.
-Waiting for Ben to tell me whether he has a preferred way of tying subpackets to signatures 
-	*/
-
     case OPS_PTAG_SS_PREFERRED_SKA:
 	ops_ss_preferred_ska_free(&c->content.ss_preferred_ska);
 	break;
@@ -380,7 +376,9 @@ Waiting for Ben to tell me whether he has a preferred way of tying subpackets to
 	ops_ss_key_flags_free(&c->content.ss_key_flags);
 	break;
 
-	/* end of subpackets which don't get freed */
+    case OPS_PTAG_SS_FEATURES:
+	ops_ss_key_flags_free(&c->content.ss_key_flags);
+	break;
 
     case OPS_PARSER_PACKET_END:
 	ops_packet_free(&c->content.packet);
@@ -759,6 +757,14 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	C.ss_key_flags.len = subregion.length - subregion.length_read;
 	C.ss_key_flags.data = malloc(C.ss_key_flags.len);
 	if (!ops_limited_read(C.ss_key_flags.data,C.ss_key_flags.len,
+			      &subregion,opt))
+	    return 0;
+	break;
+
+    case OPS_PTAG_SS_FEATURES:
+	C.ss_features.len = subregion.length - subregion.length_read;
+	C.ss_features.data = malloc(C.ss_features.len);
+	if (!ops_limited_read(C.ss_features.data,C.ss_features.len,
 			      &subregion,opt))
 	    return 0;
 	break;
@@ -1246,7 +1252,6 @@ void ops_parse_options(ops_parse_options_t *opt,
 	break;
 	}
     }
-
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

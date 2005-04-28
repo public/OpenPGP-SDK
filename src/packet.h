@@ -142,6 +142,7 @@ enum ops_content_tag_t
 							     values are relative to this value. */
     OPS_PTAG_SS_CREATION_TIME		=0x200+2,	/*!< signature creation time */
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
+
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
     OPS_PTAG_SS_REVOCABLE		=0x200+7,	/*!< revocable */
     OPS_PTAG_SS_PREFERRED_SKA 		=0x200+11,	/*!< preferred symmetric algorithms */
@@ -151,6 +152,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_PREFERRED_COMPRESSION	=0x200+22, /*!< preferred compression algorithms */
     OPS_PTAG_SS_PRIMARY_USER_ID		=0x200+25, /*!< primary User ID */
     OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
+    OPS_PTAG_SS_FEATURES		=0x200+30, /*!< features */
     };
 
 /** Structure to hold one parse error string. */
@@ -443,6 +445,12 @@ typedef struct
 
 typedef struct
     {
+    size_t len;
+    unsigned char * data;
+    } ops_ss_features_t;
+
+typedef struct
+    {
     size_t			length;
     unsigned char		*raw;
     } ops_packet_t;
@@ -506,6 +514,7 @@ typedef union
     ops_ss_key_flags_t ss_key_flags;
     ops_ss_primary_user_id_t	ss_primary_user_id;
     ops_ss_revocation_key_t	ss_revocation_key;
+    ops_ss_features_t		ss_features;
     } ops_parser_content_union_t;
 
 struct ops_parser_content_t
@@ -534,6 +543,7 @@ void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska);
 void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t *ss_preferred_hash);
 void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t *ss_preferred_compression);
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags);
+void ops_ss_features_free(ops_ss_features_t * ss_features);
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
 
