@@ -153,6 +153,10 @@ enum ops_content_tag_t
     OPS_PTAG_SS_PRIMARY_USER_ID		=0x200+25, /*!< primary User ID */
     OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
     OPS_PTAG_SS_FEATURES		=0x200+30, /*!< features */
+
+    /* pseudo content types */
+    OPS_PTAG_CT_LITERAL_DATA_HEADER	=0x300,
+    OPS_PTAG_CT_LITERAL_DATA_BODY	=0x300+1,
     };
 
 /** Structure to hold one parse error string. */
@@ -491,7 +495,29 @@ typedef struct
     unsigned char	algid;
     unsigned char fingerprint[20];
     } ops_ss_revocation_key_t;
-	
+
+typedef enum
+    {
+    OPS_LDT_BINARY='b',
+    OPS_LDT_TEXT='t',
+    OPS_LDT_UTF8='u',
+    OPS_LDT_LOCAL='l',
+    OPS_LDT_LOCAL2='1'
+    } literal_data_type_t;
+
+typedef struct
+    {
+    literal_data_type_t		format;
+    char			filename[256];
+    time_t			modification_time;
+    } ops_literal_data_header_t;
+
+typedef struct
+    {
+    size_t			length;
+    unsigned char		data[8192];
+    } ops_literal_data_body_t;
+
 typedef union
     {
     ops_parser_error_t		error;
@@ -514,6 +540,8 @@ typedef union
     ops_ss_key_flags_t ss_key_flags;
     ops_ss_primary_user_id_t	ss_primary_user_id;
     ops_ss_revocation_key_t	ss_revocation_key;
+    ops_literal_data_header_t	literal_data_header;
+    ops_literal_data_body_t	literal_data_body;
     ops_ss_features_t		ss_features;
     } ops_parser_content_union_t;
 

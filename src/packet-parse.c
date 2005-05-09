@@ -345,6 +345,8 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_SS_PRIMARY_USER_ID:
     case OPS_PTAG_SS_REVOCABLE:
     case OPS_PTAG_SS_REVOCATION_KEY:
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -1016,7 +1018,7 @@ static int parse_compressed(ops_region_t *region,ops_parse_options_t *opt)
     CB(OPS_PTAG_CT_COMPRESSED,&content);
 
     /* The content of a compressed data packet is more OpenPGP packets
-       once decmppressed, so recursively handle them */
+       once decompressed, so recursively handle them */
 
     return ops_decompress(region,opt);
     }
@@ -1077,6 +1079,43 @@ parse_trust (ops_region_t * region, ops_parse_options_t * opt)
 	return 0;
 
     CB (OPS_PTAG_CT_TRUST, &content);
+
+    return 1;
+    }
+
+static int parse_literal_data(ops_region_t *region,ops_parse_options_t *opt)
+    {
+    ops_parser_content_t content;
+    unsigned char c[1];
+
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+    C.literal_data_header.format=c[0];
+
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+    if(!ops_limited_read(C.literal_data_header.filename,c[0],region,opt))
+	return 0;
+    C.literal_data_header.filename[c[0]]='\0';
+
+    if(!limited_read_time(&C.literal_data_header.modification_time,region,opt))
+	return 0;
+
+    CB(OPS_PTAG_CT_LITERAL_DATA_HEADER,&content);
+
+    while(region->length_read < region->length)
+	{
+	int l=region->length-region->length_read;
+	if(l > sizeof C.literal_data_body.data)
+	    l=sizeof C.literal_data_body.data;
+
+	if(!ops_limited_read(C.literal_data_body.data,l,region,opt))
+	    return 0;
+
+	C.literal_data_body.length=l;
+
+	CB(OPS_PTAG_CT_LITERAL_DATA_BODY,&content);
+	}
 
     return 1;
     }
@@ -1177,6 +1216,10 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 
     case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
 	r=parse_one_pass(&region,opt);
+	break;
+
+    case OPS_PTAG_CT_LITERAL_DATA:
+	r=parse_literal_data(&region,opt);
 	break;
 
     default:

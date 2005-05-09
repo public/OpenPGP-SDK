@@ -21,20 +21,21 @@ static void bndump(const char *name,const BIGNUM *bn)
     BN_print_fp(stdout,bn);
     putchar('\n');
     }
-
+/*
 static void indent(int indent_level)
     {
     int i=0;
     for (i=0;i<indent_level;i++)
 	printf("  ");
     }
+*/
 
 static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
     int i=0; 	/* loop counter */
-    decoded_t * decoded;
+    //    decoded_t * decoded;
 
     switch(content_->tag)
 	{
@@ -203,6 +204,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	putchar('\n');
 	break;
 
+	/*
     case OPS_PTAG_SS_PREFERRED_SKA:
 
 	printf("  Preferred Symmetric Algorithms: \n    ");
@@ -219,6 +221,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	decoded_free(decoded);
 
    	break;
+	*/
 
     case OPS_PTAG_SS_PRIMARY_USER_ID:
 	printf("  Primary User ID: ");
@@ -313,7 +316,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    }
 	printf("\n");
 	break;
-
+	/*
     case OPS_PTAG_SS_KEY_FLAGS:
 	printf("  Key Flags: len=%d, data=",content->ss_key_flags.len);
 	hexdump(content->ss_key_flags.data,content->ss_key_flags.len);
@@ -335,7 +338,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	decoded_free(decoded);
 
 	break;
-
+	*/
+	/*
     case OPS_PTAG_SS_FEATURES:
 	printf("  Features: len=%d, data=",content->ss_features.len);
 	hexdump(content->ss_features.data,content->ss_features.len);
@@ -356,6 +360,24 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	
 	decoded_free(decoded);
 
+	break;
+	*/
+
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+	printf("  literal data header format=%c filename='%s'\n",
+	       content->literal_data_header.format,
+	       content->literal_data_header.filename);
+	showtime("    modification time",
+		 content->literal_data_header.modification_time);
+	printf("\n");
+	break;
+
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+	printf("  literal data body length=%d\n",
+	       content->literal_data_body.length);
+	hexdump(content->literal_data_body.data,
+		content->literal_data_body.length);
+	printf("\n");
 	break;
 
     default:
