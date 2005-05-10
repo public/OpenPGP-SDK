@@ -136,10 +136,11 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
     case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
 	printf("  one-pass signature version=%d sig_type=%d hash_algorith=%d"
-	       " key_algorithm=%d",content->one_pass_signature.version,
+	       " key_algorithm=%d\n",content->one_pass_signature.version,
 	       content->one_pass_signature.sig_type,
 	       content->one_pass_signature.hash_algorithm,
 	       content->one_pass_signature.key_algorithm);
+	printf("                     keyid=");
 	hexdump(content->one_pass_signature.keyid,
 		sizeof content->one_pass_signature.keyid);
 	printf(" nested=%d\n",content->one_pass_signature.nested);
@@ -370,6 +371,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
 	printf("  literal data body length=%d\n",
 	       content->literal_data_body.length);
+	printf("    data=");
 	hexdump(content->literal_data_body.data,
 		content->literal_data_body.length);
 	printf("\n");
