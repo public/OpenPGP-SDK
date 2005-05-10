@@ -382,8 +382,12 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_ss_key_flags_free(&c->content.ss_key_flags);
 	break;
 
+    case OPS_PTAG_SS_KEY_SERVER_PREFS:
+	ops_ss_key_server_prefs_free(&c->content.ss_key_server_prefs);
+	break;
+
     case OPS_PTAG_SS_FEATURES:
-	ops_ss_key_flags_free(&c->content.ss_key_flags);
+	ops_ss_features_free(&c->content.ss_features);
 	break;
 
     case OPS_PARSER_PACKET_END:
@@ -767,6 +771,17 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	break;
 
+    case OPS_PTAG_SS_KEY_SERVER_PREFS:
+	C.ss_key_server_prefs.len = 
+	    subregion.length - subregion.length_read;
+	C.ss_key_server_prefs.data = 
+	    malloc(C.ss_key_server_prefs.len);
+	if (!ops_limited_read(C.ss_key_server_prefs.data,
+			      C.ss_key_server_prefs.len,
+			      &subregion,opt))
+	    return 0;
+	break;
+
     case OPS_PTAG_SS_FEATURES:
 	C.ss_features.len = subregion.length - subregion.length_read;
 	C.ss_features.data = malloc(C.ss_features.len);
@@ -861,6 +876,20 @@ void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags)
     free(ss_key_flags->data);
     ss_key_flags->data=NULL;
     ss_key_flags->len=0;
+    }
+
+void ops_ss_features_free(ops_ss_features_t * ss_features)
+    {
+    free(ss_features->data);
+    ss_features->data=NULL;
+    ss_features->len=0;
+    }
+
+void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t *ss_key_server_prefs)
+    {
+    free(ss_key_server_prefs->data);
+    ss_key_server_prefs->data=NULL;
+    ss_key_server_prefs->len=0;
     }
 
 /** Parse several signature subpackets.

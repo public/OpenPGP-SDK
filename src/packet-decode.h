@@ -1,7 +1,7 @@
 /** \file packet-decode.h
  * packet decode related headers.
  *
- * $Id: packet.h 84 2005-04-26 17:16:01Z ben $
+ * $Id$
  */
 
 #ifndef OPS_PACKET_DECODE_H
@@ -42,6 +42,9 @@ char * decode_single_ss_feature(unsigned char octet, bit_map_t *map);
 
 decoded_t *decode_ss_key_flags(ops_ss_key_flags_t ss_key_flags);
 char *decode_single_ss_key_flag(unsigned char octet, bit_map_t *map);
+
+decoded_t *decode_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs);
+char *decode_single_ss_key_server_prefs(unsigned char octet, bit_map_t *map);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

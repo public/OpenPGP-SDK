@@ -150,6 +150,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16, /*!< issuer key ID */
     OPS_PTAG_SS_PREFERRED_HASH          =0x200+21, /*!< preferred hash algorithms */
     OPS_PTAG_SS_PREFERRED_COMPRESSION	=0x200+22, /*!< preferred compression algorithms */
+    OPS_PTAG_SS_KEY_SERVER_PREFS	=0x200+23, /*!< key server preferences */
     OPS_PTAG_SS_PRIMARY_USER_ID		=0x200+25, /*!< primary User ID */
     OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
     OPS_PTAG_SS_FEATURES		=0x200+30, /*!< features */
@@ -451,6 +452,12 @@ typedef struct
     {
     size_t len;
     unsigned char * data;
+    } ops_ss_key_server_prefs_t;
+
+typedef struct
+    {
+    size_t len;
+    unsigned char * data;
     } ops_ss_features_t;
 
 typedef struct
@@ -528,7 +535,7 @@ typedef union
     ops_signature_t		signature;
     ops_ss_raw_t		ss_raw;
     ops_ss_trust_t		ss_trust;
-    ops_ss_revocable_t	ss_revocable;
+    ops_ss_revocable_t		ss_revocable;
     ops_ss_time_t		ss_time;
     ops_ss_key_id_t		ss_issuer_key_id;
     ops_packet_t		packet;
@@ -537,7 +544,8 @@ typedef union
     ops_ss_preferred_ska_t	ss_preferred_ska;
     ops_ss_preferred_hash_t     ss_preferred_hash;
     ops_ss_preferred_compression_t     ss_preferred_compression;
-    ops_ss_key_flags_t ss_key_flags;
+    ops_ss_key_flags_t 		ss_key_flags;
+    ops_ss_key_server_prefs_t	ss_key_server_prefs;
     ops_ss_primary_user_id_t	ss_primary_user_id;
     ops_ss_revocation_key_t	ss_revocation_key;
     ops_literal_data_header_t	literal_data_header;
@@ -571,6 +579,7 @@ void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska);
 void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t *ss_preferred_hash);
 void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t *ss_preferred_compression);
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags);
+void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t * ss_key_server_prefs);
 void ops_ss_features_free(ops_ss_features_t * ss_features);
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);

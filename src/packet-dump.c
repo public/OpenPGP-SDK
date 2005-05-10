@@ -337,6 +337,28 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
 	break;
 	
+    case OPS_PTAG_SS_KEY_SERVER_PREFS:
+	printf("  Key Server Preferences: len=%d, data=",content->ss_key_server_prefs.len);
+	hexdump(content->ss_key_server_prefs.data,content->ss_key_server_prefs.len);
+	printf("\n");
+
+	decoded = decode_ss_key_server_prefs(content->ss_key_server_prefs);
+	for ( i=0; i < decoded->known.used; i++)
+	    {
+	    indent(2);
+	    printf("%s\n",decoded->known.strings[i]);
+	    }
+
+	for ( i=0; i < decoded->unknown.used; i++) 
+	    {
+	    indent (2);
+	    printf("%s\n",decoded->unknown.strings[i]);
+	    }
+	
+	decoded_free(decoded);
+
+	break;
+	
     case OPS_PTAG_SS_FEATURES:
 	printf("  Features: len=%d, data=",content->ss_features.len);
 	hexdump(content->ss_features.data,content->ss_features.len);

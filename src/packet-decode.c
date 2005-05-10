@@ -66,6 +66,11 @@ bit_map_t ss_key_flags_map[] =
     { 0x80, "Private component may be in possession of more than one person"},
     };
 
+bit_map_t ss_key_server_prefs_map[] = 
+    {
+    { 0x80, "Key holder requests that this key only be modified or updated\nby the key holder or an administrator of the key server" },
+    };
+
 /*
  * Private functions
  */
@@ -317,6 +322,40 @@ decoded_t * decode_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
 	    if (bit)
 		{
 		str=decode_single_ss_key_flag ( bit, &ss_key_flags_map[0] );
+		if (!process_bitmap_str( decoded, str, bit))
+		    return NULL;
+		}
+	    }
+/* xxx - must add error text if more than one octet. Only one currently specified -- rachel */
+    return decoded;
+    }
+
+char *decode_single_ss_key_server_prefs(unsigned char octet, bit_map_t *map)
+    {
+    return(search_bit_map(octet,map));
+    }
+
+decoded_t *decode_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
+    {
+    decoded_t *decoded=NULL;
+    char *str;
+    int i=0;
+    unsigned char mask, bit;
+
+    decoded=malloc(sizeof(decoded_t));
+    if (!decoded)
+	return NULL;
+
+    decoded_init(decoded);
+
+    /* xxx - TBD: extend to handle multiple octets of bits - rachel */
+
+    for (i=0, mask=0x80; i<8; i++, mask = mask>>1 )
+	    {
+	    bit = ss_key_server_prefs.data[0] & mask;
+	    if (bit)
+		{
+		str=decode_single_ss_key_server_prefs ( bit, &ss_key_server_prefs_map[0] );
 		if (!process_bitmap_str( decoded, str, bit))
 		    return NULL;
 		}
