@@ -34,6 +34,12 @@ typedef struct
 void decoded_init(decoded_t * decoded);
 void decoded_free(decoded_t * decoded);
 
+decoded_t * decode_ss_preferred_compression(ops_ss_preferred_compression_t ss_preferred_compression);
+char * decode_single_ss_preferred_compression(unsigned char octet);
+
+decoded_t * decode_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_hash);
+char * decode_single_ss_preferred_hash(unsigned char octet);
+
 decoded_t * decode_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska);
 char * decode_single_ss_preferred_ska(unsigned char octet);
 

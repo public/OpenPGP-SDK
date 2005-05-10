@@ -44,6 +44,26 @@ octet_map_t symmetric_key_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
+octet_map_t hash_algorithm_map[] =
+    {
+    { OPS_HASH_MD5,	"MD5" },
+    { OPS_HASH_SHA1,	"SHA1" },
+    { OPS_HASH_RIPEMD,	"RIPEMD160" },
+    { OPS_HASH_SHA256,	"SHA256" },
+    { OPS_HASH_SHA384,	"SHA384" },
+    { OPS_HASH_SHA512,	"SHA512" },
+    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    };
+
+octet_map_t compression_algorithm_map[] =
+    {
+    { OPS_C_NONE,	"Uncompressed" },
+    { OPS_C_ZIP,	"ZIP(RFC1951)" },
+    { OPS_C_ZLIB,	"ZLIB(RFC1950)" },
+    { OPS_C_BZIP2,	"Bzip2(BZ2)" },
+    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    };
+
 bit_map_t ss_feature_map_byte0[] =
     {
     { 0x01,	"Modification Detection" },
@@ -172,7 +192,7 @@ unsigned int process_octet_str(decoded_t * decoded, char * str, unsigned char oc
 	str=malloc(MAXSTR+1);
 	/* xxx - This isn't very nice, how do you ensure the string isn't overrun.
 	   Ben? -- rachel */
-	sprintf(str,"Unknown(%d)",octet);
+	sprintf(str,"0x%x",octet);
 	if (!add_str(&decoded->unknown,str))
 	    return 0;
 	}
@@ -228,6 +248,66 @@ void decoded_free(decoded_t * decoded)
 /*
  * Now the individual decode functions
  */
+
+char * decode_single_ss_preferred_compression(unsigned char octet)
+    {
+    return(search_octet_map(octet,compression_algorithm_map));
+    }
+
+decoded_t * decode_ss_preferred_compression(ops_ss_preferred_compression_t array)
+    {
+    /* this can be generalised further to handle any similar list -- rachel */
+
+    decoded_t * decoded=NULL;
+    char * str;
+    int i=0;
+
+    decoded=malloc(sizeof(decoded_t));
+    if (!decoded)
+	return NULL;
+
+    decoded_init(decoded);
+
+    for ( i=0; i < array.len; i++)
+	{
+	str=decode_single_ss_preferred_compression(array.data[i]);
+	if (!process_octet_str(decoded,str,array.data[i]))
+	    return NULL;
+
+	}
+    /* All values have been added to either the known or the unknown list */
+    return decoded;
+    }
+
+char * decode_single_ss_preferred_hash(unsigned char octet)
+    {
+    return(search_octet_map(octet,hash_algorithm_map));
+    }
+
+decoded_t * decode_ss_preferred_hash(ops_ss_preferred_hash_t array)
+    {
+    /* this can be generalised further to handle any similar list -- rachel */
+
+    decoded_t * decoded=NULL;
+    char * str;
+    int i=0;
+
+    decoded=malloc(sizeof(decoded_t));
+    if (!decoded)
+	return NULL;
+
+    decoded_init(decoded);
+
+    for ( i=0; i < array.len; i++)
+	{
+	str=decode_single_ss_preferred_hash(array.data[i]);
+	if (!process_octet_str(decoded,str,array.data[i]))
+	    return NULL;
+
+	}
+    /* All values have been added to either the known or the unknown list */
+    return decoded;
+    }
 
 char * decode_single_ss_preferred_ska(unsigned char octet)
     {

@@ -29,11 +29,66 @@ static void indent(int indent_level)
 	printf("  ");
     }
 
+static void print_decoded(char *text, decoded_t *decoded, int indentlevel)
+    {
+    int i=0;
+
+    if(text)
+	{
+	indent(indentlevel);
+	printf("%s:\n",text);
+	}
+
+    /* these were recognised */
+
+    for(i=0 ; i<decoded->known.used ; i++) 
+	{
+	indent(indentlevel+1);
+	printf("%s\n",decoded->known.strings[i]);
+	}
+
+    /* these were not recognised. the strings will contain the hex value
+       of the unrecognised value in string format - see process_octet_str()
+    */
+
+    if(decoded->unknown.used)
+	{
+	printf("\n");
+	indent(indentlevel+1);
+	printf("Not Recognised: ");
+	}
+    for( i=0; i < decoded->unknown.used; i++) 
+	{
+	indent(indentlevel+2);
+	printf("%s\n",decoded->unknown.strings[i]);
+	}
+	
+    //    printf ("\n");
+    }
+
+static void print_hexdump(char *text, unsigned char *data, unsigned int len, int indentlevel)
+    {
+    indent(indentlevel);
+    printf("%s: len=%d, data=", text, len);
+    hexdump(data,len);
+    printf("\n");
+    }
+
+static void print_boolean(char *text, unsigned char bool, int indentlevel)
+    {
+    indent(indentlevel);
+    printf("%s: ", text);
+    if (bool)
+	printf("Yes");
+    else
+	printf("No");
+    printf("\n");
+    }
+
 static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
-    int i=0; 	/* loop counter */
     decoded_t * decoded;
 
     switch(content_->tag)
@@ -173,15 +228,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 		
     case OPS_PTAG_SS_REVOCABLE:
-	printf("  Revocable: ");
-	if (content->ss_revocable.revocable)
-	    {
-	    printf("YES\n");
-	    } 
-	else 
-	    {
-	    printf("NO\n");
-	    }
+	print_boolean("Revocable",content->ss_revocable.revocable,1);
 	break;      
 
     case OPS_PTAG_SS_REVOCATION_KEY:
@@ -198,185 +245,70 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
     
     case OPS_PTAG_SS_ISSUER_KEY_ID:
-	fputs("  issuer key id id=",stdout);
-	hexdump(content->ss_issuer_key_id.key_id,
-		sizeof content->ss_issuer_key_id.key_id);
-	putchar('\n');
+	print_hexdump("Issuer Key Id",
+		      /* xxx - why does this need to be cast? - rachel */
+		      (unsigned char *) &content->ss_issuer_key_id.key_id[0],
+		      sizeof content->ss_issuer_key_id.key_id,
+		      1);
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
-
-	printf("  Preferred Symmetric Algorithms: \n    ");
-
 	decoded = decode_ss_preferred_ska(content->ss_preferred_ska);
-
-	for ( i=0; i < decoded->known.used; i++) 
-	    printf("%s ",decoded->known.strings[i]);
-
-	for ( i=0; i < decoded->unknown.used; i++) 
-	    printf("%s ",decoded->unknown.strings[i]);
-	
-	printf ("\n");
+	print_decoded("Preferred Symmetric Algorithms",decoded,1);
 	decoded_free(decoded);
 
    	break;
 
     case OPS_PTAG_SS_PRIMARY_USER_ID:
-	printf("  Primary User ID: ");
-	if (content->ss_primary_user_id.primary_user_id)
-	    {
-	    printf("Yes\n");
-	    } 
-	else 
-	    {
-	    printf("No\n");
-	    }
+	print_boolean("Primary User ID",
+		      content->ss_primary_user_id.primary_user_id,
+		      1);
 	break;      
 
     case OPS_PTAG_SS_PREFERRED_HASH:
-	printf("  Preferred Hash Algorithms: \n    ");
-	for (i=0; i<content->ss_preferred_hash.len; i++) 
-	    {
-	    switch (content->ss_preferred_hash.data[i]) 
-		{
-	    case OPS_HASH_MD5:
-		printf("MD5");
-		break;
-
-	    case OPS_HASH_SHA1:
-		printf("SHA1");
-		break;
-
-	    case OPS_HASH_RIPEMD:
-		printf("RIPEMD160");
-		break;
-
-	    case OPS_HASH_SHA256:
-		printf("SHA256");
-		break;
-
-	    case OPS_HASH_SHA384:
-		printf("SHA384");
-		break;
-
-	    case OPS_HASH_SHA512:
-		printf("SHA512");
-		break;
-
-	    default:
-		if (content->ss_preferred_hash.data[i] >= 4 && 
-		    content->ss_preferred_hash.data[i] <= 7)
-		    printf("Reserved (%d)",
-			   content->ss_preferred_hash.data[i]);
-		else if (content->ss_preferred_hash.data[i] >= 100 && 
-			 content->ss_preferred_hash.data[i] <= 110)
-		    printf("Private/Experimental (%d)",
-			   content->ss_preferred_hash.data[i]);	       
-		else
-		    printf("Unknown (%d)",content->ss_preferred_hash.data[i]);
-		}
-	    printf(" ");
-	    }
-	printf("\n");
+	decoded = decode_ss_preferred_hash(content->ss_preferred_hash);
+	print_decoded("Preferred Hash Algorithms",decoded,1);
+	decoded_free(decoded);
 	break;
 
     case OPS_PTAG_SS_PREFERRED_COMPRESSION:
-	printf("  Preferred Compression Algorithms: \n    ");
-	for (i=0; i<content->ss_preferred_compression.len; i++) 
-	    {
-	    switch (content->ss_preferred_compression.data[i]) 
-		{
-	    case OPS_C_NONE:
-		printf("Uncompressed");
-		break;
-
-	    case OPS_C_ZIP:
-		printf("ZIP(RFC1951)");
-		break;
-
-	    case OPS_C_ZLIB:
-		printf("ZLIB(RFC1950)");
-		break;
-
-	    case OPS_C_BZIP2:
-		printf("BZip2(BZ2)");
-		break;
-
-	    default:
-		if (content->ss_preferred_compression.data[i] >= 100 && 
-			 content->ss_preferred_compression.data[i] <= 110)
-		    printf("Private/Experimental (%d)",
-			   content->ss_preferred_compression.data[i]);	       
-		else
-		    printf("Unknown (%d)",content->ss_preferred_compression.data[i]);
-		}
-	    printf(" ");
-	    }
-	printf("\n");
+	decoded = decode_ss_preferred_compression(content->ss_preferred_compression);
+	print_decoded("Preferred Compression Algorithms",decoded,1);
+	decoded_free(decoded);
 	break;
 	
     case OPS_PTAG_SS_KEY_FLAGS:
-	printf("  Key Flags: len=%d, data=",content->ss_key_flags.len);
-	hexdump(content->ss_key_flags.data,content->ss_key_flags.len);
-	printf("\n");
+	print_hexdump("Key Flags", 
+		      content->ss_key_flags.data,
+		      content->ss_key_flags.len,
+		      1);
 
 	decoded = decode_ss_key_flags(content->ss_key_flags);
-	for ( i=0; i < decoded->known.used; i++)
-	    {
-	    indent(2);
-	    printf("%s\n",decoded->known.strings[i]);
-	    }
-
-	for ( i=0; i < decoded->unknown.used; i++) 
-	    {
-	    indent (2);
-	    printf("%s\n",decoded->unknown.strings[i]);
-	    }
-	
+	print_decoded(NULL, decoded, 1);
 	decoded_free(decoded);
 
 	break;
 	
     case OPS_PTAG_SS_KEY_SERVER_PREFS:
-	printf("  Key Server Preferences: len=%d, data=",content->ss_key_server_prefs.len);
-	hexdump(content->ss_key_server_prefs.data,content->ss_key_server_prefs.len);
-	printf("\n");
+	print_hexdump("Key Server Preferences",
+		      content->ss_key_server_prefs.data,
+		      content->ss_key_server_prefs.len,
+		      1);
 
 	decoded = decode_ss_key_server_prefs(content->ss_key_server_prefs);
-	for ( i=0; i < decoded->known.used; i++)
-	    {
-	    indent(2);
-	    printf("%s\n",decoded->known.strings[i]);
-	    }
-
-	for ( i=0; i < decoded->unknown.used; i++) 
-	    {
-	    indent (2);
-	    printf("%s\n",decoded->unknown.strings[i]);
-	    }
-	
+	print_decoded(NULL, decoded, 1);
 	decoded_free(decoded);
 
 	break;
 	
     case OPS_PTAG_SS_FEATURES:
-	printf("  Features: len=%d, data=",content->ss_features.len);
-	hexdump(content->ss_features.data,content->ss_features.len);
-	printf("\n");
+	print_hexdump("Features", 
+		      content->ss_features.data,
+		      content->ss_features.len,
+		      1);
 
 	decoded = decode_ss_features(content->ss_features);
-	for ( i=0; i < decoded->known.used; i++)
-	    {
-	    indent(2);
-	    printf("%s\n",decoded->known.strings[i]);
-	    }
-
-	for ( i=0; i < decoded->unknown.used; i++) 
-	    {
-	    indent (2);
-	    printf("%s\n",decoded->unknown.strings[i]);
-	    }
-	
+	print_decoded(NULL,decoded,1);
 	decoded_free(decoded);
 
 	break;
