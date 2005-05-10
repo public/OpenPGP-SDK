@@ -1,9 +1,5 @@
-# $Id$
-
-#DM_FLAGS=-DDMALLOC -I/usr/local/include
-DM_FLAGS= -I/usr/local/include
-#DM_LIB=/usr/local/lib/libdmalloc.a
-DM_LIB=
+DM_FLAGS=%DM_FLAGS%
+DM_LIB=%DM_LIB%
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS)
 LDFLAGS=-g
@@ -30,10 +26,13 @@ tags:
 	find . -name '*.[ch]' | xargs etags -a
 
 clean:
-	rm -f packet-dump verify *.o .depend
+	rm -f packet-dump verify *.o
 	rm -f libops.a TAGS
 
 .depend: *.[ch]
+	$(CC) -E -MM *.[ch] > .depend
+
+force_depend::
 	$(CC) -E -MM *.[ch] > .depend
 
 # need to explicitly include .depend on Ubuntu
