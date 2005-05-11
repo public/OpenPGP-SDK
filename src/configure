@@ -14,7 +14,11 @@ my %Args=(
 	  },
 	  '--with-openssl=' => sub {
 	      my $loc=shift;
-	      $Subst{OPENSSL_CFLAGS}="-I $loc/include";
+	      $Subst{INCLUDES}.=" -I $loc/include";
+	  },
+	  '--with-zlib=' => sub {
+	      my $loc=shift;
+	      $Subst{INCLUDES}.=" -I $loc/include";
 	  },
 	 );
 
@@ -38,6 +42,8 @@ while(my $arg=shift) {
 my $os=`uname -s`;
 
 $Subst{'CC'}=getKnowledge('cc');
+
+fixSubst();
 
 open(D,'>.depend') || croak "Can't create .depend";
 close D;
@@ -94,4 +100,10 @@ sub usage {
 	print "$k\n";
     }
     exit;
+}
+
+sub fixSubst {
+    foreach my $k (keys %Subst) {
+	$Subst{$k} =~ s/~/\$(HOME)/g;
+    }
 }
