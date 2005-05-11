@@ -66,7 +66,8 @@ static void print_decoded(char *text, decoded_t *decoded, int indentlevel)
     //    printf ("\n");
     }
 
-static void print_hexdump(char *text, unsigned char *data, unsigned int len, int indentlevel)
+static void print_hexdump(char *text,const unsigned char *data,
+			  unsigned int len,int indentlevel)
     {
     indent(indentlevel);
     printf("%s: len=%d, data=", text, len);
@@ -246,8 +247,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
     
     case OPS_PTAG_SS_ISSUER_KEY_ID:
 	print_hexdump("Issuer Key Id",
-		      /* xxx - why does this need to be cast? - rachel */
-		      (unsigned char *) &content->ss_issuer_key_id.key_id[0],
+		      &content->ss_issuer_key_id.key_id[0],
 		      sizeof content->ss_issuer_key_id.key_id,
 		      1);
 	break;
