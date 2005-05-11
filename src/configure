@@ -7,9 +7,14 @@ use Carp;
 our %Subst;
 
 my %Args=(
+	  '--help' => \&usage,
 	  '--use-dmalloc' => sub {
 	      $Subst{DM_FLAGS}='-I/usr/local/include -DDMALLOC';
 	      $Subst{DM_LIB}='/usr/local/lib/libdmalloc.a';
+	  },
+	  '--with-openssl=' => sub {
+	      my $loc=shift;
+	      $Subst{OPENSSL_CFLAGS}="-I $loc/include";
 	  },
 	 );
 
@@ -20,9 +25,14 @@ our %Knowledge=(
 	      );
 
 while(my $arg=shift) {
+    my $arg2;
+    if($arg =~ /^(.+=)(.+)$/) {
+	$arg=$1;
+	$arg2=$2;
+    }
     my $code=$Args{$arg};
     croak "Don't understand: $arg" if !defined $code;
-    &$code();
+    &$code($arg2);
 }
 
 my $os=`uname -s`;
@@ -77,4 +87,11 @@ sub getKnowledge {
 	$Knowledge{$thing}=&{$Knowledge{$thing}}();
     }
     return $Knowledge{$thing};
+}
+
+sub usage {
+    foreach my $k (keys %Args) {
+	print "$k\n";
+    }
+    exit;
 }

@@ -2,7 +2,7 @@ DM_FLAGS=%DM_FLAGS%
 DM_LIB=%DM_LIB%
 CC=%CC%
 
-CFLAGS=-Wall -Werror -g $(DM_FLAGS)
+CFLAGS=-Wall -Werror -g $(DM_FLAGS) %OPENSSL_CFLAGS%
 LDFLAGS=-g
 LIBS=-lz $(DM_LIB)
 
