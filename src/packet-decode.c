@@ -30,6 +30,16 @@ typedef struct
  * Arrays of value->text maps
  */
 
+octet_map_t revocation_reason_code_map[] =
+    {
+    { 0x00,	"No reason specified" },
+    { 0x01,	"Key is superseded" },
+    { 0x02,	"Key material has been compromised" },
+    { 0x03,	"Key is retired and no longer used" },
+    { 0x20,	"User ID information is no longer valid" },
+    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    };
+
 octet_map_t symmetric_key_algorithm_map[] =
     {
     { OPS_SKA_PLAINTEXT,	"Plaintext or unencrypted data" },
@@ -248,6 +258,11 @@ void decoded_free(decoded_t * decoded)
 /*
  * Now the individual decode functions
  */
+
+char * decode_ss_revocation_reason_code(unsigned char octet)
+    {
+    return(search_octet_map(octet,revocation_reason_code_map));
+    }
 
 char * decode_single_ss_preferred_compression(unsigned char octet)
     {

@@ -404,6 +404,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_ss_userdefined_free(&c->content.ss_userdefined);
 	break;
 
+    case OPS_PTAG_SS_REVOCATION_REASON:
+	ops_ss_revocation_reason_free(&c->content.ss_revocation_reason);
+	break;
+
     case OPS_PARSER_PACKET_END:
 	ops_packet_free(&c->content.packet);
 	break;
@@ -677,6 +681,31 @@ static int read_data(data_t *data, ops_region_t *subregion, ops_parse_options_t 
 	return 1;
     }
 
+/**
+ * Reads the remainder of the subregion as a string.
+ * It is the user's responsibility to free the memory allocated here.
+ */
+
+static int read_string(char **str, ops_region_t *subregion, ops_parse_options_t *opt)
+    {
+    int len=0;
+
+    len=subregion->length - subregion->length_read;
+
+    *str = malloc(len+1);
+    if (!(*str))
+	return 0;
+
+    if (len && !ops_limited_read(*str, len, subregion, opt))
+	return 0;
+
+    /* ensure the string is NULL-terminated */
+
+    *str[len]=(char) NULL;
+
+    return 1;
+    }
+
 /** Parse one signature sub-packet.
  *
  * Version 4 signatures can have an arbitrary amount of (hashed and unhashed) subpackets.  Subpackets are used to hold
@@ -829,6 +858,19 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	break;
 
+    case OPS_PTAG_SS_REVOCATION_REASON:
+	/* first byte is the machine-readable code */
+	if (!ops_limited_read(&C.ss_revocation_reason.code, 1,
+			      &subregion, opt))
+	    return 0;
+
+	/* the rest is a human-readable UTF-8 string */
+
+	if (!read_string(&C.ss_revocation_reason.text,
+		       &subregion, opt))
+	    return 0;
+	break;
+
     case OPS_PTAG_SS_REVOCATION_KEY:
  
 	/* octet 0 = class. Bit 0x80 must be set */
@@ -885,6 +927,12 @@ static void data_free(data_t *data)
     free(data->contents);
     data->contents=NULL;
     data->len=0;
+    }
+
+static void string_free(char **str)
+    {
+    free(*str);
+    *str=NULL;
     }
 
 /** ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
@@ -1135,6 +1183,11 @@ static int parse_one_pass(ops_region_t *region,ops_parse_options_t *opt)
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined)
     {
     data_free(&ss_userdefined->data);
+    }
+
+void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason)
+    {
+    string_free(&ss_revocation_reason->text);
     }
 
 void ops_trust_free(ops_trust_t * trust)

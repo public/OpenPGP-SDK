@@ -153,6 +153,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_KEY_SERVER_PREFS	=0x200+23, /*!< key server preferences */
     OPS_PTAG_SS_PRIMARY_USER_ID		=0x200+25, /*!< primary User ID */
     OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
+    OPS_PTAG_SS_REVOCATION_REASON	=0x200+29, /*!< reason for revocation */
     OPS_PTAG_SS_FEATURES		=0x200+30, /*!< features */
 
     OPS_PTAG_SS_USERDEFINED00	=0x200+100, /*!< internal or user-defined */
@@ -525,6 +526,12 @@ typedef struct
     unsigned char fingerprint[20];
     } ops_ss_revocation_key_t;
 
+typedef struct
+    {
+    unsigned char code;
+    char *text;
+    } ops_ss_revocation_reason_t;
+
 typedef enum
     {
     OPS_LDT_BINARY='b',
@@ -574,6 +581,7 @@ typedef union
     ops_literal_data_header_t	literal_data_header;
     ops_literal_data_body_t	literal_data_body;
     ops_ss_features_t		ss_features;
+    ops_ss_revocation_reason_t	ss_revocation_reason;
     } ops_parser_content_union_t;
 
 struct ops_parser_content_t
@@ -605,6 +613,7 @@ void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags);
 void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t * ss_key_server_prefs);
 void ops_ss_features_free(ops_ss_features_t * ss_features);
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined);
+void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason);
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
 

@@ -43,6 +43,8 @@ char * decode_single_ss_preferred_hash(unsigned char octet);
 decoded_t * decode_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska);
 char * decode_single_ss_preferred_ska(unsigned char octet);
 
+char *decode_ss_revocation_reason_code(unsigned char octet);
+
 decoded_t * decode_ss_features(ops_ss_features_t ss_features);
 char * decode_single_ss_feature(unsigned char octet, bit_map_t *map);
 

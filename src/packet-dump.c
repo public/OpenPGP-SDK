@@ -25,18 +25,18 @@ static void bndump(const char *name,const BIGNUM *bn)
 static void indent(int indent_level)
     {
     int i=0;
-    for (i=0;i<indent_level;i++)
+    for(i=0 ; i<indent_level ; i++)
 	printf("  ");
     }
 
-static void print_decoded(char *text, decoded_t *decoded, int indentlevel)
+static void print_decoded(char *label, decoded_t *decoded, int indentlevel)
     {
     int i=0;
 
-    if(text)
+    if(label)
 	{
 	indent(indentlevel);
-	printf("%s:\n",text);
+	printf("%s:\n",label);
 	}
 
     /* these were recognised */
@@ -63,27 +63,45 @@ static void print_decoded(char *text, decoded_t *decoded, int indentlevel)
 	printf("%s\n",decoded->unknown.strings[i]);
 	}
 	
-    //    printf ("\n");
     }
 
-static void print_hexdump(char *text,const unsigned char *data,
-			  unsigned int len,int indentlevel)
+static void print_hexdump(char *label,const unsigned char *data,
+			  unsigned int len, int indentlevel)
     {
-    indent(indentlevel);
-    printf("%s: len=%d, data=0x", text, len);
+    if(label)
+	{
+	indent(indentlevel);
+	printf("%s: len=%d, data=0x", label, len);
+	}
+
     hexdump(data,len);
     printf("\n");
     }
 
-static void print_boolean(char *text, unsigned char bool, int indentlevel)
+static void print_boolean(char *label, unsigned char bool, int indentlevel)
     {
-    indent(indentlevel);
-    printf("%s: ", text);
-    if (bool)
+    if(label)
+	{
+	indent(indentlevel);
+	printf("%s: ", label);
+	}
+    if(bool)
 	printf("Yes");
     else
 	printf("No");
     printf("\n");
+    }
+
+static void print_string(char *label, char *str, int indentlevel)
+    {
+    if(label)
+	{
+	indent(indentlevel);
+	printf("%s:\n", label);
+	}
+
+    indent(indentlevel+1);
+    printf("%s\n", str);
     }
 
 static ops_parse_callback_return_t
@@ -91,6 +109,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
     decoded_t * decoded;
+    char *str;
 
     switch(content_->tag)
 	{
@@ -328,6 +347,16 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      content->ss_userdefined.data.contents,
 		      content->ss_userdefined.data.len,
 		      1);
+	break;
+
+    case OPS_PTAG_SS_REVOCATION_REASON:
+	print_hexdump("Revocation Reason",
+		      &content->ss_revocation_reason.code,
+		      1,
+		      1);
+	str = decode_ss_revocation_reason_code(content->ss_revocation_reason.code);
+	print_string(NULL,str,1);
+	/* xxx - todo : output text as UTF-8 string */
 	break;
 
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
