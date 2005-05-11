@@ -757,12 +757,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
-
-	C.ss_preferred_ska.len = subregion.length - subregion.length_read;
-	C.ss_preferred_ska.data = malloc(C.ss_preferred_ska.len);
-
-	if (!ops_limited_read(C.ss_preferred_ska.data,
-			      C.ss_preferred_ska.len, &subregion, opt))
+	if (!read_data(&C.ss_preferred_ska.data,&subregion,opt))
 	    return 0;
 	break;
 			    	
@@ -885,14 +880,19 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     return 1;
     }
 
+static void data_free(data_t *data)
+    {
+    free(data->contents);
+    data->contents=NULL;
+    data->len=0;
+    }
+
 /** ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
  */
 
 void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
     {
-    free(ss_preferred_ska->data);
-    ss_preferred_ska->data=NULL;
-    ss_preferred_ska->len=0;
+    data_free(&ss_preferred_ska->data);
     }
 
 /** ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
@@ -1130,13 +1130,6 @@ static int parse_one_pass(ops_region_t *region,ops_parse_options_t *opt)
     CB(OPS_PTAG_CT_ONE_PASS_SIGNATURE,&content);
 
     return 1;
-    }
-
-void data_free(data_t *data)
-    {
-    free(data->contents);
-    data->contents=NULL;
-    data->len=0;
     }
 
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined)

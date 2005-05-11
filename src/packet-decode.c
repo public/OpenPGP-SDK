@@ -314,9 +314,16 @@ char * decode_single_ss_preferred_ska(unsigned char octet)
     return(search_octet_map(octet,symmetric_key_algorithm_map));
     }
 
-decoded_t * decode_ss_preferred_ska(ops_ss_preferred_ska_t array)
+/**
+ * Produce a structure containing human-readable textstrings
+ * representing the recognised and unrecognised contents
+ * of this byte array. decode_fn() will be called on each octet in turn.
+ *
+ */ 
+
+static decoded_t *decode_bytearray(data_t *data, 
+			      char *(*decode_fn)(unsigned char octet))
     {
-    /* this can be generalised further to handle any similar list -- rachel */
 
     decoded_t * decoded=NULL;
     char * str;
@@ -328,15 +335,21 @@ decoded_t * decode_ss_preferred_ska(ops_ss_preferred_ska_t array)
 
     decoded_init(decoded);
 
-    for ( i=0; i < array.len; i++)
+    for ( i=0; i < data->len; i++)
 	{
-	str=decode_single_ss_preferred_ska(array.data[i]);
-	if (!process_octet_str(decoded,str,array.data[i]))
+	str=(*decode_fn)(data->contents[i]);
+	if (!process_octet_str(decoded,str,data->contents[i]))
 	    return NULL;
 
 	}
     /* All values have been added to either the known or the unknown list */
     return decoded;
+    }
+
+decoded_t * decode_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
+    {
+    return(decode_bytearray(&ss_preferred_ska.data, 
+		       &decode_single_ss_preferred_ska));
     }
 
 char * decode_single_ss_feature(unsigned char octet, bit_map_t * map)

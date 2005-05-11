@@ -447,11 +447,9 @@ typedef struct
 
 typedef struct
     {
-    size_t	len;	/* must use a length field in structure to 
-			   determine where the algorithms stop. 
-			   The value 0 may represent the plaintext algorithm
-			   so we cannot expect a null-terminated list */
-    unsigned char * data;
+    data_t data;
+    /* Note that value 0 may represent the plaintext algorithm
+       so we cannot expect data->contents to be a null-terminated list */
     } ops_ss_preferred_ska_t;
 
 typedef struct
