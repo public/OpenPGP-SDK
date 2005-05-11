@@ -13,6 +13,12 @@ my %Args=(
 	  },
 	 );
 
+our %Knowledge=(
+	       cc => sub { return chooseBinary('gcc','cc')
+			     || croak 'Can\'t find C compiler'; },
+	       path => sub { return [split /:/,$ENV{PATH}]; },
+	      );
+
 while(my $arg=shift) {
     my $code=$Args{$arg};
     croak "Don't understand: $arg" if !defined $code;
@@ -20,6 +26,8 @@ while(my $arg=shift) {
 }
 
 my $os=`uname -s`;
+
+$Subst{'CC'}=getKnowledge('cc');
 
 open(D,'>.depend') || croak "Can't create .depend";
 close D;
@@ -47,4 +55,26 @@ sub subst {
     }
     $line =~ s/\%.+?\%//g;
     return $line;
+}
+
+sub chooseBinary {
+    my $path=getKnowledge('path');
+    while(my $bin=shift) {
+	foreach my $p (@$path) {
+	    return $bin if -x "$p/$bin";
+	}
+    }
+    return 'false';
+}
+
+sub getKnowledge {
+    my $thing=shift;
+
+    croak "Asked for nonexistent knowledge $thing"
+      if !exists $Knowledge{$thing};
+
+    if(ref $Knowledge{$thing} eq 'CODE') {
+	$Knowledge{$thing}=&{$Knowledge{$thing}}();
+    }
+    return $Knowledge{$thing};
 }

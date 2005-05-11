@@ -1,5 +1,6 @@
 DM_FLAGS=%DM_FLAGS%
 DM_LIB=%DM_LIB%
+CC=%CC%
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS)
 LDFLAGS=-g
