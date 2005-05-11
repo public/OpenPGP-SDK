@@ -70,7 +70,7 @@ static void print_hexdump(char *text,const unsigned char *data,
 			  unsigned int len,int indentlevel)
     {
     indent(indentlevel);
-    printf("%s: len=%d, data=", text, len);
+    printf("%s: len=%d, data=0x", text, len);
     hexdump(data,len);
     printf("\n");
     }
@@ -311,6 +311,23 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_decoded(NULL,decoded,1);
 	decoded_free(decoded);
 
+	break;
+
+    case OPS_PTAG_SS_USERDEFINED00:
+    case OPS_PTAG_SS_USERDEFINED01:
+    case OPS_PTAG_SS_USERDEFINED02:
+    case OPS_PTAG_SS_USERDEFINED03:
+    case OPS_PTAG_SS_USERDEFINED04:
+    case OPS_PTAG_SS_USERDEFINED05:
+    case OPS_PTAG_SS_USERDEFINED06:
+    case OPS_PTAG_SS_USERDEFINED07:
+    case OPS_PTAG_SS_USERDEFINED08:
+    case OPS_PTAG_SS_USERDEFINED09:
+    case OPS_PTAG_SS_USERDEFINED10:
+	print_hexdump("Internal or user-defined",
+		      content->ss_userdefined.data.contents,
+		      content->ss_userdefined.data.len,
+		      1);
 	break;
 
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:

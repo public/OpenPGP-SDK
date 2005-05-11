@@ -155,6 +155,19 @@ enum ops_content_tag_t
     OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
     OPS_PTAG_SS_FEATURES		=0x200+30, /*!< features */
 
+    OPS_PTAG_SS_USERDEFINED00	=0x200+100, /*!< internal or user-defined */
+    OPS_PTAG_SS_USERDEFINED01	=0x200+101, 
+    OPS_PTAG_SS_USERDEFINED02	=0x200+102,
+    OPS_PTAG_SS_USERDEFINED03	=0x200+103,
+    OPS_PTAG_SS_USERDEFINED04	=0x200+104,
+    OPS_PTAG_SS_USERDEFINED05	=0x200+105,
+    OPS_PTAG_SS_USERDEFINED06	=0x200+106,
+    OPS_PTAG_SS_USERDEFINED07	=0x200+107,
+    OPS_PTAG_SS_USERDEFINED08	=0x200+108,
+    OPS_PTAG_SS_USERDEFINED09	=0x200+109,
+    OPS_PTAG_SS_USERDEFINED10	=0x200+110,
+
+	
     /* pseudo content types */
     OPS_PTAG_CT_LITERAL_DATA_HEADER	=0x300,
     OPS_PTAG_CT_LITERAL_DATA_BODY	=0x300+1,
@@ -423,6 +436,17 @@ typedef struct
 
 typedef struct
     {
+    size_t len;
+    unsigned char *contents;
+    } data_t;
+
+typedef struct
+    {
+    data_t data;
+    } ops_ss_userdefined_t;
+
+typedef struct
+    {
     size_t	len;	/* must use a length field in structure to 
 			   determine where the algorithms stop. 
 			   The value 0 may represent the plaintext algorithm
@@ -548,6 +572,7 @@ typedef union
     ops_ss_key_server_prefs_t	ss_key_server_prefs;
     ops_ss_primary_user_id_t	ss_primary_user_id;
     ops_ss_revocation_key_t	ss_revocation_key;
+    ops_ss_userdefined_t 	ss_userdefined;
     ops_literal_data_header_t	literal_data_header;
     ops_literal_data_body_t	literal_data_body;
     ops_ss_features_t		ss_features;
@@ -581,6 +606,7 @@ void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t *ss_prefer
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags);
 void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t * ss_key_server_prefs);
 void ops_ss_features_free(ops_ss_features_t * ss_features);
+void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined);
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
 

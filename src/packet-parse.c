@@ -390,6 +390,20 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_ss_features_free(&c->content.ss_features);
 	break;
 
+    case OPS_PTAG_SS_USERDEFINED00:
+    case OPS_PTAG_SS_USERDEFINED01:
+    case OPS_PTAG_SS_USERDEFINED02:
+    case OPS_PTAG_SS_USERDEFINED03:
+    case OPS_PTAG_SS_USERDEFINED04:
+    case OPS_PTAG_SS_USERDEFINED05:
+    case OPS_PTAG_SS_USERDEFINED06:
+    case OPS_PTAG_SS_USERDEFINED07:
+    case OPS_PTAG_SS_USERDEFINED08:
+    case OPS_PTAG_SS_USERDEFINED09:
+    case OPS_PTAG_SS_USERDEFINED10:
+	ops_ss_userdefined_free(&c->content.ss_userdefined);
+	break;
+
     case OPS_PARSER_PACKET_END:
 	ops_packet_free(&c->content.packet);
 	break;
@@ -648,6 +662,21 @@ static int parse_v3_signature(ops_region_t *region,ops_parse_options_t *opt)
     return 1;
     }
 
+static int read_data(data_t *data, ops_region_t *subregion, ops_parse_options_t *opt)
+    {
+	data->len = subregion->length - subregion->length_read;
+
+	data->contents = malloc(data->len);
+	if (!data->contents)
+	    return 0;
+
+	if (!ops_limited_read(data->contents, data->len,
+			      subregion, opt))
+	    return 0;
+
+	return 1;
+    }
+
 /** Parse one signature sub-packet.
  *
  * Version 4 signatures can have an arbitrary amount of (hashed and unhashed) subpackets.  Subpackets are used to hold
@@ -787,6 +816,21 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	C.ss_features.data = malloc(C.ss_features.len);
 	if (!ops_limited_read(C.ss_features.data,C.ss_features.len,
 			      &subregion,opt))
+	    return 0;
+	break;
+
+    case OPS_PTAG_SS_USERDEFINED00:
+    case OPS_PTAG_SS_USERDEFINED01:
+    case OPS_PTAG_SS_USERDEFINED02:
+    case OPS_PTAG_SS_USERDEFINED03:
+    case OPS_PTAG_SS_USERDEFINED04:
+    case OPS_PTAG_SS_USERDEFINED05:
+    case OPS_PTAG_SS_USERDEFINED06:
+    case OPS_PTAG_SS_USERDEFINED07:
+    case OPS_PTAG_SS_USERDEFINED08:
+    case OPS_PTAG_SS_USERDEFINED09:
+    case OPS_PTAG_SS_USERDEFINED10:
+	if (!read_data(&C.ss_userdefined.data,&subregion,opt))
 	    return 0;
 	break;
 
@@ -1088,6 +1132,18 @@ static int parse_one_pass(ops_region_t *region,ops_parse_options_t *opt)
     return 1;
     }
 
+void data_free(data_t *data)
+    {
+    free(data->contents);
+    data->contents=NULL;
+    data->len=0;
+    }
+
+void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined)
+    {
+    data_free(&ss_userdefined->data);
+    }
+
 void ops_trust_free(ops_trust_t * trust)
     {
     free(trust->data);
@@ -1328,6 +1384,7 @@ void ops_parse_options(ops_parse_options_t *opt,
 	break;
 	}
     }
+
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */
