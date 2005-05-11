@@ -5,6 +5,11 @@
 #include <assert.h>
 #include <string.h>
 
+#include "configure.h"
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#endif
+
 #ifdef DMALLOC
 # include <dmalloc.h>
 #endif
