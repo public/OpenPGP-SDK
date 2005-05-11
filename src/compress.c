@@ -29,6 +29,10 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
     ops_parser_content_t content;
     unsigned length=*plength;
 
+    if(arg->region->indeterminate && arg->inflate_ret == Z_STREAM_END
+       && arg->stream.next_out == &arg->out[arg->offset])
+	return OPS_R_EOF;
+
     if(arg->region->length_read == arg->region->length)
 	{
 	if(arg->inflate_ret != Z_STREAM_END)
