@@ -499,6 +499,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_ss_policy_url_free(&c->content.ss_policy_url);
 	break;
 
+    case OPS_PTAG_SS_PREFERRED_KEY_SERVER:
+	ops_ss_preferred_key_server_free(&c->content.ss_preferred_key_server);
+	break;
+
     case OPS_PTAG_SS_USERDEFINED00:
     case OPS_PTAG_SS_USERDEFINED01:
     case OPS_PTAG_SS_USERDEFINED02:
@@ -646,6 +650,11 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
 void ops_ss_policy_url_free(ops_ss_policy_url_t *policy_url)
     {
     string_free(&policy_url->text);
+    }
+
+void ops_ss_preferred_key_server_free(ops_ss_preferred_key_server_t *preferred_key_server)
+    {
+    string_free(&preferred_key_server->text);
     }
 
 void ops_user_attribute_free(ops_user_attribute_t *user_att)
@@ -989,6 +998,12 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 
     case OPS_PTAG_SS_POLICY_URL:
 	if (!read_string(&C.ss_policy_url.text,
+		       &subregion, opt))
+	    return 0;
+	break;
+
+    case OPS_PTAG_SS_PREFERRED_KEY_SERVER:
+	if (!read_string(&C.ss_preferred_key_server.text,
 		       &subregion, opt))
 	    return 0;
 	break;

@@ -412,6 +412,12 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		     1);
 	break;
 
+    case OPS_PTAG_SS_PREFERRED_KEY_SERVER:
+	print_string("Preferred Key Server",
+		     content->ss_preferred_key_server.text,
+		     1);
+	break;
+
     case OPS_PTAG_SS_USERDEFINED00:
     case OPS_PTAG_SS_USERDEFINED01:
     case OPS_PTAG_SS_USERDEFINED02:
