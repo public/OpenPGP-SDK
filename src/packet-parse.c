@@ -302,7 +302,7 @@ static int read_new_length(unsigned *length,ops_parse_options_t *opt)
 
 	if(base_read(c,&one,0,opt))
 	    return 0;
-	*length=t+c[1]+192;
+	*length=t+c[0]+192;
 	return 1;
 	}
     return read_scalar(length,4,opt);
@@ -343,7 +343,7 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
 
 	if(!ops_limited_read(c,1,region,opt))
 	    return 0;
-	*length=t+c[1]+192;
+	*length=t+c[0]+192;
 	return 1;
 	}
     return limited_read_scalar(length,4,region,opt);
