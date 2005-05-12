@@ -12,8 +12,15 @@ typedef struct
     int fd;
     } ops_reader_fd_arg_t;
 
+typedef struct
+    {
+    int fd;
+    } ops_writer_fd_arg_t;
+
 void hexdump(const unsigned char *src,size_t length);
 ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 			       ops_reader_flags_t flags,void *arg);
+ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
+			       ops_writer_flags_t flags,void *arg_);
 
 #endif
