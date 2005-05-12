@@ -419,6 +419,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_CT_COMPRESSED:
     case OPS_PTAG_SS_CREATION_TIME:
     case OPS_PTAG_SS_EXPIRATION_TIME:
+    case OPS_PTAG_SS_KEY_EXPIRATION_TIME:
     case OPS_PTAG_SS_TRUST:
     case OPS_PTAG_SS_ISSUER_KEY_ID:
     case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
@@ -839,6 +840,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	{
     case OPS_PTAG_SS_CREATION_TIME:
     case OPS_PTAG_SS_EXPIRATION_TIME:
+    case OPS_PTAG_SS_KEY_EXPIRATION_TIME:
 	if(!limited_read_time(&C.ss_time.time,&subregion,opt))
 	    return 0;
 	break;

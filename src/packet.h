@@ -153,6 +153,7 @@ enum ops_content_tag_t
 
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
     OPS_PTAG_SS_REVOCABLE		=0x200+7,	/*!< revocable */
+    OPS_PTAG_SS_KEY_EXPIRATION_TIME	=0x200+9,	/*!< key expiration time */
     OPS_PTAG_SS_PREFERRED_SKA 		=0x200+11,	/*!< preferred symmetric algorithms */
     OPS_PTAG_SS_REVOCATION_KEY 		=0x200+12,	/*!< revocation key */
     OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16, /*!< issuer key ID */

@@ -29,6 +29,39 @@ static void indent(int indent_level)
 	printf("  ");
     }
 
+static void print_time(char *label, time_t time, int indentlevel)
+    {
+    indent(indentlevel);
+    printf("%s: ",label);
+    showtime("time",time);
+    printf("\n");
+    }
+
+static void print_duration(char *label, time_t time, int indentlevel)
+    {
+    int mins, hours, days, years;
+
+    indent(indentlevel);
+    printf("%s: ",label);
+    printf("duration %ld seconds",time);
+
+    mins=time/60;
+    hours=mins/60;
+    days=hours/24;
+    years=days/365;
+
+    printf(" (approx. ");
+    if (years)
+	printf("%d %s",years,years==1?"year":"years");
+    else if (days)
+	printf("%d %s",days,days==1?"day":"days");
+    else if (hours)
+	printf("%d %s", hours, hours==1?"hour":"hours");
+
+    printf(")");
+    printf("\n");
+    }
+
 static void print_decoded(char *label, decoded_t *decoded, int indentlevel)
     {
     int i=0;
@@ -237,15 +270,15 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_SS_CREATION_TIME:
-	fputs("  creation time ",stdout);
-	showtime("time",content->ss_time.time);
-	putchar('\n');
+	print_time("Signature Creation Time",content->ss_time.time,1);
 	break;
 
     case OPS_PTAG_SS_EXPIRATION_TIME:
-	fputs("  expiration time ",stdout);
-	printf ("%ld seconds after creation", content->ss_time.time);
-	putchar('\n');
+	print_duration("Signature Expiration Time",content->ss_time.time,1);
+	break;
+
+    case OPS_PTAG_SS_KEY_EXPIRATION_TIME:
+	print_duration("Key Expiration Time", content->ss_time.time, 1);
 	break;
 
     case OPS_PTAG_SS_TRUST:
