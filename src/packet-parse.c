@@ -300,7 +300,7 @@ static int read_new_length(unsigned *length,ops_parse_options_t *opt)
 	{
 	unsigned t=(c[0]-192) << 8;
 
-	if(base_read(c,&one,0,opt))
+	if(base_read(c,&one,0,opt) != OPS_R_OK)
 	    return 0;
 	*length=t+c[0]+192;
 	return 1;
