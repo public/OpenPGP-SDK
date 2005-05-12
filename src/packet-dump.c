@@ -406,6 +406,11 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
 	break;
 
+    case OPS_PTAG_SS_POLICY_URL:
+	print_string("Policy URL",
+		     content->ss_policy_url.text,
+		     1);
+	break;
 
     case OPS_PTAG_SS_USERDEFINED00:
     case OPS_PTAG_SS_USERDEFINED01:

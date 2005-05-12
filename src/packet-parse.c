@@ -71,7 +71,7 @@ static int read_string(char **str, ops_region_t *subregion, ops_parse_options_t 
 
     /* ensure the string is NULL-terminated */
 
-    *str[len]=(char) NULL;
+    (*str)[len]=(char) NULL;
 
     return 1;
     }
@@ -495,6 +495,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_ss_notation_data_free(&c->content.ss_notation_data);
 	break;
 
+    case OPS_PTAG_SS_POLICY_URL:
+	ops_ss_policy_url_free(&c->content.ss_policy_url);
+	break;
+
     case OPS_PTAG_SS_USERDEFINED00:
     case OPS_PTAG_SS_USERDEFINED01:
     case OPS_PTAG_SS_USERDEFINED02:
@@ -638,6 +642,11 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     return 1;
     }
 
+
+void ops_ss_policy_url_free(ops_ss_policy_url_t *policy_url)
+    {
+    string_free(&policy_url->text);
+    }
 
 void ops_user_attribute_free(ops_user_attribute_t *user_att)
     {
@@ -976,6 +985,12 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 		       &subregion, opt))
 	    return 0;
 
+	break;
+
+    case OPS_PTAG_SS_POLICY_URL:
+	if (!read_string(&C.ss_policy_url.text,
+		       &subregion, opt))
+	    return 0;
 	break;
 
     case OPS_PTAG_SS_USERDEFINED00:

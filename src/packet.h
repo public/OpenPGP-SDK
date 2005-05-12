@@ -162,6 +162,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_PREFERRED_COMPRESSION	=0x200+22, /*!< preferred compression algorithms */
     OPS_PTAG_SS_KEY_SERVER_PREFS	=0x200+23, /*!< key server preferences */
     OPS_PTAG_SS_PRIMARY_USER_ID		=0x200+25, /*!< primary User ID */
+    OPS_PTAG_SS_POLICY_URL		=0x200+26, /*!< Policy URL */
     OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
     OPS_PTAG_SS_REVOCATION_REASON	=0x200+29, /*!< reason for revocation */
     OPS_PTAG_SS_FEATURES		=0x200+30, /*!< features */
@@ -538,6 +539,11 @@ typedef struct
 
 typedef struct
     {
+    char *text;
+    } ops_ss_policy_url_t;
+
+typedef struct
+    {
     unsigned char	class;
     unsigned char	algid;
     unsigned char fingerprint[20];
@@ -595,6 +601,7 @@ typedef union
     ops_ss_key_flags_t 		ss_key_flags;
     ops_ss_key_server_prefs_t	ss_key_server_prefs;
     ops_ss_primary_user_id_t	ss_primary_user_id;
+    ops_ss_policy_url_t 	ss_policy_url;
     ops_ss_revocation_key_t	ss_revocation_key;
     ops_ss_userdefined_t 	ss_userdefined;
     ops_literal_data_header_t	literal_data_header;
@@ -633,6 +640,7 @@ void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags);
 void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t * ss_key_server_prefs);
 void ops_ss_features_free(ops_ss_features_t * ss_features);
 void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data);
+void ops_ss_policy_url_free(ops_ss_policy_url_t *ss_policy_url);
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined);
 void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason);
 void ops_packet_free(ops_packet_t *packet);
