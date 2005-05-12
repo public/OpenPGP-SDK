@@ -284,6 +284,30 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
     return 1;
     }
 
+static int read_new_length(unsigned *length,ops_parse_options_t *opt)
+    {
+    unsigned char c[1];
+    unsigned one=1;
+
+    if(base_read(c,&one,0,opt) != OPS_R_OK)
+	return 0;
+    if(c[0] < 192)
+	{
+	*length=c[0];
+	return 1;
+	}
+    if(c[0] < 255)
+	{
+	unsigned t=(c[0]-192) << 8;
+
+	if(base_read(c,&one,0,opt))
+	    return 0;
+	*length=t+c[1]+192;
+	return 1;
+	}
+    return read_scalar(length,4,opt);
+    }
+
 /** Read the length information for a new format Packet Tag.
  *
  * New style Packet Tags encode the length in one to five octets.  This function reads the right amount of bytes and
@@ -1287,6 +1311,8 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	{
 	C.ptag.content_tag=*ptag&OPS_PTAG_NF_CONTENT_TAG_MASK;
 	C.ptag.length_type=0;
+	if(!read_new_length(&C.ptag.length,opt))
+	    return 0;
 	}
     else
 	{
