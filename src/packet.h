@@ -157,6 +157,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_PREFERRED_SKA 		=0x200+11,	/*!< preferred symmetric algorithms */
     OPS_PTAG_SS_REVOCATION_KEY 		=0x200+12,	/*!< revocation key */
     OPS_PTAG_SS_ISSUER_KEY_ID		=0x200+16, /*!< issuer key ID */
+    OPS_PTAG_SS_NOTATION_DATA		=0x200+20, /*!< notation data */
     OPS_PTAG_SS_PREFERRED_HASH          =0x200+21, /*!< preferred hash algorithms */
     OPS_PTAG_SS_PREFERRED_COMPRESSION	=0x200+22, /*!< preferred compression algorithms */
     OPS_PTAG_SS_KEY_SERVER_PREFS	=0x200+23, /*!< key server preferences */
@@ -452,6 +453,13 @@ typedef struct
 
 typedef struct
     {
+    data_t flags;
+    data_t name;
+    data_t value;
+    } ops_ss_notation_data_t;
+
+typedef struct
+    {
     data_t data;
     } ops_ss_userdefined_t;
 
@@ -577,6 +585,7 @@ typedef union
     ops_ss_revocable_t		ss_revocable;
     ops_ss_time_t		ss_time;
     ops_ss_key_id_t		ss_issuer_key_id;
+    ops_ss_notation_data_t	ss_notation_data;
     ops_packet_t		packet;
     ops_compressed_t		compressed;
     ops_one_pass_signature_t	one_pass_signature;
@@ -623,6 +632,7 @@ void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t *ss_prefer
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags);
 void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t * ss_key_server_prefs);
 void ops_ss_features_free(ops_ss_features_t * ss_features);
+void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data);
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined);
 void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason);
 void ops_packet_free(ops_packet_t *packet);

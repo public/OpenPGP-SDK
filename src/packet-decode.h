@@ -54,6 +54,8 @@ char *decode_single_ss_key_flag(unsigned char octet, bit_map_t *map);
 decoded_t *decode_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs);
 char *decode_single_ss_key_server_prefs(unsigned char octet, bit_map_t *map);
 
+decoded_t *decode_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data);
+
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */
 

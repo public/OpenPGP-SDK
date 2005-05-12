@@ -74,6 +74,18 @@ octet_map_t compression_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
+bit_map_t ss_notation_data_map_byte0[] =
+    {
+    { 0x80,	"Human-readable" },
+    { (unsigned char) NULL,	(char *) NULL },
+    };
+
+bit_map_t * ss_notation_data_map[] =
+    {
+    ss_notation_data_map_byte0,
+    (bit_map_t *) NULL,
+    };
+
 bit_map_t ss_feature_map_byte0[] =
     {
     { 0x01,	"Modification Detection" },
@@ -402,6 +414,51 @@ decoded_t * decode_ss_features(ops_ss_features_t ss_features)
 	    }
 	}
     return decoded;
+    }
+
+/** char *decode_bit (unsigned char octet, bit_map_t *map)
+ */
+
+char * decode_bit(unsigned char octet, bit_map_t * map)
+    {
+    return(search_bit_map(octet,map));
+    }
+
+/** decoded_t * decode_map (data_t *data, bit_map_t *map)
+*/
+
+decoded_t * decode_map(data_t *data, bit_map_t **map)
+    {
+    decoded_t *decoded=NULL;
+    char *str;
+    int i=0, j=0;
+    unsigned char mask, bit;
+
+     decoded=malloc(sizeof(decoded_t));
+    if (!decoded)
+	return NULL;
+
+    decoded_init(decoded);
+
+    for ( i=0; i < data->len; i++)
+	{
+	for (j=0, mask=0x80; j<8; j++, mask = mask>>1 )
+	    {
+	    bit = data->contents[i]&mask;
+	    if (bit)
+		{
+		str=decode_bit ( bit, map[i] );
+		if (!process_bitmap_str( decoded, str, bit))
+		    return NULL;
+		}
+	    }
+	}
+    return decoded;
+    }
+
+decoded_t * decode_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
+    {
+    return(decode_map(&ss_notation_data.flags,ss_notation_data_map));
     }
 
 char * decode_single_ss_key_flag(unsigned char octet, bit_map_t * map)

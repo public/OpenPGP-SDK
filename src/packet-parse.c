@@ -18,21 +18,37 @@
 #endif
  
 /**
- * read_data reads the remainder of the subregion's data into a data_t structure
+ * limited_read_data reads the specified amount of the subregion's data 
+ * into a data_t structure
+ */
+static int limited_read_data(data_t *data, unsigned int len, ops_region_t *subregion, ops_parse_options_t *opt)
+    {
+    data->len = len;
+
+    assert ((subregion->length - subregion->length_read) >= len);
+
+    data->contents = malloc(data->len);
+    if (!data->contents)
+	return 0;
+
+    if (!ops_limited_read(data->contents, data->len,
+			  subregion, opt))
+	return 0;
+    
+    return 1;
+    }
+
+/**
+ * read_data reads the remainder of the subregion's data 
+ * into a data_t structure
  */
 static int read_data(data_t *data, ops_region_t *subregion, ops_parse_options_t *opt)
     {
-	data->len = subregion->length - subregion->length_read;
+    int len;
 
-	data->contents = malloc(data->len);
-	if (!data->contents)
-	    return 0;
+    len = subregion->length - subregion->length_read;
 
-	if (!ops_limited_read(data->contents, data->len,
-			      subregion, opt))
-	    return 0;
-
-	return 1;
+    return(limited_read_data(data,len,subregion,opt));
     }
 
 /**
@@ -473,6 +489,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 
     case OPS_PTAG_SS_FEATURES:
 	ops_ss_features_free(&c->content.ss_features);
+	break;
+
+    case OPS_PTAG_SS_NOTATION_DATA:
+	ops_ss_notation_data_free(&c->content.ss_notation_data);
 	break;
 
     case OPS_PTAG_SS_USERDEFINED00:
@@ -922,6 +942,42 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	break;
 
+    case OPS_PTAG_SS_NOTATION_DATA:
+
+	/* 4 octets of flags */
+
+	if (!limited_read_data(&C.ss_notation_data.flags, 4,
+			      &subregion, opt))
+	    return 0;
+
+	/* 2 octets of name length */
+
+	if (!limited_read_scalar(&C.ss_notation_data.name.len, 2,
+				 &subregion, opt))
+	    return 0;
+
+	/* 2 octets of value length */
+
+	if (!limited_read_scalar(&C.ss_notation_data.value.len, 2,
+				 &subregion, opt))
+	    return 0;
+
+	/* name */
+
+	if (!limited_read_data(&C.ss_notation_data.name,
+		       C.ss_notation_data.name.len,
+		       &subregion, opt))
+	    return 0;
+
+	/* value  */
+
+	if (!limited_read_data(&C.ss_notation_data.value,
+		       C.ss_notation_data.value.len, 
+		       &subregion, opt))
+	    return 0;
+
+	break;
+
     case OPS_PTAG_SS_USERDEFINED00:
     case OPS_PTAG_SS_USERDEFINED01:
     case OPS_PTAG_SS_USERDEFINED02:
@@ -1250,6 +1306,12 @@ void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined)
     {
     data_free(&ss_userdefined->data);
     }
+
+ void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data)
+     {
+     data_free(&ss_notation_data->name);
+     data_free(&ss_notation_data->value);
+     }
 
 void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason)
     {

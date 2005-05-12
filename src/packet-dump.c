@@ -111,6 +111,18 @@ static void print_hexdump(char *label,const unsigned char *data,
     printf("\n");
     }
 
+static void print_data(char *label, const data_t *data,int indentlevel)
+    {
+    if(label)
+	{
+	indent(indentlevel);
+	printf("%s: len=%d, data=0x", label, data->len);
+	}
+
+    hexdump(data->contents,data->len);
+    printf("\n");
+    }
+
 static void print_boolean(char *label, unsigned char bool, int indentlevel)
     {
     if(label)
@@ -371,6 +383,29 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	decoded_free(decoded);
 
 	break;
+
+    case OPS_PTAG_SS_NOTATION_DATA:
+	indent(1);
+	printf("Notation Data:\n");
+	print_data("Flags",
+		   &content->ss_notation_data.flags,
+		   2);
+	decoded = decode_ss_notation_data_flags(content->ss_notation_data);
+	print_decoded(NULL,decoded,2);
+	decoded_free(decoded);
+
+	/* xxx - TODO: print out UTF - rachel */
+
+	print_data("Name",
+		   &content->ss_notation_data.name,
+		   2);
+
+	print_data("Value",
+		   &content->ss_notation_data.value,
+		   2);
+
+	break;
+
 
     case OPS_PTAG_SS_USERDEFINED00:
     case OPS_PTAG_SS_USERDEFINED01:
