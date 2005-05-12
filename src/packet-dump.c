@@ -221,6 +221,13 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf(" nested=%d\n",content->one_pass_signature.nested);
 	break;
 
+    case OPS_PTAG_CT_USER_ATTRIBUTE:
+	print_hexdump("User Attribute",
+		      content->user_attribute.data.contents,
+		      content->user_attribute.data.len,
+		      1);
+	break;
+
     case OPS_PTAG_RAW_SS:
 	assert(!content_->critical);
 	printf("  raw signature subpacket tag=%d raw=",

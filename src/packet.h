@@ -11,6 +11,14 @@
 #include <openssl/bn.h>
 #include "types.h"
 
+/** general use structure for variable-length data */
+
+typedef struct
+    {
+    size_t len;
+    unsigned char *contents;
+    } data_t;
+
 /************************************/
 /* Packet Tags - RFC2440bis-12, 4.2 */
 /************************************/
@@ -300,6 +308,12 @@ typedef struct
     char *			user_id;	/*!< User ID string */
     } ops_user_id_t;
 
+/** Structure to hold one user attribute */
+typedef struct
+    {
+    data_t data;
+    } ops_user_attribute_t;
+
 /** Signature Version.
  * OpenPGP has two different signature versions: version 3 and version 4.
  *
@@ -437,12 +451,6 @@ typedef struct
 
 typedef struct
     {
-    size_t len;
-    unsigned char *contents;
-    } data_t;
-
-typedef struct
-    {
     data_t data;
     } ops_ss_userdefined_t;
 
@@ -561,6 +569,7 @@ typedef union
     ops_public_key_t		public_key;
     ops_trust_t			trust;
     ops_user_id_t		user_id;
+    ops_user_attribute_t	user_attribute;
     ops_signature_t		signature;
     ops_ss_raw_t		ss_raw;
     ops_ss_trust_t		ss_trust;
@@ -604,6 +613,7 @@ void ops_keyid(unsigned char keyid[OPS_KEY_ID_SIZE],
 void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key);
 void ops_public_key_free(ops_public_key_t *key);
 void ops_user_id_free(ops_user_id_t *id);
+void ops_user_attribute_free(ops_user_attribute_t *att);
 void ops_signature_free(ops_signature_t *sig);
 void ops_trust_free(ops_trust_t * trust);
 void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska);

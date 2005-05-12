@@ -17,6 +17,49 @@
 # include <dmalloc.h>
 #endif
  
+/**
+ * read_data reads the remainder of the subregion's data into a data_t structure
+ */
+static int read_data(data_t *data, ops_region_t *subregion, ops_parse_options_t *opt)
+    {
+	data->len = subregion->length - subregion->length_read;
+
+	data->contents = malloc(data->len);
+	if (!data->contents)
+	    return 0;
+
+	if (!ops_limited_read(data->contents, data->len,
+			      subregion, opt))
+	    return 0;
+
+	return 1;
+    }
+
+/**
+ * Reads the remainder of the subregion as a string.
+ * It is the user's responsibility to free the memory allocated here.
+ */
+
+static int read_string(char **str, ops_region_t *subregion, ops_parse_options_t *opt)
+    {
+    int len=0;
+
+    len=subregion->length - subregion->length_read;
+
+    *str = malloc(len+1);
+    if (!(*str))
+	return 0;
+
+    if (len && !ops_limited_read(*str, len, subregion, opt))
+	return 0;
+
+    /* ensure the string is NULL-terminated */
+
+    *str[len]=(char) NULL;
+
+    return 1;
+    }
+
 static void init_subregion(ops_region_t *subregion,ops_region_t *region)
     {
     memset(subregion,'\0',sizeof *subregion);
@@ -349,6 +392,19 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
     return limited_read_scalar(length,4,region,opt);
     }
 
+static void data_free(data_t *data)
+    {
+    free(data->contents);
+    data->contents=NULL;
+    data->len=0;
+    }
+
+static void string_free(char **str)
+    {
+    free(*str);
+    *str=NULL;
+    }
+
 void ops_packet_free(ops_packet_t *packet)
     {
     free(packet->raw);
@@ -388,6 +444,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 
     case OPS_PTAG_CT_USER_ID:
 	ops_user_id_free(&c->content.user_id);
+	break;
+
+    case OPS_PTAG_CT_USER_ATTRIBUTE:
+	ops_user_attribute_free(&c->content.user_attribute);
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
@@ -557,6 +617,39 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     return 1;
     }
 
+
+void ops_user_attribute_free(ops_user_attribute_t *user_att)
+    {
+    data_free(&user_att->data);
+    }
+
+/** Parse one user attribute packet.
+ *
+ * User attribute packets contain one or more attribute subpackets.
+ * For now, handle the whole packet as raw data.
+ */
+
+static int parse_user_attribute(ops_region_t *region, ops_parse_options_t *opt)
+    {
+
+    ops_parser_content_t content;
+
+    /* xxx- treat as raw data for now. Could break down further
+       into attribute sub-packets later - rachel */
+
+    assert (region->length_read == 0);  /* We should not have read anything so far */
+
+    assert(region->length);
+
+    if (!read_data(&C.user_attribute.data, region, opt))
+	return 0;
+
+    CB(OPS_PTAG_CT_USER_ATTRIBUTE,&content);
+
+    return 1;
+    }
+
+
 void ops_user_id_free(ops_user_id_t *id)
     {
     free(id->user_id);
@@ -686,46 +779,6 @@ static int parse_v3_signature(ops_region_t *region,ops_parse_options_t *opt)
 	ERR1("Unconsumed data (%d)",region->length-region->length_read);
 
     CB(OPS_PTAG_CT_SIGNATURE,&content);
-
-    return 1;
-    }
-
-static int read_data(data_t *data, ops_region_t *subregion, ops_parse_options_t *opt)
-    {
-	data->len = subregion->length - subregion->length_read;
-
-	data->contents = malloc(data->len);
-	if (!data->contents)
-	    return 0;
-
-	if (!ops_limited_read(data->contents, data->len,
-			      subregion, opt))
-	    return 0;
-
-	return 1;
-    }
-
-/**
- * Reads the remainder of the subregion as a string.
- * It is the user's responsibility to free the memory allocated here.
- */
-
-static int read_string(char **str, ops_region_t *subregion, ops_parse_options_t *opt)
-    {
-    int len=0;
-
-    len=subregion->length - subregion->length_read;
-
-    *str = malloc(len+1);
-    if (!(*str))
-	return 0;
-
-    if (len && !ops_limited_read(*str, len, subregion, opt))
-	return 0;
-
-    /* ensure the string is NULL-terminated */
-
-    *str[len]=(char) NULL;
 
     return 1;
     }
@@ -944,19 +997,6 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     CB(content.tag,&content);
 
     return 1;
-    }
-
-static void data_free(data_t *data)
-    {
-    free(data->contents);
-    data->contents=NULL;
-    data->len=0;
-    }
-
-static void string_free(char **str)
-    {
-    free(*str);
-    *str=NULL;
     }
 
 /** ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
@@ -1377,6 +1417,10 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 
     case OPS_PTAG_CT_LITERAL_DATA:
 	r=parse_literal_data(&region,opt);
+	break;
+
+    case OPS_PTAG_CT_USER_ATTRIBUTE:
+	r=parse_user_attribute(&region,opt);
 	break;
 
     default:
