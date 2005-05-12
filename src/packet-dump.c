@@ -406,6 +406,16 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
 	break;
 
+    case OPS_PTAG_SS_REGEXP:
+	print_hexdump("Regular Expression",
+		      content->ss_regexp.text,
+		      strlen(content->ss_regexp.text), 
+		      1);
+	print_string(NULL,
+		     content->ss_regexp.text,
+		     1);
+	break;
+
     case OPS_PTAG_SS_POLICY_URL:
 	print_string("Policy URL",
 		     content->ss_policy_url.text,

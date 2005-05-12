@@ -495,6 +495,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_ss_notation_data_free(&c->content.ss_notation_data);
 	break;
 
+    case OPS_PTAG_SS_REGEXP:
+	ops_ss_regexp_free(&c->content.ss_regexp);
+	break;
+
     case OPS_PTAG_SS_POLICY_URL:
 	ops_ss_policy_url_free(&c->content.ss_policy_url);
 	break;
@@ -646,6 +650,11 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     return 1;
     }
 
+
+void ops_ss_regexp_free(ops_ss_regexp_t *regexp)
+    {
+    string_free(&regexp->text);
+    }
 
 void ops_ss_policy_url_free(ops_ss_policy_url_t *policy_url)
     {
@@ -998,6 +1007,12 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 
     case OPS_PTAG_SS_POLICY_URL:
 	if (!read_string(&C.ss_policy_url.text,
+		       &subregion, opt))
+	    return 0;
+	break;
+
+    case OPS_PTAG_SS_REGEXP:
+	if (!read_string(&C.ss_regexp.text,
 		       &subregion, opt))
 	    return 0;
 	break;

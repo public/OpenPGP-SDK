@@ -152,6 +152,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
 
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
+    OPS_PTAG_SS_REGEXP			=0x200+6,	/*!< regular expression */
     OPS_PTAG_SS_REVOCABLE		=0x200+7,	/*!< revocable */
     OPS_PTAG_SS_KEY_EXPIRATION_TIME	=0x200+9,	/*!< key expiration time */
     OPS_PTAG_SS_PREFERRED_SKA 		=0x200+11,	/*!< preferred symmetric algorithms */
@@ -541,6 +542,11 @@ typedef struct
 typedef struct
     {
     char *text;
+    } ops_ss_regexp_t;
+
+typedef struct
+    {
+    char *text;
     } ops_ss_policy_url_t;
 
 typedef struct
@@ -607,6 +613,7 @@ typedef union
     ops_ss_key_flags_t 		ss_key_flags;
     ops_ss_key_server_prefs_t	ss_key_server_prefs;
     ops_ss_primary_user_id_t	ss_primary_user_id;
+    ops_ss_regexp_t		ss_regexp;
     ops_ss_policy_url_t 	ss_policy_url;
     ops_ss_preferred_key_server_t	ss_preferred_key_server;
     ops_ss_revocation_key_t	ss_revocation_key;
@@ -649,6 +656,7 @@ void ops_ss_features_free(ops_ss_features_t * ss_features);
 void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data);
 void ops_ss_policy_url_free(ops_ss_policy_url_t *ss_policy_url);
 void ops_ss_preferred_key_server_free(ops_ss_preferred_key_server_t *ss_preferred_key_server);
+void ops_ss_regexp_free(ops_ss_regexp_t *ss_regexp);
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined);
 void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason);
 void ops_packet_free(ops_packet_t *packet);
