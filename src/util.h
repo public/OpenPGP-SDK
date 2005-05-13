@@ -23,4 +23,9 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
 			       ops_writer_flags_t flags,void *arg_);
 
+/* typesafe deconstification */
+static inline void *_deconst(const void *p)
+    { return (void *)p; }
+#define DECONST(type,p) (((type *(*)(const type *))_deconst)(p))
+
 #endif

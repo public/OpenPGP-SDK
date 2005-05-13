@@ -6,21 +6,30 @@ int main(int argc,char **argv)
     {
     ops_writer_fd_arg_t arg;
     ops_create_options_t opt;
-
     const char *id;
+    const char *nstr;
+    const char *estr;
+    BIGNUM *n=NULL;
+    BIGNUM *e=NULL;
 
-    if(argc != 2)
+    if(argc != 4)
 	{
-	fprintf(stderr,"%s <user id>\n",argv[0]);
+	fprintf(stderr,"%s <n> <e> <user id>\n",argv[0]);
 	exit(1);
 	}
+    
+    nstr=argv[1];
+    estr=argv[2];
+    id=argv[3];
 
-    id=argv[1];
+    BN_hex2bn(&n,nstr);
+    BN_hex2bn(&e,estr);
 
     arg.fd=1;
     opt.writer=ops_writer_fd;
     opt.arg=&arg;
 
+    ops_write_rsa_public_key(time(NULL),n,e,&opt);
     ops_write_user_id(id,&opt);
 
     return 0;
