@@ -33,10 +33,10 @@ clean:
 	rm -f libops.a TAGS
 
 .depend: *.[ch]
-	$(CC) $(CFLAGS) -E -MM *.[ch] > .depend
+	$(CC) $(CFLAGS) -E -MM *.c > .depend
 
 force_depend:
-	$(CC) $(CFLAGS) -E -MM *.[ch] > .depend
+	$(CC) $(CFLAGS) -E -MM *.c > .depend
 
 Makefile: Makefile.template configure
 	echo Makefile is older than templates, rerun configure.
