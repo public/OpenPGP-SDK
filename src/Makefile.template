@@ -6,7 +6,7 @@ CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include %INCLUDES%
 LDFLAGS=-g
 LIBS=libops.a -lcrypto -lz $(DM_LIB)
 
-all: Makefile .depend verify create-key
+all: Makefile .depend libops.a
 
 LIBOBJS = packet-parse.o util.o openssl_crypto.o accumulate.o build.o \
 	memory.o fingerprint.o hash.o keyring.o signature.o compress.o \
@@ -14,12 +14,6 @@ LIBOBJS = packet-parse.o util.o openssl_crypto.o accumulate.o build.o \
 
 libops.a: $(LIBOBJS)
 	ar rc libops.a $(LIBOBJS)
-
-verify: verify.o libops.a
-	$(CC) $(LDFLAGS) -o verify verify.o $(LIBS)
-
-create-key: create-key.o libops.a
-	$(CC) $(LDFLAGS) -o create-key create-key.o $(LIBS)
 
 tags:
 	rm -f TAGS
