@@ -2,11 +2,11 @@ DM_FLAGS=%DM_FLAGS%
 DM_LIB=%DM_LIB%
 CC=%CC%
 
-CFLAGS=-Wall -Werror -g $(DM_FLAGS) %INCLUDES%
+CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include %INCLUDES%
 LDFLAGS=-g
 LIBS=libops.a -lcrypto -lz $(DM_LIB)
 
-all: Makefile .depend packet-dump verify create-key
+all: Makefile .depend verify create-key
 
 LIBOBJS = packet-parse.o util.o openssl_crypto.o accumulate.o build.o \
 	memory.o fingerprint.o hash.o keyring.o signature.o compress.o \
@@ -14,9 +14,6 @@ LIBOBJS = packet-parse.o util.o openssl_crypto.o accumulate.o build.o \
 
 libops.a: $(LIBOBJS)
 	ar rc libops.a $(LIBOBJS)
-
-packet-dump: packet-dump.o libops.a
-	$(CC) $(LDFLAGS) -o packet-dump packet-dump.o $(LIBS)
 
 verify: verify.o libops.a
 	$(CC) $(LDFLAGS) -o verify verify.o $(LIBS)
@@ -38,7 +35,7 @@ clean:
 force_depend:
 	$(CC) $(CFLAGS) -E -MM *.c > .depend
 
-Makefile: Makefile.template configure
+Makefile: Makefile.template $(CONFIGURE)
 	echo Makefile is older than templates, rerun configure.
 	exit 1
 
