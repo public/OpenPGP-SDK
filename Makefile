@@ -6,27 +6,23 @@
 #
 SUBDIRS=src examples
 
-CONFIGURE=$(PWD)/configure
+all: default include/configure.h
 
-default: Makefiles all
-
-Makefiles:
+default:
 	@for d in $(SUBDIRS); do \
-	(cd $$d; make CONFIGURE=$(CONFIGURE) Makefile); \
+	(cd $$d; echo "+++ make in $$d"; make; echo "--- $$d"); \
 	done
 
-all:
-	@for d in $(SUBDIRS); do \
-	(cd $$d; make all); \
-	done
+include/configure.h: include/configure.h.template configure
+	echo re-run configure
 
 force_depend:
 	@for d in $(SUBDIRS); do \
-	(cd $$d; make force_depend); \
+	(cd $$d; echo "+++ make force_depend in $$d"; make force_depend ; echo "--- $$d"); \
 	done
 
 clean:
 	@for d in $(SUBDIRS); do \
-	(cd $$d; make clean); \
+	(cd $$d; echo "+++ make clean in $$d"; make clean; echo "--- $$d"); \
 	done
 

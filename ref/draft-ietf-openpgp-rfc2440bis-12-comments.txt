@@ -37,3 +37,26 @@ is unclear, suggest:
 
 "The concatenation of the data to be signed, the signature type and
 creation time from the signature packet (5 additional octets) is hashed."
+
+In 5.9:
+
+   " - File name as a string (one-octet length, followed by file name),
+       if the encrypted data should be saved as a file."
+
+but no mention of what if it shouldn't be saved as a file. 0 length,
+perhaps?
+
+Then:
+
+   " - A four-octet number that indicates the modification date of the
+       file, or the creation time of the packet, or a zero that
+       indicates the present time."
+
+I would _guess_ that it means modification date of the file if there's
+a filename, the creation time if there isn't. I have no idea what zero
+is supposed to mean. Nothing, would be the obvious interpretation -
+"the present time" is nonsensical.
+
+Once more, when I know what its supposed to mean, I'll suggest
+wording.
+

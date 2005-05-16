@@ -4,11 +4,12 @@ CC=%CC%
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include  %INCLUDES%
 LDFLAGS=-g
-LIBS=../src/libops.a -lcrypto -lz $(DM_LIB)
+LIBDEPS=../src/libops.a
+LIBS=$(LIBDEPS) -lcrypto -lz $(DM_LIB)
 
 all: Makefile .depend packet-dump 
 
-packet-dump: packet-dump.o ../src/libops.a
+packet-dump: packet-dump.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o packet-dump packet-dump.o $(LIBS)
 
 tags:
@@ -25,7 +26,7 @@ clean:
 force_depend:
 	$(CC) $(CFLAGS) -E -MM *.c > .depend
 
-Makefile: Makefile.template $(CONFIGURE)
+Makefile: Makefile.template ../configure
 	echo Makefile is older than templates, rerun configure.
 	exit 1
 

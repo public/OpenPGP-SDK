@@ -35,7 +35,7 @@ clean:
 force_depend:
 	$(CC) $(CFLAGS) -E -MM *.c > .depend
 
-Makefile: Makefile.template $(CONFIGURE)
+Makefile: Makefile.template ../configure
 	echo Makefile is older than templates, rerun configure.
 	exit 1
 
