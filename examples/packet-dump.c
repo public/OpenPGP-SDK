@@ -2,7 +2,7 @@
 
 #include "packet.h"
 #include "packet-parse.h"
-#include "packet-decode.h"
+#include "packet-to-text.h"
 #include "util.h"
 #include <unistd.h>
 #include <stdio.h>
@@ -62,7 +62,7 @@ static void print_duration(char *label, time_t time, int indentlevel)
     printf("\n");
     }
 
-static void print_decoded(char *label, decoded_t *decoded, int indentlevel)
+static void print_text(char *label, text_t *text, int indentlevel)
     {
     int i=0;
 
@@ -74,26 +74,26 @@ static void print_decoded(char *label, decoded_t *decoded, int indentlevel)
 
     /* these were recognised */
 
-    for(i=0 ; i<decoded->known.used ; i++) 
+    for(i=0 ; i<text->known.used ; i++) 
 	{
 	indent(indentlevel+1);
-	printf("%s\n",decoded->known.strings[i]);
+	printf("%s\n",text->known.strings[i]);
 	}
 
     /* these were not recognised. the strings will contain the hex value
        of the unrecognised value in string format - see process_octet_str()
     */
 
-    if(decoded->unknown.used)
+    if(text->unknown.used)
 	{
 	printf("\n");
 	indent(indentlevel+1);
 	printf("Not Recognised: ");
 	}
-    for( i=0; i < decoded->unknown.used; i++) 
+    for( i=0; i < text->unknown.used; i++) 
 	{
 	indent(indentlevel+2);
-	printf("%s\n",decoded->unknown.strings[i]);
+	printf("%s\n",text->unknown.strings[i]);
 	}
 	
     }
@@ -153,7 +153,7 @@ static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
-    decoded_t * decoded;
+    text_t * text;
     char *str;
 
     switch(content_->tag)
@@ -324,9 +324,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
-	decoded = decode_ss_preferred_ska(content->ss_preferred_ska);
-	print_decoded("Preferred Symmetric Algorithms",decoded,1);
-	decoded_free(decoded);
+	text = text_ss_preferred_ska(content->ss_preferred_ska);
+	print_text("Preferred Symmetric Algorithms",text,1);
+	text_free(text);
 
    	break;
 
@@ -337,15 +337,15 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;      
 
     case OPS_PTAG_SS_PREFERRED_HASH:
-	decoded = decode_ss_preferred_hash(content->ss_preferred_hash);
-	print_decoded("Preferred Hash Algorithms",decoded,1);
-	decoded_free(decoded);
+	text = text_ss_preferred_hash(content->ss_preferred_hash);
+	print_text("Preferred Hash Algorithms",text,1);
+	text_free(text);
 	break;
 
     case OPS_PTAG_SS_PREFERRED_COMPRESSION:
-	decoded = decode_ss_preferred_compression(content->ss_preferred_compression);
-	print_decoded("Preferred Compression Algorithms",decoded,1);
-	decoded_free(decoded);
+	text = text_ss_preferred_compression(content->ss_preferred_compression);
+	print_text("Preferred Compression Algorithms",text,1);
+	text_free(text);
 	break;
 	
     case OPS_PTAG_SS_KEY_FLAGS:
@@ -354,9 +354,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      content->ss_key_flags.len,
 		      1);
 
-	decoded = decode_ss_key_flags(content->ss_key_flags);
-	print_decoded(NULL, decoded, 1);
-	decoded_free(decoded);
+	text = text_ss_key_flags(content->ss_key_flags);
+	print_text(NULL, text, 1);
+	text_free(text);
 
 	break;
 	
@@ -366,9 +366,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      content->ss_key_server_prefs.len,
 		      1);
 
-	decoded = decode_ss_key_server_prefs(content->ss_key_server_prefs);
-	print_decoded(NULL, decoded, 1);
-	decoded_free(decoded);
+	text = text_ss_key_server_prefs(content->ss_key_server_prefs);
+	print_text(NULL, text, 1);
+	text_free(text);
 
 	break;
 	
@@ -378,9 +378,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      content->ss_features.len,
 		      1);
 
-	decoded = decode_ss_features(content->ss_features);
-	print_decoded(NULL,decoded,1);
-	decoded_free(decoded);
+	text = text_ss_features(content->ss_features);
+	print_text(NULL,text,1);
+	text_free(text);
 
 	break;
 
@@ -390,9 +390,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_data("Flags",
 		   &content->ss_notation_data.flags,
 		   2);
-	decoded = decode_ss_notation_data_flags(content->ss_notation_data);
-	print_decoded(NULL,decoded,2);
-	decoded_free(decoded);
+	text = text_ss_notation_data_flags(content->ss_notation_data);
+	print_text(NULL,text,2);
+	text_free(text);
 
 	/* xxx - TODO: print out UTF - rachel */
 
@@ -450,7 +450,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      &content->ss_revocation_reason.code,
 		      1,
 		      1);
-	str = decode_ss_revocation_reason_code(content->ss_revocation_reason.code);
+	str = text_ss_revocation_reason_code(content->ss_revocation_reason.code);
 	print_string(NULL,str,1);
 	/* xxx - todo : output text as UTF-8 string */
 	break;
