@@ -20,6 +20,11 @@ all:
 	(cd $$d; make all); \
 	done
 
+force_depend:
+	@for d in $(SUBDIRS); do \
+	(cd $$d; make force_depend); \
+	done
+
 clean:
 	@for d in $(SUBDIRS); do \
 	(cd $$d; make clean); \
