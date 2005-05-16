@@ -1,0 +1,32 @@
+DM_FLAGS=%DM_FLAGS%
+DM_LIB=%DM_LIB%
+CC=%CC%
+
+CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include  %INCLUDES%
+LDFLAGS=-g
+LIBS=../src/libops.a -lcrypto -lz $(DM_LIB)
+
+all: Makefile .depend packet-dump 
+
+packet-dump: packet-dump.o ../src/libops.a
+	$(CC) $(LDFLAGS) -o packet-dump packet-dump.o $(LIBS)
+
+tags:
+	rm -f TAGS
+	find . -name '*.[ch]' | xargs etags -a
+
+clean:
+	rm -f packet-dump *.o
+	rm -f TAGS
+
+.depend: *.[ch]
+	$(CC) $(CFLAGS) -E -MM *.c > .depend
+
+force_depend:
+	$(CC) $(CFLAGS) -E -MM *.c > .depend
+
+Makefile: Makefile.template $(CONFIGURE)
+	echo Makefile is older than templates, rerun configure.
+	exit 1
+
+include .depend
