@@ -10,7 +10,7 @@ all: Makefile .depend packet-dump verify create-key
 
 LIBOBJS = packet-parse.o util.o openssl_crypto.o accumulate.o build.o \
 	memory.o fingerprint.o hash.o keyring.o signature.o compress.o \
-	packet-decode.o
+	packet-decode.o create.o
 
 libops.a: $(LIBOBJS)
 	ar rc libops.a $(LIBOBJS)
