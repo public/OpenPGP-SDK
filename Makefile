@@ -2,13 +2,13 @@
 # $Id$
 #
 
-# order of build is important
+# order of build of subdirs is important
 #
 SUBDIRS=src examples
 
 CONFIGURE=$(PWD)/configure
 
-default: Makefiles build
+default: Makefiles all
 
 Makefiles:
 	@for d in $(SUBDIRS); do \
