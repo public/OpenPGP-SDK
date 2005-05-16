@@ -129,6 +129,8 @@ sub fileSubst {
 
     close M;
     close T;
+
+    chmod 0444,"$file";
 }
 
 sub fixSubst {
