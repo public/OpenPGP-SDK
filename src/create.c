@@ -1,5 +1,6 @@
 #include "create.h"
 #include "util.h"
+#include <string.h>
 #include <assert.h>
 
 static int base_write(const void *src,unsigned length,
