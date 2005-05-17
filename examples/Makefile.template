@@ -15,7 +15,7 @@ packet-dump: packet-dump.o $(LIBDEPS)
 verify: verify.o  $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o verify verify.o $(LIBS)
 
-create-key: create-key.o libops.a
+create-key: create-key.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o create-key create-key.o $(LIBS)
 
 tags:
