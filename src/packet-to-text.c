@@ -244,6 +244,38 @@ unsigned int process_bitmap_str(text_t * text, char * str, unsigned char bit)
     return 1;
     }
 
+/**
+ * Produce a structure containing human-readable textstrings
+ * representing the recognised and unrecognised contents
+ * of this byte array. text_fn() will be called on each octet in turn.
+ *
+ */ 
+
+static text_t *bytearray_to_text(data_t *data, 
+			      char *(*text_fn)(unsigned char octet))
+    {
+
+    text_t * text=NULL;
+    char * str;
+    int i=0;
+
+    text=malloc(sizeof(text_t));
+    if (!text)
+	return NULL;
+
+    text_init(text);
+
+    for ( i=0; i < data->len; i++)
+	{
+	str=(*text_fn)(data->contents[i]);
+	if (!process_octet_str(text,str,data->contents[i]))
+	    return NULL;
+
+	}
+    /* All values have been added to either the known or the unknown list */
+    return text;
+    }
+
 /*
  * Public Functions
  */
@@ -283,28 +315,10 @@ char * text_single_ss_preferred_compression(unsigned char octet)
 
 text_t * text_ss_preferred_compression(ops_ss_preferred_compression_t array)
     {
-    /* this can be generalised further to handle any similar list -- rachel */
-
-    text_t * text=NULL;
-    char * str;
-    int i=0;
-
-    text=malloc(sizeof(text_t));
-    if (!text)
-	return NULL;
-
-    text_init(text);
-
-    for ( i=0; i < array.len; i++)
-	{
-	str=text_single_ss_preferred_compression(array.data[i]);
-	if (!process_octet_str(text,str,array.data[i]))
-	    return NULL;
-
-	}
-    /* All values have been added to either the known or the unknown list */
-    return text;
+    return(bytearray_to_text(&array.data,
+			  &text_single_ss_preferred_compression));
     }
+
 
 char * text_single_ss_preferred_hash(unsigned char octet)
     {
@@ -313,27 +327,8 @@ char * text_single_ss_preferred_hash(unsigned char octet)
 
 text_t * text_ss_preferred_hash(ops_ss_preferred_hash_t array)
     {
-    /* this can be generalised further to handle any similar list -- rachel */
-
-    text_t * text=NULL;
-    char * str;
-    int i=0;
-
-    text=malloc(sizeof(text_t));
-    if (!text)
-	return NULL;
-
-    text_init(text);
-
-    for ( i=0; i < array.len; i++)
-	{
-	str=text_single_ss_preferred_hash(array.data[i]);
-	if (!process_octet_str(text,str,array.data[i]))
-	    return NULL;
-
-	}
-    /* All values have been added to either the known or the unknown list */
-    return text;
+    return(bytearray_to_text(&array.data,
+			  &text_single_ss_preferred_hash));
     }
 
 char * text_single_ss_preferred_ska(unsigned char octet)
@@ -341,41 +336,9 @@ char * text_single_ss_preferred_ska(unsigned char octet)
     return(search_octet_map(octet,symmetric_key_algorithm_map));
     }
 
-/**
- * Produce a structure containing human-readable textstrings
- * representing the recognised and unrecognised contents
- * of this byte array. text_fn() will be called on each octet in turn.
- *
- */ 
-
-static text_t *text_bytearray(data_t *data, 
-			      char *(*text_fn)(unsigned char octet))
-    {
-
-    text_t * text=NULL;
-    char * str;
-    int i=0;
-
-    text=malloc(sizeof(text_t));
-    if (!text)
-	return NULL;
-
-    text_init(text);
-
-    for ( i=0; i < data->len; i++)
-	{
-	str=(*text_fn)(data->contents[i]);
-	if (!process_octet_str(text,str,data->contents[i]))
-	    return NULL;
-
-	}
-    /* All values have been added to either the known or the unknown list */
-    return text;
-    }
-
 text_t * text_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
-    return(text_bytearray(&ss_preferred_ska.data, 
+    return(bytearray_to_text(&ss_preferred_ska.data, 
 		       &text_single_ss_preferred_ska));
     }
 
@@ -400,11 +363,11 @@ text_t * text_ss_features(ops_ss_features_t ss_features)
 
     text_init(text);
 
-    for ( i=0; i < ss_features.len; i++)
+    for ( i=0; i < ss_features.data.len; i++)
 	{
 	for (j=0, mask=0x80; j<8; j++, mask = mask>>1 )
 	    {
-	    bit = ss_features.data[i]&mask;
+	    bit = ss_features.data.contents[i]&mask;
 	    if (bit)
 		{
 		str=text_single_ss_feature ( bit, ss_feature_map[i] );
@@ -483,7 +446,7 @@ text_t * text_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
 
     for (i=0, mask=0x80; i<8; i++, mask = mask>>1 )
 	    {
-	    bit = ss_key_flags.data[0] & mask;
+	    bit = ss_key_flags.data.contents[0] & mask;
 	    if (bit)
 		{
 		str=text_single_ss_key_flag ( bit, &ss_key_flags_map[0] );
@@ -517,7 +480,7 @@ text_t *text_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
 
     for (i=0, mask=0x80; i<8; i++, mask = mask>>1 )
 	    {
-	    bit = ss_key_server_prefs.data[0] & mask;
+	    bit = ss_key_server_prefs.data.contents[0] & mask;
 	    if (bit)
 		{
 		str=text_single_ss_key_server_prefs ( bit, &ss_key_server_prefs_map[0] );

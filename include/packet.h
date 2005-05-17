@@ -475,32 +475,27 @@ typedef struct
 
 typedef struct
     {
-    size_t	len;	
-    unsigned char * data;
+    data_t data;
     } ops_ss_preferred_hash_t;
 
 typedef struct
     {
-    size_t	len;	
-    unsigned char * data;
+    data_t data;
     } ops_ss_preferred_compression_t;
 
 typedef struct
     {
-    size_t len;
-    unsigned char * data;
+    data_t data;
     } ops_ss_key_flags_t;
 
 typedef struct
     {
-    size_t len;
-    unsigned char * data;
+    data_t data;
     } ops_ss_key_server_prefs_t;
 
 typedef struct
     {
-    size_t len;
-    unsigned char * data;
+    data_t data;
     } ops_ss_features_t;
 
 typedef struct

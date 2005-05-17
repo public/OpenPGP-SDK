@@ -917,22 +917,12 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	break;
 			    	
     case OPS_PTAG_SS_PREFERRED_HASH:
-
-	C.ss_preferred_hash.len = subregion.length - subregion.length_read;
-	C.ss_preferred_hash.data = malloc(C.ss_preferred_hash.len);
-
-	if (!ops_limited_read(C.ss_preferred_hash.data,
-			      C.ss_preferred_hash.len, &subregion, opt))
+	if (!read_data(&C.ss_preferred_hash.data,&subregion,opt))
 	    return 0;
 	break;
 			    	
     case OPS_PTAG_SS_PREFERRED_COMPRESSION:
-
-	C.ss_preferred_compression.len = subregion.length - subregion.length_read;
-	C.ss_preferred_compression.data = malloc(C.ss_preferred_compression.len);
-
-	if (!ops_limited_read(C.ss_preferred_compression.data,
-			      C.ss_preferred_compression.len, &subregion, opt))
+	if (!read_data(&C.ss_preferred_compression.data,&subregion,opt))
 	    return 0;
 	break;
 			    	
@@ -943,29 +933,17 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	break;
  
     case OPS_PTAG_SS_KEY_FLAGS:
-	C.ss_key_flags.len = subregion.length - subregion.length_read;
-	C.ss_key_flags.data = malloc(C.ss_key_flags.len);
-	if (!ops_limited_read(C.ss_key_flags.data,C.ss_key_flags.len,
-			      &subregion,opt))
+	if (!read_data(&C.ss_key_flags.data,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_KEY_SERVER_PREFS:
-	C.ss_key_server_prefs.len = 
-	    subregion.length - subregion.length_read;
-	C.ss_key_server_prefs.data = 
-	    malloc(C.ss_key_server_prefs.len);
-	if (!ops_limited_read(C.ss_key_server_prefs.data,
-			      C.ss_key_server_prefs.len,
-			      &subregion,opt))
+	if (!read_data(&C.ss_key_server_prefs.data,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_FEATURES:
-	C.ss_features.len = subregion.length - subregion.length_read;
-	C.ss_features.data = malloc(C.ss_features.len);
-	if (!ops_limited_read(C.ss_features.data,C.ss_features.len,
-			      &subregion,opt))
+	if (!read_data(&C.ss_features.data,&subregion,opt))
 	    return 0;
 	break;
 
@@ -1115,9 +1093,7 @@ void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
 
 void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
     {
-    free(ss_preferred_hash->data);
-    ss_preferred_hash->data=NULL;
-    ss_preferred_hash->len=0;
+    data_free(&ss_preferred_hash->data);
     }
 
 /** ops_ss_preferred_compression_free(ops_ss_preferred_compression_t * ss_preferred_compression)
@@ -1125,30 +1101,22 @@ void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
 
 void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t * ss_preferred_compression)
     {
-    free(ss_preferred_compression->data);
-    ss_preferred_compression->data=NULL;
-    ss_preferred_compression->len=0;
+    data_free(&ss_preferred_compression->data);
     }
 
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags)
     {
-    free(ss_key_flags->data);
-    ss_key_flags->data=NULL;
-    ss_key_flags->len=0;
+    data_free(&ss_key_flags->data);
     }
 
 void ops_ss_features_free(ops_ss_features_t * ss_features)
     {
-    free(ss_features->data);
-    ss_features->data=NULL;
-    ss_features->len=0;
+    data_free(&ss_features->data);
     }
 
 void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t *ss_key_server_prefs)
     {
-    free(ss_key_server_prefs->data);
-    ss_key_server_prefs->data=NULL;
-    ss_key_server_prefs->len=0;
+    data_free(&ss_key_server_prefs->data);
     }
 
 /** Parse several signature subpackets.

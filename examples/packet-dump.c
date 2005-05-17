@@ -349,9 +349,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 	
     case OPS_PTAG_SS_KEY_FLAGS:
-	print_hexdump("Key Flags", 
-		      content->ss_key_flags.data,
-		      content->ss_key_flags.len,
+	print_data("Key Flags", 
+		      &content->ss_key_flags.data,
 		      1);
 
 	text = text_ss_key_flags(content->ss_key_flags);
@@ -361,9 +360,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 	
     case OPS_PTAG_SS_KEY_SERVER_PREFS:
-	print_hexdump("Key Server Preferences",
-		      content->ss_key_server_prefs.data,
-		      content->ss_key_server_prefs.len,
+	print_data("Key Server Preferences",
+		      &content->ss_key_server_prefs.data,
 		      1);
 
 	text = text_ss_key_server_prefs(content->ss_key_server_prefs);
@@ -373,9 +371,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 	
     case OPS_PTAG_SS_FEATURES:
-	print_hexdump("Features", 
-		      content->ss_features.data,
-		      content->ss_features.len,
+	print_data("Features", 
+		      &content->ss_features.data,
 		      1);
 
 	text = text_ss_features(content->ss_features);
