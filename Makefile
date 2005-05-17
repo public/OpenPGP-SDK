@@ -6,7 +6,7 @@
 #
 SUBDIRS=src examples
 
-all: default include/configure.h
+all: Makefiles include/configure.h default
 
 default:
 	@for d in $(SUBDIRS); do \
@@ -26,3 +26,7 @@ clean:
 	(cd $$d; echo "+++ make clean in $$d"; make clean; echo "--- $$d"); \
 	done
 
+Makefiles:
+	@for d in $(SUBDIRS); do \
+	(cd $$d; echo "+++ make Makefile in $$d"; make Makefile; echo "--- $$d"); \
+	done
