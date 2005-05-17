@@ -23,7 +23,7 @@ tags:
 	find . -name '*.[ch]' | xargs etags -a
 
 clean:
-	rm -f packet-dump *.o
+	rm -f packet-dump verify create-key *.o
 	rm -f TAGS
 
 .depend: *.[ch]
