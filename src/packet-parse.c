@@ -1333,9 +1333,7 @@ void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_rea
 
 void ops_trust_free(ops_trust_t * trust)
     {
-    free(trust->data);
-    trust->data=NULL;
-    trust->len=0;
+    data_free(&trust->data);
     }
 
 static int
@@ -1343,12 +1341,8 @@ parse_trust (ops_region_t * region, ops_parse_options_t * opt)
     {
     ops_parser_content_t content;
 
-    C.trust.len = region->length - region->length_read;
-    C.trust.data = malloc(C.trust.len);
-	
-    if (!ops_limited_read (C.trust.data, C.trust.len, 
-			   region, opt))
-	return 0;
+    if (!read_data(&C.trust.data,region,opt))
+	    return 0;
 
     CB (OPS_PTAG_CT_TRUST, &content);
 

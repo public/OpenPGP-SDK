@@ -303,8 +303,7 @@ typedef enum
 
 typedef struct
     {
-    int len;	/* length of data */
-    unsigned char * data;
+    data_t data;
     } ops_trust_t;
 	
 /** Structure to hold one user id */

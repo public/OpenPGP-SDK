@@ -207,9 +207,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_CT_TRUST:
-	printf("Trust: "); 
-	hexdump(content->trust.data,content->trust.len);
-	printf("\n");
+	print_data("Trust",&content->trust.data,0);
 	break;
 	
     case OPS_PTAG_CT_USER_ID:
