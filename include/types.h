@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #ifndef OPS_TYPES_H
 #define OPS_TYPES_H
 

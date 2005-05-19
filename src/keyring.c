@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #include "keyring.h"
 #include "keyring_local.h"
 #include <stdlib.h>

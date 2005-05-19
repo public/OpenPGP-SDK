@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #include "signature.h"
 #include "crypto.h"
 #include "memory.h"

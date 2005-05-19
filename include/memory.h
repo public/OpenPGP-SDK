@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #ifndef OPS_MEMORY_H
 #define OPS_MEMORY_H
 

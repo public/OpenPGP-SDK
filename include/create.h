@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #include "types.h"
 #include "packet.h"
 

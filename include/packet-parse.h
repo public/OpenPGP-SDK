@@ -1,7 +1,5 @@
-/** \file packet-parse.h
+/** \file
  * Parser for OpenPGP packets - headers.
- *
- * $Id$
  */
 
 #ifndef OPS_PACKET_PARSE_H

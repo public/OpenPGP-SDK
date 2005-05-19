@@ -1,7 +1,5 @@
-/** \file packet.h
+/** \file
  * packet related headers.
- *
- * $Id$
  */
 
 #ifndef OPS_PACKET_H

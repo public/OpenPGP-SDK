@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #include "compress.h"
 #include <zlib.h>
 #include <assert.h>

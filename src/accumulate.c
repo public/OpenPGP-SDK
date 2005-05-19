@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #include "packet.h"
 #include "packet-parse.h"
 #include "util.h"
@@ -259,6 +262,7 @@ static void validate_all_signatures(const ops_keyring_t *ring)
 	validate_key_signatures(&ring->keys[n],ring);
     }
 
+/*! \todo descr for ops_parse_and_accumulate */
 void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_options_t *opt)
     {
     accumulate_arg_t arg;

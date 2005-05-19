@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #ifndef OPS_UTIL_H
 #define OPS_UTIL_H
 

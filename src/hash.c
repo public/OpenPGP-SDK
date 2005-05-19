@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #include "crypto.h"
 
 void hash_add_int(ops_hash_t *hash,unsigned n,unsigned length)

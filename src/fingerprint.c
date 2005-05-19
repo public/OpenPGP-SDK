@@ -1,3 +1,6 @@
+/** \file
+ */
+
 #include "packet.h"
 #include "crypto.h"
 #include "memory.h"
