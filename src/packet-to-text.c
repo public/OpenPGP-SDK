@@ -1,8 +1,7 @@
-/** \file packet-to_text.c
+/** \file 
  *
  * Creates printable text strings from packet contents
  *
- * $Id$
  */
 
 #include "packet-to-text.h"
@@ -30,7 +29,7 @@ typedef struct
  * Arrays of value->text maps
  */
 
-octet_map_t revocation_reason_code_map[] =
+static octet_map_t revocation_reason_code_map[] =
     {
     { 0x00,	"No reason specified" },
     { 0x01,	"Key is superseded" },
@@ -40,7 +39,7 @@ octet_map_t revocation_reason_code_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-octet_map_t symmetric_key_algorithm_map[] =
+static octet_map_t symmetric_key_algorithm_map[] =
     {
     { OPS_SKA_PLAINTEXT,	"Plaintext or unencrypted data" },
     { OPS_SKA_IDEA,		"IDEA" },
@@ -54,7 +53,7 @@ octet_map_t symmetric_key_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-octet_map_t hash_algorithm_map[] =
+static octet_map_t hash_algorithm_map[] =
     {
     { OPS_HASH_MD5,	"MD5" },
     { OPS_HASH_SHA1,	"SHA1" },
@@ -65,7 +64,7 @@ octet_map_t hash_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-octet_map_t compression_algorithm_map[] =
+static octet_map_t compression_algorithm_map[] =
     {
     { OPS_C_NONE,	"Uncompressed" },
     { OPS_C_ZIP,	"ZIP(RFC1951)" },
@@ -74,31 +73,31 @@ octet_map_t compression_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-bit_map_t ss_notation_data_map_byte0[] =
+static bit_map_t ss_notation_data_map_byte0[] =
     {
     { 0x80,	"Human-readable" },
     { (unsigned char) NULL,	(char *) NULL },
     };
 
-bit_map_t * ss_notation_data_map[] =
+static bit_map_t * ss_notation_data_map[] =
     {
     ss_notation_data_map_byte0,
     (bit_map_t *) NULL,
     };
 
-bit_map_t ss_feature_map_byte0[] =
+static bit_map_t ss_feature_map_byte0[] =
     {
     { 0x01,	"Modification Detection" },
     { (unsigned char) NULL,	(char *) NULL },
     };
 
-bit_map_t * ss_feature_map[] =
+static bit_map_t * ss_feature_map[] =
     {
     ss_feature_map_byte0,
     (bit_map_t *) NULL,
     };
 
-bit_map_t ss_key_flags_map[] =
+static bit_map_t ss_key_flags_map[] =
     {
     { 0x01, "May be used to certify other keys" },
     { 0x02, "May be used to sign data" },
@@ -108,7 +107,7 @@ bit_map_t ss_key_flags_map[] =
     { 0x80, "Private component may be in possession of more than one person"},
     };
 
-bit_map_t ss_key_server_prefs_map[] = 
+static bit_map_t ss_key_server_prefs_map[] = 
     {
     { 0x80, "Key holder requests that this key only be modified or updated\nby the key holder or an administrator of the key server" },
     };
@@ -175,7 +174,7 @@ static unsigned int add_str(list_t * list, char * str)
     return 1;
     }
 
-static char * search_octet_map(unsigned char octet, octet_map_t * map)
+static char * str_from_octet_map(unsigned char octet, octet_map_t * map)
     {
     octet_map_t * row;
 
@@ -186,7 +185,7 @@ static char * search_octet_map(unsigned char octet, octet_map_t * map)
     return NULL;
     }
 
-static char * search_bit_map(unsigned char octet, bit_map_t *map)
+static char * str_from_bitfield(unsigned char octet, bit_map_t *map)
     {
     bit_map_t * row;
 
@@ -197,8 +196,29 @@ static char * search_bit_map(unsigned char octet, bit_map_t *map)
     return NULL;
     }
 
+/*! generic function to initialise text_t structure */
+void text_init(text_t * text)
+    {
+    list_init(&text->known);
+    list_init(&text->unknown);
+    }
 
-unsigned int process_octet_str(text_t * text, char * str, unsigned char octet)
+/*! generic function to free memory used by text_t structure */
+void text_free(text_t * text)
+    {
+    /* Strings in "known" array will be constants, so don't free them */
+    list_free(&text->known);
+
+    /* Strings in "unknown" array will be dynamically allocated, so do free them */
+    list_free_strings(&text->unknown);
+    list_free(&text->unknown);
+
+    /* finally, free the text structure itself */
+    free(text);
+    }
+
+/*! generic function which adds text derived from single octet map to text */
+static unsigned int add_str_from_octet_map(text_t * text, char * str, unsigned char octet)
     {
     if (str && !add_str(&text->known,str)) 
 	{
@@ -221,7 +241,8 @@ unsigned int process_octet_str(text_t * text, char * str, unsigned char octet)
     return 1;
     }
 
-unsigned int process_bitmap_str(text_t * text, char * str, unsigned char bit)
+/*! generic function which adds text derived from single bit map to text */
+static unsigned int add_str_from_bit_map(text_t * text, char * str, unsigned char bit)
     {
     if (str && !add_str(&text->known,str)) 
 	{
@@ -251,7 +272,7 @@ unsigned int process_bitmap_str(text_t * text, char * str, unsigned char bit)
  *
  */ 
 
-static text_t *bytearray_to_text(data_t *data, 
+static text_t *text_from_octets(data_t *data, 
 			      char *(*text_fn)(unsigned char octet))
     {
 
@@ -259,20 +280,65 @@ static text_t *bytearray_to_text(data_t *data,
     char * str;
     int i=0;
 
+    /*! allocate and initialise text_t structure to store derived strings */
     text=malloc(sizeof(text_t));
     if (!text)
 	return NULL;
 
     text_init(text);
 
+    /*! for each octet in field ... */
     for ( i=0; i < data->len; i++)
 	{
+	/*! derive string from octet */
 	str=(*text_fn)(data->contents[i]);
-	if (!process_octet_str(text,str,data->contents[i]))
+
+	/*! and add to text */
+	if (!add_str_from_octet_map(text,str,data->contents[i]))
 	    return NULL;
 
 	}
-    /* All values have been added to either the known or the unknown list */
+    /*! All values have been added to either the known or the unknown list */
+    /*! Return text */
+    return text;
+    }
+
+/**
+ * Produce a structure containing human-readable textstrings
+ * representing the recognised and unrecognised contents
+ * of this byte array, derived from each bit of each octet.
+ *
+ */ 
+static text_t * text_from_octets_bits(data_t *data, bit_map_t **map)
+    {
+    text_t *text=NULL;
+    char *str;
+    int i=0, j=0;
+    unsigned char mask, bit;
+
+    /*! allocate and initialise text_t structure to store derived strings */
+     text=malloc(sizeof(text_t));
+    if (!text)
+	return NULL;
+
+    text_init(text);
+
+    /*! for each octet in field ... */
+    for ( i=0; i < data->len; i++)
+	{
+	/*! for each bit in octet ... */
+	for (j=0, mask=0x80; j<8; j++, mask = mask>>1 )
+	    {
+	    bit = data->contents[i]&mask;
+	    if (bit)
+		{
+		/*! if bit is set, then derive string from it */
+		str=str_from_bitfield ( bit, map[i] );
+		if (!add_str_from_bit_map( text, str, bit))
+		    return NULL;
+		}
+	    }
+	}
     return text;
     }
 
@@ -280,77 +346,60 @@ static text_t *bytearray_to_text(data_t *data,
  * Public Functions
  */
 
-void text_init(text_t * text)
+/*! returns string derived from this signature sub-packet type */
+char * str_from_ss_revocation_reason_code(unsigned char octet)
     {
-    list_init(&text->known);
-    list_init(&text->unknown);
+    return(str_from_octet_map(octet,revocation_reason_code_map));
     }
 
-void text_free(text_t * text)
+/*! returns string derived from a single octet in this field */
+char * str_from_single_ss_preferred_compression(unsigned char octet)
     {
-    /* Strings in "known" array will be constants, so don't free them */
-    list_free(&text->known);
-
-    /* Strings in "unknown" array will be dynamically allocated, so do free them */
-    list_free_strings(&text->unknown);
-    list_free(&text->unknown);
-
-    /* finally, free the text structure itself */
-    free(text);
+    return(str_from_octet_map(octet,compression_algorithm_map));
     }
 
-/*
- * Now the individual decode functions
- */
-
-char * text_ss_revocation_reason_code(unsigned char octet)
+/*! returns all text derived from this signature sub-packet type */
+text_t * text_from_ss_preferred_compression(ops_ss_preferred_compression_t array)
     {
-    return(search_octet_map(octet,revocation_reason_code_map));
-    }
-
-char * text_single_ss_preferred_compression(unsigned char octet)
-    {
-    return(search_octet_map(octet,compression_algorithm_map));
-    }
-
-text_t * text_ss_preferred_compression(ops_ss_preferred_compression_t array)
-    {
-    return(bytearray_to_text(&array.data,
-			  &text_single_ss_preferred_compression));
+    return(text_from_octets(&array.data,
+			  &str_from_single_ss_preferred_compression));
     }
 
 
-char * text_single_ss_preferred_hash(unsigned char octet)
+/*! returns string derived from a single octet in this field */
+char * str_from_single_ss_preferred_hash(unsigned char octet)
     {
-    return(search_octet_map(octet,hash_algorithm_map));
+    return(str_from_octet_map(octet,hash_algorithm_map));
     }
 
-text_t * text_ss_preferred_hash(ops_ss_preferred_hash_t array)
+/*! returns all text derived from this signature sub-packet type */
+text_t * text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
     {
-    return(bytearray_to_text(&array.data,
-			  &text_single_ss_preferred_hash));
+    return(text_from_octets(&array.data,
+			  &str_from_single_ss_preferred_hash));
     }
 
-char * text_single_ss_preferred_ska(unsigned char octet)
+/*! returns string derived from a single octet in this field */
+char * str_from_single_ss_preferred_ska(unsigned char octet)
     {
-    return(search_octet_map(octet,symmetric_key_algorithm_map));
+    return(str_from_octet_map(octet,symmetric_key_algorithm_map));
     }
 
-text_t * text_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
+/*! returns all text derived from this signature sub-packet type */
+text_t * text_from_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
-    return(bytearray_to_text(&ss_preferred_ska.data, 
-		       &text_single_ss_preferred_ska));
+    return(text_from_octets(&ss_preferred_ska.data, 
+		       &str_from_single_ss_preferred_ska));
     }
 
-char * text_single_ss_feature(unsigned char octet, bit_map_t * map)
+/*! returns string derived from one bitfield in this signature-subpacket type */
+char * str_from_single_ss_feature(unsigned char octet, bit_map_t * map)
     {
-    return(search_bit_map(octet,map));
+    return(str_from_bitfield(octet,map));
     }
 
-/** text_t * text_ss_features(ops_ss_features_t * ss_features)
-*/
-
-text_t * text_ss_features(ops_ss_features_t ss_features)
+/*! returns all text derived from this signature sub-packet type */
+text_t * text_from_ss_features(ops_ss_features_t ss_features)
     {
     text_t *text=NULL;
     char *str;
@@ -370,8 +419,8 @@ text_t * text_ss_features(ops_ss_features_t ss_features)
 	    bit = ss_features.data.contents[i]&mask;
 	    if (bit)
 		{
-		str=text_single_ss_feature ( bit, ss_feature_map[i] );
-		if (!process_bitmap_str( text, str, bit))
+		str=str_from_single_ss_feature ( bit, ss_feature_map[i] );
+		if (!add_str_from_bit_map( text, str, bit))
 		    return NULL;
 		}
 	    }
@@ -379,57 +428,20 @@ text_t * text_ss_features(ops_ss_features_t ss_features)
     return text;
     }
 
-/** char *text_bit (unsigned char octet, bit_map_t *map)
- */
-
-char * text_bit(unsigned char octet, bit_map_t * map)
+/*! returns all text derived from this signature sub-packet type */
+text_t * text_from_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
     {
-    return(search_bit_map(octet,map));
+    return(text_from_octets_bits(&ss_notation_data.flags,ss_notation_data_map));
     }
 
-/** text_t * text_map (data_t *data, bit_map_t *map)
-*/
-
-text_t * text_map(data_t *data, bit_map_t **map)
+/*! returns string derived from one bitfield in this signature-subpacket type */
+char * str_from_single_ss_key_flag(unsigned char octet, bit_map_t * map)
     {
-    text_t *text=NULL;
-    char *str;
-    int i=0, j=0;
-    unsigned char mask, bit;
-
-     text=malloc(sizeof(text_t));
-    if (!text)
-	return NULL;
-
-    text_init(text);
-
-    for ( i=0; i < data->len; i++)
-	{
-	for (j=0, mask=0x80; j<8; j++, mask = mask>>1 )
-	    {
-	    bit = data->contents[i]&mask;
-	    if (bit)
-		{
-		str=text_bit ( bit, map[i] );
-		if (!process_bitmap_str( text, str, bit))
-		    return NULL;
-		}
-	    }
-	}
-    return text;
+    return(str_from_bitfield(octet,map));
     }
 
-text_t * text_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
-    {
-    return(text_map(&ss_notation_data.flags,ss_notation_data_map));
-    }
-
-char * text_single_ss_key_flag(unsigned char octet, bit_map_t * map)
-    {
-    return(search_bit_map(octet,map));
-    }
-
-text_t * text_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
+/*! returns all text derived from this signature sub-packet type */
+text_t * text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     {
     text_t *text=NULL;
     char *str;
@@ -449,8 +461,8 @@ text_t * text_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
 	    bit = ss_key_flags.data.contents[0] & mask;
 	    if (bit)
 		{
-		str=text_single_ss_key_flag ( bit, &ss_key_flags_map[0] );
-		if (!process_bitmap_str( text, str, bit))
+		str=str_from_single_ss_key_flag ( bit, &ss_key_flags_map[0] );
+		if (!add_str_from_bit_map( text, str, bit))
 		    return NULL;
 		}
 	    }
@@ -458,12 +470,14 @@ text_t * text_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     return text;
     }
 
-char *text_single_ss_key_server_prefs(unsigned char octet, bit_map_t *map)
+/*! returns string derived from one bitfield in this signature-subpacket type */
+char *str_from_single_ss_key_server_prefs(unsigned char octet, bit_map_t *map)
     {
-    return(search_bit_map(octet,map));
+    return(str_from_bitfield(octet,map));
     }
 
-text_t *text_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
+/*! returns all text derived from this signature sub-packet type */
+text_t *text_from_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
     {
     text_t *text=NULL;
     char *str;
@@ -483,8 +497,8 @@ text_t *text_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
 	    bit = ss_key_server_prefs.data.contents[0] & mask;
 	    if (bit)
 		{
-		str=text_single_ss_key_server_prefs ( bit, &ss_key_server_prefs_map[0] );
-		if (!process_bitmap_str( text, str, bit))
+		str=str_from_single_ss_key_server_prefs ( bit, &ss_key_server_prefs_map[0] );
+		if (!add_str_from_bit_map( text, str, bit))
 		    return NULL;
 		}
 	    }

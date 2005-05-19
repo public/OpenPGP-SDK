@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "packet.h"
 #include "packet-parse.h"
 #include "packet-to-text.h"
@@ -322,7 +320,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
-	text = text_ss_preferred_ska(content->ss_preferred_ska);
+	text = text_from_ss_preferred_ska(content->ss_preferred_ska);
 	print_text("Preferred Symmetric Algorithms",text,1);
 	text_free(text);
 
@@ -335,13 +333,13 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;      
 
     case OPS_PTAG_SS_PREFERRED_HASH:
-	text = text_ss_preferred_hash(content->ss_preferred_hash);
+	text = text_from_ss_preferred_hash(content->ss_preferred_hash);
 	print_text("Preferred Hash Algorithms",text,1);
 	text_free(text);
 	break;
 
     case OPS_PTAG_SS_PREFERRED_COMPRESSION:
-	text = text_ss_preferred_compression(content->ss_preferred_compression);
+	text = text_from_ss_preferred_compression(content->ss_preferred_compression);
 	print_text("Preferred Compression Algorithms",text,1);
 	text_free(text);
 	break;
@@ -351,7 +349,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      &content->ss_key_flags.data,
 		      1);
 
-	text = text_ss_key_flags(content->ss_key_flags);
+	text = text_from_ss_key_flags(content->ss_key_flags);
 	print_text(NULL, text, 1);
 	text_free(text);
 
@@ -362,7 +360,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      &content->ss_key_server_prefs.data,
 		      1);
 
-	text = text_ss_key_server_prefs(content->ss_key_server_prefs);
+	text = text_from_ss_key_server_prefs(content->ss_key_server_prefs);
 	print_text(NULL, text, 1);
 	text_free(text);
 
@@ -373,7 +371,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      &content->ss_features.data,
 		      1);
 
-	text = text_ss_features(content->ss_features);
+	text = text_from_ss_features(content->ss_features);
 	print_text(NULL,text,1);
 	text_free(text);
 
@@ -385,7 +383,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_data("Flags",
 		   &content->ss_notation_data.flags,
 		   2);
-	text = text_ss_notation_data_flags(content->ss_notation_data);
+	text = text_from_ss_notation_data_flags(content->ss_notation_data);
 	print_text(NULL,text,2);
 	text_free(text);
 
@@ -445,7 +443,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      &content->ss_revocation_reason.code,
 		      1,
 		      1);
-	str = text_ss_revocation_reason_code(content->ss_revocation_reason.code);
+	str = str_from_ss_revocation_reason_code(content->ss_revocation_reason.code);
 	print_string(NULL,str,1);
 	/* xxx - todo : output text as UTF-8 string */
 	break;

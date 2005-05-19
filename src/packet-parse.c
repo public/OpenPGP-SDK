@@ -1,7 +1,5 @@
-/** \file packet-parse.c
- * Parser for OpenPGP packets.
- *
- * $Id$
+/** \file
+ * \brief Parser for OpenPGP packets
  */
 
 #include "packet.h"
@@ -69,7 +67,7 @@ static int read_string(char **str, ops_region_t *subregion, ops_parse_options_t 
     if (len && !ops_limited_read(*str, len, subregion, opt))
 	return 0;
 
-    /* ensure the string is NULL-terminated */
+    /*! ensure the string is NULL-terminated */
 
     (*str)[len]=(char) NULL;
 
@@ -82,11 +80,15 @@ static void init_subregion(ops_region_t *subregion,ops_region_t *region)
     subregion->parent=region;
     }
 
+/*! \todo descr for CB macro */
 #define CB(t,pc)	do { (pc)->tag=(t); if(opt->cb(pc,opt->cb_arg) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
+/*! \todo descr for C macro */
 #define C		content.content
-
+/*! \todo descr for E macro */
 #define E		CB(OPS_PARSER_ERROR,&content); return 0
+/*! \todo descr for ERR macro */
 #define ERR(err)	do { C.error.error=err; E; } while(0)
+/*! \todo descr ERR1 macro */
 #define ERR1(fmt,x)	do { format_error(&content,(fmt),(x)); E; } while(0)
 
 /* XXX: replace ops_ptag_t with something more appropriate for limiting
@@ -165,21 +167,21 @@ static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
     return OPS_R_OK;
     }
 
-/** Read bytes from reader.
+/** Read bytes from a region within the packet.
  *
- * Read length bytes into the buffer pointed to by *dest.  Make sure we do not read over the packet boundary.  Updates
- * the Packet Tag's ops_ptag_t::length_read.
+ * Read length bytes into the buffer pointed to by *dest.  Make sure
+ * we do not read over the packet boundary.  Updates the Packet Tag's
+ * ops_ptag_t::length_read.
  *
- * If length would make us read over the packet boundary, or if reading fails, we call the callback with an
- * #OPS_PARSER_ERROR.
+ * If length would make us read over the packet boundary, or if
+ * reading fails, we call the callback with an #OPS_PARSER_ERROR.
  *
  * This function makes sure to respect packet boundaries.
  *
  * \param *dest		The destination buffer
  * \param length	How many bytes to read
- * \param *ptag		Pointer to current packet's Packet Tag
- * \param *reader	Our reader
- * \param *cb		The callback
+ * \param *region	Pointer to packet region
+ * \param *opt		Options, including callback function
  * \return		1 on success, 0 on error
  */
 int ops_limited_read(unsigned char *dest,unsigned length,
@@ -215,9 +217,8 @@ int ops_limited_read(unsigned char *dest,unsigned length,
  * This function makes sure to respect packet boundaries.
  *
  * \param length	How many bytes to skip
- * \param *ptag		Pointer to current packet's Packet Tag.
- * \param *reader	Our reader
- * \param *cb		The callback
+ * \param *region	Pointer to packet region
+ * \param *opt		Options
  * \return		1 on success, 0 on error (calls the cb with #OPS_PARSER_ERROR in #limited_read).
  */
 static int limited_skip(unsigned length,ops_region_t *region,
@@ -237,15 +238,15 @@ static int limited_skip(unsigned length,ops_region_t *region,
 
 /** Read a scalar.
  *
- * Read a Big Endian scalar of length bytes, respecting packet boundaries (by calling #limited_read to read the raw
- * data).
+ * Read a Big Endian scalar of length bytes, respecting packet
+ * boundaries (by calling #limited_read to read the raw data).
  *
  * This function makes sure to respect packet boundaries.
  *
  * \param *dest		The scalar value is stored here
  * \param length	How many bytes make up this scalar
- * \param *ptag		Pointer to current packet's Packet Tag.
- * \param *reader	Our reader
+ * \param *region	Pointer to current packet region
+ * \param *opt		Pointer to parse options to be used
  * \param *cb		The callback
  * \return		1 on success, 0 on error (calls the cb with #OPS_PARSER_ERROR in #limited_read).
  *
@@ -421,12 +422,14 @@ static void string_free(char **str)
     *str=NULL;
     }
 
+/*! Free packet memory, set pointer to NULL */
 void ops_packet_free(ops_packet_t *packet)
     {
     free(packet->raw);
     packet->raw=NULL;
     }
 
+/*! Free any memory allocated when parsing the packet content */
 void ops_parser_content_free(ops_parser_content_t *c)
     {
     switch(c->tag)
@@ -544,6 +547,7 @@ static void free_BN(BIGNUM **pp)
     *pp=NULL;
     }
 
+/*! Free the memory used when parsing a public key */
 void ops_public_key_free(ops_public_key_t *p)
     {
     switch(p->algorithm)
@@ -651,21 +655,25 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     }
 
 
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_regexp_free(ops_ss_regexp_t *regexp)
     {
     string_free(&regexp->text);
     }
 
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_policy_url_free(ops_ss_policy_url_t *policy_url)
     {
     string_free(&policy_url->text);
     }
 
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_preferred_key_server_free(ops_ss_preferred_key_server_t *preferred_key_server)
     {
     string_free(&preferred_key_server->text);
     }
 
+/*! Free the memory used when parsing this packet type */
 void ops_user_attribute_free(ops_user_attribute_t *user_att)
     {
     data_free(&user_att->data);
@@ -697,7 +705,7 @@ static int parse_user_attribute(ops_region_t *region, ops_parse_options_t *opt)
     return 1;
     }
 
-
+/*! Free the memory used when parsing this packet type */
 void ops_user_id_free(ops_user_id_t *id)
     {
     free(id->user_id);
@@ -738,6 +746,7 @@ static int parse_user_id(ops_region_t *region,ops_parse_options_t *opt)
     return 1;
     }
 
+/*! Free the memory used when parsing this packet type */
 void ops_signature_free(ops_signature_t *sig)
     {
     switch(sig->key_algorithm)
@@ -1080,40 +1089,37 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     return 1;
     }
 
-/** ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
- */
-
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
     {
     data_free(&ss_preferred_ska->data);
     }
 
-/** ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
- */
-
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
     {
     data_free(&ss_preferred_hash->data);
     }
 
-/** ops_ss_preferred_compression_free(ops_ss_preferred_compression_t * ss_preferred_compression)
- */
-
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t * ss_preferred_compression)
     {
     data_free(&ss_preferred_compression->data);
     }
 
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags)
     {
     data_free(&ss_key_flags->data);
     }
 
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_features_free(ops_ss_features_t * ss_features)
     {
     data_free(&ss_features->data);
     }
 
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t *ss_key_server_prefs)
     {
     data_free(&ss_key_server_prefs->data);
@@ -1315,22 +1321,26 @@ static int parse_one_pass(ops_region_t *region,ops_parse_options_t *opt)
     return 1;
     }
 
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined)
     {
     data_free(&ss_userdefined->data);
     }
 
+/*! Free the memory used when parsing this signature sub-packet type */
  void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data)
      {
      data_free(&ss_notation_data->name);
      data_free(&ss_notation_data->value);
      }
 
+/*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason)
     {
     string_free(&ss_revocation_reason->text);
     }
 
+/*! Free the memory used when parsing this packet type */
 void ops_trust_free(ops_trust_t * trust)
     {
     data_free(&trust->data);
@@ -1517,8 +1527,6 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
  *
  * Parses packets calling #ops_parse_one_packet until an error occurs or until EOF (which is just another error anyway).
  *
- * \param *reader	Our reader
- * \param *cb		The callback
  * \param *opt		Parsing options
  * \return		1 on success, 0 on error
  */
@@ -1533,6 +1541,9 @@ int ops_parse(ops_parse_options_t *opt)
     }
 
 /* XXX: Make all packet types optional, not just subpackets */
+/**
+ * Setup packet options, depending on packet tag and parsing type
+ */
 void ops_parse_options(ops_parse_options_t *opt,
 		       ops_content_tag_t tag,
 		       ops_parse_type_t type)
