@@ -37,6 +37,7 @@ ops_boolean_t ops_dsa_verify(const unsigned char *hash,size_t hash_length,
 int ops_rsa_public_decrypt(unsigned char *out,const unsigned char *in,
 			   size_t length,const ops_rsa_public_key_t *rsa);
 int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
-			    size_t length,const ops_rsa_secret_key_t *rsa);
+			    size_t length,const ops_rsa_secret_key_t *srsa,
+			    const ops_rsa_public_key_t *rsa);
 
 #endif

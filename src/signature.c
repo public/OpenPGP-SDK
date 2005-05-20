@@ -45,7 +45,7 @@ static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
     assert(t == 20);
     n+=t;
 
-    ops_rsa_private_encrypt(sigbuf,hashbuf,keysize,srsa);
+    ops_rsa_private_encrypt(sigbuf,hashbuf,keysize,srsa,rsa);
     }
 
 static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,

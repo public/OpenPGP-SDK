@@ -118,19 +118,21 @@ int ops_rsa_public_decrypt(unsigned char *out,const unsigned char *in,
     }
 
 int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
-			    size_t length,const ops_rsa_secret_key_t *rsa)
+			    size_t length,const ops_rsa_secret_key_t *srsa,
+			    const ops_rsa_public_key_t *rsa)
     {
     RSA *orsa;
     int n;
 
     orsa=RSA_new();
-    orsa->d=rsa->d;
-    orsa->p=rsa->p;
-    orsa->q=rsa->q;
+    orsa->n=rsa->n;
+    orsa->d=srsa->d;
+    orsa->p=srsa->p;
+    orsa->q=srsa->q;
 
     n=RSA_private_encrypt(length,in,out,orsa,RSA_NO_PADDING);
 
-    orsa->d=orsa->p=orsa->q=NULL;
+    orsa->n=orsa->d=orsa->p=orsa->q=NULL;
     RSA_free(orsa);
 
     return n;

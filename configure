@@ -4,7 +4,9 @@ use strict;
 
 use Carp;
 
-our %Subst;
+our %Subst=(
+	    'CRYPTO_LIBS' => '-lcrypto',
+	   );
 
 my %Args=(
 	  '--help' => \&usage,
@@ -15,6 +17,7 @@ my %Args=(
 	  '--with-openssl=' => sub {
 	      my $loc=shift;
 	      $Subst{INCLUDES}.=" -I $loc/include";
+	      $Subst{CRYPTO_LIBS}="$loc/libcrypto.a";
 	  },
 	  '--with-zlib=' => sub {
 	      my $loc=shift;
@@ -139,7 +142,7 @@ sub fileSubst {
 
 sub fixSubst {
     foreach my $k (keys %Subst) {
-	$Subst{$k} =~ s/~/\$(HOME)/g;
+	$Subst{$k} =~ s/~/$ENV{HOME}/g;
     }
 }
 
