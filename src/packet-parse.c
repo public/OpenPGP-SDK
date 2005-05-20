@@ -535,6 +535,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PARSER_ERROR:
 	break;
 
+    case OPS_PTAG_CT_SECRET_KEY:
+	ops_secret_key_free(&c->content.secret_key);
+	break;
+
     default:
 	fprintf(stderr,"Can't free %d (0x%x)\n",c->tag,c->tag);
 	assert(0);
@@ -577,6 +581,66 @@ void ops_public_key_free(ops_public_key_t *p)
 	}
     }
 
+static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
+				 ops_parse_options_t *opt)
+    {
+    ops_parser_content_t content;
+    unsigned char c[1];
+
+    assert (region->length_read == 0);  /* We should not have read anything so far */
+
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+    key->version=c[0];
+    if(key->version < 2 || key->version > 4)
+	ERR1("Bad public key version (0x%02x)",key->version);
+
+    if(!limited_read_time(&key->creation_time,region,opt))
+	return 0;
+
+    key->days_valid=0;
+    if((key->version == 2 || key->version == 3)
+       && !limited_read_scalar(&key->days_valid,2,region,opt))
+	return 0;
+
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+
+    key->algorithm=c[0];
+
+    switch(key->algorithm)
+	{
+    case OPS_PKA_DSA:
+	if(!limited_read_mpi(&key->key.dsa.p,region,opt)
+	   || !limited_read_mpi(&key->key.dsa.q,region,opt)
+	   || !limited_read_mpi(&key->key.dsa.g,region,opt)
+	   || !limited_read_mpi(&key->key.dsa.y,region,opt))
+	    return 0;
+	break;
+
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	if(!limited_read_mpi(&key->key.rsa.n,region,opt)
+	   || !limited_read_mpi(&key->key.rsa.e,region,opt))
+	    return 0;
+	break;
+
+    case OPS_PKA_ELGAMAL:
+	if(!limited_read_mpi(&key->key.elgamal.p,region,opt)
+	   || !limited_read_mpi(&key->key.elgamal.g,region,opt)
+	   || !limited_read_mpi(&key->key.elgamal.y,region,opt))
+	    return 0;
+	break;
+
+    default:
+	ERR1("Unknown public key algorithm (%d)",key->algorithm);
+	}
+
+    return 1;
+    }
+
+
 /** Parse a public key packet.
  *
  * This function parses an entire v3 (== v2) or v4 public key packet for RSA, ElGamal, and DSA keys.
@@ -594,58 +658,11 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
 			    ops_parse_options_t *opt)
     {
     ops_parser_content_t content;
-    unsigned char c[1];
 
-    assert (region->length_read == 0);  /* We should not have read anything so far */
-
-    if(!ops_limited_read(c,1,region,opt))
-	return 0;
-    C.public_key.version=c[0];
-    if(C.public_key.version < 2 || C.public_key.version > 4)
-	ERR1("Bad public key version (0x%02x)",C.public_key.version);
-
-    if(!limited_read_time(&C.public_key.creation_time,region,opt))
+    if(!parse_public_key_data(&C.public_key,region,opt))
 	return 0;
 
-    C.public_key.days_valid=0;
-    if((C.public_key.version == 2 || C.public_key.version == 3)
-       && !limited_read_scalar(&C.public_key.days_valid,2,region,opt))
-	return 0;
-
-    if(!ops_limited_read(c,1,region,opt))
-	return 0;
-
-    C.public_key.algorithm=c[0];
-
-    switch(C.public_key.algorithm)
-	{
-    case OPS_PKA_DSA:
-	if(!limited_read_mpi(&C.public_key.key.dsa.p,region,opt)
-	   || !limited_read_mpi(&C.public_key.key.dsa.q,region,opt)
-	   || !limited_read_mpi(&C.public_key.key.dsa.g,region,opt)
-	   || !limited_read_mpi(&C.public_key.key.dsa.y,region,opt))
-	    return 0;
-	break;
-
-    case OPS_PKA_RSA:
-    case OPS_PKA_RSA_ENCRYPT_ONLY:
-    case OPS_PKA_RSA_SIGN_ONLY:
-	if(!limited_read_mpi(&C.public_key.key.rsa.n,region,opt)
-	   || !limited_read_mpi(&C.public_key.key.rsa.e,region,opt))
-	    return 0;
-	break;
-
-    case OPS_PKA_ELGAMAL:
-	if(!limited_read_mpi(&C.public_key.key.elgamal.p,region,opt)
-	   || !limited_read_mpi(&C.public_key.key.elgamal.g,region,opt)
-	   || !limited_read_mpi(&C.public_key.key.elgamal.y,region,opt))
-	    return 0;
-	break;
-
-    default:
-	ERR1("Unknown public key algorithm (%d)",C.public_key.algorithm);
-	}
-
+    // XXX: this test should be done for all packets, surely?
     if(region->length_read != region->length)
 	ERR1("Unconsumed data (%d)", region->length-region->length_read);
 
@@ -1396,6 +1413,63 @@ static int parse_literal_data(ops_region_t *region,ops_parse_options_t *opt)
     return 1;
     }
 
+void ops_secret_key_free(ops_secret_key_t *key)
+    {
+    switch(key->public_key.algorithm)
+	{
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	free_BN(&key->key.rsa.d);
+	free_BN(&key->key.rsa.p);
+	free_BN(&key->key.rsa.q);
+	free_BN(&key->key.rsa.u);
+	break;
+
+    default:
+	assert(0);
+	}
+
+    ops_public_key_free(&key->public_key);
+    }
+
+static int parse_secret_key(ops_region_t *region,ops_parse_options_t *opt)
+    {
+    ops_parser_content_t content;
+    unsigned char c[1];
+
+    if(!parse_public_key_data(&C.secret_key.public_key,region,opt))
+	return 0;
+    if(!ops_limited_read(c,1,region,opt))
+	return 0;
+    C.secret_key.s2k_usage=c[0];
+    assert(C.secret_key.s2k_usage == 0);
+
+    switch(C.secret_key.public_key.algorithm)
+	{
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	if(!limited_read_mpi(&C.secret_key.key.rsa.d,region,opt)
+	   || !limited_read_mpi(&C.secret_key.key.rsa.p,region,opt)
+	   || !limited_read_mpi(&C.secret_key.key.rsa.q,region,opt)
+	   || !limited_read_mpi(&C.secret_key.key.rsa.u,region,opt))
+	    return 0;
+	break;
+
+    default:
+	assert(0);
+	}
+
+    if(!limited_read_scalar(&C.secret_key.checksum,2,region,opt))
+	return 0;
+    // XXX: check the checksum
+
+    CB(OPS_PTAG_CT_SECRET_KEY,&content);
+
+    return 1;
+    }
+
 /** Parse one packet.
  *
  * This function parses the packet tag.  It computes the value of the content tag and then calls the appropriate
@@ -1504,12 +1578,17 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	r=parse_user_attribute(&region,opt);
 	break;
 
+    case OPS_PTAG_CT_SECRET_KEY:
+	r=parse_secret_key(&region,opt);
+	break;
+
     default:
 	format_error(&content,"Format error (unknown content tag %d)",
 		     C.ptag.content_tag);
 	CB(OPS_PARSER_ERROR,&content);
 	r=0;
 	}
+    // XXX: shouldn't we check that the entire packet has been consumed?
     if(opt->accumulate)
 	{
 	C.packet.length=opt->alength;

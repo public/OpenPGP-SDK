@@ -55,7 +55,7 @@ ops_boolean_t ops_write_ptag(ops_content_tag_t tag,ops_create_options_t *opt)
 
 ops_boolean_t ops_write_length(unsigned length,ops_create_options_t *opt)
     {
-    unsigned char c[5];
+    unsigned char c[2];
 
     if(length < 192)
 	{
@@ -68,8 +68,14 @@ ops_boolean_t ops_write_length(unsigned length,ops_create_options_t *opt)
 	c[1]=(length-192)%256;
 	return base_write(c,2,opt);
 	}
-    c[0]=0xff;
-    return ops_write_scalar(length,4,opt);
+    return ops_write_scalar(0xff,1,opt) && ops_write_scalar(length,4,opt);
+    }
+
+ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
+				  ops_create_options_t *opt)
+    {
+    return ops_write_length(length,opt)
+	&& ops_write_scalar(type-OPS_PTAG_SIGNATURE_SUBPACKET_BASE,1,opt);
     }
 
 // XXX: the general idea of _fast_ is that it doesn't copy stuff

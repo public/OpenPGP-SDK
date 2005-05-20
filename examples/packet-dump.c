@@ -466,6 +466,11 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf("\n");
 	break;
 
+    case OPS_PTAG_CT_SECRET_KEY:
+	// XXX: fix me
+	printf("***RACHEL DO YOUR THING HERE***\n");
+	break;
+
     default:
 	fprintf(stderr,"packet-dump: unknown tag=%d\n",content_->tag);
 	exit(1);

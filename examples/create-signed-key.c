@@ -18,9 +18,9 @@ int main(int argc,char **argv)
     ops_user_id_t id;
     unsigned char keyid[OPS_KEY_ID_SIZE];
 
-    if(argc != 4)
+    if(argc != 2)
 	{
-	fprintf(stderr,"%s <n> <e> <user id>\n",argv[0]);
+	fprintf(stderr,"%s <public key file> <secret key file>\n",argv[0]);
 	exit(1);
 	}
     
@@ -42,12 +42,12 @@ int main(int argc,char **argv)
     ops_write_struct_user_id(&id,&opt);
 
     ops_signature_start(&sig,&key,&id);
-    //    ops_signature_add_creation_time(&sig,time(NULL));
+    ops_signature_add_creation_time(&sig,time(NULL));
 
     ops_keyid(keyid,&key);
-    //    ops_signature_add_issuer_key_id(&sig,keyid);
+    ops_signature_add_issuer_key_id(&sig,keyid);
 
-    //    ops_signature_add_primary_user_id(&sig,ops_true);
+    ops_signature_add_primary_user_id(&sig,ops_true);
 
     ops_signature_hashed_subpackets_end(&sig);
 

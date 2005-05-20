@@ -298,3 +298,23 @@ void ops_signature_end(ops_create_signature_t *sig,ops_public_key_t *key,
     assert(key->algorithm == OPS_PKA_RSA);
     rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa);
     }
+
+void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
+    {
+    ops_write_ss_header(5,OPS_PTAG_SS_CREATION_TIME,&sig->opt);
+    ops_write_scalar(when,4,&sig->opt);
+    }
+
+void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
+				     const unsigned char keyid[OPS_KEY_ID_SIZE])
+    {
+    ops_write_ss_header(OPS_KEY_ID_SIZE+1,OPS_PTAG_SS_ISSUER_KEY_ID,&sig->opt);
+    ops_write(keyid,OPS_KEY_ID_SIZE,&sig->opt);
+    }
+
+void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
+				       ops_boolean_t primary)
+    {
+    ops_write_ss_header(2,OPS_PTAG_SS_PRIMARY_USER_ID,&sig->opt);
+    ops_write_scalar(primary,1,&sig->opt);
+    }

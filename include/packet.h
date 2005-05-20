@@ -289,9 +289,17 @@ typedef struct
     ops_rsa_secret_key_t rsa;
     } ops_secret_key_union_t;
 
+typedef enum
+    {
+    OPS_S2K_NONE=0,
+    } s2k_usage_t;
+
 typedef struct
     {
-    ops_secret_key_union_t key;
+    ops_public_key_t		public_key;
+    s2k_usage_t			s2k_usage;
+    unsigned			checksum;
+    ops_secret_key_union_t	key;
     } ops_secret_key_t;
 
 /** Symmetric Key Algorithm Numbers.
@@ -632,6 +640,7 @@ typedef union
     ops_literal_data_body_t	literal_data_body;
     ops_ss_features_t		ss_features;
     ops_ss_revocation_reason_t	ss_revocation_reason;
+    ops_secret_key_t		secret_key;
     } ops_parser_content_union_t;
 
 struct ops_parser_content_t
@@ -671,6 +680,7 @@ void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined);
 void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason);
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
+void ops_secret_key_free(ops_secret_key_t *key);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

@@ -45,6 +45,8 @@ ops_boolean_t ops_write_length(unsigned length,ops_create_options_t *opt);
 ops_boolean_t ops_write_ptag(ops_content_tag_t tag,ops_create_options_t *opt);
 ops_boolean_t ops_write_scalar(unsigned n,unsigned length,
 			       ops_create_options_t *opt);
+ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
+				  ops_create_options_t *opt);
 
 void ops_fast_create_rsa_public_key(ops_public_key_t *key,time_t time,
 				    BIGNUM *n,BIGNUM *e);
