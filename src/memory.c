@@ -2,6 +2,7 @@
  */
 
 #include "memory.h"
+#include "create.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -55,6 +56,15 @@ void ops_memory_add_int(ops_memory_t *mem,unsigned n,size_t length)
 	}
     }
 
+void ops_memory_place_int(ops_memory_t *mem,unsigned offset,unsigned n,
+			  size_t length)
+    {
+    assert(mem->allocated >= offset+length);
+    
+    while(length--)
+	mem->buf[offset++]=n >> (length*8);
+    }
+
 void ops_memory_add_mpi(ops_memory_t *out,const BIGNUM *bn)
     {
     unsigned length=BN_num_bits(bn);
@@ -71,3 +81,13 @@ void ops_memory_release(ops_memory_t *mem)
     free(mem->buf);
     mem->buf=NULL;
     }
+
+ops_writer_ret_t ops_writer_memory(const unsigned char *src,unsigned length,
+				   ops_writer_flags_t flags,void *arg_)
+    {
+    ops_memory_t *mem=arg_;
+
+    ops_memory_add(mem,src,length);
+    return OPS_W_OK;
+    }
+

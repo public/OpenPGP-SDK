@@ -71,6 +71,14 @@ ops_boolean_t ops_write_length(unsigned length,ops_create_options_t *opt)
     return ops_write_scalar(length,4,opt);
     }
 
+// XXX: the general idea of _fast_ is that it doesn't copy stuff
+// the safe (i.e. non _fast_) version will, and so will also need to
+// be freed.
+void ops_fast_create_user_id(ops_user_id_t *id,char *user_id)
+    {
+    id->user_id=user_id;;
+    }
+
 ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
 				       ops_create_options_t *opt)
     {
@@ -106,6 +114,16 @@ static unsigned public_key_length(const ops_public_key_t *key)
     return 0;
     }
 
+void ops_fast_create_rsa_public_key(ops_public_key_t *key,time_t time,
+				    BIGNUM *n,BIGNUM *e)
+    {
+    key->version=4;
+    key->creation_time=time;
+    key->algorithm=OPS_PKA_RSA;
+    key->key.rsa.n=n;
+    key->key.rsa.e=e;
+    }
+
 ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
 					  ops_create_options_t *opt)
     {
@@ -138,10 +156,7 @@ ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
     {
     ops_public_key_t key;
 
-    key.version=4;
-    key.creation_time=time;
-    key.algorithm=OPS_PKA_RSA;
-    key.key.rsa.n=DECONST(BIGNUM,n);
-    key.key.rsa.e=DECONST(BIGNUM,e);
+    ops_fast_create_rsa_public_key(&key,time,DECONST(BIGNUM,n),
+				   DECONST(BIGNUM,e));
     return ops_write_struct_public_key(&key,opt);
     }

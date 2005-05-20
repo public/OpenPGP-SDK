@@ -5,6 +5,7 @@
 #include "crypto.h"
 #include "memory.h"
 #include "build.h"
+#include "create.h"
 #include <assert.h>
 #include <string.h>
 
@@ -14,6 +15,38 @@ static unsigned char prefix_md5[]={ 0x30,0x20,0x30,0x0C,0x06,0x08,0x2A,0x86,
 
 static unsigned char prefix_sha1[]={ 0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0E,
 				     0x03,0x02,0x1A,0x05,0x00,0x04,0x14 };
+
+static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
+		     const ops_rsa_secret_key_t *srsa)
+    {
+    unsigned char hashbuf[8192];
+    unsigned char sigbuf[8192];
+    unsigned keysize;
+    unsigned hashsize;
+    unsigned n;
+    unsigned t;
+
+    // XXX: we assume hash is sha-1 for now
+    hashsize=20+sizeof prefix_sha1;
+
+    keysize=(BN_num_bits(rsa->n)+7)/8;
+    assert(keysize <= sizeof hashbuf);
+    assert(10+hashsize <= keysize);
+
+    hashbuf[0]=1;
+    for(n=1 ; n < keysize-hashsize-2 ; ++n)
+	hashbuf[n]=0xff;
+    hashbuf[n++]=0;
+
+    memcpy(&hashbuf[n],prefix_sha1,sizeof prefix_sha1);
+    n+=sizeof prefix_sha1;
+
+    t=hash->finish(hash,&hashbuf[n]);
+    assert(t == 20);
+    n+=t;
+
+    ops_rsa_private_encrypt(sigbuf,hashbuf,keysize,srsa);
+    }
 
 static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
 				const unsigned char *hash,size_t hash_length,
@@ -41,6 +74,8 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
     printf(" decrypt=%d ",n);
     hexdump(hashbuf,n);
 
+    // XXX: why is there a leading 0? The first byte should be 1...
+    // XXX: because the decrypt should use keysize and not sigsize?
     if(hashbuf[0] != 0 || hashbuf[1] != 1)
 	return ops_false;
 
@@ -200,4 +235,66 @@ ops_check_subkey_signature(const ops_public_key_t *key,
     return finalise_signature(&hash,sig,signer,raw_packet);
     }
 
+void ops_signature_start(ops_create_signature_t *sig,
+			const ops_public_key_t *key,
+			const ops_user_id_t *id)
+    {
+    // XXX: refactor with check (in several ways - check should probably
+    // use the buffered writer to construct packets, and also should
+    // share code for hash calculation)
+    sig->sig.version=OPS_SIG_V4;
+    sig->sig.hash_algorithm=OPS_HASH_SHA1;
+    sig->sig.key_algorithm=key->algorithm;
 
+    sig->hashed_data_length=-1;
+
+    init_signature(&sig->hash,&sig->sig,key);
+
+    hash_add_int(&sig->hash,0xb4,1);
+    hash_add_int(&sig->hash,strlen(id->user_id),4);
+    sig->hash.add(&sig->hash,id->user_id,strlen(id->user_id));
+
+    // since this has subpackets and stuff, we have to buffer the whole
+    // thing to get counts before writing.
+    ops_memory_init(&sig->mem,100);
+    sig->opt.writer=ops_writer_memory;
+    sig->opt.arg=&sig->mem;
+
+    // write nearly up to the first subpacket
+    ops_write_scalar(sig->sig.version,1,&sig->opt);
+    ops_write_scalar(sig->sig.type,1,&sig->opt);
+    ops_write_scalar(sig->sig.key_algorithm,1,&sig->opt);
+    ops_write_scalar(sig->sig.hash_algorithm,1,&sig->opt);
+
+    // dummy hashed subpacket count
+    sig->hashed_count_offset=sig->mem.length;
+    ops_write_scalar(0,2,&sig->opt);
+    }
+
+void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
+    {
+    sig->hashed_data_length=sig->mem.length-sig->hashed_count_offset-2;
+    ops_memory_place_int(&sig->mem,sig->hashed_count_offset,
+			 sig->hashed_data_length,2);
+    // dummy unhashed subpacket count
+    sig->unhashed_count_offset=sig->mem.length;
+    ops_write_scalar(0,2,&sig->opt);
+    }
+
+void ops_signature_end(ops_create_signature_t *sig,ops_public_key_t *key,
+		       ops_secret_key_t *skey)
+    {
+    assert(sig->hashed_data_length != -1);
+
+    ops_memory_place_int(&sig->mem,sig->unhashed_count_offset,
+			 sig->mem.length-sig->unhashed_count_offset-2,2);
+
+    // add the packet from version number to end of hashed subpackets
+    sig->hash.add(&sig->hash,sig->mem.buf,sig->unhashed_count_offset);
+    hash_add_int(&sig->hash,sig->sig.version,1);
+    hash_add_int(&sig->hash,0xff,1);
+    hash_add_int(&sig->hash,sig->hashed_data_length,4);
+
+    assert(key->algorithm == OPS_PKA_RSA);
+    rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa);
+    }

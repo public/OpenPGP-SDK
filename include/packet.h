@@ -276,6 +276,24 @@ typedef struct
     ops_public_key_union_t	key;		/*!< Public Key Parameters */
     } ops_public_key_t;
 
+typedef struct
+    {
+    BIGNUM *d;
+    BIGNUM *p;
+    BIGNUM *q;
+    BIGNUM *u;
+    } ops_rsa_secret_key_t;
+
+typedef struct
+    {
+    ops_rsa_secret_key_t rsa;
+    } ops_secret_key_union_t;
+
+typedef struct
+    {
+    ops_secret_key_union_t key;
+    } ops_secret_key_t;
+
 /** Symmetric Key Algorithm Numbers.
  * OpenPGP assigns a unique Algorithm Number to each algorithm that is part of OpenPGP.
  *

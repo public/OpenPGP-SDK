@@ -60,3 +60,19 @@ is supposed to mean. Nothing, would be the obvious interpretation -
 Once more, when I know what its supposed to mean, I'll suggest
 wording.
 
+------
+
+5.2.3.5 Issuer
+
+should be:
+
+5.2.3.5 Issuer key ID
+
+A tiny point, I know, but it made it hard to find.
+
+Key algorithms ... these are used in various contexts, and there's a
+list in 9.1 - some of these are clearly unsuitable in some contexts -
+for example, one would not expect to see RSA Ecnrpyt-Only (3) in a
+signature. But I can't find any language saying anything about
+this. Are there any rules?
+

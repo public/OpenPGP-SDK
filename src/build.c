@@ -44,6 +44,7 @@ void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)
     out->length+=extra+1;
     }
 
+// XXX: this should be refactored into a write
 void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
 			  ops_boolean_t make_packet)
     {
