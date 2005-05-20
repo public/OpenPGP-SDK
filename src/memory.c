@@ -45,17 +45,8 @@ void ops_memory_add(ops_memory_t *mem,const unsigned char *src,size_t length)
     mem->length+=length;
     }
 
-void ops_memory_add_int(ops_memory_t *mem,unsigned n,size_t length)
-    {
-    unsigned char c[1];
-
-    while(length--)
-	{
-	c[0]=n >> (length*8);
-	ops_memory_add(mem,c,1);
-	}
-    }
-
+// XXX: this could be refactored via the writer, but an awful lot of
+// hoops to jump through for 2 lines of code!
 void ops_memory_place_int(ops_memory_t *mem,unsigned offset,unsigned n,
 			  size_t length)
     {
@@ -63,17 +54,6 @@ void ops_memory_place_int(ops_memory_t *mem,unsigned offset,unsigned n,
     
     while(length--)
 	mem->buf[offset++]=n >> (length*8);
-    }
-
-void ops_memory_add_mpi(ops_memory_t *out,const BIGNUM *bn)
-    {
-    unsigned length=BN_num_bits(bn);
-    unsigned char buf[8192];
-
-    assert(length <= 65535);
-    BN_bn2bin(bn,buf);
-    ops_memory_add_int(out,length,2);
-    ops_memory_add(out,buf,(length+7)/8);
     }
 
 void ops_memory_release(ops_memory_t *mem)
@@ -90,4 +70,3 @@ ops_writer_ret_t ops_writer_memory(const unsigned char *src,unsigned length,
     ops_memory_add(mem,src,length);
     return OPS_W_OK;
     }
-

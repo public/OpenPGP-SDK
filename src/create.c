@@ -3,6 +3,7 @@
 
 #include "create.h"
 #include "util.h"
+#include "build.h"
 #include <string.h>
 #include <assert.h>
 
@@ -124,30 +125,57 @@ void ops_fast_create_rsa_public_key(ops_public_key_t *key,time_t time,
     key->key.rsa.e=e;
     }
 
+// Note that we support v3 keys here because they're needed for
+// for verification - the writer doesn't allow them, though
+static int write_public_key_body(const ops_public_key_t *key,
+				  ops_create_options_t *opt)
+    {
+    if(!(ops_write_scalar(key->version,1,opt)
+	 && ops_write_scalar(key->creation_time,4,opt)))
+	return ops_false;
+
+    if(key->version != 4 && !ops_write_scalar(key->days_valid,2,opt))
+	return ops_false;
+
+    if(!ops_write_scalar(key->algorithm,1,opt))
+	return ops_false;
+
+    switch(key->algorithm)
+	{
+    case OPS_PKA_DSA:
+	return ops_write_mpi(key->key.dsa.p,opt)
+	    && ops_write_mpi(key->key.dsa.q,opt)
+	    && ops_write_mpi(key->key.dsa.g,opt)
+	    && ops_write_mpi(key->key.dsa.y,opt);
+
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	return ops_write_mpi(key->key.rsa.n,opt)
+	    && ops_write_mpi(key->key.rsa.e,opt);
+
+    case OPS_PKA_ELGAMAL:
+	return ops_write_mpi(key->key.elgamal.p,opt)
+	    && ops_write_mpi(key->key.elgamal.g,opt)
+	    && ops_write_mpi(key->key.elgamal.y,opt);
+
+    default:
+	assert(0);
+	break;
+	}
+
+    /* not reached */
+    return ops_false;
+    }
+
 ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
 					  ops_create_options_t *opt)
     {
     assert(key->version == 4);
 
-    if(!(ops_write_ptag(OPS_PTAG_CT_PUBLIC_KEY,opt)
-	 && ops_write_length(1+4+1+public_key_length(key),opt)
-	 && ops_write_scalar(key->version,1,opt)
-	 && ops_write_scalar(key->creation_time,4,opt)
-	 && ops_write_scalar(key->algorithm,1,opt)))
-	return ops_false;
-
-    switch(key->algorithm)
-	{
-    case OPS_PKA_RSA:
-	return ops_write_mpi(key->key.rsa.n,opt)
-	    && ops_write_mpi(key->key.rsa.e,opt);
-
-    default:
-	assert(!"unknown key algorithm");
-	}
-
-    /* not reached */
-    return ops_false;
+    return ops_write_ptag(OPS_PTAG_CT_PUBLIC_KEY,opt)
+	&& ops_write_length(1+4+1+public_key_length(key),opt)
+	&& write_public_key_body(key,opt);
     }
 
 ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
@@ -159,4 +187,19 @@ ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
     ops_fast_create_rsa_public_key(&key,time,DECONST(BIGNUM,n),
 				   DECONST(BIGNUM,e));
     return ops_write_struct_public_key(&key,opt);
+    }
+
+void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
+			  ops_boolean_t make_packet)
+    {
+    ops_create_options_t opt;
+
+    ops_memory_init(out,128);
+    opt.writer=ops_writer_memory;
+    opt.arg=out;
+
+    write_public_key_body(key,&opt);
+
+    if(make_packet)
+	ops_memory_make_packet(out,OPS_PTAG_CT_PUBLIC_KEY);
     }

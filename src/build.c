@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <string.h>
 
+// XXX: move this to memory.c?
 void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)
     {
     size_t extra;
@@ -42,42 +43,4 @@ void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)
 	}
 
     out->length+=extra+1;
-    }
-
-// XXX: this should be refactored into a write
-void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
-			  ops_boolean_t make_packet)
-    {
-    ops_memory_init(out,128);
-    ops_memory_add_int(out,key->version,1);
-    ops_memory_add_int(out,key->creation_time,4);
-    if(key->version != 4)
-	ops_memory_add_int(out,key->days_valid,2);
-    ops_memory_add_int(out,key->algorithm,1);
-
-    switch(key->algorithm)
-	{
-    case OPS_PKA_DSA:
-	ops_memory_add_mpi(out,key->key.dsa.p);
-	ops_memory_add_mpi(out,key->key.dsa.q);
-	ops_memory_add_mpi(out,key->key.dsa.g);
-	ops_memory_add_mpi(out,key->key.dsa.y);
-	break;
-
-    case OPS_PKA_RSA:
-    case OPS_PKA_RSA_ENCRYPT_ONLY:
-    case OPS_PKA_RSA_SIGN_ONLY:
-	ops_memory_add_mpi(out,key->key.rsa.n);
-	ops_memory_add_mpi(out,key->key.rsa.e);
-	break;
-
-    case OPS_PKA_ELGAMAL:
-	ops_memory_add_mpi(out,key->key.elgamal.p);
-	ops_memory_add_mpi(out,key->key.elgamal.g);
-	ops_memory_add_mpi(out,key->key.elgamal.y);
-	break;
-	}
-
-    if(make_packet)
-	ops_memory_make_packet(out,OPS_PTAG_CT_PUBLIC_KEY);
     }

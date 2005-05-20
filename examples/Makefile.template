@@ -7,7 +7,10 @@ LDFLAGS=-g
 LIBDEPS=../src/libops.a
 LIBS=$(LIBDEPS) -lcrypto -lz $(DM_LIB)
 
-all: Makefile .depend packet-dump verify create-key create-signed-key
+all: Makefile lib .depend packet-dump verify create-key create-signed-key
+
+lib:
+	cd ../src && make
 
 packet-dump: packet-dump.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o packet-dump packet-dump.o $(LIBS)

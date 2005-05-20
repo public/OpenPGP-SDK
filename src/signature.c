@@ -240,7 +240,7 @@ void ops_signature_start(ops_create_signature_t *sig,
 			const ops_user_id_t *id)
     {
     // XXX: refactor with check (in several ways - check should probably
-    // use the buffered writer to construct packets, and also should
+    // use the buffered writer to construct packets (done), and also should
     // share code for hash calculation)
     sig->sig.version=OPS_SIG_V4;
     sig->sig.hash_algorithm=OPS_HASH_SHA1;
