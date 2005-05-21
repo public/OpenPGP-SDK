@@ -53,7 +53,8 @@ int main(int argc,char **argv)
     ops_create_signature_t sig;
     ops_user_id_t id;
     unsigned char keyid[OPS_KEY_ID_SIZE];
-    char *user_id;
+    char *user_id; /* not const coz we use _fast_ */
+    const char *keyfile;
 
     if(argc != 3)
 	{
@@ -61,8 +62,12 @@ int main(int argc,char **argv)
 	exit(1);
 	}
 
-    get_key(argv[1]);
+    keyfile=argv[1];
     user_id=argv[2];
+
+    ops_init();
+
+    get_key(keyfile);
 
     arg.fd=1;
     opt.writer=ops_writer_fd;
@@ -84,6 +89,10 @@ int main(int argc,char **argv)
     ops_signature_hashed_subpackets_end(&sig);
 
     ops_write_signature(&sig,&skey.public_key,&skey,&opt);
+
+    ops_secret_key_free(&skey);
+
+    ops_finish();
 
     return 0;
     }
