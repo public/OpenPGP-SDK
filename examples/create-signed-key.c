@@ -73,7 +73,7 @@ int main(int argc,char **argv)
     ops_fast_create_user_id(&id,user_id);
     ops_write_struct_user_id(&id,&opt);
 
-    ops_signature_start(&sig,&skey.public_key,&id);
+    ops_signature_start(&sig,&skey.public_key,&id,OPS_CERT_POSITIVE);
     ops_signature_add_creation_time(&sig,time(NULL));
 
     ops_keyid(keyid,&skey.public_key);
@@ -83,7 +83,7 @@ int main(int argc,char **argv)
 
     ops_signature_hashed_subpackets_end(&sig);
 
-    ops_signature_end(&sig,&skey.public_key,&skey);
+    ops_write_signature(&sig,&skey.public_key,&skey,&opt);
 
     return 0;
     }

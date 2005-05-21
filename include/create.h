@@ -45,6 +45,7 @@ ops_boolean_t ops_write_length(unsigned length,ops_create_options_t *opt);
 ops_boolean_t ops_write_ptag(ops_content_tag_t tag,ops_create_options_t *opt);
 ops_boolean_t ops_write_scalar(unsigned n,unsigned length,
 			       ops_create_options_t *opt);
+ops_boolean_t ops_write_mpi(const BIGNUM *bn,ops_create_options_t *opt);
 ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
 				  ops_create_options_t *opt);
 

@@ -16,8 +16,11 @@ static unsigned char prefix_md5[]={ 0x30,0x20,0x30,0x0C,0x06,0x08,0x2A,0x86,
 static unsigned char prefix_sha1[]={ 0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0E,
 				     0x03,0x02,0x1A,0x05,0x00,0x04,0x14 };
 
+// XXX: both this and verify would be clearer if the signature were
+// treated as an MPI.
 static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
-		     const ops_rsa_secret_key_t *srsa)
+		     const ops_rsa_secret_key_t *srsa,
+		     ops_create_options_t *opt)
     {
     unsigned char hashbuf[8192];
     unsigned char sigbuf[8192];
@@ -25,6 +28,7 @@ static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
     unsigned hashsize;
     unsigned n;
     unsigned t;
+    BIGNUM *bn;
 
     // XXX: we assume hash is sha-1 for now
     hashsize=20+sizeof prefix_sha1;
@@ -34,7 +38,7 @@ static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
     assert(10+hashsize <= keysize);
 
     hashbuf[0]=1;
-    for(n=1 ; n < keysize-hashsize-2 ; ++n)
+    for(n=1 ; n < keysize-hashsize-1 ; ++n)
 	hashbuf[n]=0xff;
     hashbuf[n++]=0;
 
@@ -43,9 +47,16 @@ static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
 
     t=hash->finish(hash,&hashbuf[n]);
     assert(t == 20);
-    n+=t;
 
-    ops_rsa_private_encrypt(sigbuf,hashbuf,keysize,srsa,rsa);
+    ops_write(&hashbuf[n],2,opt);
+
+    n+=t;
+    assert(n == keysize);
+
+    t=ops_rsa_private_encrypt(sigbuf,hashbuf,keysize,srsa,rsa);
+    bn=BN_bin2bn(sigbuf,t,NULL);
+    ops_write_mpi(bn,opt);
+    BN_free(bn);
     }
 
 static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
@@ -236,8 +247,9 @@ ops_check_subkey_signature(const ops_public_key_t *key,
     }
 
 void ops_signature_start(ops_create_signature_t *sig,
-			const ops_public_key_t *key,
-			const ops_user_id_t *id)
+			 const ops_public_key_t *key,
+			 const ops_user_id_t *id,
+			 ops_sig_type_t type)
     {
     // XXX: refactor with check (in several ways - check should probably
     // use the buffered writer to construct packets (done), and also should
@@ -245,6 +257,7 @@ void ops_signature_start(ops_create_signature_t *sig,
     sig->sig.version=OPS_SIG_V4;
     sig->sig.hash_algorithm=OPS_HASH_SHA1;
     sig->sig.key_algorithm=key->algorithm;
+    sig->sig.type=type;
 
     sig->hashed_data_length=-1;
 
@@ -281,8 +294,8 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
     ops_write_scalar(0,2,&sig->opt);
     }
 
-void ops_signature_end(ops_create_signature_t *sig,ops_public_key_t *key,
-		       ops_secret_key_t *skey)
+void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
+			 ops_secret_key_t *skey,ops_create_options_t *opt)
     {
     assert(sig->hashed_data_length != -1);
 
@@ -295,8 +308,16 @@ void ops_signature_end(ops_create_signature_t *sig,ops_public_key_t *key,
     hash_add_int(&sig->hash,0xff,1);
     hash_add_int(&sig->hash,sig->hashed_data_length,4);
 
+    // XXX: technically, we could figure out how big the signature is
+    // and write it directly to the output instead of via memory.
     assert(key->algorithm == OPS_PKA_RSA);
-    rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa);
+    rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa,&sig->opt);
+
+    ops_write_ptag(OPS_PTAG_CT_SIGNATURE,opt);
+    ops_write_length(sig->mem.length,opt);
+    ops_write(sig->mem.buf,sig->mem.length,opt);
+
+    ops_memory_release(&sig->mem);
     }
 
 void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
