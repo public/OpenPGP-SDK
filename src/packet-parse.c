@@ -449,6 +449,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_SS_REVOCATION_KEY:
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -456,6 +457,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	break;
 
     case OPS_PTAG_CT_SIGNATURE:
+    case OPS_PTAG_CT_SIGNATURE_FOOTER:
 	ops_signature_free(&c->content.signature);
 	break;
 
@@ -1216,6 +1218,8 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
     C.signature.hash_algorithm=c[0];
     /* XXX: check algorithm */
 
+    CB(OPS_PTAG_CT_SIGNATURE_HEADER,&content);
+
     if(!parse_signature_subpackets(&C.signature,region,opt))
 	return 0;
     C.signature.v4_hashed_data_length=opt->alength
@@ -1223,7 +1227,7 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
 
     if(!parse_signature_subpackets(&C.signature,region,opt))
 	return 0;
-
+    
     if(!ops_limited_read(C.signature.hash2,2,region,opt))
 	return 0;
 
@@ -1247,7 +1251,7 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
     if(region->length_read != region->length)
 	ERR1("Unconsumed data (%d)",region->length-region->length_read);
 
-    CB(OPS_PTAG_CT_SIGNATURE,&content);
+    CB(OPS_PTAG_CT_SIGNATURE_FOOTER,&content);
 
     return 1;
     }

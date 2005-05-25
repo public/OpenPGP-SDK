@@ -184,7 +184,7 @@ enum ops_content_tag_t
     OPS_PTAG_CT_LITERAL_DATA_HEADER	=0x300,
     OPS_PTAG_CT_LITERAL_DATA_BODY	=0x300+1,
     OPS_PTAG_CT_SIGNATURE_HEADER	=0x300+2,
-    OPS_PTAG_CT_SIGNATURE_BODY		=0x300+3,
+    OPS_PTAG_CT_SIGNATURE_FOOTER	=0x300+3,
     };
 
 /** Structure to hold one parse error string. */

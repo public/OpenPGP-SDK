@@ -587,29 +587,48 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_CT_SIGNATURE_HEADER:
-	print_tagname("SIGNATURE HEADER");
-#ifdef RWTODO
-	printf("  literal data header format=%c filename='%s'\n",
-	       content->literal_data_header.format,
-	       content->literal_data_header.filename);
-	showtime("    modification time",
-		 content->literal_data_header.modification_time);
-#endif
-	printf("\n");
-	break;
-
-    case OPS_PTAG_CT_SIGNATURE_BODY:
 	print_tagname("SIGNATURE");
-#ifdef RWTODO
-	printf("  literal data body length=%d\n",
-	       content->literal_data_body.length);
-	printf("    data=");
-	hexdump(content->literal_data_body.data,
-		content->literal_data_body.length);
-#endif
-	printf("\n");
+	print_indent(indent);
+	print_unsigned_int("Signature Version",
+	       content->signature.version);
+	if (content->signature.version == 3) 
+	    print_time("Signature Creation Time", content->signature.creation_time);
+
+	print_string_and_value("Signature Type",
+			       str_from_single_signature_type(content->signature.type),
+			       content->signature.type);
+
+	print_hexdump_data("Signer ID",
+		      content->signature.signer_id,
+		      sizeof content->signature.signer_id);
+
+	print_string_and_value("Public Key Algorithm",
+			       str_from_single_pka(content->signature.key_algorithm),
+			       content->signature.key_algorithm);
+	print_string_and_value("Hash Algorithm",
+			       str_from_single_hash_algorithm(content->signature.hash_algorithm),
+			       content->signature.hash_algorithm);
+
 	break;
 
+    case OPS_PTAG_CT_SIGNATURE_FOOTER:
+	print_indent();
+	print_hexdump_data("hash2",&content->signature.hash2[0],2);
+
+	switch(content->signature.key_algorithm)
+	    {
+	case OPS_PKA_RSA:
+	    print_bn("sig",content->signature.signature.rsa.sig);
+	    break;
+
+	case OPS_PKA_DSA:
+	    print_bn("r",content->signature.signature.dsa.r);
+	    print_bn("s",content->signature.signature.dsa.s);
+	    break;
+
+	default:
+	    assert(0);
+	    }    
     case OPS_PTAG_CT_SECRET_KEY:
 	// XXX: fix me
 	printf("***RACHEL DO YOUR THING HERE***\n");
