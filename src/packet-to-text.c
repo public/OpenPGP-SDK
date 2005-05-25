@@ -324,14 +324,14 @@ static char *str_from_bitfield(unsigned char octet, bit_map_t *map)
     }
 
 /*! generic function to initialise text_t structure */
-void text_init(text_t * text)
+void ops_text_init(text_t * text)
     {
     list_init(&text->known);
     list_init(&text->unknown);
     }
 
 /*! generic function to free memory used by text_t structure */
-void text_free(text_t * text)
+void ops_text_free(text_t * text)
     {
     /* Strings in "known" array will be constants, so don't free them */
     list_free(&text->known);
@@ -399,7 +399,7 @@ static unsigned int add_str_from_bit_map(text_t * text, char * str, unsigned cha
  *
  */ 
 
-static text_t *text_from_octets(ops_data_t *data, 
+static text_t *ops_text_from_octets(ops_data_t *data, 
 				char *(*text_fn)(unsigned char octet))
     {
 
@@ -412,7 +412,7 @@ static text_t *text_from_octets(ops_data_t *data,
     if (!text)
 	return NULL;
 
-    text_init(text);
+    ops_text_init(text);
 
     /*! for each octet in field ... */
     for ( i=0; i < data->len; i++)
@@ -436,7 +436,7 @@ static text_t *text_from_octets(ops_data_t *data,
  * of this byte array, derived from each bit of each octet.
  *
  */ 
-static text_t *text_from_octets_bits(ops_data_t *data, bit_map_t **map)
+static text_t *ops_text_from_octets_bits(ops_data_t *data, bit_map_t **map)
     {
     text_t *text=NULL;
     char *str;
@@ -448,7 +448,7 @@ static text_t *text_from_octets_bits(ops_data_t *data, bit_map_t **map)
     if (!text)
 	return NULL;
 
-    text_init(text);
+    ops_text_init(text);
 
     /*! for each octet in field ... */
     for ( i=0; i < data->len; i++)
@@ -474,13 +474,13 @@ static text_t *text_from_octets_bits(ops_data_t *data, bit_map_t **map)
  */
 
 /*! returns string derived from the Packet Tag */
-char *str_from_single_packet_tag(unsigned char octet)
+char *ops_str_from_single_packet_tag(unsigned char octet)
     {
     return(str_from_map(octet,packet_tag_map));
     }
 
 /*! returns string derived from the Signature Sub-Packet Type */
-char *str_from_single_signature_subpacket_type(unsigned char octet)
+char *ops_str_from_single_signature_subpacket_type(unsigned char octet)
     {
     char *str;
     int val=0;
@@ -494,71 +494,71 @@ char *str_from_single_signature_subpacket_type(unsigned char octet)
 }
 
 /*! returns string derived from this signature sub-packet type */
-char * str_from_ss_revocation_reason_code(unsigned char octet)
+char * ops_str_from_ss_revocation_reason_code(unsigned char octet)
     {
     return(str_from_map(octet,revocation_reason_code_map));
     }
 
 /*! returns string derived from a single octet in this field */
-char * str_from_single_ss_preferred_compression(unsigned char octet)
+char * ops_str_from_single_ss_preferred_compression(unsigned char octet)
     {
     return(str_from_map(octet,compression_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * text_from_ss_preferred_compression(ops_ss_preferred_compression_t array)
+text_t * ops_text_from_ss_preferred_compression(ops_ss_preferred_compression_t array)
     {
-    return(text_from_octets(&array.data,
-			  &str_from_single_ss_preferred_compression));
+    return(ops_text_from_octets(&array.data,
+			  &ops_str_from_single_ss_preferred_compression));
     }
 
 
 /*! returns string derived from a single octet in this field */
-char * str_from_single_hash_algorithm(unsigned char octet)
+char * ops_str_from_single_hash_algorithm(unsigned char octet)
     {
     return(str_from_map(octet,hash_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
+text_t * ops_text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
     {
-    return(text_from_octets(&array.data,
-			  &str_from_single_hash_algorithm));
+    return(ops_text_from_octets(&array.data,
+			  &ops_str_from_single_hash_algorithm));
     }
 
 /*! returns string derived from signature type value */
-char *str_from_single_signature_type(unsigned char octet)
+char *ops_str_from_single_signature_type(unsigned char octet)
     {
     return(str_from_map(octet, signature_type_map));
     }
 
 /*! returns string derived from PKA value */
-char *str_from_single_pka(unsigned char octet)
+char *ops_str_from_single_pka(unsigned char octet)
     {
     return(str_from_map(octet, public_key_algorithm_map));
     }
 
 /*! returns string derived from a single octet in this field */
-char * str_from_single_ss_preferred_ska(unsigned char octet)
+char * ops_str_from_single_ss_preferred_ska(unsigned char octet)
     {
     return(str_from_map(octet,symmetric_key_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * text_from_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
+text_t * ops_text_from_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
-    return(text_from_octets(&ss_preferred_ska.data, 
-		       &str_from_single_ss_preferred_ska));
+    return(ops_text_from_octets(&ss_preferred_ska.data, 
+		       &ops_str_from_single_ss_preferred_ska));
     }
 
 /*! returns string derived from one bitfield in this signature-subpacket type */
-char * str_from_single_ss_feature(unsigned char octet, bit_map_t * map)
+char * ops_str_from_single_ss_feature(unsigned char octet, bit_map_t * map)
     {
     return(str_from_bitfield(octet,map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * text_from_ss_features(ops_ss_features_t ss_features)
+text_t * ops_text_from_ss_features(ops_ss_features_t ss_features)
     {
     text_t *text=NULL;
     char *str;
@@ -569,7 +569,7 @@ text_t * text_from_ss_features(ops_ss_features_t ss_features)
     if (!text)
 	return NULL;
 
-    text_init(text);
+    ops_text_init(text);
 
     for ( i=0; i < ss_features.data.len; i++)
 	{
@@ -578,7 +578,7 @@ text_t * text_from_ss_features(ops_ss_features_t ss_features)
 	    bit = ss_features.data.contents[i]&mask;
 	    if (bit)
 		{
-		str=str_from_single_ss_feature ( bit, ss_feature_map[i] );
+		str=ops_str_from_single_ss_feature ( bit, ss_feature_map[i] );
 		if (!add_str_from_bit_map( text, str, bit))
 		    return NULL;
 		}
@@ -588,19 +588,19 @@ text_t * text_from_ss_features(ops_ss_features_t ss_features)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * text_from_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
+text_t * ops_text_from_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
     {
-    return(text_from_octets_bits(&ss_notation_data.flags,ss_notation_data_map));
+    return(ops_text_from_octets_bits(&ss_notation_data.flags,ss_notation_data_map));
     }
 
 /*! returns string derived from one bitfield in this signature-subpacket type */
-char * str_from_single_ss_key_flag(unsigned char octet, bit_map_t * map)
+char * ops_str_from_single_ss_key_flag(unsigned char octet, bit_map_t * map)
     {
     return(str_from_bitfield(octet,map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
+text_t * ops_text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     {
     text_t *text=NULL;
     char *str;
@@ -611,7 +611,7 @@ text_t * text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     if (!text)
 	return NULL;
 
-    text_init(text);
+    ops_text_init(text);
 
     /* xxx - TBD: extend to handle multiple octets of bits - rachel */
 
@@ -620,7 +620,7 @@ text_t * text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
 	    bit = ss_key_flags.data.contents[0] & mask;
 	    if (bit)
 		{
-		str=str_from_single_ss_key_flag ( bit, &ss_key_flags_map[0] );
+		str=ops_str_from_single_ss_key_flag ( bit, &ss_key_flags_map[0] );
 		if (!add_str_from_bit_map( text, str, bit))
 		    return NULL;
 		}
@@ -630,13 +630,13 @@ text_t * text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     }
 
 /*! returns string derived from one bitfield in this signature-subpacket type */
-char *str_from_single_ss_key_server_prefs(unsigned char octet, bit_map_t *map)
+char *ops_str_from_single_ss_key_server_prefs(unsigned char octet, bit_map_t *map)
     {
     return(str_from_bitfield(octet,map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t *text_from_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
+text_t *ops_text_from_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
     {
     text_t *text=NULL;
     char *str;
@@ -647,7 +647,7 @@ text_t *text_from_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_pr
     if (!text)
 	return NULL;
 
-    text_init(text);
+    ops_text_init(text);
 
     /* xxx - TBD: extend to handle multiple octets of bits - rachel */
 
@@ -656,7 +656,7 @@ text_t *text_from_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_pr
 	    bit = ss_key_server_prefs.data.contents[0] & mask;
 	    if (bit)
 		{
-		str=str_from_single_ss_key_server_prefs ( bit, &ss_key_server_prefs_map[0] );
+		str=ops_str_from_single_ss_key_server_prefs ( bit, &ss_key_server_prefs_map[0] );
 		if (!add_str_from_bit_map( text, str, bit))
 		    return NULL;
 		}

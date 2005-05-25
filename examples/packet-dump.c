@@ -182,7 +182,7 @@ static void start_subpacket(unsigned type)
     indent++;
     print_indent();
     printf("-- %s (type 0x%02x)\n",
-	   str_from_single_signature_subpacket_type(type),
+	   ops_str_from_single_signature_subpacket_type(type),
 	   type-OPS_PTAG_SIGNATURE_SUBPACKET_BASE);
     }
  
@@ -219,7 +219,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	       content->ptag.content_tag,content->ptag.length_type,
 	       content->ptag.length,content->ptag.length);
 	/*
-	print_tagname(str_from_single_packet_tag(content->ptag.content_tag));
+	print_tagname(ops_str_from_single_packet_tag(content->ptag.content_tag));
 	*/
 	break;
 
@@ -235,7 +235,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_time("Creation Time", content->public_key.creation_time);
 	print_unsigned_int("Days Valid",content->public_key.days_valid);
 
-	str=str_from_single_pka(content->public_key.algorithm);
+	str=ops_str_from_single_pka(content->public_key.algorithm);
 	print_string_and_value("Algorithm",str,content->public_key.algorithm);
 
 	switch(content->public_key.algorithm)
@@ -285,7 +285,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    print_time("Signature Creation Time", content->signature.creation_time);
 
 	print_string_and_value("Signature Type",
-			       str_from_single_signature_type(content->signature.type),
+			       ops_str_from_single_signature_type(content->signature.type),
 			       content->signature.type);
 
 	print_hexdump_data("Signer ID",
@@ -293,10 +293,10 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      sizeof content->signature.signer_id);
 
 	print_string_and_value("Public Key Algorithm",
-			       str_from_single_pka(content->signature.key_algorithm),
+			       ops_str_from_single_pka(content->signature.key_algorithm),
 			       content->signature.key_algorithm);
 	print_string_and_value("Hash Algorithm",
-			       str_from_single_hash_algorithm(content->signature.hash_algorithm),
+			       ops_str_from_single_hash_algorithm(content->signature.hash_algorithm),
 			       content->signature.hash_algorithm);
 
 	print_indent();
@@ -333,13 +333,13 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
 	print_unsigned_int("Version",content->one_pass_signature.version);
 	print_string_and_value("Signature Type",
-			       str_from_single_signature_type(content->one_pass_signature.sig_type),
+			       ops_str_from_single_signature_type(content->one_pass_signature.sig_type),
 			       content->one_pass_signature.sig_type);
 	print_string_and_value("Hash Algorithm",
-			       str_from_single_hash_algorithm(content->one_pass_signature.hash_algorithm),
+			       ops_str_from_single_hash_algorithm(content->one_pass_signature.hash_algorithm),
 			       content->one_pass_signature.hash_algorithm);
 	print_string_and_value("Public Key Algorithm",
-			       str_from_single_pka(content->one_pass_signature.key_algorithm),
+			       ops_str_from_single_pka(content->one_pass_signature.key_algorithm),
 			       content->one_pass_signature.key_algorithm);
  	print_hexdump("Signer ID",
 		      content->one_pass_signature.keyid,
@@ -428,9 +428,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_data( "Preferred Symmetric Algorithms",
 		   &content->ss_preferred_ska.data);
 
-	text = text_from_ss_preferred_ska(content->ss_preferred_ska);
+	text = ops_text_from_ss_preferred_ska(content->ss_preferred_ska);
 	print_text_breakdown(text);
-	text_free(text);
+	ops_text_free(text);
 
 	end_subpacket();
    	break;
@@ -447,9 +447,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_data( "Preferred Hash Algorithms",
 		   &content->ss_preferred_hash.data);
 
-	text = text_from_ss_preferred_hash(content->ss_preferred_hash);
+	text = ops_text_from_ss_preferred_hash(content->ss_preferred_hash);
 	print_text_breakdown(text);
-	text_free(text);
+	ops_text_free(text);
 	end_subpacket();
 	break;
 
@@ -458,9 +458,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_data( "Preferred Compression Algorithms",
 		   &content->ss_preferred_compression.data);
 
-	text = text_from_ss_preferred_compression(content->ss_preferred_compression);
+	text = ops_text_from_ss_preferred_compression(content->ss_preferred_compression);
 	print_text_breakdown(text);
-	text_free(text);
+	ops_text_free(text);
 	end_subpacket();
 	break;
 	
@@ -468,9 +468,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	start_subpacket(content_->tag);
 	print_data( "Key Flags", &content->ss_key_flags.data);
 
-	text = text_from_ss_key_flags(content->ss_key_flags);
+	text = ops_text_from_ss_key_flags(content->ss_key_flags);
 	print_text_breakdown( text);
-	text_free(text);
+	ops_text_free(text);
 
 	end_subpacket();
 	break;
@@ -480,9 +480,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_data( "Key Server Preferences",
 		   &content->ss_key_server_prefs.data);
 
-	text = text_from_ss_key_server_prefs(content->ss_key_server_prefs);
+	text = ops_text_from_ss_key_server_prefs(content->ss_key_server_prefs);
 	print_text_breakdown( text);
-	text_free(text);
+	ops_text_free(text);
 
 	end_subpacket();
 	break;
@@ -492,9 +492,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_data( "Features", 
 		   &content->ss_features.data);
 
-	text = text_from_ss_features(content->ss_features);
+	text = ops_text_from_ss_features(content->ss_features);
 	print_text_breakdown( text);
-	text_free(text);
+	ops_text_free(text);
 
 	end_subpacket();
 	break;
@@ -507,9 +507,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	indent++;
 	print_data( "Flags",
 		   &content->ss_notation_data.flags);
-	text = text_from_ss_notation_data_flags(content->ss_notation_data);
+	text = ops_text_from_ss_notation_data_flags(content->ss_notation_data);
 	print_text_breakdown( text);
-	text_free(text);
+	ops_text_free(text);
 
 	/* xxx - TODO: print out UTF - rachel */
 
@@ -570,7 +570,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_hexdump("Revocation Reason",
 		      &content->ss_revocation_reason.code,
 		      1);
-	str = str_from_ss_revocation_reason_code(content->ss_revocation_reason.code);
+	str = ops_str_from_ss_revocation_reason_code(content->ss_revocation_reason.code);
 	print_string(NULL,str);
 	/* xxx - todo : output text as UTF-8 string */
 	end_subpacket();
@@ -605,7 +605,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    print_time("Signature Creation Time", content->signature.creation_time);
 
 	print_string_and_value("Signature Type",
-			       str_from_single_signature_type(content->signature.type),
+			       ops_str_from_single_signature_type(content->signature.type),
 			       content->signature.type);
 
 	print_hexdump_data("Signer ID",
@@ -613,10 +613,10 @@ callback(const ops_parser_content_t *content_,void *arg_)
 		      sizeof content->signature.signer_id);
 
 	print_string_and_value("Public Key Algorithm",
-			       str_from_single_pka(content->signature.key_algorithm),
+			       ops_str_from_single_pka(content->signature.key_algorithm),
 			       content->signature.key_algorithm);
 	print_string_and_value("Hash Algorithm",
-			       str_from_single_hash_algorithm(content->signature.hash_algorithm),
+			       ops_str_from_single_hash_algorithm(content->signature.hash_algorithm),
 			       content->signature.hash_algorithm);
 
 	break;
