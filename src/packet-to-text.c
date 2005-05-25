@@ -115,6 +115,21 @@ static map_t public_key_algorithm_map[] =
     { OPS_PKA_RSA_SIGN_ONLY,	"RSA Sign-Only" },
     { OPS_PKA_ELGAMAL,		"Elgamal (Encrypt-Only)" },
     { OPS_PKA_DSA,		"DSA" },
+    { OPS_PKA_RESERVED_ELLIPTIC_CURVE,	"Reserved for Elliptic Curve" },
+    { OPS_PKA_RESERVED_ECDSA,		"Reserved for ECDSA" },
+    { OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN,	"Reserved (formerly Elgamal Encrypt or Sign" },
+    { OPS_PKA_RESERVED_DH,		"Reserved for Diffie-Hellman (X9.42)" },
+    { OPS_PKA_PRIVATE00,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE01,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE02,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE03,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE04,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE05,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE06,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE07,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE08,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE09,		"Private/Experimental" },
+    { OPS_PKA_PRIVATE10,		"Private/Experimental" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 

@@ -222,7 +222,21 @@ typedef enum
     OPS_PKA_RSA_SIGN_ONLY	=3,	/*!< RSA Sign-Only (deprecated - \see RFC2440bis-12 12.4) */
     OPS_PKA_ELGAMAL		=16,	/*!< Elgamal (Encrypt-Only) */
     OPS_PKA_DSA			=17,	/*!< DSA (Digital Signature Algorithm) */
-    OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN=20, // deprecated
+    OPS_PKA_RESERVED_ELLIPTIC_CURVE	=18,	/*!< Reserved for Elliptic Curve */
+    OPS_PKA_RESERVED_ECDSA		=19,	/*!< Reserved for ECDSA */
+    OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN	=20, 	/*!< Deprecated. */
+    OPS_PKA_RESERVED_DH			=21,	/*!< Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME) */
+    OPS_PKA_PRIVATE00		=100,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE01		=101,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE02		=102,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE03		=103,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE04		=104,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE05		=105,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE06		=106,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE07		=107,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE08		=108,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE09		=109,	/*!< Private/Experimental Algorithm */
+    OPS_PKA_PRIVATE10		=110,	/*!< Private/Experimental Algorithm */
     } ops_public_key_algorithm_t;
 
 /** Structure to hold one DSA public key parameters.
