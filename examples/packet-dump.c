@@ -181,9 +181,9 @@ static void start_subpacket(unsigned type)
     {
     indent++;
     print_indent();
-    printf("-- %s (type 0x%x)\n",
+    printf("-- %s (type 0x%02x)\n",
 	   str_from_single_signature_subpacket_type(type),
-	   type);
+	   type-OPS_PTAG_SIGNATURE_SUBPACKET_BASE);
     }
  
 static void end_subpacket()
