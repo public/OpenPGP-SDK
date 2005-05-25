@@ -114,6 +114,17 @@ static void print_hexdump( char *name,
     printf("\n");
     }
 
+static void print_hexdump_data( char *name,
+			  const unsigned char *data,
+			  unsigned int len)
+    {
+    print_name(name);
+
+    printf("0x");
+    hexdump(data,len);
+    printf("\n");
+    }
+
 static void print_data( char *name, const ops_data_t *data)
     {
     print_hexdump( name, data->contents, data->len);
@@ -272,7 +283,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 			       str_from_single_signature_type(content->signature.type),
 			       content->signature.type);
 
-	print_hexdump("Signer ID",
+	print_hexdump_data("Signer ID",
 		      content->signature.signer_id,
 		      sizeof content->signature.signer_id);
 
@@ -284,7 +295,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 			       content->signature.hash_algorithm);
 
 	print_indent();
-	print_hexdump("hash2",&content->signature.hash2[0],2);
+	print_hexdump_data("hash2",&content->signature.hash2[0],2);
 
 	switch(content->signature.key_algorithm)
 	    {
