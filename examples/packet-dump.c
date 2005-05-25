@@ -181,15 +181,13 @@ static void start_subpacket(unsigned type)
     {
     indent++;
     print_indent();
-    printf("-- subpacket start : %s (type 0x%x)\n",
+    printf("-- %s (type 0x%x)\n",
 	   str_from_single_signature_subpacket_type(type),
 	   type);
     }
  
 static void end_subpacket()
     {
-    print_indent();
-    printf("-- subpacket end\n");
     indent--;
     }
 
