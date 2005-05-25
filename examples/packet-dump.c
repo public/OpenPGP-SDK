@@ -645,7 +645,9 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
 	default:
 	    assert(0);
-	    }    
+	    }
+	break;
+
     case OPS_PTAG_CT_SECRET_KEY:
 	// XXX: fix me
 	printf("***RACHEL DO YOUR THING HERE***\n");
