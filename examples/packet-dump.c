@@ -151,7 +151,14 @@ static void print_tagname( char *str)
 static void print_string(char *name, char *str)
     {
     print_name(name);
-    printf("%s\n", str);
+    while(*str)
+	{
+	if(*str >= 0x20 && *str < 0x7f && *str != '%')
+	    putchar(*str);
+	else
+	    printf("%%%02x",(unsigned char)*str);
+	++str;
+	}
     }
 
 static void print_unsigned_int( char *name, unsigned int val)
@@ -306,6 +313,11 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	case OPS_PKA_DSA:
 	    print_bn("r",content->signature.signature.dsa.r);
 	    print_bn("s",content->signature.signature.dsa.s);
+	    break;
+
+	case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
+	    print_bn("r",content->signature.signature.elgamal.r);
+	    print_bn("s",content->signature.signature.elgamal.s);
 	    break;
 
 	default:
@@ -624,6 +636,11 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	case OPS_PKA_DSA:
 	    print_bn("r",content->signature.signature.dsa.r);
 	    print_bn("s",content->signature.signature.dsa.s);
+	    break;
+
+	case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
+	    print_bn("r",content->signature.signature.elgamal.r);
+	    print_bn("s",content->signature.signature.elgamal.s);
 	    break;
 
 	default:

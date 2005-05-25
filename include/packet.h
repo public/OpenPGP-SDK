@@ -221,7 +221,8 @@ typedef enum
     OPS_PKA_RSA_ENCRYPT_ONLY	=2,	/*!< RSA Encrypt-Only (deprecated - \see RFC2440bis-12 12.4) */
     OPS_PKA_RSA_SIGN_ONLY	=3,	/*!< RSA Sign-Only (deprecated - \see RFC2440bis-12 12.4) */
     OPS_PKA_ELGAMAL		=16,	/*!< Elgamal (Encrypt-Only) */
-    OPS_PKA_DSA			=17	/*!< DSA (Digital Signature Algorithm) */
+    OPS_PKA_DSA			=17,	/*!< DSA (Digital Signature Algorithm) */
+    OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN=20, // deprecated
     } ops_public_key_algorithm_t;
 
 /** Structure to hold one DSA public key parameters.
@@ -420,11 +421,18 @@ typedef struct
     BIGNUM			*s;	/*!< DSA value s */
     } ops_dsa_signature_t;
 
+typedef struct
+    {
+    BIGNUM			*r;
+    BIGNUM			*s;
+    } ops_elgamal_signature_t;
+
 /** Union to hold signature parameters of any algorithm */
 typedef union
     {
     ops_rsa_signature_t		rsa;	/*!< An RSA Signature */
     ops_dsa_signature_t		dsa;	/*!< A DSA Signature */
+    ops_elgamal_signature_t	elgamal; // deprecated
     } ops_signature_union_t;
 
 /** Struct to hold a signature packet.

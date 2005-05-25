@@ -387,7 +387,7 @@ static text_t *text_from_octets(ops_data_t *data,
  * of this byte array, derived from each bit of each octet.
  *
  */ 
-static text_t * text_from_octets_bits(ops_data_t *data, bit_map_t **map)
+static text_t *text_from_octets_bits(ops_data_t *data, bit_map_t **map)
     {
     text_t *text=NULL;
     char *str;

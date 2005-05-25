@@ -781,6 +781,11 @@ void ops_signature_free(ops_signature_t *sig)
 	free_BN(&sig->signature.dsa.s);
 	break;
 
+    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
+	free_BN(&sig->signature.elgamal.r);
+	free_BN(&sig->signature.elgamal.s);
+	break;
+
     default:
 	assert(0);
 	}
@@ -846,6 +851,12 @@ static int parse_v3_signature(ops_region_t *region,ops_parse_options_t *opt)
     case OPS_PKA_DSA:
 	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,opt)
 	   || !limited_read_mpi(&C.signature.signature.dsa.s,region,opt))
+	    return 0;
+	break;
+
+    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
+	if(!limited_read_mpi(&C.signature.signature.elgamal.r,region,opt)
+	   || !limited_read_mpi(&C.signature.signature.elgamal.s,region,opt))
 	    return 0;
 	break;
 
@@ -1244,8 +1255,14 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
 	    return 0;
 	break;
 
+    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
+	if(!limited_read_mpi(&C.signature.signature.elgamal.r,region,opt)
+	   || !limited_read_mpi(&C.signature.signature.elgamal.s,region,opt))
+	    return 0;
+	break;
+
     default:
-	ERR1("Bad signature key algorithm (%d)",C.signature.key_algorithm);
+	ERR1("Bad v4 signature key algorithm (%d)",C.signature.key_algorithm);
 	}
 
     if(region->length_read != region->length)
