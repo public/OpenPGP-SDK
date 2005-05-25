@@ -30,3 +30,7 @@ Makefiles:
 	@for d in $(SUBDIRS); do \
 	(cd $$d; echo "+++ make Makefile in $$d"; make Makefile; echo "--- $$d"); \
 	done
+
+tags:
+	rm -f TAGS
+	find . -name *.[ch] | xargs etags
