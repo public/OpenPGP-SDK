@@ -31,11 +31,18 @@ typedef struct
 void text_init(text_t * text);
 void text_free(text_t * text);
 
+char *str_from_single_packet_tag(unsigned char octet);
+char *str_from_single_signature_subpacket_type(unsigned char octet);
+
+char * str_from_single_signature_type(unsigned char octet);
+
+char * str_from_single_pka(unsigned char octet);
+
 text_t * text_from_ss_preferred_compression(ops_ss_preferred_compression_t ss_preferred_compression);
 char * str_from_single_ss_preferred_compression(unsigned char octet);
 
 text_t * text_from_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_hash);
-char * str_from_single_ss_preferred_hash(unsigned char octet);
+char * str_from_single_hash_algorithm(unsigned char octet);
 
 text_t * text_from_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska);
 char * str_from_single_ss_preferred_ska(unsigned char octet);

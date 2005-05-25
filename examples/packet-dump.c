@@ -8,39 +8,42 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int indent=0;
+
+static void print_indent()
+    {
+    int i=0;
+    for(i=0 ; i<indent ; i++)
+	printf("  ");
+    }
+
 static void showtime(const unsigned char *name,time_t t)
     {
     printf("%s=%ld (%.24s)",name,t,ctime(&t));
     }
 
-static void bndump(const char *name,const BIGNUM *bn)
+static void print_bn( const char *name, const BIGNUM *bn)
     {
-    printf("    %s=",name);
+    print_indent();
+    printf("%s=",name);
     BN_print_fp(stdout,bn);
-    putchar('\n');
+    printf("\n");
     }
 
-static void indent(int indent_level)
+static void print_time( char *name, time_t time)
     {
-    int i=0;
-    for(i=0 ; i<indent_level ; i++)
-	printf("  ");
-    }
-
-static void print_time(char *label, time_t time, int indentlevel)
-    {
-    indent(indentlevel);
-    printf("%s: ",label);
+    print_indent();
+    printf("%s: ",name);
     showtime("time",time);
     printf("\n");
     }
 
-static void print_duration(char *label, time_t time, int indentlevel)
+static void print_duration(char *name, time_t time)
     {
     int mins, hours, days, years;
 
-    indent(indentlevel);
-    printf("%s: ",label);
+    print_indent();
+    printf("%s: ",name);
     printf("duration %ld seconds",time);
 
     mins=time/60;
@@ -60,21 +63,24 @@ static void print_duration(char *label, time_t time, int indentlevel)
     printf("\n");
     }
 
-static void print_text(char *label, text_t *text, int indentlevel)
+static void print_name( char *name)
+    {
+    print_indent();
+    if(name)
+	printf("%s: ",name);
+    }
+
+static void print_text_breakdown( text_t *text)
     {
     int i=0;
-
-    if(label)
-	{
-	indent(indentlevel);
-	printf("%s:\n",label);
-	}
+    char *prefix=".. ";
 
     /* these were recognised */
 
     for(i=0 ; i<text->known.used ; i++) 
 	{
-	indent(indentlevel+1);
+	print_indent();
+	printf(prefix);
 	printf("%s\n",text->known.strings[i]);
 	}
 
@@ -85,49 +91,39 @@ static void print_text(char *label, text_t *text, int indentlevel)
     if(text->unknown.used)
 	{
 	printf("\n");
-	indent(indentlevel+1);
+	print_indent();
 	printf("Not Recognised: ");
 	}
     for( i=0; i < text->unknown.used; i++) 
 	{
-	indent(indentlevel+2);
+	print_indent();
+	printf(prefix);
 	printf("%s\n",text->unknown.strings[i]);
 	}
 	
     }
 
-static void print_hexdump(char *label,const unsigned char *data,
-			  unsigned int len, int indentlevel)
+static void print_hexdump( char *name,
+			  const unsigned char *data,
+			  unsigned int len)
     {
-    if(label)
-	{
-	indent(indentlevel);
-	printf("%s: len=%d, data=0x", label, len);
-	}
+    print_name(name);
 
+    printf("len=%d, data=0x", len);
     hexdump(data,len);
     printf("\n");
     }
 
-static void print_data(char *label, const ops_data_t *data,int indentlevel)
+static void print_data( char *name, const ops_data_t *data)
     {
-    if(label)
-	{
-	indent(indentlevel);
-	printf("%s: len=%d, data=0x", label, data->len);
-	}
-
-    hexdump(data->contents,data->len);
-    printf("\n");
+    print_hexdump( name, data->contents, data->len);
     }
 
-static void print_boolean(char *label, unsigned char bool, int indentlevel)
+
+static void print_boolean(char *name, unsigned char bool)
     {
-    if(label)
-	{
-	indent(indentlevel);
-	printf("%s: ", label);
-	}
+    print_name(name);
+
     if(bool)
 	printf("Yes");
     else
@@ -135,16 +131,48 @@ static void print_boolean(char *label, unsigned char bool, int indentlevel)
     printf("\n");
     }
 
-static void print_string(char *label, char *str, int indentlevel)
+static void print_tagname( char *str)
     {
-    if(label)
-	{
-	indent(indentlevel);
-	printf("%s:\n", label);
-	}
+    print_indent();
+    printf("%s packet\n", str);
+    }
 
-    indent(indentlevel+1);
+static void print_string(char *name, char *str)
+    {
+    print_name(name);
     printf("%s\n", str);
+    }
+
+static void print_unsigned_int( char *name, unsigned int val)
+    {
+    print_name(name);
+    printf("%d\n", val);
+    }
+
+static void print_string_and_value( char *name, char *str, unsigned char value)
+    {
+
+    print_name(name);
+
+    printf("%s", str);
+    printf(" (0x%x)", value);
+    printf("\n");
+    }
+
+static void start_subpacket(unsigned type)
+    {
+    indent++;
+    print_indent();
+    printf("-- subpacket start : %s (type 0x%x)\n",
+	   str_from_single_signature_subpacket_type(type),
+	   type);
+    }
+ 
+static void end_subpacket()
+    {
+    print_indent();
+    printf("-- subpacket end\n");
+    indent--;
     }
 
 static ops_parse_callback_return_t
@@ -161,42 +189,59 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PARSER_PTAG:
-	printf("ptag new_format=%d content_tag=%d length_type=%d"
+
+	if (content->ptag.content_tag==OPS_PTAG_CT_PUBLIC_KEY)
+	    {
+	    indent=0;
+	    printf("\n*** NEXT KEY ***\n");
+	    }
+
+	printf("\n");
+	print_indent();
+	printf("==== ptag new_format=%d content_tag=%d length_type=%d"
 	       " length=0x%x (%d)\n",content->ptag.new_format,
 	       content->ptag.content_tag,content->ptag.length_type,
 	       content->ptag.length,content->ptag.length);
+	/*
+	print_tagname(str_from_single_packet_tag(content->ptag.content_tag));
+	*/
 	break;
 
     case OPS_PTAG_CT_PUBLIC_KEY:
     case OPS_PTAG_CT_PUBLIC_SUBKEY:
-	printf("public %skey version=%d creation_time=%ld (%.24s)\n",
-	       content_->tag == OPS_PTAG_CT_PUBLIC_KEY ? "" : "sub",
-	       content->public_key.version,content->public_key.creation_time,
-	       ctime(&content->public_key.creation_time));
-	/* XXX: convert algorithm to string */
-	printf("           %sdays_valid=%d algorithm=%d\n",
-	       content_->tag == OPS_PTAG_CT_PUBLIC_KEY ? "" : "   ",
-	       content->public_key.days_valid,content->public_key.algorithm);
+
+	if (content_->tag == OPS_PTAG_CT_PUBLIC_KEY)
+	    print_tagname("PUBLIC KEY");
+	else
+	    print_tagname("PUBLIC SUBKEY");
+
+	print_unsigned_int("Version",content->public_key.version);
+	print_time("Creation Time", content->public_key.creation_time);
+	print_unsigned_int("Days Valid",content->public_key.days_valid);
+
+	str=str_from_single_pka(content->public_key.algorithm);
+	print_string_and_value("Algorithm",str,content->public_key.algorithm);
+
 	switch(content->public_key.algorithm)
 	    {
 	case OPS_PKA_DSA:
-	    bndump("p",content->public_key.key.dsa.p);
-	    bndump("q",content->public_key.key.dsa.q);
-	    bndump("g",content->public_key.key.dsa.g);
-	    bndump("y",content->public_key.key.dsa.y);
+	    print_bn("p",content->public_key.key.dsa.p);
+	    print_bn("q",content->public_key.key.dsa.q);
+	    print_bn("g",content->public_key.key.dsa.g);
+	    print_bn("y",content->public_key.key.dsa.y);
 	    break;
 
 	case OPS_PKA_RSA:
 	case OPS_PKA_RSA_ENCRYPT_ONLY:
 	case OPS_PKA_RSA_SIGN_ONLY:
-	    bndump("n",content->public_key.key.rsa.n);
-	    bndump("e",content->public_key.key.rsa.e);
+	    print_bn("n",content->public_key.key.rsa.n);
+	    print_bn("e",content->public_key.key.rsa.e);
 	    break;
 
 	case OPS_PKA_ELGAMAL:
-	    bndump("p",content->public_key.key.elgamal.p);
-	    bndump("g",content->public_key.key.elgamal.g);
-	    bndump("y",content->public_key.key.elgamal.y);
+	    print_bn("p",content->public_key.key.elgamal.p);
+	    print_bn("g",content->public_key.key.elgamal.g);
+	    print_bn("y",content->public_key.key.elgamal.y);
 	    break;
 
 	default:
@@ -205,40 +250,51 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_CT_TRUST:
-	print_data("Trust",&content->trust.data,0);
+	print_tagname("TRUST");
+	print_data("Trust",&content->trust.data);
 	break;
 	
     case OPS_PTAG_CT_USER_ID:
 	/* XXX: how do we print UTF-8? */
-	printf("user id user_id=%s\n",content->user_id.user_id);
+	print_tagname("USER ID");
+	print_string("user_id",content->user_id.user_id);
 	break;
 
     case OPS_PTAG_CT_SIGNATURE:
-	printf("signature version=%d type=0x%02x\n",
-	       content->signature.version,content->signature.type);
+	print_tagname("SIGNATURE");
+	print_indent(indent);
+	print_unsigned_int("Signature Version",
+	       content->signature.version);
 	if (content->signature.version == 3) 
-	    {
-	    printf("          creation_time=%ld (%.24s)\n",
-		   content->signature.creation_time,
-		   ctime(&content->signature.creation_time));
-	    }
-	printf("          signer_id=");
-	hexdump(content->signature.signer_id,
-		sizeof content->signature.signer_id);
-	printf(" key_algorithm=%d hash_algorithm=%d\n",
-	       content->signature.key_algorithm,
-	       content->signature.hash_algorithm);
-	printf("          hash2=%02x%02x\n",content->signature.hash2[0],
-	       content->signature.hash2[1]);
+	    print_time("Signature Creation Time", content->signature.creation_time);
+
+	print_string_and_value("Signature Type",
+			       str_from_single_signature_type(content->signature.type),
+			       content->signature.type);
+
+	print_hexdump("Signer ID",
+		      content->signature.signer_id,
+		      sizeof content->signature.signer_id);
+
+	print_string_and_value("Public Key Algorithm",
+			       str_from_single_pka(content->signature.key_algorithm),
+			       content->signature.key_algorithm);
+	print_string_and_value("Hash Algorithm",
+			       str_from_single_hash_algorithm(content->signature.hash_algorithm),
+			       content->signature.hash_algorithm);
+
+	print_indent();
+	print_hexdump("hash2",&content->signature.hash2[0],2);
+
 	switch(content->signature.key_algorithm)
 	    {
 	case OPS_PKA_RSA:
-	    bndump("sig",content->signature.signature.rsa.sig);
+	    print_bn("sig",content->signature.signature.rsa.sig);
 	    break;
 
 	case OPS_PKA_DSA:
-	    bndump("r",content->signature.signature.dsa.r);
-	    bndump("s",content->signature.signature.dsa.s);
+	    print_bn("r",content->signature.signature.dsa.r);
+	    print_bn("s",content->signature.signature.dsa.s);
 	    break;
 
 	default:
@@ -247,59 +303,84 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_CT_COMPRESSED:
-	printf("  compressed data type=%d\n",content->compressed.type);
+	print_tagname("COMPRESSED");
+	print_unsigned_int("Compressed Data Type", content->compressed.type);
 	break;
 
     case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
-	printf("  one-pass signature version=%d sig_type=%d hash_algorith=%d"
-	       " key_algorithm=%d\n",content->one_pass_signature.version,
-	       content->one_pass_signature.sig_type,
-	       content->one_pass_signature.hash_algorithm,
-	       content->one_pass_signature.key_algorithm);
-	printf("                     keyid=");
-	hexdump(content->one_pass_signature.keyid,
-		sizeof content->one_pass_signature.keyid);
-	printf(" nested=%d\n",content->one_pass_signature.nested);
+	print_tagname("ONE PASS SIGNATURE");
+
+	print_unsigned_int("Version",content->one_pass_signature.version);
+	print_string_and_value("Signature Type",
+			       str_from_single_signature_type(content->one_pass_signature.sig_type),
+			       content->one_pass_signature.sig_type);
+	print_string_and_value("Hash Algorithm",
+			       str_from_single_hash_algorithm(content->one_pass_signature.hash_algorithm),
+			       content->one_pass_signature.hash_algorithm);
+	print_string_and_value("Public Key Algorithm",
+			       str_from_single_pka(content->one_pass_signature.key_algorithm),
+			       content->one_pass_signature.key_algorithm);
+ 	print_hexdump("Signer ID",
+		      content->one_pass_signature.keyid,
+		      sizeof content->one_pass_signature.keyid);
+
+	print_unsigned_int("Nested",
+			   content->one_pass_signature.nested);
 	break;
 
     case OPS_PTAG_CT_USER_ATTRIBUTE:
+	print_tagname("USER ATTRIBUTE");
 	print_hexdump("User Attribute",
 		      content->user_attribute.data.contents,
-		      content->user_attribute.data.len,
-		      1);
+		      content->user_attribute.data.len);
 	break;
 
     case OPS_PTAG_RAW_SS:
 	assert(!content_->critical);
-	printf("  raw signature subpacket tag=%d raw=",
-	       content->ss_raw.tag-OPS_PTAG_SIGNATURE_SUBPACKET_BASE);
-	hexdump(content->ss_raw.raw,content->ss_raw.length);
-	putchar('\n');
+	start_subpacket(content_->tag);
+	print_unsigned_int("Raw Signature Subpacket: tag",
+			   content->ss_raw.tag-OPS_PTAG_SIGNATURE_SUBPACKET_BASE);
+	print_hexdump("Raw Data",
+		      content->ss_raw.raw,
+		      content->ss_raw.length);
 	break;
 
     case OPS_PTAG_SS_CREATION_TIME:
-	print_time("Signature Creation Time",content->ss_time.time,1);
+	start_subpacket(content_->tag);
+	print_time("Signature Creation Time",content->ss_time.time);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_EXPIRATION_TIME:
-	print_duration("Signature Expiration Time",content->ss_time.time,1);
+	start_subpacket(content_->tag);
+	print_duration("Signature Expiration Time",content->ss_time.time);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_KEY_EXPIRATION_TIME:
-	print_duration("Key Expiration Time", content->ss_time.time, 1);
+	start_subpacket(content_->tag);
+	print_duration("Key Expiration Time", content->ss_time.time);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_TRUST:
-	printf ("  trust signature: level=%d, amount=%d\n",
-		content->ss_trust.level,
-		content->ss_trust.amount);
+	start_subpacket(content_->tag);
+	print_string("Trust Signature","");
+	print_unsigned_int("Level",
+			   content->ss_trust.level);
+	print_unsigned_int("Amount",
+			   content->ss_trust.amount);
+	end_subpacket();
 	break;
 		
     case OPS_PTAG_SS_REVOCABLE:
-	print_boolean("Revocable",content->ss_revocable.revocable,1);
+	start_subpacket(content_->tag);
+	print_boolean("Revocable",content->ss_revocable.revocable);
+	end_subpacket();
 	break;      
 
     case OPS_PTAG_SS_REVOCATION_KEY:
+	start_subpacket(content_->tag);
 	/* not yet tested */
 	printf ("  revocation key: class=0x%x",
 		content->ss_revocation_key.class);
@@ -310,115 +391,139 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf(", fingerprint=");
 	hexdump(content->ss_revocation_key.fingerprint,20);
 	printf("\n");
+	end_subpacket();
 	break;
     
     case OPS_PTAG_SS_ISSUER_KEY_ID:
+	start_subpacket(content_->tag);
 	print_hexdump("Issuer Key Id",
 		      &content->ss_issuer_key_id.key_id[0],
-		      sizeof content->ss_issuer_key_id.key_id,
-		      1);
+		      sizeof content->ss_issuer_key_id.key_id);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
+	start_subpacket(content_->tag);
+	print_data( "Preferred Symmetric Algorithms",
+		   &content->ss_preferred_ska.data);
+
 	text = text_from_ss_preferred_ska(content->ss_preferred_ska);
-	print_text("Preferred Symmetric Algorithms",text,1);
+	print_text_breakdown(text);
 	text_free(text);
 
+	end_subpacket();
    	break;
 
     case OPS_PTAG_SS_PRIMARY_USER_ID:
+	start_subpacket(content_->tag);
 	print_boolean("Primary User ID",
-		      content->ss_primary_user_id.primary_user_id,
-		      1);
+		      content->ss_primary_user_id.primary_user_id);
+	end_subpacket();
 	break;      
 
     case OPS_PTAG_SS_PREFERRED_HASH:
+	start_subpacket(content_->tag);
+	print_data( "Preferred Hash Algorithms",
+		   &content->ss_preferred_hash.data);
+
 	text = text_from_ss_preferred_hash(content->ss_preferred_hash);
-	print_text("Preferred Hash Algorithms",text,1);
+	print_text_breakdown(text);
 	text_free(text);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_PREFERRED_COMPRESSION:
+	start_subpacket(content_->tag);
+	print_data( "Preferred Compression Algorithms",
+		   &content->ss_preferred_compression.data);
+
 	text = text_from_ss_preferred_compression(content->ss_preferred_compression);
-	print_text("Preferred Compression Algorithms",text,1);
+	print_text_breakdown(text);
 	text_free(text);
+	end_subpacket();
 	break;
 	
     case OPS_PTAG_SS_KEY_FLAGS:
-	print_data("Key Flags", 
-		      &content->ss_key_flags.data,
-		      1);
+	start_subpacket(content_->tag);
+	print_data( "Key Flags", &content->ss_key_flags.data);
 
 	text = text_from_ss_key_flags(content->ss_key_flags);
-	print_text(NULL, text, 1);
+	print_text_breakdown( text);
 	text_free(text);
 
+	end_subpacket();
 	break;
 	
     case OPS_PTAG_SS_KEY_SERVER_PREFS:
-	print_data("Key Server Preferences",
-		      &content->ss_key_server_prefs.data,
-		      1);
+	start_subpacket(content_->tag);
+	print_data( "Key Server Preferences",
+		   &content->ss_key_server_prefs.data);
 
 	text = text_from_ss_key_server_prefs(content->ss_key_server_prefs);
-	print_text(NULL, text, 1);
+	print_text_breakdown( text);
 	text_free(text);
 
+	end_subpacket();
 	break;
 	
     case OPS_PTAG_SS_FEATURES:
-	print_data("Features", 
-		      &content->ss_features.data,
-		      1);
+	start_subpacket(content_->tag);
+	print_data( "Features", 
+		   &content->ss_features.data);
 
 	text = text_from_ss_features(content->ss_features);
-	print_text(NULL,text,1);
+	print_text_breakdown( text);
 	text_free(text);
 
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_NOTATION_DATA:
-	indent(1);
+	start_subpacket(content_->tag);
+	print_indent();
 	printf("Notation Data:\n");
-	print_data("Flags",
-		   &content->ss_notation_data.flags,
-		   2);
+
+	indent++;
+	print_data( "Flags",
+		   &content->ss_notation_data.flags);
 	text = text_from_ss_notation_data_flags(content->ss_notation_data);
-	print_text(NULL,text,2);
+	print_text_breakdown( text);
 	text_free(text);
 
 	/* xxx - TODO: print out UTF - rachel */
 
-	print_data("Name",
-		   &content->ss_notation_data.name,
-		   2);
+	print_data( "Name",
+		   &content->ss_notation_data.name);
 
-	print_data("Value",
-		   &content->ss_notation_data.value,
-		   2);
+	print_data( "Value",
+		   &content->ss_notation_data.value);
 
+	indent--;
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_REGEXP:
+	start_subpacket(content_->tag);
 	print_hexdump("Regular Expression",
 		      content->ss_regexp.text,
-		      strlen(content->ss_regexp.text), 
-		      1);
+		      strlen(content->ss_regexp.text));
 	print_string(NULL,
-		     content->ss_regexp.text,
-		     1);
+		     content->ss_regexp.text);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_POLICY_URL:
+	start_subpacket(content_->tag);
 	print_string("Policy URL",
-		     content->ss_policy_url.text,
-		     1);
+		     content->ss_policy_url.text);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_PREFERRED_KEY_SERVER:
+	start_subpacket(content_->tag);
 	print_string("Preferred Key Server",
-		     content->ss_preferred_key_server.text,
-		     1);
+		     content->ss_preferred_key_server.text);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_USERDEFINED00:
@@ -432,23 +537,26 @@ callback(const ops_parser_content_t *content_,void *arg_)
     case OPS_PTAG_SS_USERDEFINED08:
     case OPS_PTAG_SS_USERDEFINED09:
     case OPS_PTAG_SS_USERDEFINED10:
+	start_subpacket(content_->tag);
 	print_hexdump("Internal or user-defined",
 		      content->ss_userdefined.data.contents,
-		      content->ss_userdefined.data.len,
-		      1);
+		      content->ss_userdefined.data.len);
+	end_subpacket();
 	break;
 
     case OPS_PTAG_SS_REVOCATION_REASON:
+	start_subpacket(content_->tag);
 	print_hexdump("Revocation Reason",
 		      &content->ss_revocation_reason.code,
-		      1,
 		      1);
 	str = str_from_ss_revocation_reason_code(content->ss_revocation_reason.code);
-	print_string(NULL,str,1);
+	print_string(NULL,str);
 	/* xxx - todo : output text as UTF-8 string */
+	end_subpacket();
 	break;
 
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+	print_tagname("LITERAL DATA HEADER");
 	printf("  literal data header format=%c filename='%s'\n",
 	       content->literal_data_header.format,
 	       content->literal_data_header.filename);
@@ -458,11 +566,36 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
+	print_tagname("LITERAL DATA BODY");
 	printf("  literal data body length=%d\n",
 	       content->literal_data_body.length);
 	printf("    data=");
 	hexdump(content->literal_data_body.data,
 		content->literal_data_body.length);
+	printf("\n");
+	break;
+
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
+	print_tagname("SIGNATURE HEADER");
+#ifdef RWTODO
+	printf("  literal data header format=%c filename='%s'\n",
+	       content->literal_data_header.format,
+	       content->literal_data_header.filename);
+	showtime("    modification time",
+		 content->literal_data_header.modification_time);
+#endif
+	printf("\n");
+	break;
+
+    case OPS_PTAG_CT_SIGNATURE_BODY:
+	print_tagname("SIGNATURE");
+#ifdef RWTODO
+	printf("  literal data body length=%d\n",
+	       content->literal_data_body.length);
+	printf("    data=");
+	hexdump(content->literal_data_body.data,
+		content->literal_data_body.length);
+#endif
 	printf("\n");
 	break;
 
@@ -472,6 +605,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     default:
+	print_tagname("UNKNOWN PACKET TYPE");
 	fprintf(stderr,"packet-dump: unknown tag=%d\n",content_->tag);
 	exit(1);
 	}

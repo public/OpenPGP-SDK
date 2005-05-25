@@ -23,13 +23,62 @@ typedef struct
     {
     int type;
     char * string;
-    } octet_map_t;
+    } map_t;
 
 /*
  * Arrays of value->text maps
  */
 
-static octet_map_t revocation_reason_code_map[] =
+static map_t packet_tag_map[] =
+    {
+    { OPS_PTAG_CT_RESERVED,	  "Reserved" },
+    { OPS_PTAG_CT_PK_SESSION_KEY, "Public-Key Encrypted Session Key" },
+    { OPS_PTAG_CT_SIGNATURE,	      	"Signature" },
+    { OPS_PTAG_CT_SK_SESSION_KEY,	"Symmetric-Key Encrypted Session Key" },
+    { OPS_PTAG_CT_ONE_PASS_SIGNATURE,	"One-Pass Signature" },
+    { OPS_PTAG_CT_SECRET_KEY,		"Secret Key" },
+    { OPS_PTAG_CT_PUBLIC_KEY,		"Public Key" },
+    { OPS_PTAG_CT_SECRET_SUBKEY,		"Secret Subkey" },
+    { OPS_PTAG_CT_COMPRESSED,		"Compressed Data" },
+    { OPS_PTAG_CT_SK_DATA,		"Symmetrically Encrypted Data" },
+    { OPS_PTAG_CT_MARKER,		"Marker" },
+    { OPS_PTAG_CT_LITERAL_DATA,		"Literal Data" },
+    { OPS_PTAG_CT_TRUST,	       	"Trust" },
+    { OPS_PTAG_CT_USER_ID,		"User ID" },
+    { OPS_PTAG_CT_PUBLIC_SUBKEY,	"Public Subkey" },
+    { OPS_PTAG_CT_RESERVED2,		"reserved" },
+    { OPS_PTAG_CT_RESERVED3,		"reserved" },
+    { OPS_PTAG_CT_USER_ATTRIBUTE,	"User Attribute" },
+    { OPS_PTAG_CT_SK_IP_DATA,		"Sym. Encrypted and Integrity Protected Data" },
+    { OPS_PTAG_CT_MDC,			"Modification Detection Code" },
+    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    };
+
+static map_t signature_subpacket_type_map[] =
+    {
+    { OPS_PTAG_SS_CREATION_TIME,	"Signature Creation Time" },
+    { OPS_PTAG_SS_EXPIRATION_TIME,	"Signature Expiration Time" },
+    { OPS_PTAG_SS_TRUST,		"Trust Signature" },
+    { OPS_PTAG_SS_REGEXP,		"Regular Expression" },
+    { OPS_PTAG_SS_REVOCABLE,		"Revocable" },
+    { OPS_PTAG_SS_KEY_EXPIRATION_TIME,	"Key Expiration Time" },
+    { OPS_PTAG_SS_PREFERRED_SKA, 	"Preferred Symmetric Algorithms" },
+    { OPS_PTAG_SS_REVOCATION_KEY, 	"Revocation Key" },
+    { OPS_PTAG_SS_ISSUER_KEY_ID,	"Issuer key ID" },
+    { OPS_PTAG_SS_NOTATION_DATA,	"Notation Data" },
+    { OPS_PTAG_SS_PREFERRED_HASH,       "Preferred Hash Algorithms" },
+    { OPS_PTAG_SS_PREFERRED_COMPRESSION,"Preferred Compression Algorithms" },
+    { OPS_PTAG_SS_KEY_SERVER_PREFS,	"Key Server Preferences" },
+    { OPS_PTAG_SS_PREFERRED_KEY_SERVER,	"Preferred Key Server" },
+    { OPS_PTAG_SS_PRIMARY_USER_ID,	"Primary User ID" },
+    { OPS_PTAG_SS_POLICY_URL,		"Policy URL" },
+    { OPS_PTAG_SS_KEY_FLAGS, 		"Key Flags" },
+    { OPS_PTAG_SS_REVOCATION_REASON,	"Reason for Revocation" },
+    { OPS_PTAG_SS_FEATURES,		"Features" },
+    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    };
+
+static map_t revocation_reason_code_map[] =
     {
     { 0x00,	"No reason specified" },
     { 0x01,	"Key is superseded" },
@@ -39,7 +88,37 @@ static octet_map_t revocation_reason_code_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-static octet_map_t symmetric_key_algorithm_map[] =
+static map_t signature_type_map[] =
+    {
+    { OPS_SIG_BINARY,		"Signature of a binary document" },
+    { OPS_SIG_TEXT,		"Signature of a canonical text document" },
+    { OPS_SIG_STANDALONE,	"Standalone signature" },
+    { OPS_CERT_GENERIC,		"Generic certification of a User ID and Public Key packet" },
+    { OPS_CERT_PERSONA,		"Persona certification of a User ID and Public Key packet" },
+    { OPS_CERT_CASUAL,		"Casual certification of a User ID and Public Key packet" },
+    { OPS_CERT_POSITIVE,	"Positive certification of a User ID and Public Key packet" },
+    { OPS_SIG_SUBKEY,		"Subkey Binding Signature" },
+    { OPS_SIG_PRIMARY,		"Primary Key Binding Signature" },
+    { OPS_SIG_DIRECT,		"Signature directly on a key" },
+    { OPS_SIG_REV_KEY,		"Key revocation signature" },
+    { OPS_SIG_REV_SUBKEY,	"Subkey revocation signature" },
+    { OPS_SIG_REV_CERT,		"Certification revocation signature" },
+    { OPS_SIG_TIMESTAMP,	"Timestamp signature" },
+    { OPS_SIG_3RD_PARTY,	"Third-Party Confirmation signature" },
+    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    };
+
+static map_t public_key_algorithm_map[] =
+    {
+    { OPS_PKA_RSA,		"RSA (Encrypt or Sign)" },
+    { OPS_PKA_RSA_ENCRYPT_ONLY,	"RSA Encrypt-Only" },
+    { OPS_PKA_RSA_SIGN_ONLY,	"RSA Sign-Only" },
+    { OPS_PKA_ELGAMAL,		"Elgamal (Encrypt-Only)" },
+    { OPS_PKA_DSA,		"DSA" },
+    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    };
+
+static map_t symmetric_key_algorithm_map[] =
     {
     { OPS_SKA_PLAINTEXT,	"Plaintext or unencrypted data" },
     { OPS_SKA_IDEA,		"IDEA" },
@@ -53,7 +132,7 @@ static octet_map_t symmetric_key_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-static octet_map_t hash_algorithm_map[] =
+static map_t hash_algorithm_map[] =
     {
     { OPS_HASH_MD5,	"MD5" },
     { OPS_HASH_SHA1,	"SHA1" },
@@ -64,7 +143,7 @@ static octet_map_t hash_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-static octet_map_t compression_algorithm_map[] =
+static map_t compression_algorithm_map[] =
     {
     { OPS_C_NONE,	"Uncompressed" },
     { OPS_C_ZIP,	"ZIP(RFC1951)" },
@@ -109,7 +188,7 @@ static bit_map_t ss_key_flags_map[] =
 
 static bit_map_t ss_key_server_prefs_map[] = 
     {
-    { 0x80, "Key holder requests that this key only be modified or updated\nby the key holder or an administrator of the key server" },
+    { 0x80, "Key holder requests that this key only be modified or updated by the key holder or an administrator of the key server" },
     };
 
 /*
@@ -174,14 +253,13 @@ static unsigned int add_str(list_t * list, char * str)
     return 1;
     }
 
-static char * str_from_octet_map(unsigned char octet, octet_map_t * map)
+static char * str_from_map(int type, map_t * map)
     {
-    octet_map_t * row;
+    map_t * row;
 
     for ( row=map; row->string != NULL; row++ )
-	if (row->type == octet) 
+	if (row->type == type) 
 	    return row->string;
-
     return NULL;
     }
 
@@ -346,16 +424,36 @@ static text_t * text_from_octets_bits(ops_data_t *data, bit_map_t **map)
  * Public Functions
  */
 
+/*! returns string derived from the Packet Tag */
+char *str_from_single_packet_tag(unsigned char octet)
+    {
+    return(str_from_map(octet,packet_tag_map));
+    }
+
+/*! returns string derived from the Signature Sub-Packet Type */
+char *str_from_single_signature_subpacket_type(unsigned char octet)
+    {
+    char *str;
+    int val=0;
+
+    val=OPS_PTAG_SIGNATURE_SUBPACKET_BASE+octet;
+    str = str_from_map(val,signature_subpacket_type_map);
+    if (str)
+	return(str);
+    else
+	return("Unknown");
+}
+
 /*! returns string derived from this signature sub-packet type */
 char * str_from_ss_revocation_reason_code(unsigned char octet)
     {
-    return(str_from_octet_map(octet,revocation_reason_code_map));
+    return(str_from_map(octet,revocation_reason_code_map));
     }
 
 /*! returns string derived from a single octet in this field */
 char * str_from_single_ss_preferred_compression(unsigned char octet)
     {
-    return(str_from_octet_map(octet,compression_algorithm_map));
+    return(str_from_map(octet,compression_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
@@ -367,22 +465,34 @@ text_t * text_from_ss_preferred_compression(ops_ss_preferred_compression_t array
 
 
 /*! returns string derived from a single octet in this field */
-char * str_from_single_ss_preferred_hash(unsigned char octet)
+char * str_from_single_hash_algorithm(unsigned char octet)
     {
-    return(str_from_octet_map(octet,hash_algorithm_map));
+    return(str_from_map(octet,hash_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
 text_t * text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
     {
     return(text_from_octets(&array.data,
-			  &str_from_single_ss_preferred_hash));
+			  &str_from_single_hash_algorithm));
+    }
+
+/*! returns string derived from signature type value */
+char *str_from_single_signature_type(unsigned char octet)
+    {
+    return(str_from_map(octet, signature_type_map));
+    }
+
+/*! returns string derived from PKA value */
+char *str_from_single_pka(unsigned char octet)
+    {
+    return(str_from_map(octet, public_key_algorithm_map));
     }
 
 /*! returns string derived from a single octet in this field */
 char * str_from_single_ss_preferred_ska(unsigned char octet)
     {
-    return(str_from_octet_map(octet,symmetric_key_algorithm_map));
+    return(str_from_map(octet,symmetric_key_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
