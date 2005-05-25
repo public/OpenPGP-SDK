@@ -70,7 +70,7 @@ static void print_name( char *name)
 	printf("%s: ",name);
     }
 
-static void print_text_breakdown( text_t *text)
+static void print_text_breakdown( ops_text_t *text)
     {
     int i=0;
     char *prefix=".. ";
@@ -195,7 +195,7 @@ static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
-    text_t * text;
+    ops_text_t * text;
     char *str;
 
     switch(content_->tag)

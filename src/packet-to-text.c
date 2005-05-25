@@ -323,15 +323,15 @@ static char *str_from_bitfield(unsigned char octet, bit_map_t *map)
 	return("Unknown");
     }
 
-/*! generic function to initialise text_t structure */
-void ops_text_init(text_t * text)
+/*! generic function to initialise ops_text_t structure */
+void ops_text_init(ops_text_t * text)
     {
     list_init(&text->known);
     list_init(&text->unknown);
     }
 
-/*! generic function to free memory used by text_t structure */
-void ops_text_free(text_t * text)
+/*! generic function to free memory used by ops_text_t structure */
+void ops_text_free(ops_text_t * text)
     {
     /* Strings in "known" array will be constants, so don't free them */
     list_free(&text->known);
@@ -345,7 +345,7 @@ void ops_text_free(text_t * text)
     }
 
 /*! generic function which adds text derived from single octet map to text */
-static unsigned int add_str_from_octet_map(text_t * text, char * str, unsigned char octet)
+static unsigned int add_str_from_octet_map(ops_text_t * text, char * str, unsigned char octet)
     {
     if (str && !add_str(&text->known,str)) 
 	{
@@ -369,7 +369,7 @@ static unsigned int add_str_from_octet_map(text_t * text, char * str, unsigned c
     }
 
 /*! generic function which adds text derived from single bit map to text */
-static unsigned int add_str_from_bit_map(text_t * text, char * str, unsigned char bit)
+static unsigned int add_str_from_bit_map(ops_text_t * text, char * str, unsigned char bit)
     {
     if (str && !add_str(&text->known,str)) 
 	{
@@ -399,16 +399,16 @@ static unsigned int add_str_from_bit_map(text_t * text, char * str, unsigned cha
  *
  */ 
 
-static text_t *ops_text_from_octets(ops_data_t *data, 
+static ops_text_t *ops_text_from_octets(ops_data_t *data, 
 				char *(*text_fn)(unsigned char octet))
     {
 
-    text_t * text=NULL;
+    ops_text_t * text=NULL;
     char * str;
     int i=0;
 
-    /*! allocate and initialise text_t structure to store derived strings */
-    text=malloc(sizeof(text_t));
+    /*! allocate and initialise ops_text_t structure to store derived strings */
+    text=malloc(sizeof(ops_text_t));
     if (!text)
 	return NULL;
 
@@ -436,15 +436,15 @@ static text_t *ops_text_from_octets(ops_data_t *data,
  * of this byte array, derived from each bit of each octet.
  *
  */ 
-static text_t *ops_text_from_octets_bits(ops_data_t *data, bit_map_t **map)
+static ops_text_t *ops_text_from_octets_bits(ops_data_t *data, bit_map_t **map)
     {
-    text_t *text=NULL;
+    ops_text_t *text=NULL;
     char *str;
     int i=0, j=0;
     unsigned char mask, bit;
 
-    /*! allocate and initialise text_t structure to store derived strings */
-     text=malloc(sizeof(text_t));
+    /*! allocate and initialise ops_text_t structure to store derived strings */
+     text=malloc(sizeof(ops_text_t));
     if (!text)
 	return NULL;
 
@@ -506,7 +506,7 @@ char * ops_str_from_single_ss_preferred_compression(unsigned char octet)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * ops_text_from_ss_preferred_compression(ops_ss_preferred_compression_t array)
+ops_text_t * ops_text_from_ss_preferred_compression(ops_ss_preferred_compression_t array)
     {
     return(ops_text_from_octets(&array.data,
 			  &ops_str_from_single_ss_preferred_compression));
@@ -520,7 +520,7 @@ char * ops_str_from_single_hash_algorithm(unsigned char octet)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * ops_text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
+ops_text_t * ops_text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
     {
     return(ops_text_from_octets(&array.data,
 			  &ops_str_from_single_hash_algorithm));
@@ -545,7 +545,7 @@ char * ops_str_from_single_ss_preferred_ska(unsigned char octet)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * ops_text_from_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
+ops_text_t * ops_text_from_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
     return(ops_text_from_octets(&ss_preferred_ska.data, 
 		       &ops_str_from_single_ss_preferred_ska));
@@ -558,14 +558,14 @@ char * ops_str_from_single_ss_feature(unsigned char octet, bit_map_t * map)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * ops_text_from_ss_features(ops_ss_features_t ss_features)
+ops_text_t * ops_text_from_ss_features(ops_ss_features_t ss_features)
     {
-    text_t *text=NULL;
+    ops_text_t *text=NULL;
     char *str;
     int i=0, j=0;
     unsigned char mask, bit;
 
-     text=malloc(sizeof(text_t));
+     text=malloc(sizeof(ops_text_t));
     if (!text)
 	return NULL;
 
@@ -588,7 +588,7 @@ text_t * ops_text_from_ss_features(ops_ss_features_t ss_features)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * ops_text_from_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
+ops_text_t * ops_text_from_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
     {
     return(ops_text_from_octets_bits(&ss_notation_data.flags,ss_notation_data_map));
     }
@@ -600,14 +600,14 @@ char * ops_str_from_single_ss_key_flag(unsigned char octet, bit_map_t * map)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t * ops_text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
+ops_text_t * ops_text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     {
-    text_t *text=NULL;
+    ops_text_t *text=NULL;
     char *str;
     int i=0;
     unsigned char mask, bit;
 
-     text=malloc(sizeof(text_t));
+     text=malloc(sizeof(ops_text_t));
     if (!text)
 	return NULL;
 
@@ -636,14 +636,14 @@ char *ops_str_from_single_ss_key_server_prefs(unsigned char octet, bit_map_t *ma
     }
 
 /*! returns all text derived from this signature sub-packet type */
-text_t *ops_text_from_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
+ops_text_t *ops_text_from_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
     {
-    text_t *text=NULL;
+    ops_text_t *text=NULL;
     char *str;
     int i=0;
     unsigned char mask, bit;
 
-    text=malloc(sizeof(text_t));
+    text=malloc(sizeof(ops_text_t));
     if (!text)
 	return NULL;
 
