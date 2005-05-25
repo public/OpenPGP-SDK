@@ -350,7 +350,7 @@ typedef struct
 /** Structure to hold one user id */
 typedef struct
     {
-    char *			user_id;	/*!< User ID string */
+    char *user_id;	/*!< User ID string */
     } ops_user_id_t;
 
 /** Structure to hold one user attribute */
@@ -689,13 +689,13 @@ void ops_public_key_free(ops_public_key_t *key);
 void ops_user_id_free(ops_user_id_t *id);
 void ops_user_attribute_free(ops_user_attribute_t *att);
 void ops_signature_free(ops_signature_t *sig);
-void ops_trust_free(ops_trust_t * trust);
+void ops_trust_free(ops_trust_t *trust);
 void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska);
 void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t *ss_preferred_hash);
 void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t *ss_preferred_compression);
-void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags);
-void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t * ss_key_server_prefs);
-void ops_ss_features_free(ops_ss_features_t * ss_features);
+void ops_ss_key_flags_free(ops_ss_key_flags_t *ss_key_flags);
+void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t *ss_key_server_prefs);
+void ops_ss_features_free(ops_ss_features_t *ss_features);
 void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data);
 void ops_ss_policy_url_free(ops_ss_policy_url_t *ss_policy_url);
 void ops_ss_preferred_key_server_free(ops_ss_preferred_key_server_t *ss_preferred_key_server);

@@ -195,7 +195,7 @@ static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
     const ops_parser_content_union_t *content=&content_->content;
-    ops_text_t * text;
+    ops_text_t *text;
     char *str;
 
     switch(content_->tag)

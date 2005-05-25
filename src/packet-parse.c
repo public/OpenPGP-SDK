@@ -99,7 +99,7 @@ static void init_subregion(ops_region_t *subregion,ops_region_t *region)
 /* Note that this makes the parser non-reentrant, in a limited way */
 /* It is the caller's responsibility to avoid overflow in the buffer */
 static void format_error(ops_parser_content_t *content,
-			 const char * const fmt,...)
+			 const char *const fmt,...)
     {
     va_list va;
     static char buf[8192];
@@ -1122,31 +1122,31 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     }
 
 /*! Free the memory used when parsing this signature sub-packet type */
-void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t * ss_preferred_ska)
+void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska)
     {
     data_free(&ss_preferred_ska->data);
     }
 
 /*! Free the memory used when parsing this signature sub-packet type */
-void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t * ss_preferred_hash)
+void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t *ss_preferred_hash)
     {
     data_free(&ss_preferred_hash->data);
     }
 
 /*! Free the memory used when parsing this signature sub-packet type */
-void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t * ss_preferred_compression)
+void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t *ss_preferred_compression)
     {
     data_free(&ss_preferred_compression->data);
     }
 
 /*! Free the memory used when parsing this signature sub-packet type */
-void ops_ss_key_flags_free(ops_ss_key_flags_t * ss_key_flags)
+void ops_ss_key_flags_free(ops_ss_key_flags_t *ss_key_flags)
     {
     data_free(&ss_key_flags->data);
     }
 
 /*! Free the memory used when parsing this signature sub-packet type */
-void ops_ss_features_free(ops_ss_features_t * ss_features)
+void ops_ss_features_free(ops_ss_features_t *ss_features)
     {
     data_free(&ss_features->data);
     }
@@ -1381,13 +1381,13 @@ void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_rea
     }
 
 /*! Free the memory used when parsing this packet type */
-void ops_trust_free(ops_trust_t * trust)
+void ops_trust_free(ops_trust_t *trust)
     {
     data_free(&trust->data);
     }
 
 static int
-parse_trust (ops_region_t * region, ops_parse_options_t * opt)
+parse_trust (ops_region_t *region, ops_parse_options_t *opt)
     {
     ops_parser_content_t content;
 

@@ -12,7 +12,7 @@ typedef struct
     {
     unsigned int size;/* num of array slots allocated */
     unsigned int used; /* num of array slots currently used */
-    char ** strings;
+    char **strings;
     } list_t;
 
 typedef struct
@@ -25,11 +25,11 @@ typedef struct
 typedef struct
     {
     unsigned char mask;
-    char * string;
+    char *string;
     } bit_map_t;
 
-void ops_text_init(ops_text_t * text);
-void ops_text_free(ops_text_t * text);
+void ops_text_init(ops_text_t *text);
+void ops_text_free(ops_text_t *text);
 
 char *ops_str_from_single_packet_tag(unsigned char octet);
 char *ops_str_from_single_signature_subpacket_type(unsigned char octet);

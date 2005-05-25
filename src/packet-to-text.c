@@ -22,7 +22,7 @@
 typedef struct 
     {
     int type;
-    char * string;
+    char *string;
     } map_t;
 
 /*
@@ -173,7 +173,7 @@ static bit_map_t ss_notation_data_map_byte0[] =
     { (unsigned char) NULL,	(char *) NULL },
     };
 
-static bit_map_t * ss_notation_data_map[] =
+static bit_map_t *ss_notation_data_map[] =
     {
     ss_notation_data_map_byte0,
     (bit_map_t *) NULL,
@@ -185,7 +185,7 @@ static bit_map_t ss_feature_map_byte0[] =
     { (unsigned char) NULL,	(char *) NULL },
     };
 
-static bit_map_t * ss_feature_map[] =
+static bit_map_t *ss_feature_map[] =
     {
     ss_feature_map_byte0,
     (bit_map_t *) NULL,
@@ -217,7 +217,7 @@ static void list_init(list_t *list)
     list->strings=NULL;
     }
  
-static void list_free_strings(list_t * list)
+static void list_free_strings(list_t *list)
     {
     int i=0;
 
@@ -228,14 +228,14 @@ static void list_free_strings(list_t * list)
 	}
     }
 
-static void list_free(list_t * list)
+static void list_free(list_t *list)
     {
     if (list->strings)
 	free(list->strings);
     list_init(list);
     }
 
-static unsigned int list_resize(list_t * list)
+static unsigned int list_resize(list_t *list)
     {
     /* We only resize in one direction - upwards.
        Algorithm used : double the current size then add 1
@@ -257,7 +257,7 @@ static unsigned int list_resize(list_t * list)
 	}
     }
 
-static unsigned int add_str(list_t * list, char * str)
+static unsigned int add_str(list_t *list, char *str)
     {
     if (list->size==list->used) 
 	if (!list_resize(list))
@@ -277,9 +277,9 @@ static unsigned int add_str(list_t * list, char * str)
  * error case sensibly (i.e. don't just print out the return string.
  * 
  */
-static char * str_from_map_or_null(int type, map_t * map)
+static char *str_from_map_or_null(int type, map_t *map)
     {
-    map_t * row;
+    map_t *row;
 
     for ( row=map; row->string != NULL; row++ )
 	if (row->type == type) 
@@ -302,9 +302,9 @@ static char *str_from_map(int type, map_t *map)
 	return("Unknown");
     }
 
-static char * str_from_bitfield_or_null(unsigned char octet, bit_map_t *map)
+static char *str_from_bitfield_or_null(unsigned char octet, bit_map_t *map)
     {
-    bit_map_t * row;
+    bit_map_t *row;
 
     for ( row=map; row->string != NULL; row++ )
 	if (row->mask == octet) 
@@ -324,14 +324,14 @@ static char *str_from_bitfield(unsigned char octet, bit_map_t *map)
     }
 
 /*! generic function to initialise ops_text_t structure */
-void ops_text_init(ops_text_t * text)
+void ops_text_init(ops_text_t *text)
     {
     list_init(&text->known);
     list_init(&text->unknown);
     }
 
 /*! generic function to free memory used by ops_text_t structure */
-void ops_text_free(ops_text_t * text)
+void ops_text_free(ops_text_t *text)
     {
     /* Strings in "known" array will be constants, so don't free them */
     list_free(&text->known);
@@ -345,7 +345,7 @@ void ops_text_free(ops_text_t * text)
     }
 
 /*! generic function which adds text derived from single octet map to text */
-static unsigned int add_str_from_octet_map(ops_text_t * text, char * str, unsigned char octet)
+static unsigned int add_str_from_octet_map(ops_text_t *text, char *str, unsigned char octet)
     {
     if (str && !add_str(&text->known,str)) 
 	{
@@ -369,7 +369,7 @@ static unsigned int add_str_from_octet_map(ops_text_t * text, char * str, unsign
     }
 
 /*! generic function which adds text derived from single bit map to text */
-static unsigned int add_str_from_bit_map(ops_text_t * text, char * str, unsigned char bit)
+static unsigned int add_str_from_bit_map(ops_text_t *text, char *str, unsigned char bit)
     {
     if (str && !add_str(&text->known,str)) 
 	{
@@ -403,8 +403,8 @@ static ops_text_t *ops_text_from_octets(ops_data_t *data,
 				char *(*text_fn)(unsigned char octet))
     {
 
-    ops_text_t * text=NULL;
-    char * str;
+    ops_text_t *text=NULL;
+    char *str;
     int i=0;
 
     /*! allocate and initialise ops_text_t structure to store derived strings */
@@ -494,19 +494,19 @@ char *ops_str_from_single_signature_subpacket_type(unsigned char octet)
 }
 
 /*! returns string derived from this signature sub-packet type */
-char * ops_str_from_ss_revocation_reason_code(unsigned char octet)
+char *ops_str_from_ss_revocation_reason_code(unsigned char octet)
     {
     return(str_from_map(octet,revocation_reason_code_map));
     }
 
 /*! returns string derived from a single octet in this field */
-char * ops_str_from_single_ss_preferred_compression(unsigned char octet)
+char *ops_str_from_single_ss_preferred_compression(unsigned char octet)
     {
     return(str_from_map(octet,compression_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-ops_text_t * ops_text_from_ss_preferred_compression(ops_ss_preferred_compression_t array)
+ops_text_t *ops_text_from_ss_preferred_compression(ops_ss_preferred_compression_t array)
     {
     return(ops_text_from_octets(&array.data,
 			  &ops_str_from_single_ss_preferred_compression));
@@ -514,13 +514,13 @@ ops_text_t * ops_text_from_ss_preferred_compression(ops_ss_preferred_compression
 
 
 /*! returns string derived from a single octet in this field */
-char * ops_str_from_single_hash_algorithm(unsigned char octet)
+char *ops_str_from_single_hash_algorithm(unsigned char octet)
     {
     return(str_from_map(octet,hash_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-ops_text_t * ops_text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
+ops_text_t *ops_text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
     {
     return(ops_text_from_octets(&array.data,
 			  &ops_str_from_single_hash_algorithm));
@@ -539,26 +539,26 @@ char *ops_str_from_single_pka(unsigned char octet)
     }
 
 /*! returns string derived from a single octet in this field */
-char * ops_str_from_single_ss_preferred_ska(unsigned char octet)
+char *ops_str_from_single_ss_preferred_ska(unsigned char octet)
     {
     return(str_from_map(octet,symmetric_key_algorithm_map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-ops_text_t * ops_text_from_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
+ops_text_t *ops_text_from_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
     return(ops_text_from_octets(&ss_preferred_ska.data, 
 		       &ops_str_from_single_ss_preferred_ska));
     }
 
 /*! returns string derived from one bitfield in this signature-subpacket type */
-char * ops_str_from_single_ss_feature(unsigned char octet, bit_map_t * map)
+char *ops_str_from_single_ss_feature(unsigned char octet, bit_map_t *map)
     {
     return(str_from_bitfield(octet,map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-ops_text_t * ops_text_from_ss_features(ops_ss_features_t ss_features)
+ops_text_t *ops_text_from_ss_features(ops_ss_features_t ss_features)
     {
     ops_text_t *text=NULL;
     char *str;
@@ -588,19 +588,19 @@ ops_text_t * ops_text_from_ss_features(ops_ss_features_t ss_features)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-ops_text_t * ops_text_from_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
+ops_text_t *ops_text_from_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
     {
     return(ops_text_from_octets_bits(&ss_notation_data.flags,ss_notation_data_map));
     }
 
 /*! returns string derived from one bitfield in this signature-subpacket type */
-char * ops_str_from_single_ss_key_flag(unsigned char octet, bit_map_t * map)
+char *ops_str_from_single_ss_key_flag(unsigned char octet, bit_map_t *map)
     {
     return(str_from_bitfield(octet,map));
     }
 
 /*! returns all text derived from this signature sub-packet type */
-ops_text_t * ops_text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
+ops_text_t *ops_text_from_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     {
     ops_text_t *text=NULL;
     char *str;
