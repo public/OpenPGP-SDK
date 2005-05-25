@@ -15,7 +15,7 @@ typedef struct
     {
     size_t len;
     unsigned char *contents;
-    } data_t;
+    } ops_data_t;
 
 /************************************/
 /* Packet Tags - RFC2440bis-12, 4.2 */
@@ -327,7 +327,7 @@ typedef enum
 
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     } ops_trust_t;
 	
 /** Structure to hold one user id */
@@ -339,7 +339,7 @@ typedef struct
 /** Structure to hold one user attribute */
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     } ops_user_attribute_t;
 
 /** Signature Version.
@@ -479,46 +479,46 @@ typedef struct
 
 typedef struct
     {
-    data_t flags;
-    data_t name;
-    data_t value;
+    ops_data_t flags;
+    ops_data_t name;
+    ops_data_t value;
     } ops_ss_notation_data_t;
 
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     } ops_ss_userdefined_t;
 
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     /* Note that value 0 may represent the plaintext algorithm
        so we cannot expect data->contents to be a null-terminated list */
     } ops_ss_preferred_ska_t;
 
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     } ops_ss_preferred_hash_t;
 
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     } ops_ss_preferred_compression_t;
 
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     } ops_ss_key_flags_t;
 
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     } ops_ss_key_server_prefs_t;
 
 typedef struct
     {
-    data_t data;
+    ops_data_t data;
     } ops_ss_features_t;
 
 typedef struct

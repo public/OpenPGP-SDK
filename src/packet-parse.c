@@ -19,7 +19,8 @@
  * limited_read_data reads the specified amount of the subregion's data 
  * into a data_t structure
  */
-static int limited_read_data(data_t *data, unsigned int len, ops_region_t *subregion, ops_parse_options_t *opt)
+static int limited_read_data(ops_data_t *data,unsigned int len,
+			     ops_region_t *subregion,ops_parse_options_t *opt)
     {
     data->len = len;
 
@@ -40,7 +41,8 @@ static int limited_read_data(data_t *data, unsigned int len, ops_region_t *subre
  * read_data reads the remainder of the subregion's data 
  * into a data_t structure
  */
-static int read_data(data_t *data, ops_region_t *subregion, ops_parse_options_t *opt)
+static int read_data(ops_data_t *data,ops_region_t *subregion,
+		     ops_parse_options_t *opt)
     {
     int len;
 
@@ -409,7 +411,7 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
     return limited_read_scalar(length,4,region,opt);
     }
 
-static void data_free(data_t *data)
+static void data_free(ops_data_t *data)
     {
     free(data->contents);
     data->contents=NULL;

@@ -109,7 +109,7 @@ static void print_hexdump(char *label,const unsigned char *data,
     printf("\n");
     }
 
-static void print_data(char *label, const data_t *data,int indentlevel)
+static void print_data(char *label, const ops_data_t *data,int indentlevel)
     {
     if(label)
 	{

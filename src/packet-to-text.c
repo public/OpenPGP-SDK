@@ -272,8 +272,8 @@ static unsigned int add_str_from_bit_map(text_t * text, char * str, unsigned cha
  *
  */ 
 
-static text_t *text_from_octets(data_t *data, 
-			      char *(*text_fn)(unsigned char octet))
+static text_t *text_from_octets(ops_data_t *data, 
+				char *(*text_fn)(unsigned char octet))
     {
 
     text_t * text=NULL;
@@ -309,7 +309,7 @@ static text_t *text_from_octets(data_t *data,
  * of this byte array, derived from each bit of each octet.
  *
  */ 
-static text_t * text_from_octets_bits(data_t *data, bit_map_t **map)
+static text_t * text_from_octets_bits(ops_data_t *data, bit_map_t **map)
     {
     text_t *text=NULL;
     char *str;
