@@ -357,10 +357,7 @@ static unsigned int add_str_from_octet_map(ops_text_t *text, char *str, unsigned
 	{
 	/* value not recognised and there was a problem adding it to the unknown list */
 
-#define MAXSTR 255
-	str=malloc(MAXSTR+1);
-	/* xxx - This isn't very nice, how do you ensure the string isn't overrun.
-	   Ben? -- rachel */
+	str=malloc(2+2+1); /* 2 for "0x", 2 for single octet in hex format, 1 for NULL */
 	sprintf(str,"0x%x",octet);
 	if (!add_str(&text->unknown,str))
 	    return 0;
@@ -371,6 +368,8 @@ static unsigned int add_str_from_octet_map(ops_text_t *text, char *str, unsigned
 /*! generic function which adds text derived from single bit map to text */
 static unsigned int add_str_from_bit_map(ops_text_t *text, char *str, unsigned char bit)
     {
+    char *fmt_unknown="Unknown bit(0x%x)";
+
     if (str && !add_str(&text->known,str)) 
 	{
 	/* value recognised, but there was a problem adding it to the list */
@@ -381,11 +380,12 @@ static unsigned int add_str_from_bit_map(ops_text_t *text, char *str, unsigned c
 	{
 	/* value not recognised and there was a problem adding it to the unknown list */
 
-#define MAXSTR 255
-	str=malloc(MAXSTR+1);
-	/* xxx - This isn't very nice, how do you ensure the string isn't overrun.
-	   Ben? -- rachel */
-	sprintf(str,"Unknown bit(%d)",bit);
+	/* 2 chars of the string are the format definition, 
+	   this will be replaced in the output by 2 chars of hex,
+	   so the length will be correct */
+	str=malloc(strlen(fmt_unknown)+1);  
+
+	sprintf(str,fmt_unknown,bit);
 	if (!add_str(&text->unknown,str))
 	    return 0;
 	}
@@ -506,9 +506,9 @@ char *ops_str_from_single_ss_preferred_compression(unsigned char octet)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-ops_text_t *ops_text_from_ss_preferred_compression(ops_ss_preferred_compression_t array)
+ops_text_t *ops_text_from_ss_preferred_compression(ops_ss_preferred_compression_t ss_preferred_compression)
     {
-    return(ops_text_from_octets(&array.data,
+    return(ops_text_from_octets(&ss_preferred_compression.data,
 			  &ops_str_from_single_ss_preferred_compression));
     }
 
@@ -520,9 +520,9 @@ char *ops_str_from_single_hash_algorithm(unsigned char octet)
     }
 
 /*! returns all text derived from this signature sub-packet type */
-ops_text_t *ops_text_from_ss_preferred_hash(ops_ss_preferred_hash_t array)
+ops_text_t *ops_text_from_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_hash)
     {
-    return(ops_text_from_octets(&array.data,
+    return(ops_text_from_octets(&ss_preferred_hash.data,
 			  &ops_str_from_single_hash_algorithm));
     }
 
