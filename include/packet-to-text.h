@@ -31,8 +31,8 @@ typedef struct
 void ops_text_init(ops_text_t *text);
 void ops_text_free(ops_text_t *text);
 
-char *ops_str_from_single_packet_tag(unsigned char octet);
-char *ops_str_from_single_signature_subpacket_type(unsigned char octet);
+char *ops_str_from_single_packet_tag(ops_packet_tag_t packet_tag);
+char *ops_str_from_single_signature_subpacket_type(ops_ss_type_t ss_type);
 
 char *ops_str_from_single_signature_type(unsigned char octet);
 

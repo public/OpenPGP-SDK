@@ -53,8 +53,9 @@ static map_t packet_tag_map[] =
     { OPS_PTAG_CT_MDC,			"Modification Detection Code" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
+typedef map_t packet_tag_map_t;
 
-static map_t signature_subpacket_type_map[] =
+static map_t ss_type_map[] =
     {
     { OPS_PTAG_SS_CREATION_TIME,	"Signature Creation Time" },
     { OPS_PTAG_SS_EXPIRATION_TIME,	"Signature Expiration Time" },
@@ -62,11 +63,11 @@ static map_t signature_subpacket_type_map[] =
     { OPS_PTAG_SS_REGEXP,		"Regular Expression" },
     { OPS_PTAG_SS_REVOCABLE,		"Revocable" },
     { OPS_PTAG_SS_KEY_EXPIRATION_TIME,	"Key Expiration Time" },
-    { OPS_PTAG_SS_PREFERRED_SKA, 	"Preferred Symmetric Algorithms" },
+    { OPS_PTAG_SS_PREFERRED_SKA,	"Preferred Symmetric Algorithms" },
     { OPS_PTAG_SS_REVOCATION_KEY, 	"Revocation Key" },
     { OPS_PTAG_SS_ISSUER_KEY_ID,	"Issuer key ID" },
     { OPS_PTAG_SS_NOTATION_DATA,	"Notation Data" },
-    { OPS_PTAG_SS_PREFERRED_HASH,       "Preferred Hash Algorithms" },
+    { OPS_PTAG_SS_PREFERRED_HASH,      	"Preferred Hash Algorithms" },
     { OPS_PTAG_SS_PREFERRED_COMPRESSION,"Preferred Compression Algorithms" },
     { OPS_PTAG_SS_KEY_SERVER_PREFS,	"Key Server Preferences" },
     { OPS_PTAG_SS_PREFERRED_KEY_SERVER,	"Preferred Key Server" },
@@ -77,6 +78,8 @@ static map_t signature_subpacket_type_map[] =
     { OPS_PTAG_SS_FEATURES,		"Features" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
+typedef map_t ss_type_map_t;
+
 
 static map_t revocation_reason_code_map[] =
     {
@@ -282,7 +285,7 @@ static char *str_from_map_or_null(int type, map_t *map)
     map_t *row;
 
     for ( row=map; row->string != NULL; row++ )
-	if (row->type == type) 
+	if (row->type == type)
 	    return row->string;
     return NULL;
     }
@@ -473,25 +476,19 @@ static ops_text_t *ops_text_from_octets_bits(ops_data_t *data, bit_map_t **map)
  * Public Functions
  */
 
+#include "packet-to-text-cast.h"
+
 /*! returns string derived from the Packet Tag */
-char *ops_str_from_single_packet_tag(unsigned char octet)
+char *ops_str_from_single_packet_tag(ops_packet_tag_t packet_tag)
     {
-    return(str_from_map(octet,packet_tag_map));
+    return(str_from_single_packet_tag(packet_tag,packet_tag_map));
     }
 
 /*! returns string derived from the Signature Sub-Packet Type */
-char *ops_str_from_single_signature_subpacket_type(unsigned char octet)
+char *ops_str_from_single_signature_subpacket_type(ops_ss_type_t ss_type)
     {
-    char *str;
-    int val=0;
-
-    val=OPS_PTAG_SIGNATURE_SUBPACKET_BASE+octet;
-    str = str_from_map(val,signature_subpacket_type_map);
-    if (str)
-	return(str);
-    else
-	return("Unknown");
-}
+    return(str_from_single_ss_type(ss_type,ss_type_map));
+    }
 
 /*! returns string derived from this signature sub-packet type */
 char *ops_str_from_ss_revocation_reason_code(unsigned char octet)
