@@ -4,6 +4,12 @@
 #ifndef OPS_TYPES_H
 #define OPS_TYPES_H
 
+typedef struct 
+    {
+    int type;
+    char *string;
+    } map_t;
+
 typedef unsigned ops_boolean_t;
 
 typedef enum ops_content_tag_t ops_content_tag_t;

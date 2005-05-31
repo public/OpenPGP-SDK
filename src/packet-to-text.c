@@ -13,17 +13,7 @@
 # include <dmalloc.h>
 #endif
 
-/*
- * 
- * Structures specific to this file
- *
- */
-
-typedef struct 
-    {
-    int type;
-    char *string;
-    } map_t;
+#include "packet-to-text-cast.h"
 
 /*
  * Arrays of value->text maps
@@ -295,7 +285,7 @@ static char *str_from_map_or_null(int type, map_t *map)
  * Returns a readable string if found, "Unknown" if not.
  */
 
-static char *str_from_map(int type, map_t *map)
+char *str_from_map(int type, map_t *map)
     {
     char *str;
     str=str_from_map_or_null(type,map);
@@ -475,8 +465,6 @@ static ops_text_t *ops_text_from_octets_bits(ops_data_t *data, bit_map_t **map)
 /*
  * Public Functions
  */
-
-#include "packet-to-text-cast.h"
 
 /*! returns string derived from the Packet Tag */
 char *ops_str_from_single_packet_tag(ops_packet_tag_t packet_tag)
