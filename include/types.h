@@ -21,6 +21,9 @@ typedef enum ops_content_tag_t ops_content_tag_t;
 */
 typedef enum ops_content_tag_t ops_packet_tag_t;
 typedef enum ops_content_tag_t ops_ss_type_t;
+/* typedef enum ops_sig_type_t ops_sig_type_t; */
+
+typedef unsigned char ops_ss_rr_code_t;
 
 typedef enum ops_parse_type_t ops_parse_type_t;
 typedef struct ops_parser_content_t ops_parser_content_t;
