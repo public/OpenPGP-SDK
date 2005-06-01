@@ -1,0 +1,2 @@
+char *str_from_single_packet_tag(ops_packet_tag_t packet_tag, packet_tag_map_t *packet_tag_map) -> char *str_from_map(int packet_tag, map_t *packet_tag_map)
+char *str_from_single_ss_type(ops_ss_type_t ss_type, ss_type_map_t *ss_type_map) -> char *str_from_map(int ss_type, map_t *ss_type_map)
