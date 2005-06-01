@@ -570,7 +570,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_hexdump("Revocation Reason",
 		      &content->ss_revocation_reason.code,
 		      1);
-	str = ops_str_from_ss_rr_code(content->ss_revocation_reason.code);
+	str = ops_show_ss_rr_code(content->ss_revocation_reason.code);
 	print_string(NULL,str);
 	/* xxx - todo : output text as UTF-8 string */
 	end_subpacket();

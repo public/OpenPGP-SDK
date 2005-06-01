@@ -48,7 +48,7 @@ char *ops_show_hash_algorithm(unsigned char octet);
 ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska);
 char *ops_show_ss_preferred_ska(unsigned char octet);
 
-char *ops_str_from_ss_rr_code(ops_ss_rr_code_t ss_rr_code);
+char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code);
 
 ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features);
 char *ops_show_ss_feature(unsigned char octet, bit_map_t *map);

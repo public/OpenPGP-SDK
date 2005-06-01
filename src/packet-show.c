@@ -390,10 +390,11 @@ static unsigned int add_str_from_bit_map(ops_text_t *text, char *str, unsigned c
  * Produce a structure containing human-readable textstrings
  * representing the recognised and unrecognised contents
  * of this byte array. text_fn() will be called on each octet in turn.
+ * Each octet will generate one string representing the whole byte.
  *
  */ 
 
-static ops_text_t *showall_octets(ops_data_t *data, 
+static ops_text_t *text_from_bytemapped_octets(ops_data_t *data, 
 				char *(*text_fn)(unsigned char octet))
     {
 
@@ -473,14 +474,14 @@ char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
     return(show_packet_tag(packet_tag,packet_tag_map));
     }
 
-/*! returns string derived from the Signature Sub-Packet Type */
+/*! returns string derived from the type of the Signature Sub-Packet */
 char *ops_show_ss_type(ops_ss_type_t ss_type)
     {
     return(show_ss_type(ss_type,ss_type_map));
     }
 
-/*! returns string derived from this signature sub-packet type */
-char *ops_str_from_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
+/*! returns string derived from the type of the SS Revocation Reaspon */
+char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
     {
     return(show_ss_rr_code(ss_rr_code,ss_rr_code_map));
     }
@@ -494,7 +495,7 @@ char *ops_show_ss_preferred_compression(unsigned char octet)
 /*! returns all text derived from this signature sub-packet type */
 ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t ss_preferred_compression)
     {
-    return(showall_octets(&ss_preferred_compression.data,
+    return(text_from_bytemapped_octets(&ss_preferred_compression.data,
 			  &ops_show_ss_preferred_compression));
     }
 
@@ -508,7 +509,7 @@ char *ops_show_hash_algorithm(unsigned char octet)
 /*! returns all text derived from this signature sub-packet type */
 ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_hash)
     {
-    return(showall_octets(&ss_preferred_hash.data,
+    return(text_from_bytemapped_octets(&ss_preferred_hash.data,
 			  &ops_show_hash_algorithm));
     }
 
@@ -518,7 +519,7 @@ char *ops_show_sig_type(ops_sig_type_t sig_type)
     return(show_sig_type(sig_type, sig_type_map));
     }
 
-/*! returns string derived from PKA value */
+/*! returns string derived from PKA type */
 char *ops_show_pka(ops_public_key_algorithm_t pka)
     {
     return(show_pka(pka, public_key_algorithm_map));
@@ -533,7 +534,7 @@ char *ops_show_ss_preferred_ska(unsigned char octet)
 /*! returns all text derived from this signature sub-packet type */
 ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
-    return(showall_octets(&ss_preferred_ska.data, 
+    return(text_from_bytemapped_octets(&ss_preferred_ska.data, 
 		       &ops_show_ss_preferred_ska));
     }
 
