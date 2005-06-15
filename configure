@@ -3,6 +3,7 @@
 use strict;
 
 use Carp;
+use File::Temp;
 
 our %Subst=(
 	    'CRYPTO_LIBS' => '-lcrypto',
@@ -26,11 +27,13 @@ my %Args=(
 	 );
 
 my @Headers=qw(alloca.h);
+my @Types=qw(time_t);
 
 our %Knowledge=(
-	       cc => sub { return chooseBinary('gcc','cc')
+		cc => sub { return chooseBinary('gcc','cc')
 			     || croak 'Can\'t find C compiler'; },
-	       path => sub { return [split /:/,$ENV{PATH}]; },
+		path => sub { return [split /:/,$ENV{PATH}]; },
+		time_t => sub { return typeInfo('time_t','time.h'); }
 	      );
 
 while(my $arg=shift) {
@@ -44,11 +47,12 @@ while(my $arg=shift) {
     &$code($arg2);
 }
 
-my $os=`uname -s`;
+#my $os=`uname -s`;
 
 $Subst{'CC'}=getKnowledge('cc');
 
 findHeaders(\@Headers);
+investigateTypes(\@Types);
 
 fixSubst();
 
@@ -152,5 +156,53 @@ sub create {
     print "Creating $file\n";
     open(D,">$file") || croak "Can't create $file";
     close D;
+}
+
+sub build {
+    my $code=shift;
+
+    my $cc=getKnowledge('cc');
+    my $fh=new File::Temp(SUFFIX => '.c');
+#    print $fh->filename(),"\n";
+    print $fh $code;
+#    print $code;
+    $fh->close();
+
+    my $cmd="$cc -Wall -Werror -c ".$fh;
+#    print "$cmd\n";
+    my $ret=system("$cmd > /dev/null 2>&1");
+
+    return $ret == 0;
+}
+
+sub typeInfo {
+    my $type=shift;
+    my $header=shift;
+
+    my %info;
+
+    print "Getting info about $type.\n";
+
+    foreach my $fmt (qw(%d %ld)) {
+	my $code="#include <$header>\n";
+	$code .= "#include <stdio.h>\n";
+	$code .= "void f(void) { static $type t; printf(\"$fmt\",t); }\n";
+	if(build($code)) {
+	    $info{fmt}=$fmt;
+	    print "  $type printf format is $fmt\n";
+	}
+    }
+    croak "Can't determine print format for $type" if !defined $info{fmt};
+
+    return \%info;
+}
+
+sub investigateTypes {
+    my $types=shift;
+
+    foreach my $type (@$types) {
+	my $info=getKnowledge($type);
+	$Subst{uc($type)."_FMT"}="\"$info->{fmt}\"";
+    }
 }
 

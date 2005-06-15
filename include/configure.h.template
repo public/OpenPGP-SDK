@@ -1,1 +1,2 @@
 %HAVE_ALLOCA_H%
+#define TIME_T_FMT	%TIME_T_FMT%

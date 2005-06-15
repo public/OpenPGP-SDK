@@ -1,6 +1,7 @@
 #include "packet.h"
 #include "packet-parse.h"
 #include "packet-show.h"
+#include "configure.h"
 #include "util.h"
 #include <unistd.h>
 #include <stdio.h>
@@ -19,7 +20,7 @@ static void print_indent()
 
 static void showtime(const unsigned char *name,time_t t)
     {
-    printf("%s=%ld (%.24s)",name,t,ctime(&t));
+    printf("%s=" TIME_T_FMT " (%.24s)",name,t,ctime(&t));
     }
 
 static void print_bn( const char *name, const BIGNUM *bn)
@@ -44,7 +45,7 @@ static void print_duration(char *name, time_t time)
 
     print_indent();
     printf("%s: ",name);
-    printf("duration %ld seconds",time);
+    printf("duration " TIME_T_FMT " seconds",time);
 
     mins=time/60;
     hours=mins/60;
