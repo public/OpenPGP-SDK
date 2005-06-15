@@ -65,6 +65,17 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
 	}
     }
 
+/**
+ * \ingroup Utils
+ *
+ * Not sure what this does
+ *
+ * \param keyid
+ * \param key
+ *
+ * \todo Get descr from Ben what this does
+ */
+
 void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key)
     {
     if(key->version == 2 || key->version == 3)

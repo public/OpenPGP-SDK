@@ -2,6 +2,39 @@
  * \brief Parser for OpenPGP packets
  */
 
+/** @defgroup PublicAPI Public API
+ * These functions are public and available for external use.
+ * @{
+ */
+/**
+ * @defgroup Parse Parse
+ * These functions allow an OpenPGP object (for example, an OpenPGP message or keyring) to be parsed.
+ * @ingroup PublicAPI
+ */
+/**
+ * @defgroup Create Create
+ * These functions allow an OpenPGP object to be created.
+ * @ingroup PublicAPI
+ */
+/**
+ * @defgroup Memory Memory
+ * These functions relate to memory usage.
+ * @ingroup PublicAPI
+ */
+/**
+ * @defgroup Show Show
+ * These functions allow the contents to be displayed in human-readable form.
+ * @ingroup PublicAPI
+ */
+/**
+ * @defgroup Utils Utils
+ * These functions are of general utility
+ * @ingroup PublicAPI
+ */
+/**
+ * @}
+ */
+
 #include "packet.h"
 #include "packet-parse.h"
 #include "util.h"
@@ -1436,6 +1469,15 @@ static int parse_literal_data(ops_region_t *region,ops_parse_options_t *opt)
     return 1;
     }
 
+/**
+ * \ingroup Memory
+ *
+ * ops_secret_key_free() frees the memory associated with #key. Note that
+ * the key itself is not freed.
+ * 
+ * \param key
+ */
+
 void ops_secret_key_free(ops_secret_key_t *key)
     {
     switch(key->public_key.algorithm)
@@ -1625,8 +1667,9 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
     return r ? 1 : -1;
     }
 
-/** Parse packets.
- *
+/**
+ * \ingroup Parse
+ * 
  * Parses packets calling #ops_parse_one_packet until an error occurs or until EOF (which is just another error anyway).
  *
  * \param *opt		Parsing options
@@ -1642,9 +1685,15 @@ int ops_parse(ops_parse_options_t *opt)
     return r == 0;
     }
 
-/* XXX: Make all packet types optional, not just subpackets */
 /**
- * Setup packet options, depending on packet tag and parsing type
+ * \ingroup Parse
+ *
+ * ops_parse_options() sets up the packet options in #*opt, depending on 
+ * the packet tag #tag and the parsing type #type
+ * \param	opt	Pointer to previously allocated structure
+ * \param	tag	Packet tag
+ * \param	type	Parse type
+ * \todo  XXX: Make all packet types optional, not just subpackets
  */
 void ops_parse_options(ops_parse_options_t *opt,
 		       ops_content_tag_t tag,

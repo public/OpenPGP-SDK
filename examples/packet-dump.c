@@ -103,6 +103,12 @@ static void print_text_breakdown( ops_text_t *text)
 	
     }
 
+static void printhex(const unsigned char *src,size_t length)
+    {
+    while(length--)
+	printf("%02X",*src++);
+    }
+
 static void print_hexdump( char *name,
 			  const unsigned char *data,
 			  unsigned int len)
@@ -110,7 +116,7 @@ static void print_hexdump( char *name,
     print_name(name);
 
     printf("len=%d, data=0x", len);
-    hexdump(data,len);
+    printhex(data,len);
     printf("\n");
     }
 
@@ -121,7 +127,7 @@ static void print_hexdump_data( char *name,
     print_name(name);
 
     printf("0x");
-    hexdump(data,len);
+    printhex(data,len);
     printf("\n");
     }
 

@@ -40,6 +40,12 @@ void ops_key_data_free(ops_key_data_t *key)
     ops_public_key_free(&key->pkey);
     }
 
+/**
+ * \ingroup Memory
+ *
+ * ops_keyring_free() frees the memory used in one ops_keyring_t structure
+ * \param keyring Keyring to be freed.
+ */
 void ops_keyring_free(ops_keyring_t *keyring)
     {
     int n;

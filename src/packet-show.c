@@ -324,7 +324,13 @@ void ops_text_init(ops_text_t *text)
     list_init(&text->unknown);
     }
 
-/*! generic function to free memory used by ops_text_t structure */
+/**
+ * \ingroup Memory
+ *
+ * ops_text_free() frees the memory used by an ops_text_t structure
+ *
+ * \param text Pointer to a previously allocated structure. This structure and its contents will be freed.
+ */
 void ops_text_free(ops_text_t *text)
     {
     /* Strings in "known" array will be constants, so don't free them */
@@ -474,13 +480,29 @@ char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
     return(show_packet_tag(packet_tag,packet_tag_map));
     }
 
-/*! returns string derived from the type of the Signature Sub-Packet */
+/**
+ * \ingroup Show
+ *
+ * ops_show_ss_type() returns a string pointer which
+ * represents the type of the Signature Sub-Packet
+ * \param ss_type Signature Sub-Packet type
+ * \return string or "Unknown"
+ */
 char *ops_show_ss_type(ops_ss_type_t ss_type)
     {
     return(show_ss_type(ss_type,ss_type_map));
     }
 
-/*! returns string derived from the type of the SS Revocation Reaspon */
+/**
+ * \ingroup Show
+ *
+ * ops_show_rr_code() returns a pointer to a string which
+ * represents the Revocation Reason code
+ * \param ss_rr_code Revocation Reason code
+ * \todo add reference
+ * \todo make typesafe
+ * \return string or "Unknown"
+ */
 char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
     {
     return(show_ss_rr_code(ss_rr_code,ss_rr_code_map));
@@ -492,7 +514,17 @@ char *ops_show_ss_preferred_compression(unsigned char octet)
     return(str_from_map(octet,compression_algorithm_map));
     }
 
-/*! returns all text derived from this signature sub-packet type */
+/**
+ * \ingroup Show
+ *
+ * ops_showall_ss_preferred_compression() returns a pointer to an ops_text_t 
+ * structure which contains strings representing the Compression Algorithms
+ * in the preferred list
+ * \param ss_preferred_compression Array of Preferred Compression Algorithms
+ * \return NULL if cannot allocate memory or other error
+ * \return pointer to structure, if no error
+ * \todo make typesafe
+ */
 ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t ss_preferred_compression)
     {
     return(text_from_bytemapped_octets(&ss_preferred_compression.data,
@@ -500,26 +532,61 @@ ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t 
     }
 
 
-/*! returns string derived from a single octet in this field */
-char *ops_show_hash_algorithm(unsigned char octet)
+/**
+ * \ingroup Show
+ *
+ * ops_show_hash_algorithm() returns a pointer to a string which
+ * represents the Hash Algorithm type
+ * \param hash Hash Algorithm type
+ * \todo add reference
+ * \todo make typesafe
+ * \return string or "Unknown"
+ */
+char *ops_show_hash_algorithm(unsigned char hash)
     {
-    return(str_from_map(octet,hash_algorithm_map));
+    return(str_from_map(hash,hash_algorithm_map));
     }
 
-/*! returns all text derived from this signature sub-packet type */
+/**
+ * \ingroup Show
+ *
+ * ops_showall_ss_preferred_hash() returns a pointer to an ops_text_t 
+ * structure which contains strings representing the Hash Algorithms
+ * in the preferred list
+ * \param ss_preferred_hash Array of Preferred Hash Algorithms
+ * \return NULL if cannot allocate memory or other error
+ * \return pointer to structure, if no error
+ * \todo make typesafe
+ */
 ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_hash)
     {
     return(text_from_bytemapped_octets(&ss_preferred_hash.data,
 			  &ops_show_hash_algorithm));
     }
 
-/*! returns string derived from signature type value */
+/**
+ * \ingroup Show
+ *
+ * ops_show_sig_type() returns a pointer to a string which
+ * represents the Signature type
+ * \param sig_type Signature type
+ * \todo add reference
+ * \return string or "Unknown"
+ */
 char *ops_show_sig_type(ops_sig_type_t sig_type)
     {
     return(show_sig_type(sig_type, sig_type_map));
     }
 
-/*! returns string derived from PKA type */
+/**
+ * \ingroup Show
+ *
+ * ops_show_pka() returns a pointer to a string which
+ * represents the Public Key Algorithm
+ * \param pka Public Key Algorithm type
+ * \todo add reference
+ * \return string or "Unknown"
+ */
 char *ops_show_pka(ops_public_key_algorithm_t pka)
     {
     return(show_pka(pka, public_key_algorithm_map));
@@ -531,7 +598,17 @@ char *ops_show_ss_preferred_ska(unsigned char octet)
     return(str_from_map(octet,symmetric_key_algorithm_map));
     }
 
-/*! returns all text derived from this signature sub-packet type */
+/**
+ * \ingroup Show
+ *
+ * ops_showall_ss_preferred_ska() returns a pointer to an ops_text_t structure
+ * which contains strings representing the Secret Key Algorithms
+ * in the preferred list
+ * \param ss_preferred_ska Array of Preferred Secret Key Algorithms
+ * \return NULL if cannot allocate memory or other error
+ * \return pointer to structure, if no error
+ * \todo make typesafe
+ */
 ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
     return(text_from_bytemapped_octets(&ss_preferred_ska.data, 
@@ -544,7 +621,18 @@ char *ops_show_ss_feature(unsigned char octet, bit_map_t *map)
     return(str_from_bitfield(octet,map));
     }
 
-/*! returns all text derived from this signature sub-packet type */
+/**
+ * \ingroup Show
+ *
+ * ops_showall_ss_features() returns a pointer to an ops_text_t 
+ * structure which contains strings representing the 
+ * Signature Sub-Packet Features given in #ss_features
+ * \param ss_features Signature Sub-Packet Features
+ * \return NULL if cannot allocate memory or other error
+ * \return pointer to structure, if no error
+ * \todo make typesafe
+ * \todo add reference
+ */
 ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
     {
     ops_text_t *text=NULL;
@@ -574,7 +662,18 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
     return text;
     }
 
-/*! returns all text derived from this signature sub-packet type */
+/**
+ * \ingroup Show
+ *
+ * ops_showall_ss_notation_data_flags() returns a pointer to an ops_text_t 
+ * structure containing strings representing the 
+ * Signature Sub-Packet Notation Data Flags given in #ss_notation_data
+ * \param ss_notation_data Signature Sub-Packet Notation Data
+ * \return NULL if cannot allocate memory or other error
+ * \return pointer to structure, if no error
+ * \todo make typesafe
+ * \todo add reference
+ */
 ops_text_t *ops_showall_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
     {
     return(showall_octets_bits(&ss_notation_data.flags,ss_notation_data_map));
@@ -586,7 +685,17 @@ char *ops_show_ss_key_flag(unsigned char octet, bit_map_t *map)
     return(str_from_bitfield(octet,map));
     }
 
-/*! returns all text derived from this signature sub-packet type */
+/**
+ * \ingroup Show
+ *
+ * ops_showall_ss_key_flags() returns a pointer to an ops_text_t 
+ * structure which contains strings representing the Key Flags
+ * in the preferred list
+ * \param ss_key_flags Array of Key Flags
+ * \return NULL if cannot allocate memory or other error
+ * \return pointer to structure, if no error
+ * \todo make typesafe
+ */
 ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     {
     ops_text_t *text=NULL;
@@ -616,10 +725,22 @@ ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     return text;
     }
 
-/*! returns string derived from one bitfield in this signature-subpacket type */
-char *ops_show_ss_key_server_prefs(unsigned char octet, bit_map_t *map)
+/**
+ * \ingroup Show
+ *
+ * ops_show_ss_key_server_prefs() returns a string pointer
+ * which represents the user's preferences that should be
+ * observed by the key server.
+ *
+ * \param prefs Byte containing bitfield of preferences
+ * \param map
+ * \return string or "Unknown"
+ * \todo add reference
+ * \todo make typesafe
+ */
+char *ops_show_ss_key_server_prefs(unsigned char prefs, bit_map_t *map)
     {
-    return(str_from_bitfield(octet,map));
+    return(str_from_bitfield(prefs,map));
     }
 
 /*! returns all text derived from this signature sub-packet type */

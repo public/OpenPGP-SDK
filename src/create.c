@@ -81,11 +81,32 @@ ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
 // XXX: the general idea of _fast_ is that it doesn't copy stuff
 // the safe (i.e. non _fast_) version will, and so will also need to
 // be freed.
+
+/**
+ * \ingroup Create
+ *
+ * ops_fast_create_user_id() sets #id->user_id to the given #user_id.
+ * This is fast because it is only copying a char*. However, if #user_id
+ * is changed or freed in the future, this could have injurious results.
+ * \param id
+ * \param user_id
+ */
+
 void ops_fast_create_user_id(ops_user_id_t *id,char *user_id)
     {
     id->user_id=user_id;;
     }
 
+/**
+ * \ingroup Create
+ *
+ * Writes a User Id from the information held in #id and #opt
+ *
+ * \param id
+ * \param opt
+ * \return Return value from ops_write() unless call to ops_write_ptag() or ops_write_length() failed before it was called, in which case returns 0
+ * \todo tidy up that return value description!
+ */
 ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
 				       ops_create_options_t *opt)
     {
@@ -174,6 +195,16 @@ static int write_public_key_body(const ops_public_key_t *key,
     return ops_false;
     }
 
+/**
+ * \ingroup Create
+ *
+ * Writes a Public Key from the information held in #key and #opt
+ *
+ * \param key
+ * \param opt
+ * \return Return value from write_public_key_body() unless call to ops_write_ptag() or ops_write_length() failed before it was called, in which case returns 0
+ * \todo tidy up that return value description!
+ */
 ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
 					  ops_create_options_t *opt)
     {
@@ -183,6 +214,22 @@ ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
 	&& ops_write_length(1+4+1+public_key_length(key),opt)
 	&& write_public_key_body(key,opt);
     }
+
+/**
+ * \ingroup Create
+ *
+ * Writes an RSA public key.
+ *
+ * \param time
+ * \param n
+ * \param e
+ * \param opt 
+ *
+ * \return result from ops_write_struct_public_key()
+ * 
+ * \todo get better definition of return values
+ * \todo get better description of usage. What writers are provided? When do they get setup? How are you supposed to use this?
+ */
 
 ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
 				       const BIGNUM *e,

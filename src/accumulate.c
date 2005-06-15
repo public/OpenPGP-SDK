@@ -263,6 +263,17 @@ static void validate_all_signatures(const ops_keyring_t *ring)
     }
 
 /*! \todo descr for ops_parse_and_accumulate */
+/**
+ * \ingroup Parse
+ *
+ * ops_parse_and_accumulate() calls ops_parse() with accumulate_cb() to do
+ * something I'm not clear what. It then calls dump_key_data() on the keyring, 
+ * and validates all signatures on it. 
+ * \param keyring
+ * \param opt
+ * \todo Get Ben to shed some light on this darkness
+*/
+
 void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_options_t *opt)
     {
     accumulate_arg_t arg;

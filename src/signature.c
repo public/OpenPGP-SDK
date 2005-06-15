@@ -246,6 +246,17 @@ ops_check_subkey_signature(const ops_public_key_t *key,
     return finalise_signature(&hash,sig,signer,raw_packet);
     }
 
+/**
+ * \ingroup Create
+ *
+ * ops_signature_start() creates a V4 signature with a SHA1 hash.
+ * 
+ * \param sig
+ * \param key
+ * \param id
+ * \param type
+ * \todo Expand description.
+ */
 void ops_signature_start(ops_create_signature_t *sig,
 			 const ops_public_key_t *key,
 			 const ops_user_id_t *id,
@@ -284,6 +295,14 @@ void ops_signature_start(ops_create_signature_t *sig,
     ops_write_scalar(0,2,&sig->opt);
     }
 
+/**
+ * \ingroup Create
+ *
+ * Mark the end of the hashed subpackets in the signature
+ *
+ * \param sig
+ */
+
 void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
     {
     sig->hashed_data_length=sig->mem.length-sig->hashed_count_offset-2;
@@ -293,6 +312,19 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
     sig->unhashed_count_offset=sig->mem.length;
     ops_write_scalar(0,2,&sig->opt);
     }
+
+/**
+ * \ingroup Create
+ *
+ * Write out a signature
+ *
+ * \param sig
+ * \param key
+ * \param skey
+ * \param opt
+ *
+ * \todo get a better description of how/when this is used
+ */
 
 void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
 			 ops_secret_key_t *skey,ops_create_options_t *opt)
@@ -320,11 +352,28 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
     ops_memory_release(&sig->mem);
     }
 
+/**
+ * \ingroup Create
+ * 
+ * ops_signature_add_creation_time() adds a creation time to the signature.
+ * 
+ * \param sig
+ * \param when
+ */
 void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
     {
     ops_write_ss_header(5,OPS_PTAG_SS_CREATION_TIME,&sig->opt);
     ops_write_scalar(when,4,&sig->opt);
     }
+
+/**
+ * \ingroup Create
+ *
+ * Adds issuer's key ID to the signature
+ *
+ * \param sig
+ * \param keyid
+ */
 
 void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
 				     const unsigned char keyid[OPS_KEY_ID_SIZE])
@@ -333,6 +382,14 @@ void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
     ops_write(keyid,OPS_KEY_ID_SIZE,&sig->opt);
     }
 
+/**
+ * \ingroup Create
+ *
+ * Adds primary user ID to the signature
+ *
+ * \param sig
+ * \param keyid
+ */
 void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 				       ops_boolean_t primary)
     {

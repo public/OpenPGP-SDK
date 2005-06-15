@@ -15,16 +15,48 @@ void hexdump(const unsigned char *src,size_t length)
 	printf("%02X",*src++);
     }
 
+/**
+ * \ingroup Utils
+ *
+ * ops_init() just calls ops_crypto_init()
+ * \todo Ask Ben why we need this extra layer
+ */
+
 void ops_init(void)
     {
     ops_crypto_init();
     }
+
+/**
+ * \ingroup Utils
+ *
+ * ops_finish() just calls ops_crypto_finish()
+ * \todo Ask Ben why we need this extra layer
+ */
 
 void ops_finish(void)
     {
     ops_crypto_finish();
     }
 
+/**
+ * \ingroup Parse
+ *
+ * ops_reader_fd() attempts to read up to #plength bytes from the file 
+ * descriptor in #arg_ into the buffer starting at #dest using the
+ * rules contained in #flags
+ * 
+ * \param	dest	Pointer to previously allocated buffer
+ * \param	plength Number of bytes to try to read
+ * \param	flags	Rules about reading to use
+ * \param	arg_	Gets cast to #ops_reader_fd_arg_t
+ *
+ * \return	OPS_R_EOF 	if no bytes read
+ * \return	OPS_R_PARTIAL_READ	if not enough bytes read, and OPS_RETURN_LENGTH set in #flags
+ * \return	OPS_R_EARLY_EOF	if not enough bytes read, and OPS_RETURN_LENGTH not set in #flags
+ * \return	OPS_R_OK	if expected length read
+ * \todo change arg_ to typesafe? 
+ */
 ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 			       ops_reader_flags_t flags,void *arg_)
     {
@@ -52,6 +84,22 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
     return OPS_R_OK;
     }
 
+/**
+ * \ingroup Create
+ *
+ * ops_writer_fd() attempts to write up to #length bytes 
+ * to the file descriptor in #arg_ from the buffer #src 
+ * using the rules contained in #flags
+ * 
+ * \param	src
+ * \param	length Number of bytes to try to write
+ * \param	flags	Rules to use
+ * \param	arg_	Gets cast to #ops_writer_fd_arg_t
+ *
+ * \return	OPS_W_ERROR 	if not enough bytes written
+ * \return	OPS_W_OK if all bytes written
+ * \todo change arg_ to typesafe? 
+ */
 ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
 			       ops_writer_flags_t flags,void *arg_)
     {
