@@ -23,6 +23,9 @@ while(my $line=<I>) {
     chomp $line;
     ++$lineno;
 
+    next if $line eq '';
+    next if $line =~ /^\/\//;
+
     my($to,$from)=$line =~ /^\s*(.+?)\s*->\s*(.+?)\s*$/;
 
     my($ttype,$tname,$targs)=parse($to);

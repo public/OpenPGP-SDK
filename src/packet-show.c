@@ -546,7 +546,7 @@ ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t 
  */
 char *ops_show_hash_algorithm(unsigned char hash)
     {
-    return(str_from_map(hash,hash_algorithm_map));
+    return(show_hash_algorithm(hash));
     }
 
 /**
