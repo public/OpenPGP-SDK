@@ -28,7 +28,8 @@ while(my $line=<I>) {
     my($ttype,$tname,$targs)=parse($to);
     my($ftype,$fname,$fargs)=parse($from);
     print O "\n";
-    print O "#line $lineno \"$infile\"\n";
+#    print O "#line $lineno \"$infile\"\n";
+    print O "/* (line $lineno) $line */\n";
     print O "$from;\n";
     print O "#define $tname(";
     print_list($targs,1,1);

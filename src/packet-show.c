@@ -200,6 +200,8 @@ static bit_map_t ss_key_server_prefs_map[] =
     { 0x80, "Key holder requests that this key only be modified or updated by the key holder or an administrator of the key server" },
     };
 
+#include "packet-show-cast.h"
+
 /*
  * Private functions
  */

@@ -8,8 +8,6 @@
 #include "packet.h"
 #endif
 
-#include "packet-show-cast.h"
-
 typedef struct
     {
     unsigned int size;/* num of array slots allocated */

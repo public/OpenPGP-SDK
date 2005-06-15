@@ -4,6 +4,8 @@ use strict;
 
 use Carp;
 use File::Temp;
+use File::Spec;
+use POSIX qw(:errno_h);
 
 our %Subst=(
 	    'CRYPTO_LIBS' => '-lcrypto',
@@ -154,7 +156,7 @@ sub create {
     my $file=shift;
 
     print "Creating $file\n";
-    open(D,">$file") || croak "Can't create $file";
+    open(D,">$file") || croak "Can't create $file: $!";
     close D;
 }
 
@@ -163,14 +165,25 @@ sub build {
 
     my $cc=getKnowledge('cc');
     my $fh=new File::Temp(SUFFIX => '.c');
+
+    my($v,$d,$f)=File::Spec->splitpath($fh->filename());
+
+    my $cur=File::Spec->rel2abs(File::Spec->curdir());
+    chdir($d) || croak "chdir($d): $!";
+
 #    print $fh->filename(),"\n";
     print $fh $code;
 #    print $code;
     $fh->close();
 
-    my $cmd="$cc -Wall -Werror -c ".$fh;
+    my $cmd="$cc -Wall -Werror -c ".$f;
 #    print "$cmd\n";
     my $ret=system("$cmd > /dev/null 2>&1");
+    my $obj=$fh->filename();
+    $obj =~ s/\.c$/.o/;
+    unlink($obj) || $! == ENOENT || croak "unlink($obj): $!";
+
+    chdir($cur) || croak "chdir($cur): $!";
 
     return $ret == 0;
 }
