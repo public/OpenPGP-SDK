@@ -16,13 +16,19 @@ my $outfile=shift;
 open(I,$infile) || croak "$infile: $!";
 open(O,">$outfile") || croak "$outfile: $!";
 
+print O "/* Generated from $infile by $0, do not edit. */\n\n";
+
+my $lineno=0;
 while(my $line=<I>) {
     chomp $line;
+    ++$lineno;
 
     my($to,$from)=$line =~ /^\s*(.+?)\s*->\s*(.+?)\s*$/;
 
     my($ttype,$tname,$targs)=parse($to);
     my($ftype,$fname,$fargs)=parse($from);
+    print O "\n";
+    print O "#line $lineno \"$infile\"\n";
     print O "$from;\n";
     print O "#define $tname(";
     print_list($targs,1);

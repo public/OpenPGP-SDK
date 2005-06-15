@@ -6,7 +6,10 @@
 #
 SUBDIRS=src examples
 
-all: Makefiles include/configure.h default
+all: Makefiles include/configure.h headers default
+
+headers:
+	cd include && make headers
 
 default:
 	@for d in $(SUBDIRS); do \
