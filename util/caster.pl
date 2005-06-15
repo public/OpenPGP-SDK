@@ -31,12 +31,16 @@ while(my $line=<I>) {
     print O "#line $lineno \"$infile\"\n";
     print O "$from;\n";
     print O "#define $tname(";
-    print_list($targs,1);
+    print_list($targs,1,1);
     print O ") (($ttype(*)(";
     print_list($targs,0);
     print O "))$fname)(";
     print_list($fargs,1);
     print O ")\n";
+
+    print O "typedef $ttype ${tname}_t(";
+    print_list($targs,0,1);
+    print O ");\n";
 }
 
 sub parse {
@@ -49,7 +53,7 @@ sub parse {
     my @alist;
     foreach my $arg (@args) {
 	my($atype,$aname)=parse_decl($arg);
-	print "atype=$atype aname=$aname\n";
+#	print "atype=$atype aname=$aname\n";
 	push @alist,[$atype,$aname];
     }
     return ($ftype,$fname,\@alist);
@@ -69,11 +73,15 @@ sub parse_decl {
 sub print_list {
     my $list=shift;
     my $member=shift;
+    my $skip_extra=shift;
 
     my $first=1;
     foreach my $arg (@$list) {
+	next if $skip_extra && $arg->[0] =~ /^\+/;
 	print O ',' if !$first;
-	print O $arg->[$member];
+	my $str=$arg->[$member];
+	$str =~ s/^\+//;
+	print O $str;
 	$first=undef;
     }
 }
