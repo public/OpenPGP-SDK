@@ -138,7 +138,7 @@ static void format_error(ops_parser_content_t *content,
     static char buf[8192];
 
     va_start(va,fmt);
-    vsprintf(buf,fmt,va);
+    vsnprintf(buf,sizeof buf,fmt,va);
     va_end(va);
     content->content.error.error=buf;
     }
