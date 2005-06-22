@@ -17,7 +17,7 @@ typedef struct ops_region
     ops_boolean_t indeterminate:1;
     } ops_region_t;
 
-/** Return values for #ops_packet_reader_t. */
+/** Return values for reader functions e.g. ops_packet_reader_t() */
 enum ops_reader_ret_t
     {
     OPS_R_OK		=0,	/*!< success */
@@ -39,16 +39,22 @@ typedef ops_reader_ret_t ops_packet_reader_t(unsigned char *dest,
 					     ops_reader_flags_t flags,
 					     void *arg);
 
+/** Structure to hold the options for parsing one (or more?) packets.
+ * \todo get Ben to check ops_parse_options_t descr
+ */
+
 typedef struct
     {
-    unsigned char ss_raw[256/8];
-    unsigned char ss_parsed[256/8];
+    unsigned char ss_raw[256/8]; /*!< one bit per signature-subpacket type; 
+				    set to get raw data */
+    unsigned char ss_parsed[256/8]; /*!< one bit per signature-subpacket type;
+				       set to get parsed data */
 
-    ops_packet_parse_callback_t *cb;
-    void *cb_arg;
+    ops_packet_parse_callback_t *cb; /*!< the callback function to use when parsing */
+    void *cb_arg; /*!< the args to pass to the callback function */
 
-    ops_packet_reader_t *reader;
-    void *reader_arg;
+    ops_packet_reader_t *reader; /*!< the reader function to use to get the data to be parsed */
+    void *reader_arg; /*!< the args to pass to the reader function */
 
     unsigned accumulate:1;	/*!< accumulate packet data */
     unsigned char *accumulated;	/*!< the accumulated data */
@@ -59,13 +65,17 @@ typedef struct
 int ops_parse(ops_parse_options_t *opt);
 void ops_parse_and_validate(ops_parse_options_t *opt);
 
+/** Used to specify whether subpackets should be returned raw, parsed or ignored.
+ */
 enum ops_parse_type_t
     {
-    OPS_PARSE_RAW,
-    OPS_PARSE_PARSED,
-    OPS_PARSE_IGNORE 
+    OPS_PARSE_RAW,	/*!< Return Raw */
+    OPS_PARSE_PARSED,	/*!< Return Parsed */
+    OPS_PARSE_IGNORE 	/*!< Ignore - Return Nothing*/
     };
 
+/** Initialise structure 
+ */
 #define ops_parse_options_init(opt) memset(opt,'\0',sizeof *opt)
 
 void ops_parse_options(ops_parse_options_t *opt,ops_content_tag_t tag,

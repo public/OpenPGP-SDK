@@ -5,6 +5,10 @@
 
 typedef struct ops_key_data ops_key_data_t;
 
+/** \struct ops_keyring_t
+ * A keyring
+ */
+
 typedef struct
     {
     int nkeys; // while we are constructing a key, this is the offset

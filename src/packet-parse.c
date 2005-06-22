@@ -2,38 +2,6 @@
  * \brief Parser for OpenPGP packets
  */
 
-/** @defgroup PublicAPI Public API
- * These functions are public and available for external use.
- * @{
- */
-/**
- * @defgroup Parse Parse
- * These functions allow an OpenPGP object (for example, an OpenPGP message or keyring) to be parsed.
- * @ingroup PublicAPI
- */
-/**
- * @defgroup Create Create
- * These functions allow an OpenPGP object to be created.
- * @ingroup PublicAPI
- */
-/**
- * @defgroup Memory Memory
- * These functions relate to memory usage.
- * @ingroup PublicAPI
- */
-/**
- * @defgroup Show Show
- * These functions allow the contents to be displayed in human-readable form.
- * @ingroup PublicAPI
- */
-/**
- * @defgroup Utils Utils
- * These functions are of general utility
- * @ingroup PublicAPI
- */
-/**
- * @}
- */
 
 #include "packet.h"
 #include "packet-parse.h"
@@ -177,7 +145,7 @@ static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
  * \param *result	The scalar value is stored here
  * \param *reader	Our reader
  * \param length	How many bytes to read
- * \return		#OPS_PR_OK on success, reader's return value otherwise
+ * \return		OPS_PR_OK on success, reader's return value otherwise
  *
  */
 static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
@@ -209,7 +177,7 @@ static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
  * ops_ptag_t::length_read.
  *
  * If length would make us read over the packet boundary, or if
- * reading fails, we call the callback with an #OPS_PARSER_ERROR.
+ * reading fails, we call the callback with an OPS_PARSER_ERROR.
  *
  * This function makes sure to respect packet boundaries.
  *
@@ -247,14 +215,14 @@ int ops_limited_read(unsigned char *dest,unsigned length,
 
 /** Skip over length bytes of this packet.
  *
- * Calls #limited_read to skip over some data.
+ * Calls limited_read() to skip over some data.
  *
  * This function makes sure to respect packet boundaries.
  *
  * \param length	How many bytes to skip
  * \param *region	Pointer to packet region
  * \param *opt		Options
- * \return		1 on success, 0 on error (calls the cb with #OPS_PARSER_ERROR in #limited_read).
+ * \return		1 on success, 0 on error (calls the cb with OPS_PARSER_ERROR in limited_read()).
  */
 static int limited_skip(unsigned length,ops_region_t *region,
 			ops_parse_options_t *opt)
@@ -274,7 +242,7 @@ static int limited_skip(unsigned length,ops_region_t *region,
 /** Read a scalar.
  *
  * Read a Big Endian scalar of length bytes, respecting packet
- * boundaries (by calling #limited_read to read the raw data).
+ * boundaries (by calling limited_read() to read the raw data).
  *
  * This function makes sure to respect packet boundaries.
  *
@@ -283,7 +251,7 @@ static int limited_skip(unsigned length,ops_region_t *region,
  * \param *region	Pointer to current packet region
  * \param *opt		Pointer to parse options to be used
  * \param *cb		The callback
- * \return		1 on success, 0 on error (calls the cb with #OPS_PARSER_ERROR in #limited_read).
+ * \return		1 on success, 0 on error (calls the cb with OPS_PARSER_ERROR in limited_read()).
  *
  * \see RFC2440bis-12 3.1
  */
@@ -310,7 +278,7 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
  * Timestamps in OpenPGP are unix time, i.e. seconds since The Epoch (1.1.1970).  They are stored in an unsigned scalar
  * of 4 bytes.
  *
- * This function reads the timestamp using #limited_read_scalar.
+ * This function reads the timestamp using limited_read_scalar().
  *
  * This function makes sure to respect packet boundaries.
  *
@@ -318,7 +286,7 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
  * \param *ptag		Pointer to current packet's Packet Tag.
  * \param *reader	Our reader
  * \param *cb		The callback
- * \return		see #limited_read_scalar
+ * \return		see limited_read_scalar()
  *
  * \see RFC2440bis-12 3.5
  */
@@ -345,8 +313,8 @@ static int limited_read_time(time_t *dest,ops_region_t *region,
  * \param *ptag		Pointer to current packet's Packet Tag.
  * \param *reader	Our reader
  * \param *cb		The callback
- * \return		1 on success, 0 on error (by #limited_read_scalar or #limited_read or if the MPI is not properly formed (XXX
- * 				 see comment below - the callback is called with a #OPS_PARSER_ERROR in case of an error)
+ * \return		1 on success, 0 on error (by limited_read_scalar() or limited_read() or if the MPI is not properly formed (XXX
+ * 				 see comment below - the callback is called with a OPS_PARSER_ERROR in case of an error)
  *
  * \see RFC2440bis-12 3.2
  */
@@ -414,7 +382,7 @@ static int read_new_length(unsigned *length,ops_parse_options_t *opt)
  * \param *ptag		Pointer to current packet's Packet Tag.
  * \param *reader	Our reader
  * \param *cb		The callback
- * \return		1 on success, 0 on error (by #limited_read_scalar or #limited_read or if the MPI is not properly formed (XXX
+ * \return		1 on success, 0 on error (by limited_read_scalar() or limited_read() or if the MPI is not properly formed (XXX
  * 				 see comment below)
  *
  * \see RFC2440bis-12 4.2.2
@@ -1193,10 +1161,10 @@ void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t *ss_key_server_prefs
 /** Parse several signature subpackets.
  *
  * Hashed and unhashed subpacket sets are preceded by an octet count that specifies the length of the complete set.
- * This function parses this length and then calls #parse_one_signature_subpacket for each subpacket until the
+ * This function parses this length and then calls parse_one_signature_subpacket() for each subpacket until the
  * entire set is consumed.
  *
- * This function does not call the callback directly, #parse_one_signature_subpacket does for each subpacket.
+ * This function does not call the callback directly, parse_one_signature_subpacket() does for each subpacket.
  *
  * \param *ptag		Pointer to the Packet Tag.
  * \param *reader	Our reader
@@ -1472,7 +1440,7 @@ static int parse_literal_data(ops_region_t *region,ops_parse_options_t *opt)
 /**
  * \ingroup Memory
  *
- * ops_secret_key_free() frees the memory associated with #key. Note that
+ * ops_secret_key_free() frees the memory associated with "key". Note that
  * the key itself is not freed.
  * 
  * \param key
@@ -1670,10 +1638,23 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 /**
  * \ingroup Parse
  * 
- * Parses packets calling #ops_parse_one_packet until an error occurs or until EOF (which is just another error anyway).
+ * Parses packets from an input stream until an error occurs or until EOF 
+ *
+ * All the necessary information for parsing should have been set up by the
+ * calling function in "*opt" beforehand.
+ *
+ * That information includes :
+ *
+ * - a "reader" function to be used to get the data to be parsed
+ *
+ * - a "callback" function to be called when this library has identified 
+ * a parseable object within the data
+ *
+ * - whether the calling function wants the signature subpackets returned raw, parsed or not at all
  *
  * \param *opt		Parsing options
  * \return		1 on success, 0 on error
+ * \todo Add some error checking to make sure *opt contains a sensible setup?
  */
 int ops_parse(ops_parse_options_t *opt)
     {
@@ -1688,10 +1669,11 @@ int ops_parse(ops_parse_options_t *opt)
 /**
  * \ingroup Parse
  *
- * ops_parse_options() sets up the packet options in #*opt, depending on 
- * the packet tag #tag and the parsing type #type
+ * ops_parse_options() specifies whether one or more signature subpacket types should
+ *  be returned parsed or raw or ignored.
+ *
  * \param	opt	Pointer to previously allocated structure
- * \param	tag	Packet tag
+ * \param	tag	Packet tag. OPS_PTAG_SS_ALL for all SS tags; or one individual signature subpacket tag
  * \param	type	Parse type
  * \todo  XXX: Make all packet types optional, not just subpackets
  */

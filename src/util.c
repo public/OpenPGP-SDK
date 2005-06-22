@@ -42,19 +42,19 @@ void ops_finish(void)
 /**
  * \ingroup Parse
  *
- * ops_reader_fd() attempts to read up to #plength bytes from the file 
- * descriptor in #arg_ into the buffer starting at #dest using the
- * rules contained in #flags
+ * ops_reader_fd() attempts to read up to "plength" bytes from the file 
+ * descriptor in "arg_" into the buffer starting at "dest" using the
+ * rules contained in "flags"
  * 
  * \param	dest	Pointer to previously allocated buffer
  * \param	plength Number of bytes to try to read
  * \param	flags	Rules about reading to use
- * \param	arg_	Gets cast to #ops_reader_fd_arg_t
+ * \param	arg_	Gets cast to ops_reader_fd_arg_t
  *
- * \return	OPS_R_EOF 	if no bytes read
- * \return	OPS_R_PARTIAL_READ	if not enough bytes read, and OPS_RETURN_LENGTH set in #flags
- * \return	OPS_R_EARLY_EOF	if not enough bytes read, and OPS_RETURN_LENGTH not set in #flags
- * \return	OPS_R_OK	if expected length read
+ * \return	OPS_R_EOF 	if no bytes were read
+ * \return	OPS_R_PARTIAL_READ	if not enough bytes were read, and OPS_RETURN_LENGTH is set in "flags"
+ * \return	OPS_R_EARLY_EOF	if not enough bytes were read, and OPS_RETURN_LENGTH was not set in "flags"
+ * \return	OPS_R_OK	if expected length was read
  * \todo change arg_ to typesafe? 
  */
 ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,

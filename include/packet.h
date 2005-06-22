@@ -9,7 +9,8 @@
 #include <openssl/bn.h>
 #include "types.h"
 
-/** general use structure for variable-length data */
+/** General-use structure for variable-length data 
+ */
 
 typedef struct
     {
@@ -293,6 +294,8 @@ typedef struct
     ops_public_key_union_t	key;		/*!< Public Key Parameters */
     } ops_public_key_t;
 
+/** Structure to hold data for one RSA secret key
+ */
 typedef struct
     {
     BIGNUM *d;
