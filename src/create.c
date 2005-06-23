@@ -83,7 +83,7 @@ ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
 // be freed.
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  *
  * ops_fast_create_user_id() sets id->user_id to the given "user_id".
  * This is fast because it is only copying a char*. However, if "user_id"
@@ -98,7 +98,7 @@ void ops_fast_create_user_id(ops_user_id_t *id,char *user_id)
     }
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  *
  * Writes a User Id from the information held in #id and #opt
  *
@@ -207,9 +207,9 @@ static int write_public_key_body(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  *
- * Writes a Public Key from the information held in #key and #opt
+ * Writes a Public Key from the information held in "key" and "opt"
  *
  * \param key
  * \param opt

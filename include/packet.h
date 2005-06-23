@@ -106,7 +106,7 @@ typedef enum
 /* PTag Content Tags */
 /***************************/
 
-/** Package Tags (aka Content Tags) and signatue subpacket types.
+/** Package Tags (aka Content Tags) and signature subpacket types.
  * This enumerates all rfc-defined packet tag values and the
  * signature subpacket type values that we understand.
  *
@@ -347,7 +347,7 @@ typedef enum
 
 typedef struct
     {
-    ops_data_t data;
+    ops_data_t data; /*<! Trust Packet */
     } ops_trust_t;
 	
 /** Structure to hold one user id */
@@ -359,7 +359,7 @@ typedef struct
 /** Structure to hold one user attribute */
 typedef struct
     {
-    ops_data_t data;
+    ops_data_t data; /*!< User Attribute */
     } ops_user_attribute_t;
 
 /** Signature Version.
@@ -458,6 +458,7 @@ typedef union
  * \see RFC2440bis-12 5.2.3
  */
 #define OPS_KEY_ID_SIZE		8
+/** signature */
 typedef struct
     {
     ops_sig_version_t		version;	/*!< signature version number */
@@ -485,8 +486,8 @@ typedef struct
 
 typedef struct
     {
-    unsigned char		level;
-    unsigned char		amount;
+    unsigned char		level;	/*<! Trust Level */
+    unsigned char		amount; /*<! Amount */
     } ops_ss_trust_t;
 
 typedef struct

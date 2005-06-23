@@ -31,9 +31,13 @@
  */
 /**
  * @defgroup Create Create
- * These functions allow an OpenPGP object to be created.
+ * These functions allow an OpenPGP object to be created. 
  *
- * \par Usage 1 : To create an RSA public key:
+ * The low-level functions are provided to enable flexible usage.
+ * Higher-level functions which bundle several functions together into 
+ * common operations may be added in the future.
+ *
+ * \par Example Usage 1 : To create an unsigned RSA public key with user id:
  * - Get the key parameters (creation time, modulus, exponent)
  * - Get the userid
  * - Configure an ops_writer_fd_arg_t structure

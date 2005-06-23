@@ -31,6 +31,7 @@ typedef struct
     void *arg;
     } ops_create_options_t;
 
+/** needed for signature creation */
 typedef struct
     {
     ops_packet_writer_t *writer;

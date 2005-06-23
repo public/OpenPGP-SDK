@@ -73,7 +73,7 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
  * \param keyid
  * \param key
  *
- * \todo Get descr from Ben what this does
+ * \todo Get descr from Ben for ops_keyid()
  */
 
 void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key)

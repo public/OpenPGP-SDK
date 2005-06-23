@@ -247,7 +247,7 @@ ops_check_subkey_signature(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  *
  * ops_signature_start() creates a V4 signature with a SHA1 hash.
  * 
@@ -296,7 +296,7 @@ void ops_signature_start(ops_create_signature_t *sig,
     }
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  *
  * Mark the end of the hashed subpackets in the signature
  *
@@ -314,7 +314,7 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
     }
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  *
  * Write out a signature
  *
@@ -353,7 +353,7 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
     }
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  * 
  * ops_signature_add_creation_time() adds a creation time to the signature.
  * 
@@ -367,7 +367,7 @@ void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
     }
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  *
  * Adds issuer's key ID to the signature
  *
@@ -383,12 +383,12 @@ void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
     }
 
 /**
- * \ingroup IntCreate
+ * \ingroup Create
  *
  * Adds primary user ID to the signature
  *
  * \param sig
- * \param keyid
+ * \param primary
  */
 void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 				       ops_boolean_t primary)

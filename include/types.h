@@ -10,6 +10,7 @@ typedef struct
     char *string;
     } map_t;
 
+/** Boolean type */
 typedef unsigned ops_boolean_t;
 
 typedef enum ops_content_tag_t ops_content_tag_t;
