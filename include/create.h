@@ -9,17 +9,22 @@
 #include "crypto.h"
 #include "memory.h"
 
+/** expected return values from the writer function
+ */
+
 enum ops_writer_ret_t
     {
     OPS_W_OK		=0,
     OPS_W_ERROR		=1,
     };
 
+/** the writer function prototype */
 typedef ops_writer_ret_t ops_packet_writer_t(const unsigned char *src,
 					     unsigned length,
 					     ops_writer_flags_t flags,
 					     void *arg);
 
+/** required information when writing */
 typedef struct
     {
     ops_packet_writer_t *writer;

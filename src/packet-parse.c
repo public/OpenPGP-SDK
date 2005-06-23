@@ -1621,7 +1621,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	CB(OPS_PARSER_ERROR,&content);
 	r=0;
 	}
-    // XXX: shouldn't we check that the entire packet has been consumed?
+    // \todo XXX: shouldn't we check that the entire packet has been consumed?
     if(opt->accumulate)
 	{
 	C.packet.length=opt->alength;
@@ -1638,7 +1638,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 /**
  * \ingroup Parse
  * 
- * Parses packets from an input stream until an error occurs or until EOF 
+ * ops_parse() parses packets from an input stream until EOF or error.
  *
  * All the necessary information for parsing should have been set up by the
  * calling function in "*opt" beforehand.
@@ -1650,7 +1650,9 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
  * - a "callback" function to be called when this library has identified 
  * a parseable object within the data
  *
- * - whether the calling function wants the signature subpackets returned raw, parsed or not at all
+ * - whether the calling function wants the signature subpackets returned raw, parsed or not at all.
+ *
+ * \sa See Detailed Description for usage.
  *
  * \param *opt		Parsing options
  * \return		1 on success, 0 on error

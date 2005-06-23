@@ -80,6 +80,9 @@ static void verify(const ops_signature_t *sig,validate_arg_t *arg)
     printf("\n");
     }
 
+/**
+ * \ingroup Callbacks
+ */
 static void validate_cb(const ops_parser_content_t *content_,void *arg_)
     {
     validate_arg_t *arg=arg_;

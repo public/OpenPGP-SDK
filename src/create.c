@@ -83,10 +83,10 @@ ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
 // be freed.
 
 /**
- * \ingroup Create
+ * \ingroup IntCreate
  *
- * ops_fast_create_user_id() sets #id->user_id to the given #user_id.
- * This is fast because it is only copying a char*. However, if #user_id
+ * ops_fast_create_user_id() sets id->user_id to the given "user_id".
+ * This is fast because it is only copying a char*. However, if "user_id"
  * is changed or freed in the future, this could have injurious results.
  * \param id
  * \param user_id
@@ -98,7 +98,7 @@ void ops_fast_create_user_id(ops_user_id_t *id,char *user_id)
     }
 
 /**
- * \ingroup Create
+ * \ingroup IntCreate
  *
  * Writes a User Id from the information held in #id and #opt
  *
@@ -115,6 +115,17 @@ ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
 	&& ops_write(id->user_id,strlen(id->user_id),opt);
     }
 
+/**
+ * \ingroup Create
+ *
+ * Write User Id
+ * 
+ * \param user_id
+ * \param opt
+ *
+ * \return return value from ops_write_struct_user_id()
+ * \todo better descr of return value
+ */
 ops_boolean_t ops_write_user_id(const char *user_id,ops_create_options_t *opt)
     {
     ops_user_id_t id;
@@ -196,7 +207,7 @@ static int write_public_key_body(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup Create
+ * \ingroup IntCreate
  *
  * Writes a Public Key from the information held in #key and #opt
  *
@@ -218,17 +229,23 @@ ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
 /**
  * \ingroup Create
  *
- * Writes an RSA public key.
+ * Writes one RSA public key.
  *
- * \param time
- * \param n
- * \param e
- * \param opt 
+ * The parameters for the public key are provided by "time", "n" and "e".
+ *
+ * This function expects "opt" to specify a "writer" function to be used, for the
+ * actual output.
+ *
+ * \sa See Detailed Description for usage.
+ *
+ * \param time Creation time
+ * \param n RSA public modulus
+ * \param e RSA public encryption exponent
+ * \param opt Writer setup
  *
  * \return result from ops_write_struct_public_key()
  * 
  * \todo get better definition of return values
- * \todo get better description of usage. What writers are provided? When do they get setup? How are you supposed to use this?
  */
 
 ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,

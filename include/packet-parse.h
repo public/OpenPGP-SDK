@@ -39,8 +39,7 @@ typedef ops_reader_ret_t ops_packet_reader_t(unsigned char *dest,
 					     ops_reader_flags_t flags,
 					     void *arg);
 
-/** Structure to hold the options for parsing one (or more?) packets.
- * \todo get Ben to check ops_parse_options_t descr
+/** Structure to hold the options for parsing packets.
  */
 
 typedef struct
@@ -56,7 +55,7 @@ typedef struct
     ops_packet_reader_t *reader; /*!< the reader function to use to get the data to be parsed */
     void *reader_arg; /*!< the args to pass to the reader function */
 
-    unsigned accumulate:1;	/*!< accumulate packet data */
+    unsigned accumulate:1;	/*!< set to accumulate packet data */
     unsigned char *accumulated;	/*!< the accumulated data */
     unsigned asize;	/*!< size of the buffer */
     unsigned alength;	/*!< used buffer */

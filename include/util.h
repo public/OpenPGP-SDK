@@ -10,14 +10,18 @@
 #define ops_false	0
 #define ops_true	1
 
+/** Arguments for reader_fd
+ */
 typedef struct
     {
-    int fd;
+    int fd; /*!< file descriptor */
     } ops_reader_fd_arg_t;
 
+/** Arguments for writer_fd
+ */
 typedef struct
     {
-    int fd;
+    int fd; /*!< file descriptor */
     } ops_writer_fd_arg_t;
 
 void hexdump(const unsigned char *src,size_t length);

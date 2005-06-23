@@ -18,6 +18,9 @@ typedef struct
     ops_keyring_t *keyring;
     } accumulate_arg_t;
 
+/**
+ * \ingroup Callbacks
+ */
 static ops_parse_callback_return_t
 accumulate_cb(const ops_parser_content_t *content_,void *arg_)
     {
@@ -142,6 +145,10 @@ static ops_reader_ret_t key_data_reader(unsigned char *dest,unsigned *plength,
      return OPS_R_OK;
      }
 
+/**
+ * \ingroup Callbacks
+ */
+
  static ops_parse_callback_return_t
  validate_cb(const ops_parser_content_t *content_,void *arg_)
      {
@@ -262,16 +269,21 @@ static void validate_all_signatures(const ops_keyring_t *ring)
 	validate_key_signatures(&ring->keys[n],ring);
     }
 
-/*! \todo descr for ops_parse_and_accumulate */
 /**
  * \ingroup Parse
  *
- * ops_parse_and_accumulate() calls ops_parse() with accumulate_cb() to do
- * something I'm not clear what. It then calls dump_key_data() on the keyring, 
- * and validates all signatures on it. 
- * \param keyring
- * \param opt
- * \todo Get Ben to shed some light on this darkness
+ * ops_parse_and_accumulate() parses packets from an input stream until EOF or error.
+ *
+ * The parsed data is added to "keyring".
+ *
+ * Once all the input data has been parsed:
+ * - the keyring is printed to stdout
+ * - each signature on the keyring is validated, with the result printed to stdout
+ *
+ * \sa See Detailed Description for usage.
+ *
+ * \param *keyring Pointer to an existing keyring
+ * \param *opt Options to use when parsing
 */
 
 void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_options_t *opt)
