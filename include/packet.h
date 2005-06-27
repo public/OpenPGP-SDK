@@ -505,6 +505,7 @@ typedef struct
     unsigned char		key_id[OPS_KEY_ID_SIZE];
     } ops_ss_key_id_t;
 
+/** SS Notation Data */
 typedef struct
     {
     ops_data_t flags;
@@ -517,6 +518,7 @@ typedef struct
     ops_data_t data;
     } ops_ss_userdefined_t;
 
+/** SS Preferred Symmetric Key Algorithm */
 typedef struct
     {
     ops_data_t data;
@@ -524,26 +526,31 @@ typedef struct
        so we cannot expect data->contents to be a null-terminated list */
     } ops_ss_preferred_ska_t;
 
+/** SS Preferrred Hash Algorithm */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_preferred_hash_t;
 
+/** SS Preferred Compression */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_preferred_compression_t;
 
+/** SS Key Flags */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_key_flags_t;
 
+/** SS Key Server Preferences */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_key_server_prefs_t;
 
+/** SS Features */
 typedef struct
     {
     ops_data_t data;
