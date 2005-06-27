@@ -4,6 +4,7 @@
 #include "util.h"
 #include "signature.h"
 #include <assert.h>
+#include <string.h>
 
 /* XXX: because we might well use this reader with different callbacks
    it would make sense to split the arguments for callbacks, one for the reader
