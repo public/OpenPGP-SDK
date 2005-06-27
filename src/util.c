@@ -111,4 +111,3 @@ ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
 
     return OPS_W_OK;
     }
-

@@ -1,4 +1,6 @@
 all: top
+
+top:
 	cd .. && make
 
 headers: packet-show-cast.h
