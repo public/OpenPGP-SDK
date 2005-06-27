@@ -81,55 +81,11 @@ static void verify(const ops_signature_t *sig,validate_arg_t *arg)
     }
 
 /**
- * \ingroup Callbacks
+ * \ingroup Parse
+ * Parse and Validate
+ * \param opt
+ * \todo XXX do we want this as part of the API?
  */
-static void validate_cb(const ops_parser_content_t *content_,void *arg_)
-    {
-    validate_arg_t *arg=arg_;
-    const ops_parser_content_union_t *content=&content_->content;
-
-    // XXX: clean up saved pkay and uid...
-    switch(content_->tag)
-	{
-    case OPS_PARSER_PTAG:
-	/* Packet has just started */
-	switch(content->ptag.content_tag)
-	    {
-	case OPS_PTAG_CT_PUBLIC_KEY:
-	case OPS_PTAG_CT_USER_ID:
-	    arg->packet=malloc(128);
-	    arg->size=128;
-	    arg->length=1;
-	    arg->packet[0]=content->ptag.content_tag;
-	    break;
-	    }
-	break;
-
-    case OPS_PTAG_CT_PUBLIC_KEY:
-	/* Packet has ended */
-	arg->pkey_packet=arg->packet;
-	arg->pkey_length=arg->length;
-	arg->packet=NULL;
-	break;
-
-    case OPS_PTAG_CT_USER_ID:
-	/* Packet has ended */
-	arg->uid_packet=arg->packet;
-	arg->uid_length=arg->length;
-	arg->packet=NULL;
-	break;
-
-    case OPS_PTAG_CT_SIGNATURE:
-	verify(&content->signature,arg);
-	break;
-
-    default:
-	break;
-	}
-
-    arg->cb(content_,arg->cb_arg);
-    }
-
 void ops_parse_and_validate(ops_parse_options_t *opt)
     {
     validate_arg_t arg;
