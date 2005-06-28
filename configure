@@ -6,9 +6,21 @@ use Carp;
 use File::Temp;
 use File::Spec;
 use POSIX qw(:errno_h);
+use IO::File;
+
+our $Log;
+our $LogFile;
+
+sub trace {
+    return if !$Log;
+
+    $Log->seek(0,2);
+    print $Log join '',@_;
+}
 
 our %Subst=(
 	    'CRYPTO_LIBS' => '-lcrypto',
+	    'INCLUDES' => '',
 	   );
 
 my %Args=(
@@ -24,12 +36,18 @@ my %Args=(
 	  },
 	  '--with-zlib=' => sub {
 	      my $loc=shift;
-	      $Subst{INCLUDES}.=" -I $loc/include";
+	      $Subst{INCLUDES}.=" -I $loc";
 	  },
+	  '--log=' => sub {
+	      $LogFile=shift;
+	      $Log=new IO::File(">$LogFile");
+	      $Log->autoflush(1);
+	  }
 	 );
 
 my @Headers=qw(alloca.h);
 my @Types=qw(time_t);
+my @RHeaders=qw(openssl/bn.h zlib.h);
 
 our %Knowledge=(
 		cc => sub { return chooseBinary('gcc','cc')
@@ -50,6 +68,8 @@ while(my $arg=shift) {
 }
 
 #my $os=`uname -s`;
+
+checkHeaders(\@RHeaders);
 
 $Subst{'CC'}=getKnowledge('cc');
 
@@ -174,14 +194,13 @@ sub build {
     my $cur=File::Spec->rel2abs(File::Spec->curdir());
     chdir($d) || croak "chdir($d): $!";
 
-#    print $fh->filename(),"\n";
     print $fh $code;
-#    print $code;
     $fh->close();
 
-    my $cmd="$cc -Wall -Werror -c ".$f;
-#    print "$cmd\n";
-    my $ret=system("$cmd > /dev/null 2>&1");
+    my $cmd="$cc $Subst{INCLUDES} -Wall -Werror -c ".$f;
+    trace("$cmd\n--code--\n$code\n--------\n");
+    my $ret=system("$cmd >> $LogFile 2>&1");
+
     my $obj=$fh->filename();
     $obj =~ s/\.c$/.o/;
     unlink($obj) || $! == ENOENT || croak "unlink($obj): $!";
@@ -222,3 +241,10 @@ sub investigateTypes {
     }
 }
 
+sub checkHeaders {
+    my $headers=shift;
+
+    foreach my $h (@$headers) {
+	build("#include <$h>\n") || croak "Can't find required header $h";
+    }
+}
