@@ -68,7 +68,10 @@ fileSubst('include/configure.h','/*','*/');
 print "make clean\n";
 system 'make clean' || exit;
 print "make force_depend\n";
-system 'make force_depend' || exit;
+if(system('make force_depend') != 0) {
+    print STDERR "Configuration failed\n";
+    exit 1;
+}
 
 sub subst {
     my $line=shift;
