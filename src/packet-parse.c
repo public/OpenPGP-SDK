@@ -567,6 +567,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_ss_userdefined_free(&c->content.ss_userdefined);
 	break;
 
+    case OPS_PTAG_SS_RESERVED:
+	ops_ss_reserved_free(&c->content.ss_unknown);
+	break;
+
     case OPS_PTAG_SS_REVOCATION_REASON:
 	ops_ss_revocation_reason_free(&c->content.ss_revocation_reason);
 	break;
@@ -1096,6 +1100,11 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	break;
 
+    case OPS_PTAG_SS_RESERVED:
+	if (!read_data(&C.ss_unknown.data,&subregion,opt))
+	    return 0;
+	break;
+
     case OPS_PTAG_SS_REVOCATION_REASON:
 	/* first byte is the machine-readable code */
 	if (!ops_limited_read(&C.ss_revocation_reason.code, 1,
@@ -1407,7 +1416,13 @@ void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined)
     }
 
 /*! Free the memory used when parsing this signature sub-packet type */
- void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data)
+void ops_ss_reserved_free(ops_ss_unknown_t *ss_unknown)
+    {
+    data_free(&ss_unknown->data);
+    }
+
+/*! Free the memory used when parsing this signature sub-packet type */
+void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data)
      {
      data_free(&ss_notation_data->name);
      data_free(&ss_notation_data->value);

@@ -572,6 +572,14 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	end_subpacket();
 	break;
 
+    case OPS_PTAG_SS_RESERVED:
+	start_subpacket(content_->tag);
+	print_hexdump("Reserved",
+		      content->ss_userdefined.data.contents,
+		      content->ss_userdefined.data.len);
+	end_subpacket();
+	break;
+
     case OPS_PTAG_SS_REVOCATION_REASON:
 	start_subpacket(content_->tag);
 	print_hexdump("Revocation Reason",
