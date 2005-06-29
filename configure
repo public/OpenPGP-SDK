@@ -9,7 +9,7 @@ use POSIX qw(:errno_h);
 use IO::File;
 
 our $Log;
-our $LogFile;
+our $LogFile='/dev/null';
 
 sub trace {
     return if !$Log;
