@@ -24,7 +24,7 @@ our %Subst=(
 	    CRYPTO_LIBS => '-lcrypto',
 	    ZLIB => '-lz',
 	    INCLUDES => '',
-	    
+	    CFLAGS => '',
 	   );
 
 my %Args=(
@@ -54,7 +54,7 @@ my %Args=(
 	 );
 
 my %Functions=(
-	       'socket' => { headers => ['sys/socket.h'],
+	       'socket' => { headers => ['sys/types.h','sys/socket.h'],
 			     call => 'socket(0,0,0)',
 			     libs => [[],['socket','nsl']] },
 	       );
