@@ -638,7 +638,7 @@ typedef struct
 
 typedef struct
     {
-    size_t			length;
+    unsigned			length;
     unsigned char		data[8192];
     } ops_literal_data_body_t;
 

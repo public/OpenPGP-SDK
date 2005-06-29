@@ -241,13 +241,13 @@ static int limited_skip(unsigned length,ops_region_t *region,
 
 /** Read a scalar.
  *
- * Read a Big Endian scalar of length bytes, respecting packet
+ * Read a big-endian scalar of length bytes, respecting packet
  * boundaries (by calling limited_read() to read the raw data).
  *
  * This function makes sure to respect packet boundaries.
  *
  * \param *dest		The scalar value is stored here
- * \param length	How many bytes make up this scalar
+ * \param length	How many bytes make up this scalar (at most 4)
  * \param *region	Pointer to current packet region
  * \param *opt		Pointer to parse options to be used
  * \param *cb		The callback
@@ -263,6 +263,8 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
     unsigned t;
     int n;
 
+    assert(length <= 4);
+    assert(sizeof(*dest) >= 4);
     if(!ops_limited_read(c,length,region,opt))
 	return 0;
 
@@ -270,6 +272,42 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
 	t=(t << 8)+c[n];
     *dest=t;
 
+    return 1;
+    }
+
+/** Read a scalar.
+ *
+ * Read a big-endian scalar of length bytes, respecting packet
+ * boundaries (by calling limited_read() to read the raw data).
+ *
+ * The value read is stored in a size_t, which is a different size
+ * from an unsigned on some platforms.
+ *
+ * This function makes sure to respect packet boundaries.
+ *
+ * \param *dest		The scalar value is stored here
+ * \param length	How many bytes make up this scalar (at most 4)
+ * \param *region	Pointer to current packet region
+ * \param *opt		Pointer to parse options to be used
+ * \param *cb		The callback
+ * \return		1 on success, 0 on error (calls the cb with OPS_PARSER_ERROR in limited_read()).
+ *
+ * \see RFC2440bis-12 3.1
+ */
+static int limited_read_size_t_scalar(size_t *dest,unsigned length,
+				      ops_region_t *region,
+				      ops_parse_options_t *opt)
+    {
+    unsigned tmp;
+
+    assert(sizeof(*dest) >= 4);
+
+    /* Note that because the scalar is at most 4 bytes, we don't care
+       if size_t is bigger than usigned */
+    if(!limited_read_scalar(&tmp,length,region,opt))
+	return 0;
+
+    *dest=tmp;
     return 1;
     }
 
@@ -999,14 +1037,14 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 
 	/* 2 octets of name length */
 
-	if (!limited_read_scalar(&C.ss_notation_data.name.len, 2,
-				 &subregion, opt))
+	if (!limited_read_size_t_scalar(&C.ss_notation_data.name.len, 2,
+					&subregion, opt))
 	    return 0;
 
 	/* 2 octets of value length */
 
-	if (!limited_read_scalar(&C.ss_notation_data.value.len, 2,
-				 &subregion, opt))
+	if (!limited_read_size_t_scalar(&C.ss_notation_data.value.len, 2,
+					&subregion, opt))
 	    return 0;
 
 	/* name */

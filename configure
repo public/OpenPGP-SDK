@@ -8,6 +8,8 @@ use File::Spec;
 use POSIX qw(:errno_h);
 use IO::File;
 
+$|=1;
+
 our $Log;
 our $LogFile='/dev/null';
 
@@ -19,8 +21,10 @@ sub trace {
 }
 
 our %Subst=(
-	    'CRYPTO_LIBS' => '-lcrypto',
-	    'INCLUDES' => '',
+	    CRYPTO_LIBS => '-lcrypto',
+	    ZLIB => '-lz',
+	    INCLUDES => '',
+	    
 	   );
 
 my %Args=(
@@ -37,13 +41,23 @@ my %Args=(
 	  '--with-zlib=' => sub {
 	      my $loc=shift;
 	      $Subst{INCLUDES}.=" -I $loc";
+	      $Subst{ZLIB}="$loc/libz.a";
 	  },
 	  '--log=' => sub {
 	      $LogFile=shift;
 	      $Log=new IO::File(">$LogFile");
 	      $Log->autoflush(1);
+	  },
+	  '--64' => sub {
+	      $Subst{CFLAGS}.=' -m64';
 	  }
 	 );
+
+my %Functions=(
+	       'socket' => { headers => ['sys/socket.h'],
+			     call => 'socket(0,0,0)',
+			     libs => [[],['socket','nsl']] },
+	       );
 
 my @Headers=qw(alloca.h);
 my @Types=qw(time_t);
@@ -75,6 +89,9 @@ $Subst{'CC'}=getKnowledge('cc');
 
 findHeaders(\@Headers);
 investigateTypes(\@Types);
+my $libs=findLibraries(\%Functions);
+$Subst{'LIBS'}=join(' ',map { "-l$_" } @$libs);
+#exit;
 
 fixSubst();
 
@@ -185,6 +202,7 @@ sub create {
 
 sub build {
     my $code=shift;
+    my $link=shift;
 
     my $cc=getKnowledge('cc');
     my $fh=new File::Temp(SUFFIX => '.c');
@@ -197,13 +215,17 @@ sub build {
     print $fh $code;
     $fh->close();
 
-    my $cmd="$cc $Subst{INCLUDES} -Wall -Werror -c ".$f;
-    trace("$cmd\n--code--\n$code\n--------\n");
+    my $cflag='';
+    $cflag='-c' if !defined $link;
+    my $cmd="$cc $Subst{CFLAGS} $Subst{INCLUDES} -Wall -Werror $cflag ".$f;
+    $cmd.=" $link" if defined $link;
+    trace("$cmd\n--code--\n$code--------\n");
     my $ret=system("$cmd >> $LogFile 2>&1");
 
     my $obj=$fh->filename();
     $obj =~ s/\.c$/.o/;
     unlink($obj) || $! == ENOENT || croak "unlink($obj): $!";
+    unlink('a.out') || $! == ENOENT || croak "unlink(a.out): $!";
 
     chdir($cur) || croak "chdir($cur): $!";
 
@@ -245,6 +267,31 @@ sub checkHeaders {
     my $headers=shift;
 
     foreach my $h (@$headers) {
+	print "Check required header $h\n";
 	build("#include <$h>\n") || croak "Can't find required header $h";
     }
 }
+
+sub findLibraries {
+    my $funcs=shift;
+
+    my @libs;
+  func:
+    foreach my $func (keys %$funcs) {
+	print "Checking libraries for $func()\n";
+	my $code=join("\n",map { "#include <$_>" }
+		      @{$funcs->{$func}->{headers}});
+	$code.="\nint main() { $funcs->{$func}->{call}; return 0; }\n";
+	foreach my $lgroup (@{$funcs->{$func}->{libs}}) {
+	    print "  trying ",@$lgroup ? join(', ',@$lgroup) : 'no libraries';
+	    if(build($code,join(' ',map { "-l$_" } @$lgroup))) {
+		push @libs,@$lgroup;
+		print " ... OK\n";
+		next func;
+	    }
+	    print " ... no\n";
+	}
+    }
+    return \@libs;
+}
+
