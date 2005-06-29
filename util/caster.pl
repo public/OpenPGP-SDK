@@ -18,8 +18,7 @@ open(O,">$outfile") || croak "$outfile: $!";
 
 print O "/* Generated from $infile by $0, do not edit. */\n\n";
 
-# Some platforms need to be cast via this to avoid warnings, strangely
-print O "typedef void (*ops_void_fptr)(void);\n";
+print O "#include \"types.h\"\n";
 
 my $lineno=0;
 while(my $line=<I>) {
@@ -41,7 +40,7 @@ while(my $line=<I>) {
     print_list($targs,1,1);
     print O ") (($ttype(*)(";
     print_list($targs,0);
-    print O "))((ops_void_fptr)$fname))(";
+    print O "))ops_fcast($fname))(";
     print_list($fargs,1);
     print O ")\n";
 

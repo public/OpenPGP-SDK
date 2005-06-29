@@ -33,6 +33,6 @@ ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
 /* typesafe deconstification */
 static inline void *_deconst(const void *p)
     { return (void *)p; }
-#define DECONST(type,p) (((type *(*)(const type *))_deconst)(p))
+#define DECONST(type,p) (((type *(*)(const type *))ops_fcast(_deconst))(p))
 
 #endif

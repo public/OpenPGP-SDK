@@ -4,6 +4,12 @@
 #ifndef OPS_TYPES_H
 #define OPS_TYPES_H
 
+/** Special type for intermediate function casting, avoids warnings on
+    some platforms
+*/
+typedef void (*ops_void_fptr)(void);
+#define ops_fcast(f) ((ops_void_fptr)f)
+
 typedef struct 
     {
     int type;
