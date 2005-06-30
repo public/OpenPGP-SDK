@@ -9,6 +9,8 @@ LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
 
 all: Makefile lib .depend packet-dump verify create-key create-signed-key
 
+test: test-dump
+
 lib:
 	cd ../src && make
 
@@ -41,5 +43,14 @@ force_depend:
 Makefile: Makefile.template ../configure
 	echo Makefile is older than templates, rerun configure.
 	exit 1
+
+# tests
+
+test-dump: packet-dump
+	./packet-dump < ../test/dsa-public-key-2118CF83.raw
+	./packet-dump < ../test/rsa-public-key-2719AF35.raw
+	./packet-dump < ../test/signtest.gpg
+	./packet-dump < ../test/subpacket-10.raw
+	./packet-dump < ../test/user-attribute-key.raw
 
 include .depend
