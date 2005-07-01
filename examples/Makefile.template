@@ -9,7 +9,7 @@ LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
 
 all: Makefile lib .depend packet-dump verify create-key create-signed-key
 
-test: test-dump
+test: test-dump test-verify
 
 lib:
 	cd ../src && make
@@ -53,5 +53,8 @@ test-dump: packet-dump
 	./packet-dump < ../test/subpacket-10.raw
 	./packet-dump < ../test/user-attribute-key.raw
 	./packet-dump < ../test/subpacket-28.raw
+
+test-verify: verify
+	cat ../test/* | ./verify
 
 include .depend
