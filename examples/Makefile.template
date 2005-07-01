@@ -52,5 +52,6 @@ test-dump: packet-dump
 	./packet-dump < ../test/signtest.gpg
 	./packet-dump < ../test/subpacket-10.raw
 	./packet-dump < ../test/user-attribute-key.raw
+	./packet-dump < ../test/subpacket-28.raw
 
 include .depend

@@ -37,3 +37,6 @@ Makefiles:
 tags:
 	rm -f TAGS
 	find . -name *.[ch] | xargs etags
+
+test::
+	cd examples && make test
