@@ -166,6 +166,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_PRIMARY_USER_ID		=0x200+25, /*!< primary User ID */
     OPS_PTAG_SS_POLICY_URL		=0x200+26, /*!< Policy URL */
     OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
+    OPS_PTAG_SS_SIGNERS_USER_ID		=0x200+28, /*!< Signer's User ID */
     OPS_PTAG_SS_REVOCATION_REASON	=0x200+29, /*!< reason for revocation */
     OPS_PTAG_SS_FEATURES		=0x200+30, /*!< features */
 
@@ -683,6 +684,7 @@ typedef union
     ops_ss_features_t		ss_features;
     ops_ss_revocation_reason_t	ss_revocation_reason;
     ops_secret_key_t		secret_key;
+    ops_user_id_t		ss_signers_user_id;
     } ops_parser_content_union_t;
 
 struct ops_parser_content_t

@@ -166,6 +166,7 @@ static void print_string(char *name, char *str)
 	    printf("%%%02x",(unsigned char)*str);
 	++str;
 	}
+    putchar('\n');
     }
 
 static void print_unsigned_int( char *name, unsigned int val)
@@ -544,6 +545,12 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	start_subpacket(content_->tag);
 	print_string("Policy URL",
 		     content->ss_policy_url.text);
+	end_subpacket();
+	break;
+
+    case OPS_PTAG_SS_SIGNERS_USER_ID:
+	start_subpacket(content_->tag);
+	print_string("Signer's User ID",content->ss_signers_user_id.user_id);
 	end_subpacket();
 	break;
 

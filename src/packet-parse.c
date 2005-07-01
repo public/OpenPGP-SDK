@@ -509,6 +509,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_user_id_free(&c->content.user_id);
 	break;
 
+    case OPS_PTAG_SS_SIGNERS_USER_ID:
+	ops_user_id_free(&c->content.ss_signers_user_id);
+	break;
+
     case OPS_PTAG_CT_USER_ATTRIBUTE:
 	ops_user_attribute_free(&c->content.user_attribute);
 	break;
@@ -1028,6 +1032,11 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 
     case OPS_PTAG_SS_FEATURES:
 	if (!read_data(&C.ss_features.data,&subregion,opt))
+	    return 0;
+	break;
+
+    case OPS_PTAG_SS_SIGNERS_USER_ID:
+	if(!read_string(&C.ss_signers_user_id.user_id,&subregion,opt))
 	    return 0;
 	break;
 
