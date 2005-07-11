@@ -446,12 +446,19 @@ typedef struct
     BIGNUM			*s;
     } ops_elgamal_signature_t;
 
+/** Struct to hold data for a private/experimental signature */
+typedef struct
+    {
+    BIGNUM	*data;
+    } ops_unknown_signature_t;
+
 /** Union to hold signature parameters of any algorithm */
 typedef union
     {
     ops_rsa_signature_t		rsa;	/*!< An RSA Signature */
     ops_dsa_signature_t		dsa;	/*!< A DSA Signature */
     ops_elgamal_signature_t	elgamal; // deprecated
+    ops_unknown_signature_t 	unknown; /* private or experimental */
     } ops_signature_union_t;
 
 /** Struct to hold a signature packet.

@@ -843,6 +843,20 @@ void ops_signature_free(ops_signature_t *sig)
 	free_BN(&sig->signature.elgamal.s);
 	break;
 
+    case OPS_PKA_PRIVATE00:
+    case OPS_PKA_PRIVATE01:
+    case OPS_PKA_PRIVATE02:
+    case OPS_PKA_PRIVATE03:
+    case OPS_PKA_PRIVATE04:
+    case OPS_PKA_PRIVATE05:
+    case OPS_PKA_PRIVATE06:
+    case OPS_PKA_PRIVATE07:
+    case OPS_PKA_PRIVATE08:
+    case OPS_PKA_PRIVATE09:
+    case OPS_PKA_PRIVATE10:
+	free_BN(&sig->signature.unknown.data);
+	break;
+
     default:
 	assert(0);
 	}
@@ -1325,6 +1339,21 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
     case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
 	if(!limited_read_mpi(&C.signature.signature.elgamal.r,region,opt)
 	   || !limited_read_mpi(&C.signature.signature.elgamal.s,region,opt))
+	    return 0;
+	break;
+
+    case OPS_PKA_PRIVATE00:
+    case OPS_PKA_PRIVATE01:
+    case OPS_PKA_PRIVATE02:
+    case OPS_PKA_PRIVATE03:
+    case OPS_PKA_PRIVATE04:
+    case OPS_PKA_PRIVATE05:
+    case OPS_PKA_PRIVATE06:
+    case OPS_PKA_PRIVATE07:
+    case OPS_PKA_PRIVATE08:
+    case OPS_PKA_PRIVATE09:
+    case OPS_PKA_PRIVATE10:
+	if (!limited_read_mpi(&C.signature.signature.unknown.data,region,opt))
 	    return 0;
 	break;
 

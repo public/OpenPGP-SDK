@@ -663,6 +663,20 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    print_bn("s",content->signature.signature.elgamal.s);
 	    break;
 
+	case OPS_PKA_PRIVATE00:
+	case OPS_PKA_PRIVATE01:
+	case OPS_PKA_PRIVATE02:
+	case OPS_PKA_PRIVATE03:
+	case OPS_PKA_PRIVATE04:
+	case OPS_PKA_PRIVATE05:
+	case OPS_PKA_PRIVATE06:
+	case OPS_PKA_PRIVATE07:
+	case OPS_PKA_PRIVATE08:
+	case OPS_PKA_PRIVATE09:
+	case OPS_PKA_PRIVATE10:
+	    print_bn("private/experimental",content->signature.signature.unknown.data);
+	    break;
+
 	default:
 	    assert(0);
 	    }
