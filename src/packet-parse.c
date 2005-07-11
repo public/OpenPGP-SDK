@@ -406,7 +406,7 @@ static int read_new_length(unsigned *length,ops_parse_options_t *opt)
 	*length=t+c[0]+192;
 	return 1;
 	}
-    return read_scalar(length,4,opt);
+    return (read_scalar(length,4,opt) == OPS_R_OK ? 1 : 0);
     }
 
 /** Read the length information for a new format Packet Tag.
