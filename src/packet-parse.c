@@ -385,6 +385,16 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
     return 1;
     }
 
+/** Read some data with a New-Format length from reader.
+ *
+ * \sa Internet-Draft RFC2440bis-13.txt Section 4.2.2
+ *
+ * \param *length	Where the decoded length will be put
+ * \param *opt		Options for reading/parsing
+ * \return		1 if OK, else 0
+ *
+ */
+
 static int read_new_length(unsigned *length,ops_parse_options_t *opt)
     {
     unsigned char c[1];
