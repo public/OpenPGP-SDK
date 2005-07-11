@@ -263,6 +263,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    break;
 
 	case OPS_PKA_ELGAMAL:
+	case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
 	    print_bn("p",content->public_key.key.elgamal.p);
 	    print_bn("g",content->public_key.key.elgamal.g);
 	    print_bn("y",content->public_key.key.elgamal.y);

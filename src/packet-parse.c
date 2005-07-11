@@ -632,6 +632,7 @@ void ops_public_key_free(ops_public_key_t *p)
 	break;
 
     case OPS_PKA_ELGAMAL:
+    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
 	free_BN(&p->key.elgamal.p);
 	free_BN(&p->key.elgamal.g);
 	free_BN(&p->key.elgamal.y);
@@ -688,6 +689,7 @@ static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
 	break;
 
     case OPS_PKA_ELGAMAL:
+    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
 	if(!limited_read_mpi(&key->key.elgamal.p,region,opt)
 	   || !limited_read_mpi(&key->key.elgamal.g,region,opt)
 	   || !limited_read_mpi(&key->key.elgamal.y,region,opt))
