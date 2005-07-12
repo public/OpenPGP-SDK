@@ -449,7 +449,7 @@ typedef struct
 /** Struct to hold data for a private/experimental signature */
 typedef struct
     {
-    BIGNUM	*data;
+    ops_data_t	data;
     } ops_unknown_signature_t;
 
 /** Union to hold signature parameters of any algorithm */

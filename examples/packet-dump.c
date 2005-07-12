@@ -675,7 +675,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	case OPS_PKA_PRIVATE08:
 	case OPS_PKA_PRIVATE09:
 	case OPS_PKA_PRIVATE10:
-	    print_bn("private/experimental",content->signature.signature.unknown.data);
+	    print_data("Private/Experimental",
+		       &content->signature.signature.unknown.data);
 	    break;
 
 	default:

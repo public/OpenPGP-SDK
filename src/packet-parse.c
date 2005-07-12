@@ -19,6 +19,13 @@
 /**
  * limited_read_data reads the specified amount of the subregion's data 
  * into a data_t structure
+ *
+ * \param data	Empty structure which will be filled with data
+ * \param len	Number of octets to read
+ * \param subregion
+ * \param opt	Options to use when reading
+ *
+ * \return 1 on success, 0 on failure
  */
 static int limited_read_data(ops_data_t *data,unsigned int len,
 			     ops_region_t *subregion,ops_parse_options_t *opt)
@@ -41,6 +48,12 @@ static int limited_read_data(ops_data_t *data,unsigned int len,
 /**
  * read_data reads the remainder of the subregion's data 
  * into a data_t structure
+ *
+ * \param data
+ * \param subregion
+ * \param opt
+ * 
+ * \return 1 on success, 0 on failure
  */
 static int read_data(ops_data_t *data,ops_region_t *subregion,
 		     ops_parse_options_t *opt)
@@ -826,7 +839,25 @@ static int parse_user_id(ops_region_t *region,ops_parse_options_t *opt)
     return 1;
     }
 
-/*! Free the memory used when parsing this packet type */
+/**
+ * \ingroup Memory
+ *
+ * Free the memory used when parsing a private/experimental PKA signature 
+ *
+ * \param unknown_sig
+ */
+void free_unknown_sig_pka(ops_unknown_signature_t *unknown_sig)
+    {
+    data_free(&unknown_sig->data);
+    }
+
+/**
+ * \ingroup Memory
+ *
+ * Free the memory used when parsing a signature 
+ *
+ * \param sig
+ */
 void ops_signature_free(ops_signature_t *sig)
     {
     switch(sig->key_algorithm)
@@ -856,7 +887,7 @@ void ops_signature_free(ops_signature_t *sig)
     case OPS_PKA_PRIVATE08:
     case OPS_PKA_PRIVATE09:
     case OPS_PKA_PRIVATE10:
-	free_BN(&sig->signature.unknown.data);
+	free_unknown_sig_pka(&sig->signature.unknown);
 	break;
 
     default:
@@ -1355,7 +1386,7 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
     case OPS_PKA_PRIVATE08:
     case OPS_PKA_PRIVATE09:
     case OPS_PKA_PRIVATE10:
-	if (!limited_read_mpi(&C.signature.signature.unknown.data,region,opt))
+	if (!read_data(&C.signature.signature.unknown.data,region,opt))
 	    return 0;
 	break;
 
