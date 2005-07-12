@@ -98,11 +98,11 @@ static void init_subregion(ops_region_t *subregion,ops_region_t *region)
 
 /*! \todo descr for CB macro */
 #define CB(t,pc)	do { (pc)->tag=(t); if(opt->cb(pc,opt->cb_arg) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
-/*! \todo descr for C macro */
+/*! macro to save typing */
 #define C		content.content
-/*! \todo descr for E macro */
+/*! macro to run CallBack function specifying a parser error has occurred */
 #define E		CB(OPS_PARSER_ERROR,&content); return 0
-/*! \todo descr for ERR macro */
+/*! set error code in content and run CallBack to handle error */
 #define ERR(err)	do { C.error.error=err; E; } while(0)
 /*! \todo descr ERR1 macro */
 #define ERR1(fmt,x)	do { format_error(&content,(fmt),(x)); E; } while(0)
@@ -1776,21 +1776,19 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	/* There has been a problem.
 	   Ensure that the entire packet has been consumed 
 	*/
-	fprintf(stderr,"\n*** ERROR parsing packet ***\n");
 
 	if (region.length != region.length_read)
 	    {
 	    ops_data_t remainder;
 
-	    fprintf(stderr,"* Entire packet has not been consumed\n");
 	    if (read_data(&remainder,&region,opt))
 		{
 		/* now throw it away */
 		data_free(&remainder);
-		fprintf (stderr,"* Remainder consumed and discarded\n");
+		ERR("Remainder of error packet consumed and discarded.");
 		}
 	    else
-		fprintf (stderr,"* Problem consuming remainder\n");
+		ERR("Problem consuming remainder of error packet.");
 
 	    
 	    }
