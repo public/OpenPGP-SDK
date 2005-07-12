@@ -828,7 +828,9 @@ static int parse_user_id(ops_region_t *region,ops_parse_options_t *opt)
 
     assert (region->length_read == 0);  /* We should not have read anything so far */
 
-    assert(region->length);
+    if (!region->length) 
+	ERR("User id is empty");
+
     C.user_id.user_id=malloc(region->length+1);  /* XXX should we not like check malloc's return value? */
     if(!ops_limited_read(C.user_id.user_id,region->length,region,opt))
 	return 0;
