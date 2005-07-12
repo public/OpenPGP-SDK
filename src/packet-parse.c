@@ -7,6 +7,8 @@
 #include "packet-parse.h"
 #include "util.h"
 #include "compress.h"
+#include "lists.h"
+
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -1650,7 +1652,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_options_t *opt)
  * \param *opt		Parsing options
  * \return		1 on success, 0 on error, -1 on EOF
  */
-static int ops_parse_one_packet(ops_parse_options_t *opt)
+static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *offset)
     {
     char ptag[1];
     ops_reader_ret_t ret;
@@ -1663,6 +1665,8 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
     ret=base_read(ptag,&one,0,opt);
     if(ret == OPS_R_EOF)
 	return -1;
+
+    *offset+=one;
 
     assert(ret == OPS_R_OK);
     if(!(*ptag&OPS_PTAG_ALWAYS_SET))
@@ -1678,6 +1682,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	C.ptag.length_type=0;
 	if(!read_new_length(&C.ptag.length,opt))
 	    return 0;
+	*offset+=C.ptag.length;
 	}
     else
 	{
@@ -1689,15 +1694,18 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	case OPS_PTAG_OF_LT_ONE_BYTE:
 	    ret=read_scalar(&C.ptag.length,1,opt);
 	    assert(ret == OPS_R_OK);
+	    *offset+=1;
 	    break;
 
 	case OPS_PTAG_OF_LT_TWO_BYTE:
 	    ret=read_scalar(&C.ptag.length,2,opt);
 	    assert(ret == OPS_R_OK);
+	    *offset+=2;
 	    break;
 
 	case OPS_PTAG_OF_LT_FOUR_BYTE:
 	    ret=read_scalar(&C.ptag.length,4,opt);
+	    *offset+=4;
 	    assert(ret == OPS_R_OK);
 	    break;
 
@@ -1770,28 +1778,27 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	}
     opt->alength=0;
 	
+    /*
+     * update offset for packet contents
+     */
 
-    if (!r)
+    *offset+=region.length;
+
+    /* Ensure that the entire packet has been consumed 
+     */
+
+    if (region.length != region.length_read)
 	{
-	/* There has been a problem.
-	   Ensure that the entire packet has been consumed 
-	*/
+	ops_data_t remainder;
 
-	if (region.length != region.length_read)
+	if (read_data(&remainder,&region,opt))
 	    {
-	    ops_data_t remainder;
-
-	    if (read_data(&remainder,&region,opt))
-		{
-		/* now throw it away */
-		data_free(&remainder);
-		ERR("Remainder of error packet consumed and discarded.");
-		}
-	    else
-		ERR("Problem consuming remainder of error packet.");
-
-	    
+	    /* now throw it away */
+	    data_free(&remainder);
+	    ERR("Remainder of packet consumed and discarded.");
 	    }
+	else
+	    ERR("Problem consuming remainder of error packet.");
 	}
     return r ? 1 : 0;
     }
@@ -1819,20 +1826,34 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
  * \return		1 on success in all packets, 0 on error in any packet
  * \todo Add some error checking to make sure *opt contains a sensible setup?
  */
+
 int ops_parse(ops_parse_options_t *opt)
     {
+    int rtn;
+    ops_ulong_list_t errors;
+
+    ops_ulong_list_init(&errors);
+    rtn=ops_parse_and_save_errs(opt,&errors);
+    ops_ulong_list_free(&errors);
+    return rtn;
+    }
+
+int ops_parse_and_save_errs(ops_parse_options_t *opt, ops_ulong_list_t *errors)
+    {
     int r;
-    int all_ok=1;
+    unsigned long pktlen;
+    unsigned long offset=0;
 
     do
 	{
-	r=ops_parse_one_packet(opt);
+	pktlen=0;
+	r=ops_parse_one_packet(opt,&pktlen);
 	if (!r)
-	    all_ok=0;
-	} while (r != -1);
+	    ops_ulong_list_add(errors,&offset);
+	offset+=pktlen;
+	} while (r!=-1);
 
-    return all_ok;
-
+    return errors->used ? 0 : 1;
     }
 
 /**

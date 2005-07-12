@@ -3,6 +3,8 @@
 #include "packet-show.h"
 #include "configure.h"
 #include "util.h"
+#include "lists.h"
+
 #include <unistd.h>
 #include <stdio.h>
 #include <assert.h>
@@ -701,6 +703,8 @@ int main(int argc,char **argv)
     {
     ops_parse_options_t opt;
     ops_reader_fd_arg_t arg;
+    ops_ulong_list_t errors;
+    int i;
 
     ops_parse_options_init(&opt);
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
@@ -711,8 +715,15 @@ int main(int argc,char **argv)
     opt.reader_arg=&arg;
     opt.reader=ops_reader_fd;
 
-    if (!ops_parse(&opt))
+    ops_ulong_list_init(&errors);
+
+    if (!ops_parse_and_save_errs(&opt,&errors))
 	printf("\n*** Warning: errors were found when parsing input\n");
+
+    for (i=0; i<errors.used; i++)
+	printf("offset: %lu\n", errors.ulongs[i]);
+
+    ops_ulong_list_free(&errors);
 
     return 0;
     }
