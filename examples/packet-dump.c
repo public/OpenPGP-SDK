@@ -711,7 +711,8 @@ int main(int argc,char **argv)
     opt.reader_arg=&arg;
     opt.reader=ops_reader_fd;
 
-    ops_parse(&opt);
+    if (!ops_parse(&opt))
+	printf("\n*** Warning: errors were found when parsing input\n");
 
     return 0;
     }

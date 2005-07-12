@@ -1364,9 +1364,10 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
 	break;
 
     case OPS_PKA_DSA:
-	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,opt)
-	   || !limited_read_mpi(&C.signature.signature.dsa.s,region,opt))
-	    return 0;
+	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,opt)) 
+	    ERR("Error reading DSA r field in signature");
+	if (!limited_read_mpi(&C.signature.signature.dsa.s,region,opt))
+	    ERR("Error reading DSA s field in signature");
 	break;
 
     case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
@@ -1645,7 +1646,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_options_t *opt)
  * \param *reader	Our reader
  * \param *cb		The callback
  * \param *opt		Parsing options
- * \return		1 on success, 0 on error
+ * \return		1 on success, 0 on error, -1 on EOF
  */
 static int ops_parse_one_packet(ops_parse_options_t *opt)
     {
@@ -1659,7 +1660,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 
     ret=base_read(ptag,&one,0,opt);
     if(ret == OPS_R_EOF)
-	return 0;
+	return -1;
 
     assert(ret == OPS_R_OK);
     if(!(*ptag&OPS_PTAG_ALWAYS_SET))
@@ -1755,6 +1756,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	CB(OPS_PARSER_ERROR,&content);
 	r=0;
 	}
+
     // \todo XXX: shouldn't we check that the entire packet has been consumed?
     if(opt->accumulate)
 	{
@@ -1766,7 +1768,32 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
 	}
     opt->alength=0;
 	
-    return r ? 1 : -1;
+
+    if (!r)
+	{
+	/* There has been a problem.
+	   Ensure that the entire packet has been consumed 
+	*/
+	fprintf(stderr,"\n*** ERROR parsing packet ***\n");
+
+	if (region.length != region.length_read)
+	    {
+	    ops_data_t remainder;
+
+	    fprintf(stderr,"* Entire packet has not been consumed\n");
+	    if (read_data(&remainder,&region,opt))
+		{
+		/* now throw it away */
+		data_free(&remainder);
+		fprintf (stderr,"* Remainder consumed and discarded\n");
+		}
+	    else
+		fprintf (stderr,"* Problem consuming remainder\n");
+
+	    
+	    }
+	}
+    return r ? 1 : 0;
     }
 
 /**
@@ -1789,17 +1816,23 @@ static int ops_parse_one_packet(ops_parse_options_t *opt)
  * \sa See Detailed Description for usage.
  *
  * \param *opt		Parsing options
- * \return		1 on success, 0 on error
+ * \return		1 on success in all packets, 0 on error in any packet
  * \todo Add some error checking to make sure *opt contains a sensible setup?
  */
 int ops_parse(ops_parse_options_t *opt)
     {
     int r;
+    int all_ok=1;
 
-    while((r=ops_parse_one_packet(opt)) > 0)
-	;
+    do
+	{
+	r=ops_parse_one_packet(opt);
+	if (!r)
+	    all_ok=0;
+	} while (r != -1);
 
-    return r == 0;
+    return all_ok;
+
     }
 
 /**
