@@ -106,8 +106,10 @@ static void init_subregion(ops_region_t *subregion,ops_region_t *region)
 #define C		content.content
 /*! macro to run CallBack function specifying a parser error has occurred */
 #define E		CB(OPS_PARSER_ERROR,&content); return 0
-/*! set error code in content and run CallBack to handle error */
+/*! set error code in content and run CallBack to handle error, then return */
 #define ERR(err)	do { C.error.error=err; E; } while(0)
+/*! set error code in content and run CallBack to handle warning, do not return */
+#define WARN(warn)	do { C.error.error=warn; CB(OPS_PARSER_ERROR,&content);; } while(0)
 /*! \todo descr ERR1 macro */
 #define ERR1(fmt,x)	do { format_error(&content,(fmt),(x)); E; } while(0)
 
@@ -833,7 +835,10 @@ static int parse_user_id(ops_region_t *region,ops_parse_options_t *opt)
     assert (region->length_read == 0);  /* We should not have read anything so far */
 
     if (!region->length) 
-	ERR("User id is empty");
+	{
+	WARN("User id is empty");
+	return 0;
+	}
 
     C.user_id.user_id=malloc(region->length+1);  /* XXX should we not like check malloc's return value? */
     if(!ops_limited_read(C.user_id.user_id,region->length,region,opt))
@@ -1776,10 +1781,10 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
 	    {
 	    /* now throw it away */
 	    data_free(&remainder);
-	    // XXX cannot give error message - it prevents hexdump occurring	    ERR("Remainder of packet consumed and discarded.");
+	    WARN("Remainder of packet consumed and discarded.");
 	    }
-	//	else
-	//  ERR("Problem consuming remainder of error packet.");
+	else
+	    WARN("Problem consuming remainder of error packet.");
 	}
 
     /* set pktlen */
@@ -1905,11 +1910,10 @@ int ops_parse_errs(ops_parse_options_t *opt, ops_ulong_list_t *errs)
 
 	ops_parse_one_packet(opt,&pktlen);
 
-
-	/* restore accumulate flag original value */
-	opt->accumulate=orig_acc;
-
 	}
+
+    /* restore accumulate flag original value */
+    opt->accumulate=orig_acc;
 
     return 1;
     }
