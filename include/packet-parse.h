@@ -64,6 +64,8 @@ typedef struct
 
 int ops_parse(ops_parse_options_t *opt);
 int ops_parse_and_save_errs(ops_parse_options_t *opt,ops_ulong_list_t *errs);
+int ops_parse_errs(ops_parse_options_t *opt,ops_ulong_list_t *errs);
+
 void ops_parse_and_validate(ops_parse_options_t *opt);
 
 /** Used to specify whether subpackets should be returned raw, parsed or ignored.

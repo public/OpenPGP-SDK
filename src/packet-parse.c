@@ -13,6 +13,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <errno.h>
 
 #ifdef DMALLOC
 # include <dmalloc.h>
@@ -1647,12 +1649,11 @@ static int parse_secret_key(ops_region_t *region,ops_parse_options_t *opt)
  * This function parses the packet tag.  It computes the value of the content tag and then calls the appropriate
  * function to handle the content.
  *
- * \param *reader	Our reader
- * \param *cb		The callback
  * \param *opt		Parsing options
+ * \param *pktlen	On return, will contain number of bytes in packet
  * \return		1 on success, 0 on error, -1 on EOF
  */
-static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *offset)
+static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
     {
     char ptag[1];
     ops_reader_ret_t ret;
@@ -1666,7 +1667,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *offset)
     if(ret == OPS_R_EOF)
 	return -1;
 
-    *offset+=one;
+    *pktlen=0;
 
     assert(ret == OPS_R_OK);
     if(!(*ptag&OPS_PTAG_ALWAYS_SET))
@@ -1682,7 +1683,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *offset)
 	C.ptag.length_type=0;
 	if(!read_new_length(&C.ptag.length,opt))
 	    return 0;
-	*offset+=C.ptag.length;
+
 	}
     else
 	{
@@ -1694,18 +1695,15 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *offset)
 	case OPS_PTAG_OF_LT_ONE_BYTE:
 	    ret=read_scalar(&C.ptag.length,1,opt);
 	    assert(ret == OPS_R_OK);
-	    *offset+=1;
 	    break;
 
 	case OPS_PTAG_OF_LT_TWO_BYTE:
 	    ret=read_scalar(&C.ptag.length,2,opt);
 	    assert(ret == OPS_R_OK);
-	    *offset+=2;
 	    break;
 
 	case OPS_PTAG_OF_LT_FOUR_BYTE:
 	    ret=read_scalar(&C.ptag.length,4,opt);
-	    *offset+=4;
 	    assert(ret == OPS_R_OK);
 	    break;
 
@@ -1767,23 +1765,6 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *offset)
 	r=0;
 	}
 
-    // \todo XXX: shouldn't we check that the entire packet has been consumed?
-    if(opt->accumulate)
-	{
-	C.packet.length=opt->alength;
-	C.packet.raw=opt->accumulated;
-	opt->accumulated=NULL;
-	opt->asize=0;
-	CB(OPS_PARSER_PACKET_END,&content);
-	}
-    opt->alength=0;
-	
-    /*
-     * update offset for packet contents
-     */
-
-    *offset+=region.length;
-
     /* Ensure that the entire packet has been consumed 
      */
 
@@ -1795,11 +1776,28 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *offset)
 	    {
 	    /* now throw it away */
 	    data_free(&remainder);
-	    ERR("Remainder of packet consumed and discarded.");
+	    // XXX cannot give error message - it prevents hexdump occurring	    ERR("Remainder of packet consumed and discarded.");
 	    }
-	else
-	    ERR("Problem consuming remainder of error packet.");
+	//	else
+	//  ERR("Problem consuming remainder of error packet.");
 	}
+
+    /* set pktlen */
+
+    *pktlen=opt->alength;
+
+    /* do callback on entire packet, if desired */
+
+    if(opt->accumulate)
+	{
+	C.packet.length=opt->alength;
+	C.packet.raw=opt->accumulated;
+	opt->accumulated=NULL;
+	opt->asize=0;
+	CB(OPS_PARSER_PACKET_END,&content);
+	}
+    opt->alength=0;
+	
     return r ? 1 : 0;
     }
 
@@ -1846,7 +1844,6 @@ int ops_parse_and_save_errs(ops_parse_options_t *opt, ops_ulong_list_t *errors)
 
     do
 	{
-	pktlen=0;
 	r=ops_parse_one_packet(opt,&pktlen);
 	if (!r)
 	    ops_ulong_list_add(errors,&offset);
@@ -1854,6 +1851,67 @@ int ops_parse_and_save_errs(ops_parse_options_t *opt, ops_ulong_list_t *errors)
 	} while (r!=-1);
 
     return errors->used ? 0 : 1;
+    }
+
+/**
+ *
+ * \return 1 if success, 0 otherwise
+ */
+
+int ops_parse_errs(ops_parse_options_t *opt, ops_ulong_list_t *errs)
+    {
+    int err;
+    int r;
+    unsigned long pktlen;
+    ops_reader_fd_arg_t *arg;
+
+    int orig_acc;
+
+    /* can only handle ops_reader_fd for now */
+
+    if (opt->reader!=ops_reader_fd)
+	{
+	printf("ops_parse_errs: can only handle ops_reader_fd\n");
+	return 0;
+	}
+
+    arg=opt->reader_arg;
+
+    /* store current state of accumulate flag */
+
+    orig_acc=opt->accumulate;
+
+    /* set accumulate flag */
+
+    opt->accumulate=1;
+
+    /* now parse each error in turn. */
+
+    for (err=0; err<errs->used; err++)
+	{
+
+	//	printf("\n***\n*** Error at offset %lu \n***\n",errs->ulongs[err]);
+
+	/* move stream to offset of error */
+
+	r=lseek(arg->fd,errs->ulongs[err],SEEK_SET);
+	if (r==-1)
+	    {
+	    printf("error %d in first lseek to offset\n", errno);
+	    return 0;
+	    }
+
+	/* parse packet */
+
+	ops_parse_one_packet(opt,&pktlen);
+
+
+	/* restore accumulate flag original value */
+	opt->accumulate=orig_acc;
+
+	}
+
+    return 1;
     }
 
 /**

@@ -201,6 +201,29 @@ static void end_subpacket()
     indent--;
     }
 
+static void print_packet(const ops_packet_t *packet)
+    {
+    unsigned char *cur;
+    int i;
+    int rem;
+    int blksz=4;
+
+    printf("\nhexdump of packet contents follows:\n");
+
+
+    for (i=1,cur=packet->raw; cur<(packet->raw+packet->length); cur+=blksz,i++)
+	{
+	rem = packet->raw+packet->length-cur;
+	hexdump(cur,rem<=blksz ? rem : blksz);
+	printf(" ");
+	if (!(i%8))
+	    printf("\n");
+	
+	}
+    
+    printf("\n");
+    }
+
 static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
@@ -212,6 +235,10 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	{
     case OPS_PARSER_ERROR:
 	printf("parse error: %s\n",content->error.error);
+	break;
+
+    case OPS_PARSER_PACKET_END:
+	print_packet(&content->packet);
 	break;
 
     case OPS_PARSER_PTAG:
@@ -718,10 +745,16 @@ int main(int argc,char **argv)
     ops_ulong_list_init(&errors);
 
     if (!ops_parse_and_save_errs(&opt,&errors))
+	{
 	printf("\n*** Warning: errors were found when parsing input\n");
+	printf("\nError packets will be printed again, together with hexdump\n");
 
-    for (i=0; i<errors.used; i++)
-	printf("offset: %lu\n", errors.ulongs[i]);
+	for (i=0; i<errors.used; i++)
+	    printf("offset: %lu\n", errors.ulongs[i]);
+
+	if (!ops_parse_errs(&opt,&errors))
+	    printf("\n*** Warning: problems found when parsing errors\n");
+	}
 
     ops_ulong_list_free(&errors);
 
