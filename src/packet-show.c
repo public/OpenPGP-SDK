@@ -264,40 +264,6 @@ static unsigned int add_str(list_t *list, char *str)
     return 1;
     }
 
-/**
- * Searches the given map for the given type.
- * Returns a human-readable descriptive string if found,
- * returns NULL if not found
- *
- * It is the responsibility of the calling function to handle the
- * error case sensibly (i.e. don't just print out the return string.
- * 
- */
-static char *str_from_map_or_null(int type, map_t *map)
-    {
-    map_t *row;
-
-    for ( row=map; row->string != NULL; row++ )
-	if (row->type == type)
-	    return row->string;
-    return NULL;
-    }
-
-/**
- * Searches the given map for the given type.
- * Returns a readable string if found, "Unknown" if not.
- */
-
-char *str_from_map(int type, map_t *map)
-    {
-    char *str;
-    str=str_from_map_or_null(type,map);
-    if (str)
-	return(str);
-    else
-	return("Unknown");
-    }
-
 static char *str_from_bitfield_or_null(unsigned char octet, bit_map_t *map)
     {
     bit_map_t *row;
@@ -546,7 +512,7 @@ char *ops_show_pka(ops_public_key_algorithm_t pka)
 */
 char *ops_show_ss_preferred_compression(unsigned char octet)
     {
-    return(str_from_map(octet,compression_algorithm_map));
+    return(ops_str_from_map(octet,compression_algorithm_map));
     }
 
 /**
@@ -603,7 +569,7 @@ ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_h
 */
 char *ops_show_ss_preferred_ska(unsigned char octet)
     {
-    return(str_from_map(octet,symmetric_key_algorithm_map));
+    return(ops_str_from_map(octet,symmetric_key_algorithm_map));
     }
 
 /**

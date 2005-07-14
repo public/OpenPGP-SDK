@@ -8,6 +8,7 @@
 #include <time.h>
 #include <openssl/bn.h>
 #include "types.h"
+#include "ops_errors.h"
 
 /** General-use structure for variable-length data 
  */
@@ -142,6 +143,7 @@ enum ops_content_tag_t
     OPS_PTAG_RAW_SS			=0x102,	/*!< Internal Use: content is raw sig subtag */
     OPS_PTAG_SS_ALL			=0x103,	/*!< Internal Use: select all subtags */
     OPS_PARSER_PACKET_END		=0x104,
+    OPS_PARSER_ERRCODE			=0x105, /*! < Internal Use: Parser Error with errcode returned */
 
     /* signature subpackets (0x200-2ff) (type+0x200) */
     /* only those we can parse are listed here */
@@ -195,6 +197,12 @@ typedef struct
     {
     const char *error; /*!< error message. */
     } ops_parser_error_t;
+
+/** Structure to hold one error code */
+typedef struct
+    {
+    ops_errcode_t errcode;
+    } ops_parser_errcode_t;
 
 /** Structure to hold one packet tag.
  * \see RFC2440bis-12 4.2
@@ -659,6 +667,7 @@ typedef struct
 typedef union
     {
     ops_parser_error_t		error;
+    ops_parser_errcode_t	errcode;
     ops_ptag_t			ptag;
     ops_public_key_t		public_key;
     ops_trust_t			trust;

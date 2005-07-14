@@ -35,4 +35,6 @@ static inline void *_deconst(const void *p)
     { return (void *)p; }
 #define DECONST(type,p) (((type *(*)(const type *))ops_fcast(_deconst))(p))
 
+char *ops_str_from_map(int code, map_t *map);
+
 #endif

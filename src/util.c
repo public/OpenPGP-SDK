@@ -9,6 +9,42 @@
 #include <assert.h>
 #include <unistd.h>
 
+/**
+ * Searches the given map for the given type.
+ * Returns a human-readable descriptive string if found,
+ * returns NULL if not found
+ *
+ * It is the responsibility of the calling function to handle the
+ * error case sensibly (i.e. don't just print out the return string.
+ * 
+ */
+static char *str_from_map_or_null(int type, map_t *map)
+    {
+    map_t *row;
+
+    for ( row=map; row->string != NULL; row++ )
+	if (row->type == type)
+	    return row->string;
+    return NULL;
+    }
+
+/**
+ * \ingroup Utils
+ *
+ * Searches the given map for the given type.
+ * Returns a readable string if found, "Unknown" if not.
+ */
+
+char *ops_str_from_map(int type, map_t *map)
+    {
+    char *str;
+    str=str_from_map_or_null(type,map);
+    if (str)
+	return(str);
+    else
+	return("Unknown");
+    }
+
 void hexdump(const unsigned char *src,size_t length)
     {
     while(length--)
@@ -45,7 +81,7 @@ void ops_finish(void)
  * ops_reader_fd() attempts to read up to "plength" bytes from the file 
  * descriptor in "arg_" into the buffer starting at "dest" using the
  * rules contained in "flags"
- * 
+ *
  * \param	dest	Pointer to previously allocated buffer
  * \param	plength Number of bytes to try to read
  * \param	flags	Rules about reading to use
@@ -55,6 +91,9 @@ void ops_finish(void)
  * \return	OPS_R_PARTIAL_READ	if not enough bytes were read, and OPS_RETURN_LENGTH is set in "flags"
  * \return	OPS_R_EARLY_EOF	if not enough bytes were read, and OPS_RETURN_LENGTH was not set in "flags"
  * \return	OPS_R_OK	if expected length was read
+ *
+ * \sa enum opt_reader_ret_t
+ *
  * \todo change arg_ to typesafe? 
  */
 ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,

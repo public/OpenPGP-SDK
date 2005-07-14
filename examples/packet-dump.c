@@ -4,6 +4,7 @@
 #include "configure.h"
 #include "util.h"
 #include "lists.h"
+#include "ops_errors.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -235,6 +236,13 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	{
     case OPS_PARSER_ERROR:
 	printf("parse error: %s\n",content->error.error);
+	break;
+
+    case OPS_PARSER_ERRCODE:
+	printf("parse error: %s (0x%x): %s\n",
+	       ops_errcode(content->errcode.errcode, OPS_LANG_ENGLISH),
+	       content->errcode.errcode,
+	       ops_error(content->errcode.errcode, OPS_LANG_ENGLISH));
 	break;
 
     case OPS_PARSER_PACKET_END:

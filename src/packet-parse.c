@@ -8,6 +8,7 @@
 #include "util.h"
 #include "compress.h"
 #include "lists.h"
+#include "ops_errors.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -106,9 +107,11 @@ static void init_subregion(ops_region_t *subregion,ops_region_t *region)
 #define C		content.content
 /*! macro to run CallBack function specifying a parser error has occurred */
 #define E		CB(OPS_PARSER_ERROR,&content); return 0
-/*! set error code in content and run CallBack to handle error, then return */
+/*! set error code in content and run CallBack to handle error */
+#define ERRCODE(err)	do { C.errcode.errcode=err; CB(OPS_PARSER_ERRCODE,&content); } while(0)
+/*! set error text in content and run CallBack to handle error, then return */
 #define ERR(err)	do { C.error.error=err; E; } while(0)
-/*! set error code in content and run CallBack to handle warning, do not return */
+/*! set error text in content and run CallBack to handle warning, do not return */
 #define WARN(warn)	do { C.error.error=warn; CB(OPS_PARSER_ERROR,&content);; } while(0)
 /*! \todo descr ERR1 macro */
 #define ERR1(fmt,x)	do { format_error(&content,(fmt),(x)); E; } while(0)
@@ -129,6 +132,30 @@ static void format_error(ops_parser_content_t *content,
     va_end(va);
     content->content.error.error=buf;
     }
+
+/**
+ * low-level function to read data from reader function
+ *
+ * Use this function, rather than calling the reader directly.
+ *
+ * If the accumulate flag is set in *opt, the function
+ * adds the read data to the accumulated data, and updates 
+ * the accumulated length. This is useful if, for example, 
+ * the application wants access to the raw data as well as the
+ * parsed data.
+ *
+ * \param *dest
+ * \param *plength
+ * \param flags
+ * \param *opt
+ *
+ * \return OPS_R_OK
+ * \return OPS_R_PARTIAL_READ
+ * \return OPS_R_EOF
+ * \return OPS_R_EARLY_EOF
+ * 
+ * \sa #opt_reader_ret_t, ops_reader_fd() for details of return codes
+ */
 
 static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
 				  ops_reader_flags_t flags,
@@ -164,8 +191,9 @@ static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
  * \param *result	The scalar value is stored here
  * \param *reader	Our reader
  * \param length	How many bytes to read
- * \return		OPS_PR_OK on success, reader's return value otherwise
+ * \return		OPS_R_OK on success, reader's return value otherwise
  *
+ * \sa #ops_reader_ret_t for possible return codes
  */
 static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
 				    ops_parse_options_t *opt)
@@ -213,13 +241,19 @@ int ops_limited_read(unsigned char *dest,unsigned length,
     ops_reader_ret_t ret;
 
     if(!region->indeterminate && region->length_read+length > region->length)
-	ERR("Not enough data left");
+	{
+	ERRCODE(OPS_E_P_NOT_ENOUGH_DATA);
+	return 0;
+	}
 
     ret=base_read(dest,&length,region->indeterminate ? OPS_RETURN_LENGTH : 0,
 		  opt);
 
     if(ret != OPS_R_OK && ret != OPS_R_PARTIAL_READ)
-	ERR("Read failed");
+	{
+	ERRCODE(OPS_E_R_READ_FAILED);
+	return 0;
+	}
 
     region->last_read=length;
     do
@@ -613,6 +647,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	break;
 
     case OPS_PARSER_ERROR:
+    case OPS_PARSER_ERRCODE:
 	break;
 
     case OPS_PTAG_CT_SECRET_KEY:
