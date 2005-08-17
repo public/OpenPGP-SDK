@@ -37,14 +37,13 @@ static int limited_read_data(ops_data_t *data,unsigned int len,
     {
     data->len = len;
 
-    assert ((subregion->length - subregion->length_read) >= len);
+    assert(subregion->length-subregion->length_read >= len);
 
     data->contents = malloc(data->len);
     if (!data->contents)
 	return 0;
 
-    if (!ops_limited_read(data->contents, data->len,
-			  subregion, opt))
+    if (!ops_limited_read(data->contents, data->len,subregion, opt))
 	return 0;
     
     return 1;
@@ -65,7 +64,7 @@ static int read_data(ops_data_t *data,ops_region_t *subregion,
     {
     int len;
 
-    len = subregion->length - subregion->length_read;
+    len=subregion->length-subregion->length_read;
 
     return(limited_read_data(data,len,subregion,opt));
     }
@@ -79,13 +78,13 @@ static int read_string(char **str, ops_region_t *subregion, ops_parse_options_t 
     {
     int len=0;
 
-    len=subregion->length - subregion->length_read;
+    len=subregion->length-subregion->length_read;
 
-    *str = malloc(len+1);
-    if (!(*str))
+    *str=malloc(len+1);
+    if(!(*str))
 	return 0;
 
-    if (len && !ops_limited_read(*str, len, subregion, opt))
+    if(len && !ops_limited_read(*str,len,subregion,opt))
 	return 0;
 
     /*! ensure the string is NULL-terminated */
