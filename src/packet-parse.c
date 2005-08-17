@@ -39,11 +39,11 @@ static int limited_read_data(ops_data_t *data,unsigned int len,
 
     assert(subregion->length-subregion->length_read >= len);
 
-    data->contents = malloc(data->len);
+    data->contents=malloc(data->len);
     if (!data->contents)
 	return 0;
 
-    if (!ops_limited_read(data->contents, data->len,subregion, opt))
+    if (!ops_limited_read(data->contents, data->len,subregion,opt))
 	return 0;
     
     return 1;
@@ -1048,6 +1048,9 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     if(!limited_read_new_length(&subregion.length,region,opt))
 	return 0;
 
+    if(subregion.length > region->length)
+	ERR("Subpacket too long");
+
     if(!ops_limited_read(c,1,&subregion,opt))
 	return 0;
 
@@ -1332,10 +1335,14 @@ static int parse_signature_subpackets(ops_signature_t *sig,
 				      ops_parse_options_t *opt)
     {
     ops_region_t subregion;
+    ops_parser_content_t content;
 
     init_subregion(&subregion,region);
     if(!limited_read_scalar(&subregion.length,2,region,opt))
 	return 0;
+
+    if(subregion.length > region->length)
+	ERR("Subpacket set too long");
 
     while(subregion.length_read < subregion.length)
 	if(!parse_one_signature_subpacket(sig,&subregion,opt))
