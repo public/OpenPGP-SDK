@@ -37,4 +37,7 @@ static inline void *_deconst(const void *p)
 
 char *ops_str_from_map(int code, map_t *map);
 
+/* number of elements in an array */
+#define OPS_ARRAY_SIZE(a)	(sizeof(a)/sizeof(*(a)))
+
 #endif

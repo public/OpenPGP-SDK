@@ -12,6 +12,7 @@
 #endif
 
 #include "packet-show.h"
+#include <util.h>
 
 /*
  * Arrays of value->text maps
@@ -170,7 +171,6 @@ static bit_map_t ss_notation_data_map_byte0[] =
 static bit_map_t *ss_notation_data_map[] =
     {
     ss_notation_data_map_byte0,
-    (bit_map_t *) NULL,
     };
 
 static bit_map_t ss_feature_map_byte0[] =
@@ -182,7 +182,6 @@ static bit_map_t ss_feature_map_byte0[] =
 static bit_map_t *ss_feature_map[] =
     {
     ss_feature_map_byte0,
-    (bit_map_t *) NULL,
     };
 
 static bit_map_t ss_key_flags_map[] =
@@ -405,7 +404,8 @@ static ops_text_t *text_from_bytemapped_octets(ops_data_t *data,
  * of this byte array, derived from each bit of each octet.
  *
  */ 
-static ops_text_t *showall_octets_bits(ops_data_t *data, bit_map_t **map)
+static ops_text_t *showall_octets_bits(ops_data_t *data,bit_map_t **map,
+				       size_t nmap)
     {
     ops_text_t *text=NULL;
     char *str;
@@ -428,8 +428,10 @@ static ops_text_t *showall_octets_bits(ops_data_t *data, bit_map_t **map)
 	    bit = data->contents[i]&mask;
 	    if (bit)
 		{
-		/*! if bit is set, then derive string from it */
-		str=str_from_bitfield ( bit, map[i] );
+		if(i >= nmap)
+		    str="Unknown";
+		else
+		    str=str_from_bitfield ( bit, map[i] );
 		if (!add_str_from_bit_map( text, str, bit))
 		    return NULL;
 		}
@@ -594,9 +596,11 @@ ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska
  * \return string or "Unknown"
  * \todo add reference
 */
-char *ops_show_ss_feature(unsigned char octet, bit_map_t *map)
+static char *ops_show_ss_feature(unsigned char octet,int offset)
     {
-    return(str_from_bitfield(octet,map));
+    if(offset < 0 || offset >= OPS_ARRAY_SIZE(ss_feature_map))
+	return "Unknown";
+    return(str_from_bitfield(octet,ss_feature_map[offset]));
     }
 
 /**
@@ -609,6 +613,7 @@ char *ops_show_ss_feature(unsigned char octet, bit_map_t *map)
  * \todo make typesafe
  * \todo add reference
  */
+// XXX: shouldn't this use show_all_octets_bits?
 ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
     {
     ops_text_t *text=NULL;
@@ -629,7 +634,7 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
 	    bit = ss_features.data.contents[i]&mask;
 	    if (bit)
 		{
-		str=ops_show_ss_feature ( bit, ss_feature_map[i] );
+		str=ops_show_ss_feature ( bit, i );
 		if (!add_str_from_bit_map( text, str, bit))
 		    return NULL;
 		}
@@ -757,8 +762,6 @@ ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_ser
  */
 ops_text_t *ops_showall_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
     {
-    return(showall_octets_bits(&ss_notation_data.flags,ss_notation_data_map));
+    return(showall_octets_bits(&ss_notation_data.flags,ss_notation_data_map,
+			       OPS_ARRAY_SIZE(ss_notation_data_map)));
     }
-
-/* end of file */
-

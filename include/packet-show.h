@@ -49,7 +49,6 @@ char *ops_show_ss_preferred_ska(unsigned char octet);
 char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code);
 
 ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features);
-char *ops_show_ss_feature(unsigned char octet, bit_map_t *map);
 
 ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags);
 char *ops_show_ss_key_flag(unsigned char octet, bit_map_t *map);
