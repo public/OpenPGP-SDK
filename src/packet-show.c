@@ -279,9 +279,9 @@ static char *str_from_bitfield(unsigned char octet, bit_map_t *map)
     char *str;
     str=str_from_bitfield_or_null(octet,map);
     if (str)
-	return(str);
+	return str;
     else
-	return("Unknown");
+	return "Unknown";
     }
 
 /*! generic function to initialise ops_text_t structure */
@@ -452,7 +452,7 @@ static ops_text_t *showall_octets_bits(ops_data_t *data,bit_map_t **map,
 */
 char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
     {
-    return(show_packet_tag(packet_tag,packet_tag_map));
+    return show_packet_tag(packet_tag,packet_tag_map);
     }
 
 /**
@@ -464,7 +464,7 @@ char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
  */
 char *ops_show_ss_type(ops_ss_type_t ss_type)
     {
-    return(show_ss_type(ss_type,ss_type_map));
+    return show_ss_type(ss_type,ss_type_map);
     }
 
 /**
@@ -477,7 +477,7 @@ char *ops_show_ss_type(ops_ss_type_t ss_type)
  */
 char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
     {
-    return(show_ss_rr_code(ss_rr_code,ss_rr_code_map));
+    return show_ss_rr_code(ss_rr_code,ss_rr_code_map);
     }
 
 /**
@@ -490,7 +490,7 @@ char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
  */
 char *ops_show_sig_type(ops_sig_type_t sig_type)
     {
-    return(show_sig_type(sig_type, sig_type_map));
+    return show_sig_type(sig_type, sig_type_map);
     }
 
 /**
@@ -503,7 +503,7 @@ char *ops_show_sig_type(ops_sig_type_t sig_type)
  */
 char *ops_show_pka(ops_public_key_algorithm_t pka)
     {
-    return(show_pka(pka, public_key_algorithm_map));
+    return show_pka(pka, public_key_algorithm_map);
     }
 
 /** 
@@ -514,7 +514,7 @@ char *ops_show_pka(ops_public_key_algorithm_t pka)
 */
 char *ops_show_ss_preferred_compression(unsigned char octet)
     {
-    return(ops_str_from_map(octet,compression_algorithm_map));
+    return ops_str_from_map(octet,compression_algorithm_map);
     }
 
 /**
@@ -528,8 +528,8 @@ char *ops_show_ss_preferred_compression(unsigned char octet)
  */
 ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t ss_preferred_compression)
     {
-    return(text_from_bytemapped_octets(&ss_preferred_compression.data,
-			  &ops_show_ss_preferred_compression));
+    return text_from_bytemapped_octets(&ss_preferred_compression.data,
+				       &ops_show_ss_preferred_compression);
     }
 
 
@@ -544,7 +544,7 @@ ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t 
  */
 char *ops_show_hash_algorithm(unsigned char hash)
     {
-    return(show_hash_algorithm(hash));
+    return show_hash_algorithm(hash);
     }
 
 /**
@@ -558,8 +558,8 @@ char *ops_show_hash_algorithm(unsigned char hash)
  */
 ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_hash)
     {
-    return(text_from_bytemapped_octets(&ss_preferred_hash.data,
-			  &ops_show_hash_algorithm));
+    return text_from_bytemapped_octets(&ss_preferred_hash.data,
+				       &ops_show_hash_algorithm);
     }
 
 /**
@@ -571,7 +571,7 @@ ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_h
 */
 char *ops_show_ss_preferred_ska(unsigned char octet)
     {
-    return(ops_str_from_map(octet,symmetric_key_algorithm_map));
+    return ops_str_from_map(octet,symmetric_key_algorithm_map);
     }
 
 /**
@@ -585,8 +585,8 @@ char *ops_show_ss_preferred_ska(unsigned char octet)
  */
 ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
-    return(text_from_bytemapped_octets(&ss_preferred_ska.data, 
-		       &ops_show_ss_preferred_ska));
+    return text_from_bytemapped_octets(&ss_preferred_ska.data, 
+				       &ops_show_ss_preferred_ska);
     }
 
 /** 
@@ -600,7 +600,7 @@ static char *ops_show_ss_feature(unsigned char octet,int offset)
     {
     if(offset < 0 || offset >= OPS_ARRAY_SIZE(ss_feature_map))
 	return "Unknown";
-    return(str_from_bitfield(octet,ss_feature_map[offset]));
+    return str_from_bitfield(octet,ss_feature_map[offset]);
     }
 
 /**
@@ -653,7 +653,7 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
 */
 char *ops_show_ss_key_flag(unsigned char octet, bit_map_t *map)
     {
-    return(str_from_bitfield(octet,map));
+    return str_from_bitfield(octet,map);
     }
 
 /**
@@ -708,7 +708,7 @@ ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
  */
 char *ops_show_ss_key_server_prefs(unsigned char prefs, bit_map_t *map)
     {
-    return(str_from_bitfield(prefs,map));
+    return str_from_bitfield(prefs,map);
     }
 
 /**
@@ -762,6 +762,6 @@ ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_ser
  */
 ops_text_t *ops_showall_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
     {
-    return(showall_octets_bits(&ss_notation_data.flags,ss_notation_data_map,
-			       OPS_ARRAY_SIZE(ss_notation_data_map)));
+    return showall_octets_bits(&ss_notation_data.flags,ss_notation_data_map,
+			       OPS_ARRAY_SIZE(ss_notation_data_map));
     }
