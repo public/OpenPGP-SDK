@@ -828,8 +828,6 @@ static int parse_user_attribute(ops_region_t *region, ops_parse_options_t *opt)
 
     assert (region->length_read == 0);  /* We should not have read anything so far */
 
-    assert(region->length);
-
     if (!read_data(&C.user_attribute.data, region, opt))
 	return 0;
 
