@@ -1348,8 +1348,13 @@ static int parse_signature_subpackets(ops_signature_t *sig,
 	if(!parse_one_signature_subpacket(sig,&subregion,opt))
 	    return 0;
 
-    assert(subregion.length_read == subregion.length);  /* XXX: this should not be an assert but a parse error.  It's not
-							   our fault if the packet is inconsistent with itself. */
+    if(subregion.length_read != subregion.length)
+	{
+	if(!limited_skip(subregion.length-subregion.length_read,&subregion,
+			 opt))
+	    ERR("Read failed while recovering from subpacket length mismatch");
+	ERR("Subpacket length mismatch");
+	}
 
     return 1;
     }
