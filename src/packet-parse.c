@@ -177,6 +177,8 @@ static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
 	}
     // we track length anyway, because it is used for packet offsets
     opt->alength+=*plength;
+    // and also the position
+    opt->position+=*plength;
 
     return ret;
     }
@@ -1707,6 +1709,8 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
     ops_region_t region;
     unsigned one=1;
     ops_boolean_t indeterminate=ops_false;
+
+    C.ptag.position=opt->position;
 
     ret=base_read(ptag,&one,0,opt);
     if(ret == OPS_R_EOF)

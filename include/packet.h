@@ -217,6 +217,7 @@ typedef struct
 					  Only defined if #length_read is set. */  /* XXX: Ben, is this correct? */
     //    unsigned		length_read;	/*!< How much bytes of this packet we have read so far - for internal use
     //					  only. */
+    unsigned		position;	/*!< The position (within the current reader) of the packet */
     } ops_ptag_t;
 
 /** Public Key Algorithm Numbers.

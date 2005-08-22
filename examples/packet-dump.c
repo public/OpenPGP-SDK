@@ -260,9 +260,10 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf("\n");
 	print_indent();
 	printf("==== ptag new_format=%d content_tag=%d length_type=%d"
-	       " length=0x%x (%d)\n",content->ptag.new_format,
+	       " length=0x%x (%d) position=0x%x (%d)\n",content->ptag.new_format,
 	       content->ptag.content_tag,content->ptag.length_type,
-	       content->ptag.length,content->ptag.length);
+	       content->ptag.length,content->ptag.length,
+	       content->ptag.position,content->ptag.position);
 	/*
 	print_tagname(ops_str_from_single_packet_tag(content->ptag.content_tag));
 	*/
