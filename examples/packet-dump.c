@@ -5,6 +5,7 @@
 #include "util.h"
 #include "lists.h"
 #include "ops_errors.h"
+#include "armour.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -13,6 +14,7 @@
 #include <string.h>
 
 static int indent=0;
+static const char *pname;
 
 static void print_indent()
     {
@@ -67,7 +69,7 @@ static void print_duration(char *name, time_t time)
     printf("\n");
     }
 
-static void print_name( char *name)
+static void print_name(const char *name)
     {
     print_indent();
     if(name)
@@ -81,7 +83,7 @@ static void print_text_breakdown( ops_text_t *text)
 
     /* these were recognised */
 
-    for(i=0 ; i<text->known.used ; i++) 
+    for(i=0 ; i<text->known.used ; i++)
 	{
 	print_indent();
 	printf(prefix);
@@ -152,13 +154,13 @@ static void print_boolean(char *name, unsigned char bool)
     printf("\n");
     }
 
-static void print_tagname( char *str)
+static void print_tagname(char *str)
     {
     print_indent();
     printf("%s packet\n", str);
     }
 
-static void print_string(char *name, char *str)
+static void print_string(const char *name,const char *str)
     {
     print_name(name);
     while(*str)
@@ -727,12 +729,35 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	printf("***RACHEL DO YOUR THING HERE***\n");
 	break;
 
+    case OPS_PTAG_CT_ARMOUR_HEADER:
+	print_tagname("ARMOUR HEADER");
+	print_string("type",content->armour_header.type);
+	break;
+
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
+	print_tagname("SIGNED CLEARTEXT HEADER");
+	break;
+
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
+	print_tagname("SIGNED CLEARTEXT BODY");
+	printf("----------------\n%.*s\n----------------\n",
+	       (int)content->signed_cleartext_body.length,
+	       content->signed_cleartext_body.data);
+	break;
+
     default:
 	print_tagname("UNKNOWN PACKET TYPE");
-	fprintf(stderr,"packet-dump: unknown tag=%d\n",content_->tag);
+	fprintf(stderr,"packet-dump: unknown tag=%d (0x%x)\n",content_->tag,
+		content_->tag);
 	exit(1);
 	}
     return OPS_RELEASE_MEMORY;
+    }
+
+static void usage()
+    {
+    fprintf(stderr,"%s [-a]\n",pname);
+    exit(1);
     }
 
 int main(int argc,char **argv)
@@ -741,6 +766,23 @@ int main(int argc,char **argv)
     ops_reader_fd_arg_t arg;
     ops_ulong_list_t errors;
     int i;
+    ops_boolean_t armour=ops_false;
+    int ret;
+    int ch;
+
+    pname=argv[0];
+
+    while((ch=getopt(argc,argv,"a")) != -1)
+	switch(ch)
+	    {
+	case 'a':
+	    armour=ops_true;
+	    break;
+
+	default:
+	    usage();
+	    }
+
 
     ops_parse_options_init(&opt);
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
@@ -753,7 +795,18 @@ int main(int argc,char **argv)
 
     ops_ulong_list_init(&errors);
 
-    if (!ops_parse_and_save_errs(&opt,&errors))
+    if(armour)
+	{
+	ops_region_t region;
+
+	ops_init_subregion(&region,NULL);
+	region.indeterminate=ops_true;
+	ret=ops_dearmour(&region,&opt);
+	}
+    else
+	ret=ops_parse_and_save_errs(&opt,&errors);
+
+    if (!ret)
 	{
 	printf("\n*** Warning: errors were found when parsing input\n");
 	printf("\nError packets will be printed again, together with hexdump\n");

@@ -18,6 +18,8 @@ typedef struct ops_region
     ops_boolean_t indeterminate:1;
     } ops_region_t;
 
+void ops_init_subregion(ops_region_t *subregion,ops_region_t *region);
+
 /** Return values for reader functions e.g. ops_packet_reader_t() */
 enum ops_reader_ret_t
     {

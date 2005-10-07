@@ -190,6 +190,10 @@ enum ops_content_tag_t
     OPS_PTAG_CT_LITERAL_DATA_BODY	=0x300+1,
     OPS_PTAG_CT_SIGNATURE_HEADER	=0x300+2,
     OPS_PTAG_CT_SIGNATURE_FOOTER	=0x300+3,
+    OPS_PTAG_CT_ARMOUR_HEADER		=0x300+4,
+    OPS_PTAG_CT_ARMOUR_TRAILER		=0x300+5,
+    OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER	=0x300+6,
+    OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY	=0x300+7,
     };
 
 /** Structure to hold one parse error string. */
@@ -665,6 +669,27 @@ typedef struct
     unsigned char		data[8192];
     } ops_literal_data_body_t;
 
+typedef struct
+    {
+    const char *type;
+    } ops_armour_header_t;
+
+typedef struct
+    {
+    const char *type;
+    } ops_armour_trailer_t;
+
+typedef struct
+    {
+    // will include headers later
+    } ops_signed_cleartext_header_t;
+
+typedef struct
+    {
+    unsigned			length;
+    unsigned char		data[8192];
+    } ops_signed_cleartext_body_t;
+
 typedef union
     {
     ops_parser_error_t		error;
@@ -702,6 +727,10 @@ typedef union
     ops_ss_revocation_reason_t	ss_revocation_reason;
     ops_secret_key_t		secret_key;
     ops_user_id_t		ss_signers_user_id;
+    ops_armour_header_t		armour_header;
+    ops_armour_trailer_t	armour_trailer;
+    ops_signed_cleartext_header_t signed_cleartext_header;
+    ops_signed_cleartext_body_t	signed_cleartext_body;
     } ops_parser_content_union_t;
 
 struct ops_parser_content_t

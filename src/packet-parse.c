@@ -94,7 +94,7 @@ static int read_string(char **str, ops_region_t *subregion, ops_parse_options_t 
     return 1;
     }
 
-static void init_subregion(ops_region_t *subregion,ops_region_t *region)
+void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
     {
     memset(subregion,'\0',sizeof *subregion);
     subregion->parent=region;
@@ -553,6 +553,9 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
+    case OPS_PTAG_CT_ARMOUR_HEADER:
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -1044,7 +1047,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     ops_boolean_t read=ops_true;
     unsigned char bool[1];
 
-    init_subregion(&subregion,region);
+    ops_init_subregion(&subregion,region);
     if(!limited_read_new_length(&subregion.length,region,opt))
 	return 0;
 
@@ -1337,7 +1340,7 @@ static int parse_signature_subpackets(ops_signature_t *sig,
     ops_region_t subregion;
     ops_parser_content_t content;
 
-    init_subregion(&subregion,region);
+    ops_init_subregion(&subregion,region);
     if(!limited_read_scalar(&subregion.length,2,region,opt))
 	return 0;
 
@@ -1765,7 +1768,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
 
     CB(OPS_PARSER_PTAG,&content);
 
-    init_subregion(&region,NULL);
+    ops_init_subregion(&region,NULL);
     region.length=C.ptag.length;
     region.indeterminate=indeterminate;
     switch(C.ptag.content_tag)
