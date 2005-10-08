@@ -194,6 +194,7 @@ enum ops_content_tag_t
     OPS_PTAG_CT_ARMOUR_TRAILER		=0x300+5,
     OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER	=0x300+6,
     OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY	=0x300+7,
+    OPS_PTAG_CT_UNARMOURED_TEXT		=0x300+8,
     };
 
 /** Structure to hold one parse error string. */
@@ -690,6 +691,12 @@ typedef struct
     unsigned char		data[8192];
     } ops_signed_cleartext_body_t;
 
+typedef struct
+    {
+    unsigned			length;
+    unsigned char		*data;
+    } ops_unarmoured_text_t;
+
 typedef union
     {
     ops_parser_error_t		error;
@@ -731,6 +738,7 @@ typedef union
     ops_armour_trailer_t	armour_trailer;
     ops_signed_cleartext_header_t signed_cleartext_header;
     ops_signed_cleartext_body_t	signed_cleartext_body;
+    ops_unarmoured_text_t	unarmoured_text;
     } ops_parser_content_union_t;
 
 struct ops_parser_content_t

@@ -19,7 +19,8 @@ static const char *pname;
 static void print_indent()
     {
     int i=0;
-    for(i=0 ; i<indent ; i++)
+
+    for(i=0 ; i < indent ; i++)
 	printf("  ");
     }
 
@@ -115,7 +116,7 @@ static void printhex(const unsigned char *src,size_t length)
 	printf("%02X",*src++);
     }
 
-static void print_hexdump( char *name,
+static void print_hexdump(const char *name,
 			  const unsigned char *data,
 			  unsigned int len)
     {
@@ -126,9 +127,9 @@ static void print_hexdump( char *name,
     printf("\n");
     }
 
-static void print_hexdump_data( char *name,
-			  const unsigned char *data,
-			  unsigned int len)
+static void print_hexdump_data(const char *name,
+			       const unsigned char *data,
+			       unsigned int len)
     {
     print_name(name);
 
@@ -137,13 +138,13 @@ static void print_hexdump_data( char *name,
     printf("\n");
     }
 
-static void print_data( char *name, const ops_data_t *data)
+static void print_data(const char *name,const ops_data_t *data)
     {
-    print_hexdump( name, data->contents, data->len);
+    print_hexdump(name,data->contents,data->len);
     }
 
 
-static void print_boolean(char *name, unsigned char bool)
+static void print_boolean(const char *name, unsigned char bool)
     {
     print_name(name);
 
@@ -154,7 +155,7 @@ static void print_boolean(char *name, unsigned char bool)
     printf("\n");
     }
 
-static void print_tagname(char *str)
+static void print_tagname(const char *str)
     {
     print_indent();
     printf("%s packet\n", str);
@@ -174,7 +175,40 @@ static void print_string(const char *name,const char *str)
     putchar('\n');
     }
 
-static void print_unsigned_int( char *name, unsigned int val)
+static void print_block(const char *name,const unsigned char *str,
+			size_t length)
+    {
+    int o=length;
+
+    print_indent();
+    printf(">>>>> %s >>>>>\n",name);
+
+    print_indent();
+    for( ; length > 0 ; --length)
+	{
+	if(*str >= 0x20 && *str < 0x7f && *str != '%')
+	    putchar(*str);
+	else if(*str == '\n')
+	    {
+	    putchar(*str);
+	    print_indent();
+	    }
+	else
+	    printf("%%%02x",*str);
+	++str;
+	}
+    if(o && str[-1] != '\n')
+	{
+	putchar('\n');
+	print_indent();
+	fputs("[no newline]",stdout);
+	}
+    else
+	print_indent();
+    printf("<<<<< %s <<<<<\n",name);
+    }
+
+static void print_unsigned_int(char *name, unsigned int val)
     {
     print_name(name);
     printf("%d\n", val);
@@ -740,9 +774,19 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
 	print_tagname("SIGNED CLEARTEXT BODY");
-	printf("----------------\n%.*s\n----------------\n",
-	       (int)content->signed_cleartext_body.length,
-	       content->signed_cleartext_body.data);
+	print_block("signed cleartext",content->signed_cleartext_body.data,
+		    content->signed_cleartext_body.length);
+	break;
+
+    case OPS_PTAG_CT_UNARMOURED_TEXT:
+	print_tagname("UNARMOURED TEXT");
+	print_block("unarmoured text",content->unarmoured_text.data,
+		    content->unarmoured_text.length);
+	break;
+
+    case OPS_PTAG_CT_ARMOUR_TRAILER:
+	print_tagname("ARMOUR TRAILER");
+	print_string("type",content->armour_header.type);
 	break;
 
     default:

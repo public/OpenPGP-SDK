@@ -26,6 +26,9 @@ typedef struct
     unsigned char buffer[3];
     ops_boolean_t eof64;
     unsigned long checksum;
+    // unarmoured text blocks
+    unsigned char unarmoured[8192];
+    size_t num_unarmoured;
     } dearmour_arg_t;
 
 // FIXME: move these to a common header
@@ -55,7 +58,35 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
     arg->seen_nl=c[0] == '\n';
 
     return c[0];
-    }    
+    }
+
+static void flush(dearmour_arg_t *arg)
+    {
+    ops_parser_content_t content;
+
+    content.content.unarmoured_text.data=arg->unarmoured;
+    content.content.unarmoured_text.length=arg->num_unarmoured;
+    CB(OPS_PTAG_CT_UNARMOURED_TEXT,&content);
+    arg->num_unarmoured=0;
+    }
+
+static int unarmoured_read_char(dearmour_arg_t *arg,ops_boolean_t skip)
+    {
+    int c;
+
+    do
+	{
+	c=read_char(arg,ops_false);
+	if(c < 0)
+	    return c;
+	arg->unarmoured[arg->num_unarmoured++]=c;
+	if(arg->num_unarmoured == sizeof arg->unarmoured)
+	    flush(arg);
+	}
+    while(skip && c == '\r');
+
+    return c;
+    }
 
 static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
     {
@@ -69,11 +100,11 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 	unsigned count;
 
 	if((c=read_char(arg,ops_false)) < 0)
-	    return OPS_R_EOF;
+	    return OPS_R_EARLY_EOF;
 	if(arg->prev_nl && c == '-')
 	    {
 	    if((c=read_char(arg,ops_false)) < 0)
-		return OPS_R_EOF;
+		return OPS_R_EARLY_EOF;
 	    if(c != ' ')
 		{
 		/* then this had better be a trailer! */
@@ -82,7 +113,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 		for(count=2 ; count < 5 ; ++count)
 		    {
 		    if((c=read_char(arg,ops_false)) < 0)
-			return OPS_R_EOF;
+			return OPS_R_EARLY_EOF;
 		    if(c != '-')
 			ERR("Bad dash-escaping (2)");
 		    }
@@ -91,7 +122,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 		}
 	    /* otherwise we read the next character */
 	    if((c=read_char(arg,ops_false)) < 0)
-		return OPS_R_EOF;
+		return OPS_R_EARLY_EOF;
 	    }
 	body->data[body->length++]=c;
 	if(body->length == sizeof body->data)
@@ -138,7 +169,7 @@ static ops_reader_ret_t read4(dearmour_arg_t *arg,int *pc,int *pn,
 	if(c < 0)
 	    {
 	    arg->eof64=ops_true;
-	    return OPS_R_EOF;
+	    return OPS_R_EARLY_EOF;
 	    }
 	if(c == '-')
 	    break;
@@ -186,6 +217,7 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
     if(n == 3)
 	{
 	arg->buffered=2;
+	arg->eof64=ops_true;
 	l >>= 2;
 	}
     else if(n == 2)
@@ -227,6 +259,12 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
 	    ERR("Error in checksum");
 	if(l != arg->checksum)
 	    ERR("Checksum mismatch");
+	c=read_char(arg,ops_true);
+	if(c != '\n')
+	    ERR("Badly terminated checksum");
+	c=read_char(arg,ops_false);
+	if(c != '-')
+	    ERR("Bad base64 trailer (2)");
 	}
 
     if(c == '-')
@@ -248,7 +286,7 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
 	unsigned i;
 
 	arg->checksum ^= arg->buffer[n] << 16;
-	for (i = 0; i < 8; i++)
+	for(i=0 ; i < 8 ; i++)
 	    {
 	    arg->checksum <<= 1;
 	    if(arg->checksum & 0x1000000)
@@ -261,7 +299,8 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
     }
 
 // This reader is rather strange in that it can generate callbacks for
-// content - this is because plaintext is not encapsulated in PGP packets...
+// content - this is because plaintext is not encapsulated in PGP
+// packets... it also calls back for the text between the blocks.
 
 static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 					     unsigned *plength,
@@ -272,6 +311,10 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
     unsigned length=*plength;
     ops_parser_content_t content;
     ops_reader_ret_t ret;
+    ops_boolean_t first;
+
+    if(arg->eof64 && !arg->buffered)
+	return _OPS_R_BLOCK_END;
 
     while(length > 0)
 	{
@@ -283,25 +326,29 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	switch(arg->state)
 	    {
 	case OUTSIDE_BLOCK:
+	    /* This code returns EOF rather than EARLY_EOF because if
+	       we don't see a header line at all, then it is just an
+	       EOF (and not a BLOCK_END) */
 	    while(!arg->seen_nl)
-		if((c=read_char(arg,ops_true)) < 0)
+		if((c=unarmoured_read_char(arg,ops_true)) < 0)
 		    return OPS_R_EOF;
-		
+
+	    /* flush at this point so we definitely have room for the
+	       header, and so we can easily erase it from the buffer */
+	    flush(arg);
 	    /* Find and consume the 5 leading '-' */
-	    for(count=0 ; count < 5 ; )
+	    for(count=0 ; count < 5 ; ++count)
 		{
-		if((c=read_char(arg,ops_false)) < 0)
+		if((c=unarmoured_read_char(arg,ops_false)) < 0)
 		    return OPS_R_EOF;
-		if(c == '-')
-		    ++count;
-		else
-		    count=0;
+		if(c != '-')
+		    goto reloop;
 		}
 
 	    /* Now find the block type */
 	    for(n=0 ; n < sizeof buf-1 ; )
 		{
-		if((c=read_char(arg,ops_false)) < 0)
+		if((c=unarmoured_read_char(arg,ops_false)) < 0)
 		    return OPS_R_EOF;
 		if(c == '-')
 		    goto got_minus;
@@ -316,7 +363,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	    /* Consume trailing '-' */
 	    for(count=1 ; count < 5 ; ++count)
 		{
-		if((c=read_char(arg,ops_false)) < 0)
+		if((c=unarmoured_read_char(arg,ops_false)) < 0)
 		    return OPS_R_EOF;
 		if(c != '-')
 		    /* wasn't a header after all */
@@ -324,14 +371,19 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		}
 
 	    /* Consume final NL */
-	    if((c=read_char(arg,ops_true)) < 0)
+	    if((c=unarmoured_read_char(arg,ops_true)) < 0)
 		return OPS_R_EOF;
 	    if(c != '\n')
 		/* wasn't a header line after all */
 		break;
 
+	    /* Now we've seen the header, scrub it from the buffer */
+	    arg->num_unarmoured=0;
+
+	    /* But now we've seen a header line, then errors are
+	       EARLY_EOF */
 	    if(!parse_headers(arg))
-		return OPS_R_EOF;
+		return OPS_R_EARLY_EOF;
 
 	    if(!strcmp(buf,"BEGIN PGP SIGNED MESSAGE"))
 		{
@@ -351,23 +403,34 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	    break;
 
 	case BASE64:
+	    first=ops_true;
 	    while(length > 0)
 		{
 		if(!arg->buffered)
 		    {
-		    if(arg->eof64)
-			return OPS_R_EOF;
-		    ret=decode64(arg);
-		    if(ret != OPS_R_OK)
-			return ret;
+		    if(!arg->eof64)
+			{
+			ret=decode64(arg);
+			if(ret != OPS_R_OK)
+			    return ret;
+			}
 		    if(!arg->buffered)
-			return OPS_R_EOF;
+			{
+			assert(arg->eof64);
+			if(first)
+			    {
+			    arg->state=AT_TRAILER_NAME;
+			    break;
+			    }
+			return OPS_R_EARLY_EOF;
+			}
 		    }
 		
 		assert(arg->buffered);
 		*dest=arg->buffer[--arg->buffered];
 		++dest;
 		--length;
+		first=ops_false;
 		}
 	    break;
 
@@ -375,7 +438,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	    for(n=0 ; n < sizeof buf-1 ; )
 		{
 		if((c=read_char(arg,ops_false)) < 0)
-		    return OPS_R_EOF;
+		    return OPS_R_EARLY_EOF;
 		if(c == '-')
 		    goto got_minus2;
 		buf[n++]=c;
@@ -391,7 +454,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	    for(count=1 ; count < 5 ; ++count)
 		{
 		if((c=read_char(arg,ops_false)) < 0)
-		    return OPS_R_EOF;
+		    return OPS_R_EARLY_EOF;
 		if(c != '-')
 		    /* wasn't a trailer after all */
 		    ERR("Bad ASCII armour trailer (2)");
@@ -399,7 +462,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 
 	    /* Consume final NL */
 	    if((c=read_char(arg,ops_true)) < 0)
-		return OPS_R_EOF;
+		return OPS_R_EARLY_EOF;
 	    if(c != '\n')
 		/* wasn't a trailer line after all */
 		ERR("Bad ASCII armour trailer (3)");
@@ -407,7 +470,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	    if(!strncmp(buf,"BEGIN ",6))
 		{
 		if(!parse_headers(arg))
-		    return OPS_R_EOF;
+		    return OPS_R_EARLY_EOF;
 		content.content.armour_header.type=buf;
 		CB(OPS_PTAG_CT_ARMOUR_HEADER,&content);
 		arg->state=BASE64;

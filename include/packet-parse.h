@@ -25,8 +25,15 @@ enum ops_reader_ret_t
     {
     OPS_R_OK		=0,	/*!< success */
     OPS_R_EOF		=1,	/*!< reached end of file, no data has been returned */
-    OPS_R_EARLY_EOF	=2,	/*!< could not read the requested amount of bytes and OPS_RETURN_LENGTH was not set and at least 1 byte was read */
+    OPS_R_EARLY_EOF	=2,	/*!< could not read the requested
+                                  number of bytes and either
+                                  OPS_RETURN_LENGTH was not set and at
+                                  least 1 byte was read, or there was
+				  an abnormal end to the file (or
+				  armoured block) */
     OPS_R_PARTIAL_READ	=3,	/*!< if OPS_RETURN_LENGTH is set and the buffer was not filled */
+    _OPS_R_BLOCK_END	=4,	/*!< the end of an armoured block
+				  [interal use only] */
     };
 
 typedef enum
