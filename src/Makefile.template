@@ -29,7 +29,7 @@ clean:
 .depend: *.[ch]
 	$(CC) $(CFLAGS) -E -MM *.c > .depend
 
-force_depend:
+force_depend: headers
 	$(CC) $(CFLAGS) -E -MM *.c > .depend
 
 Makefile: Makefile.template ../configure
