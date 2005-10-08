@@ -2,6 +2,10 @@
 #include "util.h"
 
 #include <string.h>
+#include <assert.h>
+
+#define CRC24_INIT 0xb704ceL
+#define CRC24_POLY 0x1864cfbL
 
 typedef struct
     {
@@ -16,6 +20,12 @@ typedef struct
     ops_region_t *region;
     ops_parse_options_t *opt;
     ops_boolean_t seen_nl;
+    ops_boolean_t prev_nl;
+    // base64 stuff
+    unsigned buffered;
+    unsigned char buffer[3];
+    ops_boolean_t eof64;
+    unsigned long checksum;
     } dearmour_arg_t;
 
 // FIXME: move these to a common header
@@ -41,6 +51,7 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
     arg->opt->reader=reader;
     arg->opt->reader_arg=arg;
 
+    arg->prev_nl=arg->seen_nl;
     arg->seen_nl=c[0] == '\n';
 
     return c[0];
@@ -57,10 +68,9 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 	int c;
 	unsigned count;
 
-	ops_boolean_t t=arg->seen_nl;
 	if((c=read_char(arg,ops_false)) < 0)
 	    return OPS_R_EOF;
-	if(t && c == '-')
+	if(arg->prev_nl && c == '-')
 	    {
 	    if((c=read_char(arg,ops_false)) < 0)
 		return OPS_R_EOF;
@@ -97,6 +107,159 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
     return OPS_R_OK;
     }
 
+static ops_boolean_t parse_headers(dearmour_arg_t *arg)
+    {
+    unsigned count;
+
+    /* FIXME: parse headers */
+    for(count=1 ; count < 2 ; )
+	{
+	int c;
+
+	if((c=read_char(arg,ops_false)) < 0)
+	    return ops_false;
+	if(c == '\n')
+	    ++count;
+	else
+	    count=0;
+	}
+    return ops_true;
+    }
+
+static ops_reader_ret_t read4(dearmour_arg_t *arg,int *pc,int *pn,
+			      unsigned long *pl)
+    {
+    int n,c;
+    unsigned long l=0;
+
+    for(n=0 ; n < 4 ; ++n)
+	{
+	c=read_char(arg,ops_true);
+	if(c < 0)
+	    {
+	    arg->eof64=ops_true;
+	    return OPS_R_EOF;
+	    }
+	if(c == '-')
+	    break;
+	if(c == '=')
+	    break;
+	l <<= 6;
+	if(c >= 'A' && c <= 'Z')
+	    l+=c-'A';
+	else if(c >= 'a' && c <= 'z')
+	    l+=c-'a'+26;
+	else if(c >= '0' && c <= '9')
+	    l+=c-'0'+52;
+	else if(c == '+')
+	    l+=62;
+	else if(c == '/')
+	    l+=63;
+	else
+	    {
+	    --n;
+	    l >>= 6;
+	    }
+	}
+
+    *pc=c;
+    *pn=n;
+    *pl=l;
+
+    return OPS_R_OK;
+    }
+
+static ops_reader_ret_t decode64(dearmour_arg_t *arg)
+    {
+    int n;
+    unsigned long l;
+    ops_parser_content_t content;
+    int c;
+    ops_reader_ret_t ret;
+
+    assert(arg->buffered == 0);
+
+    ret=read4(arg,&c,&n,&l);
+    if(ret != OPS_R_OK)
+	ERR("Badly formed base64");
+
+    if(n == 3)
+	{
+	arg->buffered=2;
+	l >>= 2;
+	}
+    else if(n == 2)
+	{
+	arg->buffered=1;
+	arg->eof64=ops_true;
+	l >>= 4;
+	c=read_char(arg,ops_false);
+	if(c != '=')
+	    ERR("Badly terminated base64");
+	}
+    else if(n == 0)
+	{
+	assert(c == '-' || (arg->prev_nl && c == '='));
+	arg->buffered=0;
+	}
+    else
+	{
+	assert(n == 4);
+	arg->buffered=3;
+	}
+
+    if(c == '=' && !arg->prev_nl)
+	{
+	// then we saw padding
+	c=read_char(arg,ops_true);
+	if(c != '\n')
+	    ERR("No newline at base64 end");
+	c=read_char(arg,ops_false);
+	if(c != '=')
+	    ERR("No checksum at base64 end");
+	}
+
+    if(c == '=')
+	{
+	// now we are at the checksum
+	ret=read4(arg,&c,&n,&l);
+	if(ret != OPS_R_OK || n != 4)
+	    ERR("Error in checksum");
+	if(l != arg->checksum)
+	    ERR("Checksum mismatch");
+	}
+
+    if(c == '-')
+	{
+	for(n=0 ; n < 4 ; ++n)
+	    if(read_char(arg,ops_false) != '-')
+		ERR("Bad base64 trailer");
+	arg->eof64=ops_true;
+	}
+
+    for(n=0 ; n < arg->buffered ; ++n)
+	{
+	arg->buffer[n]=l;
+	l >>= 8;
+	}
+
+    for(n=arg->buffered-1 ; n >= 0 ; --n)
+	{
+	unsigned i;
+
+	arg->checksum ^= arg->buffer[n] << 16;
+	for (i = 0; i < 8; i++)
+	    {
+	    arg->checksum <<= 1;
+	    if(arg->checksum & 0x1000000)
+		arg->checksum ^= CRC24_POLY;
+	    }
+	}
+    arg->checksum &= 0xffffffL;
+
+    return OPS_R_OK;
+    }
+
 // This reader is rather strange in that it can generate callbacks for
 // content - this is because plaintext is not encapsulated in PGP packets...
 
@@ -108,6 +271,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
     dearmour_arg_t *arg=arg_;
     unsigned length=*plength;
     ops_parser_content_t content;
+    ops_reader_ret_t ret;
 
     while(length > 0)
 	{
@@ -166,16 +330,8 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		/* wasn't a header line after all */
 		break;
 
-	    /* FIXME: parse headers */
-	    for(count=1 ; count < 2 ; )
-		{
-		if((c=read_char(arg,ops_false)) < 0)
-		    return OPS_R_EOF;
-		if(c == '\n')
-		    ++count;
-		else
-		    count=0;
-		}
+	    if(!parse_headers(arg))
+		return OPS_R_EOF;
 
 	    if(!strcmp(buf,"BEGIN PGP SIGNED MESSAGE"))
 		{
@@ -190,10 +346,29 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		content.content.armour_header.type=buf;
 		CB(OPS_PTAG_CT_ARMOUR_HEADER,&content);
 		arg->state=BASE64;
+		arg->checksum=CRC24_INIT;
 		}
 	    break;
 
 	case BASE64:
+	    while(length > 0)
+		{
+		if(!arg->buffered)
+		    {
+		    if(arg->eof64)
+			return OPS_R_EOF;
+		    ret=decode64(arg);
+		    if(ret != OPS_R_OK)
+			return ret;
+		    if(!arg->buffered)
+			return OPS_R_EOF;
+		    }
+		
+		assert(arg->buffered);
+		*dest=arg->buffer[--arg->buffered];
+		++dest;
+		--length;
+		}
 	    break;
 
 	case AT_TRAILER_NAME:
@@ -231,9 +406,12 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 
 	    if(!strncmp(buf,"BEGIN ",6))
 		{
+		if(!parse_headers(arg))
+		    return OPS_R_EOF;
 		content.content.armour_header.type=buf;
 		CB(OPS_PTAG_CT_ARMOUR_HEADER,&content);
 		arg->state=BASE64;
+		arg->checksum=CRC24_INIT;
 		}
 	    else
 		{
