@@ -672,6 +672,12 @@ typedef struct
 
 typedef struct
     {
+    const char *key;
+    const char *value;
+    } ops_armoured_header_value_t;
+
+typedef struct
+    {
     const char *type;
     } ops_armour_header_t;
 
@@ -682,7 +688,6 @@ typedef struct
 
 typedef struct
     {
-    // will include headers later
     } ops_signed_cleartext_header_t;
 
 typedef struct

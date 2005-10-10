@@ -30,12 +30,30 @@ typedef struct
     // unarmoured text blocks
     unsigned char unarmoured[8192];
     size_t num_unarmoured;
+    // pushed back data (stored backwards)
+    unsigned char *pushed_back;
+    unsigned npushed_back;
+    // armoured block headers
+    ops_armoured_header_value_t **headers;
+    unsigned nheaders;
     } dearmour_arg_t;
 
 // FIXME: move these to a common header
 #define CB(t,pc)	do { (pc)->tag=(t); if(arg->opt->cb(pc,arg->opt->cb_arg) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
 #define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; arg->opt->cb(&content,arg->opt->cb_arg); return OPS_R_EARLY_EOF; } while(0)
 
+static void push_back(dearmour_arg_t *arg,const unsigned char *buf,
+		      unsigned length)
+    {
+    int n;
+
+    assert(!arg->pushed_back);
+    arg->pushed_back=malloc(length);
+    for(n=0 ; n < length ; ++n)
+	arg->pushed_back[n]=buf[length-n-1];
+    arg->npushed_back=length;
+    }
+    
 static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
     {
     unsigned char c[1];
@@ -47,7 +65,13 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
 
     do
 	{
-	if(!ops_limited_read(c,1,arg->region,arg->opt))
+	if(arg->npushed_back)
+	    {
+	    c[0]=arg->pushed_back[--arg->npushed_back];
+	    if(!arg->npushed_back)
+		free(arg->pushed_back);
+	    }
+	else if(!ops_limited_read(c,1,arg->region,arg->opt))
 	    return -1;
 	}
     while(skip && c[0] == '\r');
@@ -139,23 +163,84 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
     return OPS_R_OK;
     }
 
-static ops_boolean_t parse_headers(dearmour_arg_t *arg)
+static void add_header(dearmour_arg_t *arg,const char *key,const char
+		       *value)
     {
-    unsigned count;
+    ops_armoured_header_value_t *header;
 
-    /* FIXME: parse headers */
-    for(count=1 ; count < 2 ; )
+    header=malloc(sizeof *header);
+    header->key=strdup(key);
+    header->value=strdup(value);
+
+    arg->headers=realloc(arg->headers,(arg->nheaders+1)*sizeof *arg->headers);
+    arg->headers[arg->nheaders++]=header;
+    }
+
+static ops_reader_ret_t parse_headers(dearmour_arg_t *arg)
+    {
+    char *buf;
+    unsigned nbuf;
+    unsigned size;
+    ops_boolean_t first=ops_true;
+    ops_parser_content_t content;
+
+    buf=NULL;
+    nbuf=size=0;
+
+    for( ;  ; )
 	{
 	int c;
 
 	if((c=read_char(arg,ops_true)) < 0)
-	    return ops_false;
+	    return OPS_R_EARLY_EOF;
+
 	if(c == '\n')
-	    ++count;
+	    {
+	    char *s;
+
+	    if(nbuf == 0)
+		break;
+
+	    assert(nbuf < size);
+	    buf[nbuf]='\0';
+
+	    s=strchr(buf,':');
+	    if(!s)
+		if(!first)
+		    // then we have seriously malformed armour
+		    ERR("No colon in armour header");
+		else
+		    {
+		    // then we have a nasty armoured block with no
+		    // headers, not even a blank line.
+		    buf[nbuf]='\n';
+		    push_back(arg,buf,nbuf+1);
+		    break;
+		    }
+	    else
+		{
+		*s='\0';
+		if(s[1] != ' ')
+		    ERR("No space in armour header");
+		add_header(arg,buf,s+2);
+		nbuf=0;
+		}
+	    first=ops_false;
+	    }
 	else
-	    count=0;
+	    {
+	    if(size <= nbuf+1)
+		{
+		size+=size+80;
+		buf=realloc(buf,size);
+		}
+	    buf[nbuf++]=c;
+	    }
 	}
-    return ops_true;
+
+    free(buf);
+
+    return OPS_R_OK;
     }
 
 static ops_reader_ret_t read4(dearmour_arg_t *arg,int *pc,int *pn,
@@ -398,7 +483,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 
 	    /* But now we've seen a header line, then errors are
 	       EARLY_EOF */
-	    if(!parse_headers(arg))
+	    if((ret=parse_headers(arg)) != OPS_R_OK)
 		return OPS_R_EARLY_EOF;
 
 	    if(!strcmp(buf,"BEGIN PGP SIGNED MESSAGE"))
@@ -486,8 +571,8 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 
 	    if(!strncmp(buf,"BEGIN ",6))
 		{
-		if(!parse_headers(arg))
-		    return OPS_R_EARLY_EOF;
+		if((ret=parse_headers(arg)) != OPS_R_OK)
+		    return ret;
 		content.content.armour_header.type=buf;
 		CB(OPS_PTAG_CT_ARMOUR_HEADER,&content);
 		base64(arg);
