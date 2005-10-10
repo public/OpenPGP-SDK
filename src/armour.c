@@ -69,7 +69,10 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
 	    {
 	    c[0]=arg->pushed_back[--arg->npushed_back];
 	    if(!arg->npushed_back)
+		{
 		free(arg->pushed_back);
+		arg->pushed_back=NULL;
+		}
 	    }
 	else if(!ops_limited_read(c,1,arg->region,arg->opt))
 	    return -1;
@@ -206,11 +209,15 @@ static ops_reader_ret_t parse_headers(dearmour_arg_t *arg)
 
 	    s=strchr(buf,':');
 	    if(!s)
-		if(!first)
+		if(!first && !arg->opt->armour_allow_headers_without_gap)
 		    // then we have seriously malformed armour
 		    ERR("No colon in armour header");
 		else
 		    {
+		    if(first &&
+		       !(arg->opt->armour_allow_headers_without_gap
+			 || arg->opt->armour_allow_no_gap))
+			ERR("No colon in armour header (2)");
 		    // then we have a nasty armoured block with no
 		    // headers, not even a blank line.
 		    buf[nbuf]='\n';

@@ -845,6 +845,9 @@ int main(int argc,char **argv)
 
 	ops_init_subregion(&region,NULL);
 	region.indeterminate=ops_true;
+
+	opt.armour_allow_no_gap=ops_true;
+	opt.armour_allow_headers_without_gap=ops_true;
 	ret=ops_dearmour(&region,&opt);
 	}
     else

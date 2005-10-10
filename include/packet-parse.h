@@ -69,6 +69,13 @@ typedef struct
     unsigned char *accumulated;	/*!< the accumulated data */
     unsigned asize;	/*!< size of the buffer */
     unsigned alength;	/*!< used buffer */
+    unsigned armour_allow_headers_without_gap:1; /*< allow headers in
+						  armoured data that
+						  are not separated
+						  from the data by a
+						  blank line */
+    unsigned armour_allow_no_gap:1; /* allow no blank line at the
+				       start of armoured data */
     } ops_parse_options_t;
 
 int ops_parse(ops_parse_options_t *opt);
