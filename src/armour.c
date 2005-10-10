@@ -148,7 +148,7 @@ static ops_boolean_t parse_headers(dearmour_arg_t *arg)
 	{
 	int c;
 
-	if((c=read_char(arg,ops_false)) < 0)
+	if((c=read_char(arg,ops_true)) < 0)
 	    return ops_false;
 	if(c == '\n')
 	    ++count;
