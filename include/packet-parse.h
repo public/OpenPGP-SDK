@@ -32,8 +32,6 @@ enum ops_reader_ret_t
 				  an abnormal end to the file (or
 				  armoured block) */
     OPS_R_PARTIAL_READ	=3,	/*!< if OPS_RETURN_LENGTH is set and the buffer was not filled */
-    _OPS_R_BLOCK_END	=4,	/*!< the end of an armoured block
-				  [interal use only] */
     };
 
 typedef enum

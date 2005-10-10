@@ -26,6 +26,7 @@ typedef struct
     unsigned char buffer[3];
     ops_boolean_t eof64;
     unsigned long checksum;
+    unsigned long read_checksum;
     // unarmoured text blocks
     unsigned char unarmoured[8192];
     size_t num_unarmoured;
@@ -216,12 +217,14 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
 
     if(n == 3)
 	{
+	assert(c == '=');
 	arg->buffered=2;
 	arg->eof64=ops_true;
 	l >>= 2;
 	}
     else if(n == 2)
 	{
+	assert(c == '=');
 	arg->buffered=1;
 	arg->eof64=ops_true;
 	l >>= 4;
@@ -231,18 +234,20 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
 	}
     else if(n == 0)
 	{
-	assert(c == '-' || (arg->prev_nl && c == '='));
+	assert(arg->prev_nl && c == '=');
 	arg->buffered=0;
 	}
     else
 	{
 	assert(n == 4);
 	arg->buffered=3;
+	assert(c != '-' && c != '=');
 	}
 
-    if(c == '=' && !arg->prev_nl)
+    if(arg->buffered < 3 && arg->buffered > 0)
 	{
 	// then we saw padding
+	assert(c == '=');
 	c=read_char(arg,ops_true);
 	if(c != '\n')
 	    ERR("No newline at base64 end");
@@ -254,11 +259,9 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
     if(c == '=')
 	{
 	// now we are at the checksum
-	ret=read4(arg,&c,&n,&l);
+	ret=read4(arg,&c,&n,&arg->read_checksum);
 	if(ret != OPS_R_OK || n != 4)
 	    ERR("Error in checksum");
-	if(l != arg->checksum)
-	    ERR("Checksum mismatch");
 	c=read_char(arg,ops_true);
 	if(c != '\n')
 	    ERR("Badly terminated checksum");
@@ -274,6 +277,8 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
 		ERR("Bad base64 trailer");
 	arg->eof64=ops_true;
 	}
+    else
+	assert(arg->buffered);
 
     for(n=0 ; n < arg->buffered ; ++n)
 	{
@@ -295,7 +300,18 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
 	}
     arg->checksum &= 0xffffffL;
 
+    if(arg->eof64 && arg->read_checksum != arg->checksum)
+	ERR("Checksum mismatch");
+
     return OPS_R_OK;
+    }
+
+static void base64(dearmour_arg_t *arg)
+    {
+    arg->state=BASE64;
+    arg->checksum=CRC24_INIT;
+    arg->eof64=ops_false;
+    arg->buffered=0;
     }
 
 // This reader is rather strange in that it can generate callbacks for
@@ -314,7 +330,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
     ops_boolean_t first;
 
     if(arg->eof64 && !arg->buffered)
-	return _OPS_R_BLOCK_END;
+	assert(arg->state == OUTSIDE_BLOCK || arg->state == AT_TRAILER_NAME);
 
     while(length > 0)
 	{
@@ -397,8 +413,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		{
 		content.content.armour_header.type=buf;
 		CB(OPS_PTAG_CT_ARMOUR_HEADER,&content);
-		arg->state=BASE64;
-		arg->checksum=CRC24_INIT;
+		base64(arg);
 		}
 	    break;
 
@@ -420,7 +435,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 			if(first)
 			    {
 			    arg->state=AT_TRAILER_NAME;
-			    break;
+			    goto reloop;
 			    }
 			return OPS_R_EARLY_EOF;
 			}
@@ -432,6 +447,8 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		--length;
 		first=ops_false;
 		}
+	    if(arg->eof64 && !arg->buffered)
+		arg->state=AT_TRAILER_NAME;
 	    break;
 
 	case AT_TRAILER_NAME:
@@ -473,8 +490,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		    return OPS_R_EARLY_EOF;
 		content.content.armour_header.type=buf;
 		CB(OPS_PTAG_CT_ARMOUR_HEADER,&content);
-		arg->state=BASE64;
-		arg->checksum=CRC24_INIT;
+		base64(arg);
 		}
 	    else
 		{
