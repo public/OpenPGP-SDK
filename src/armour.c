@@ -58,6 +58,8 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
     {
     unsigned char c[1];
     ops_packet_reader_t *reader;
+    ops_reader_ret_t ret;
+    unsigned length=1;
 
     reader=arg->opt->reader;
     arg->opt->reader=arg->reader;
@@ -74,7 +76,7 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
 		arg->pushed_back=NULL;
 		}
 	    }
-	else if(!ops_limited_read(c,1,arg->region,arg->opt))
+	else if((ret=arg->reader(c,&length,0,arg->reader_arg)) != OPS_R_OK)
 	    return -1;
 	}
     while(skip && c[0] == '\r');
