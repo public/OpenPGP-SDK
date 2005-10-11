@@ -7,7 +7,8 @@ LDFLAGS=-g %CFLAGS%
 LIBDEPS=../src/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
 
-all: Makefile lib .depend packet-dump verify create-key create-signed-key
+all: Makefile lib .depend packet-dump verify create-key create-signed-key \
+     verify2
 
 test: test-dump test-verify
 
@@ -19,6 +20,9 @@ packet-dump: packet-dump.o $(LIBDEPS)
 
 verify: verify.o  $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o verify verify.o $(LIBS)
+
+verify2: verify2.o  $(LIBDEPS)
+	$(CC) $(LDFLAGS) -o verify2 verify2.o $(LIBS)
 
 create-key: create-key.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o create-key create-key.o $(LIBS)
@@ -56,5 +60,8 @@ test-dump: packet-dump
 
 test-verify: verify
 	cat ../test/* | ./verify
+
+test-verify-amoured: verify2
+	./verify2 -a ../test/rsa-public-key-2719AF35.raw ../test/clearsign.txt
 
 include .depend

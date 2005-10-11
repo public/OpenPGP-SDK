@@ -17,7 +17,6 @@ typedef struct
 	BASE64,
 	AT_TRAILER_NAME,
 	} state;
-    ops_region_t *region;
     ops_parse_options_t *opt;
     ops_boolean_t seen_nl;
     ops_boolean_t prev_nl;
@@ -604,20 +603,18 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
     return OPS_R_OK;
     }
 
-int ops_dearmour(ops_region_t *region,ops_parse_options_t *opt)
+void ops_push_dearmour(ops_parse_options_t *opt)
     {
-    dearmour_arg_t arg;
+    dearmour_arg_t *arg;
 
+    arg=malloc(sizeof *arg);
     memset(&arg,'\0',sizeof arg);
 
-    arg.reader_arg=opt->reader_arg;
-    arg.reader=opt->reader;
-    arg.region=region;
-    arg.opt=opt;
-    arg.seen_nl=ops_true;
+    arg->reader_arg=opt->reader_arg;
+    arg->reader=opt->reader;
+    arg->opt=opt;
+    arg->seen_nl=ops_true;
 
     opt->reader=armoured_data_reader;
-    opt->reader_arg=&arg;
-
-    return ops_parse(opt);
+    opt->reader_arg=arg;
     }

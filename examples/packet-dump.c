@@ -846,17 +846,12 @@ int main(int argc,char **argv)
 
     if(armour)
 	{
-	ops_region_t region;
-
-	ops_init_subregion(&region,NULL);
-	region.indeterminate=ops_true;
-
 	opt.armour_allow_no_gap=ops_true;
 	opt.armour_allow_headers_without_gap=ops_true;
-	ret=ops_dearmour(&region,&opt);
+	ops_push_dearmour(&opt);
 	}
-    else
-	ret=ops_parse_and_save_errs(&opt,&errors);
+
+    ret=ops_parse_and_save_errs(&opt,&errors);
 
     if (!ret)
 	{
