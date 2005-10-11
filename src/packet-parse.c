@@ -1698,14 +1698,14 @@ static int parse_secret_key(ops_region_t *region,ops_parse_options_t *opt)
 
 /** Parse one packet.
  *
- * This function parses the packet tag.  It computes the value of the content tag and then calls the appropriate
- * function to handle the content.
+ * This function parses the packet tag.  It computes the value of the
+ * content tag and then calls the appropriate function to handle the
+ * content.
  *
  * \param *opt		Parsing options
  * \param *pktlen	On return, will contain number of bytes in packet
- * \return		1 on success, 0 on error, -1 on EOF
- */
-static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
+ * \return 1 on success, 0 on error, -1 on EOF */
+static int ops_parse_one_packet(ops_parse_options_t *opt,unsigned long *pktlen)
     {
     char ptag[1];
     ops_reader_ret_t ret;
@@ -1718,7 +1718,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
     C.ptag.position=opt->position;
 
     ret=base_read(ptag,&one,0,opt);
-    if(ret == OPS_R_EOF)
+    if(ret == OPS_R_EOF || ret == OPS_R_EARLY_EOF)
 	return -1;
 
     *pktlen=0;
@@ -1748,24 +1748,24 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
 	    {
 	case OPS_PTAG_OF_LT_ONE_BYTE:
 	    ret=read_scalar(&C.ptag.length,1,opt);
-	    assert(ret == OPS_R_OK);
 	    break;
 
 	case OPS_PTAG_OF_LT_TWO_BYTE:
 	    ret=read_scalar(&C.ptag.length,2,opt);
-	    assert(ret == OPS_R_OK);
 	    break;
 
 	case OPS_PTAG_OF_LT_FOUR_BYTE:
 	    ret=read_scalar(&C.ptag.length,4,opt);
-	    assert(ret == OPS_R_OK);
 	    break;
 
 	case OPS_PTAG_OF_LT_INDETERMINATE:
 	    C.ptag.length=0;
 	    indeterminate=ops_true;
+	    ret=OPS_R_OK;
 	    break;
 	    }
+	if(ret == OPS_R_EOF || ret == OPS_R_EARLY_EOF)
+	    return -1;
 	}
 
     CB(OPS_PARSER_PTAG,&content);
@@ -1785,7 +1785,7 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
 	break;
 
     case OPS_PTAG_CT_TRUST:
-	r = parse_trust(&region, opt);
+	r=parse_trust(&region, opt);
 	break;
       
     case OPS_PTAG_CT_USER_ID:
@@ -1819,10 +1819,10 @@ static int ops_parse_one_packet(ops_parse_options_t *opt, unsigned long *pktlen)
 	r=0;
 	}
 
-    /* Ensure that the entire packet has been consumed 
-     */
+    /* Ensure that the entire packet has been consumed (so long as
+       there haven't been errors) */
 
-    if (region.length != region.length_read)
+    if(region.length != region.length_read && r)
 	{
 	ops_data_t remainder;
 

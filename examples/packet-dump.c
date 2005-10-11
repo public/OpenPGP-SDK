@@ -816,11 +816,16 @@ int main(int argc,char **argv)
 
     pname=argv[0];
 
-    while((ch=getopt(argc,argv,"a")) != -1)
+    while((ch=getopt(argc,argv,"ab")) != -1)
 	switch(ch)
 	    {
 	case 'a':
 	    armour=ops_true;
+	    break;
+
+	case 'b':
+	    setvbuf(stdout,NULL,_IONBF,0);
+	    setvbuf(stderr,NULL,_IONBF,0);
 	    break;
 
 	default:
