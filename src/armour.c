@@ -92,6 +92,9 @@ static void flush(dearmour_arg_t *arg)
     {
     ops_parser_content_t content;
 
+    if(arg->num_unarmoured == 0)
+	return;
+
     content.content.unarmoured_text.data=arg->unarmoured;
     content.content.unarmoured_text.length=arg->num_unarmoured;
     CB(OPS_PTAG_CT_UNARMOURED_TEXT,&content);
