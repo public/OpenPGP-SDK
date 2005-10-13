@@ -534,6 +534,19 @@ void ops_packet_free(ops_packet_t *packet)
     packet->raw=NULL;
     }
 
+void ops_headers_free(ops_headers_t *headers)
+    {
+    int n;
+
+    for(n=0 ; n < headers->nheaders ; ++n)
+	{
+	free(headers->headers[n].key);
+	free(headers->headers[n].value);
+	}
+    free(headers->headers);
+    headers->headers=NULL;
+    }
+
 /*! Free any memory allocated when parsing the packet content */
 void ops_parser_content_free(ops_parser_content_t *c)
     {
@@ -554,10 +567,14 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
     case OPS_PTAG_CT_ARMOUR_HEADER:
-    case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
     case OPS_PTAG_CT_UNARMOURED_TEXT:
     case OPS_PTAG_CT_ARMOUR_TRAILER:
+	break;
+
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
+	ops_headers_free(&c->content.signed_cleartext_header.headers);
 	break;
 
     case OPS_PTAG_CT_TRUST:

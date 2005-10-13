@@ -194,7 +194,8 @@ enum ops_content_tag_t
     OPS_PTAG_CT_ARMOUR_TRAILER		=0x300+5,
     OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER	=0x300+6,
     OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY	=0x300+7,
-    OPS_PTAG_CT_UNARMOURED_TEXT		=0x300+8,
+    OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER=0x300+8,
+    OPS_PTAG_CT_UNARMOURED_TEXT		=0x300+9,
     };
 
 /** Structure to hold one parse error string. */
@@ -432,6 +433,7 @@ typedef enum
  */
 typedef enum
     {
+    OPS_HASH_UNKNOWN	=-1,	/*!< used to indicate errors */
     OPS_HASH_MD5	= 1,	/*!< MD5 */
     OPS_HASH_SHA1	= 2,	/*!< SHA-1 */
     OPS_HASH_RIPEMD	= 3,	/*!< RIPEMD160 */
@@ -672,9 +674,15 @@ typedef struct
 
 typedef struct
     {
-    const char *key;
-    const char *value;
+    char *key;
+    char *value;
     } ops_armoured_header_value_t;
+
+typedef struct
+    {
+    ops_armoured_header_value_t *headers;
+    unsigned nheaders;
+    } ops_headers_t;
 
 typedef struct
     {
@@ -688,6 +696,7 @@ typedef struct
 
 typedef struct
     {
+    ops_headers_t headers;
     } ops_signed_cleartext_header_t;
 
 typedef struct
@@ -695,6 +704,11 @@ typedef struct
     unsigned			length;
     unsigned char		data[8192];
     } ops_signed_cleartext_body_t;
+
+typedef struct
+    {
+    struct _ops_hash_t		*hash;	/*!< This will not have been finalised, but will have seen all the cleartext data in canonical form */
+    } ops_signed_cleartext_trailer_t;
 
 typedef struct
     {
@@ -743,6 +757,7 @@ typedef union
     ops_armour_trailer_t	armour_trailer;
     ops_signed_cleartext_header_t signed_cleartext_header;
     ops_signed_cleartext_body_t	signed_cleartext_body;
+    ops_signed_cleartext_trailer_t signed_cleartext_trailer;
     ops_unarmoured_text_t	unarmoured_text;
     } ops_parser_content_union_t;
 

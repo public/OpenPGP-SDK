@@ -7,7 +7,7 @@
 #ifndef OPS_CRYPTO_H
 #define OPS_CRYPTO_H
 
-#define OPS_MAX_HASH	20
+#define OPS_MAX_HASH	64
 
 typedef struct _ops_hash_t ops_hash_t;
 
@@ -18,6 +18,7 @@ typedef unsigned ops_hash_finish_t(ops_hash_t *hash,unsigned char *out);
 
 struct _ops_hash_t
     {
+    ops_hash_algorithm_t algorithm;
     ops_hash_init_t *init;
     ops_hash_add_t *add;
     ops_hash_finish_t *finish;
@@ -28,8 +29,11 @@ void ops_crypto_init(void);
 void ops_crypto_finish(void);
 void ops_hash_md5(ops_hash_t *hash);
 void ops_hash_sha1(ops_hash_t *hash);
+void ops_hash_any(ops_hash_t *hash,ops_hash_algorithm_t alg);
+ops_hash_algorithm_t ops_hash_algorithm_from_text(const char *hash);
+unsigned ops_hash_size(ops_hash_algorithm_t alg);
 
-void hash_add_int(ops_hash_t *hash,unsigned n,unsigned length);
+void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length);
 
 ops_boolean_t ops_dsa_verify(const unsigned char *hash,size_t hash_length,
 			     const ops_dsa_signature_t *sig,

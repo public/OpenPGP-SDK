@@ -121,8 +121,8 @@ static void hash_add_key(ops_hash_t *hash,const ops_public_key_t *key)
     memset(&mem,'\0',sizeof mem);
     ops_build_public_key(&mem,key,ops_false);
 
-    hash_add_int(hash,0x99,1);
-    hash_add_int(hash,mem.length,2);
+    ops_hash_add_int(hash,0x99,1);
+    ops_hash_add_int(hash,mem.length,2);
     hash->add(hash,mem.buf,mem.length);
 
     ops_memory_release(&mem);
@@ -131,20 +131,7 @@ static void hash_add_key(ops_hash_t *hash,const ops_public_key_t *key)
 static void init_signature(ops_hash_t *hash,const ops_signature_t *sig,
 			   const ops_public_key_t *key)
     {
-    switch(sig->hash_algorithm)
-	{
-    case OPS_HASH_MD5:
-	ops_hash_md5(hash);
-	break;
-
-    case OPS_HASH_SHA1:
-	ops_hash_sha1(hash);
-	break;
-
-    default:
-	assert(0);
-	}
-
+    ops_hash_any(hash,sig->hash_algorithm);
     hash->init(hash);
     hash_add_key(hash,key);
     }
@@ -155,40 +142,38 @@ static void hash_add_trailer(ops_hash_t *hash,const ops_signature_t *sig,
     {
     if(sig->version == OPS_SIG_V4)
 	{
-	hash->add(hash,raw_packet+sig->v4_hashed_data_start,
-		  sig->v4_hashed_data_length);
-	hash_add_int(hash,sig->version,1);
-	hash_add_int(hash,0xff,1);
-	hash_add_int(hash,sig->v4_hashed_data_length,4);
+	if(raw_packet)
+	    hash->add(hash,raw_packet+sig->v4_hashed_data_start,
+		      sig->v4_hashed_data_length);
+	ops_hash_add_int(hash,sig->version,1);
+	ops_hash_add_int(hash,0xff,1);
+	ops_hash_add_int(hash,sig->v4_hashed_data_length,4);
 	}
     else
 	{
-	hash_add_int(hash,sig->type,1);
-	hash_add_int(hash,sig->creation_time,4);
+	ops_hash_add_int(hash,sig->type,1);
+	ops_hash_add_int(hash,sig->creation_time,4);
 	}
     }
 
-static ops_boolean_t check_signature(ops_hash_t *hash,
+static ops_boolean_t check_signature(const unsigned char *hash,unsigned length,
 				     const ops_signature_t *sig,
 				     const ops_public_key_t *signer)
     {
-    int n;
     ops_boolean_t ret;
-    unsigned char hashout[OPS_MAX_HASH];
 
-    n=hash->finish(hash,hashout);
     printf(" hash=");
     //    hashout[0]=0;
-    hexdump(hashout,n);
+    hexdump(hash,length);
 
     switch(sig->key_algorithm)
 	{
     case OPS_PKA_DSA:
-	ret=ops_dsa_verify(hashout,n,&sig->signature.dsa,&signer->key.dsa);
+	ret=ops_dsa_verify(hash,length,&sig->signature.dsa,&signer->key.dsa);
 	break;
 
     case OPS_PKA_RSA:
-	ret=rsa_verify(sig->hash_algorithm,hashout,n,&sig->signature.rsa,
+	ret=rsa_verify(sig->hash_algorithm,hash,length,&sig->signature.rsa,
 		       &signer->key.rsa);
 	break;
 
@@ -199,13 +184,25 @@ static ops_boolean_t check_signature(ops_hash_t *hash,
     return ret;
     }
 
+static ops_boolean_t hash_and_check_signature(ops_hash_t *hash,
+					      const ops_signature_t *sig,
+					      const ops_public_key_t *signer)
+    {
+    int n;
+    unsigned char hashout[OPS_MAX_HASH];
+
+    n=hash->finish(hash,hashout);
+
+    return check_signature(hashout,n,sig,signer);
+    }
+
 static ops_boolean_t finalise_signature(ops_hash_t *hash,
 					const ops_signature_t *sig,
 					const ops_public_key_t *signer,
 					const unsigned char *raw_packet)
     {
     hash_add_trailer(hash,sig,signer,raw_packet);
-    return check_signature(hash,sig,signer);
+    return hash_and_check_signature(hash,sig,signer);
     }
 
 ops_boolean_t
@@ -221,8 +218,8 @@ ops_check_certification_signature(const ops_public_key_t *key,
 
     if(sig->version == OPS_SIG_V4)
 	{
-	hash_add_int(&hash,0xb4,1);
-	hash_add_int(&hash,strlen(id->user_id),4);
+	ops_hash_add_int(&hash,0xb4,1);
+	ops_hash_add_int(&hash,strlen(id->user_id),4);
 	hash.add(&hash,id->user_id,strlen(id->user_id));
 	}
     else
@@ -245,6 +242,18 @@ ops_check_subkey_signature(const ops_public_key_t *key,
 
     return finalise_signature(&hash,sig,signer,raw_packet);
     }
+
+ops_boolean_t
+ops_check_hash_signature(ops_hash_t *hash,
+			 const ops_signature_t *sig,
+			 const ops_public_key_t *signer)
+    {
+    if(sig->hash_algorithm != hash->algorithm)
+	return ops_false;
+
+    return finalise_signature(hash,sig,signer,NULL);
+    }
+    
 
 /**
  * \ingroup Create
@@ -274,8 +283,8 @@ void ops_signature_start(ops_create_signature_t *sig,
 
     init_signature(&sig->hash,&sig->sig,key);
 
-    hash_add_int(&sig->hash,0xb4,1);
-    hash_add_int(&sig->hash,strlen(id->user_id),4);
+    ops_hash_add_int(&sig->hash,0xb4,1);
+    ops_hash_add_int(&sig->hash,strlen(id->user_id),4);
     sig->hash.add(&sig->hash,id->user_id,strlen(id->user_id));
 
     // since this has subpackets and stuff, we have to buffer the whole
@@ -336,9 +345,9 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
 
     // add the packet from version number to end of hashed subpackets
     sig->hash.add(&sig->hash,sig->mem.buf,sig->unhashed_count_offset);
-    hash_add_int(&sig->hash,sig->sig.version,1);
-    hash_add_int(&sig->hash,0xff,1);
-    hash_add_int(&sig->hash,sig->hashed_data_length,4);
+    ops_hash_add_int(&sig->hash,sig->sig.version,1);
+    ops_hash_add_int(&sig->hash,0xff,1);
+    ops_hash_add_int(&sig->hash,sig->hashed_data_length,4);
 
     // XXX: technically, we could figure out how big the signature is
     // and write it directly to the output instead of via memory.

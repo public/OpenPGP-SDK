@@ -6,6 +6,7 @@
 #include "lists.h"
 #include "ops_errors.h"
 #include "armour.h"
+#include "crypto.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -206,6 +207,14 @@ static void print_block(const char *name,const unsigned char *str,
     else
 	print_indent();
     printf("<<<<< %s <<<<<\n",name);
+    }
+
+static void print_headers(const ops_headers_t *headers)
+    {
+    int n;
+
+    for(n=0 ; n < headers->nheaders ; ++n)
+	printf("%s=%s\n",headers->headers[n].key,headers->headers[n].value);
     }
 
 static void print_unsigned_int(char *name, unsigned int val)
@@ -770,12 +779,20 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
 	print_tagname("SIGNED CLEARTEXT HEADER");
+	print_headers(&content->signed_cleartext_header.headers);
 	break;
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
 	print_tagname("SIGNED CLEARTEXT BODY");
 	print_block("signed cleartext",content->signed_cleartext_body.data,
 		    content->signed_cleartext_body.length);
+	break;
+
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
+	print_tagname("SIGNED CLEARTEXT TRAILER");
+	printf("hash algorithm: %d\n",
+	       content->signed_cleartext_trailer.hash->algorithm);
+	printf("\n");
 	break;
 
     case OPS_PTAG_CT_UNARMOURED_TEXT:

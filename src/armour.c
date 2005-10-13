@@ -1,5 +1,6 @@
 #include "armour.h"
 #include "util.h"
+#include "crypto.h"
 
 #include <string.h>
 #include <assert.h>
@@ -33,8 +34,7 @@ typedef struct
     unsigned char *pushed_back;
     unsigned npushed_back;
     // armoured block headers
-    ops_armoured_header_value_t **headers;
-    unsigned nheaders;
+    ops_headers_t headers;
     } dearmour_arg_t;
 
 // FIXME: move these to a common header
@@ -120,10 +120,57 @@ static int unarmoured_read_char(dearmour_arg_t *arg,ops_boolean_t skip)
     return c;
     }
 
+const char *ops_find_header(ops_headers_t *headers,const char *key)
+    {
+    int n;
+
+    for(n=0 ; n < headers->nheaders ; ++n)
+	if(!strcmp(headers->headers[n].key,key))
+	    return headers->headers[n].value;
+    return NULL;
+    }
+
+void ops_dup_headers(ops_headers_t *dest,const ops_headers_t *src)
+    {
+    int n;
+
+    dest->headers=malloc(src->nheaders*sizeof *dest->headers);
+    dest->nheaders=src->nheaders;
+
+    for(n=0 ; n < src->nheaders ; ++n)
+	{
+	dest->headers[n].key=strdup(src->headers[n].key);
+	dest->headers[n].value=strdup(src->headers[n].value);
+	}
+    }
+
+/* Note that this skips CRs so implementations always see just
+   straight LFs as line terminators */
 static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
     {
     ops_parser_content_t content;
-    ops_signed_cleartext_body_t *body=&content.content.signed_cleartext_body;
+    ops_parser_content_t content2;
+    ops_signed_cleartext_body_t	*body=&content.content.signed_cleartext_body;
+    ops_signed_cleartext_trailer_t *trailer
+	=&content2.content.signed_cleartext_trailer;
+    const char *hashstr;
+    ops_hash_t *hash;
+
+    hash=malloc(sizeof *hash);
+    hashstr=ops_find_header(&arg->headers,"Hash");
+    if(hashstr)
+	{
+	ops_hash_algorithm_t alg;
+
+	alg=ops_hash_algorithm_from_text(hashstr);
+	if(alg == OPS_HASH_UNKNOWN)
+	    ERR("Unknown hash algorithm");
+	ops_hash_any(hash,alg);
+	}
+    else
+	ops_hash_md5(hash);
+
+    hash->init(hash);
 
     body->length=0;
     for( ; ; )
@@ -131,7 +178,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 	int c;
 	unsigned count;
 
-	if((c=read_char(arg,ops_false)) < 0)
+	if((c=read_char(arg,ops_true)) < 0)
 	    return OPS_R_EARLY_EOF;
 	if(arg->prev_nl && c == '-')
 	    {
@@ -156,6 +203,16 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 	    if((c=read_char(arg,ops_false)) < 0)
 		return OPS_R_EARLY_EOF;
 	    }
+	if(c == '\n' && body->length)
+	    {
+	    assert(memchr(body->data+1,'\n',body->length-1) == NULL);
+	    if(body->data[0] == '\n')
+		hash->add(hash,"\r",1);
+	    hash->add(hash,body->data,body->length);
+	    CB(OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY,&content);
+	    body->length=0;
+	    }
+		
 	body->data[body->length++]=c;
 	if(body->length == sizeof body->data)
 	    {
@@ -164,8 +221,14 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 	    }
 	}
 
-    if(body->length)
-	CB(OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY,&content);
+    assert(body->data[0] == '\n');
+    assert(body->length == 1);
+    // and we don't send that one character, because its part of the trailer.
+    //    if(body->length)
+    //	CB(OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY,&content);
+
+    trailer->hash=hash;
+    CB(OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER,&content2);
 
     return OPS_R_OK;
     }
@@ -173,14 +236,12 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 static void add_header(dearmour_arg_t *arg,const char *key,const char
 		       *value)
     {
-    ops_armoured_header_value_t *header;
-
-    header=malloc(sizeof *header);
-    header->key=strdup(key);
-    header->value=strdup(value);
-
-    arg->headers=realloc(arg->headers,(arg->nheaders+1)*sizeof *arg->headers);
-    arg->headers[arg->nheaders++]=header;
+    arg->headers.headers=realloc(arg->headers.headers,
+				 (arg->headers.nheaders+1)
+				 *sizeof *arg->headers.headers);
+    arg->headers.headers[arg->headers.nheaders].key=strdup(key);
+    arg->headers.headers[arg->headers.nheaders].value=strdup(value);
+    ++arg->headers.nheaders;
     }
 
 static ops_reader_ret_t parse_headers(dearmour_arg_t *arg)
@@ -435,6 +496,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	char buf[1024];
 	int c;
 
+	flush(arg);
 	switch(arg->state)
 	    {
 	case OUTSIDE_BLOCK:
@@ -500,7 +562,10 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	    if(!strcmp(buf,"BEGIN PGP SIGNED MESSAGE"))
 		{
 		ops_reader_ret_t ret;
+
+		ops_dup_headers(&content.content.signed_cleartext_header.headers,&arg->headers);
 		CB(OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER,&content);
+
 		ret=process_dash_escaped(arg);
 		if(ret != OPS_R_OK)
 		    return ret;

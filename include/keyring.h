@@ -25,5 +25,7 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 void ops_key_data_free(ops_key_data_t *key);
 void ops_keyring_free(ops_keyring_t *keyring);
 void ops_dump_keyring(const ops_keyring_t *keyring);
+const ops_public_key_t *
+ops_get_public_key_from_data(const ops_key_data_t *data);
 
 #endif

@@ -55,8 +55,8 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
 	ops_hash_sha1(&sha1);
 	sha1.init(&sha1);
 
-	hash_add_int(&sha1,0x99,1);
-	hash_add_int(&sha1,mem.length,2);
+	ops_hash_add_int(&sha1,0x99,1);
+	ops_hash_add_int(&sha1,mem.length,2);
 	sha1.add(&sha1,mem.buf,mem.length);
 	sha1.finish(&sha1,fp->fingerprint);
 	fp->length=20;

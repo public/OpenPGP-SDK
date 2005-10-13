@@ -17,6 +17,10 @@ ops_check_subkey_signature(const ops_public_key_t *key,
 			   const ops_signature_t *sig,
 			   const ops_public_key_t *signer,
 			   const unsigned char *raw_packet);
+ops_boolean_t
+ops_check_hash_signature(ops_hash_t *hash,
+			 const ops_signature_t *sig,
+			 const ops_public_key_t *signer);
 void ops_signature_start(ops_create_signature_t *sig,
 			 const ops_public_key_t *key,
 			 const ops_user_id_t *id,ops_sig_type_t type);
