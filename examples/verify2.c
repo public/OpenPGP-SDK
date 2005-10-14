@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include <assert.h>
 
 const char *pname;
 
@@ -34,9 +35,13 @@ callback(const ops_parser_content_t *content_,void *arg_)
     switch(content_->tag)
 	{
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
-	free(signed_data);
-	signed_data=NULL;
-	length=0;
+	if(signed_data)
+	    {
+	    free(signed_data);
+	    signed_data=NULL;
+	    length=0;
+	    }
+	assert(length == 0);
 	break;
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
@@ -64,8 +69,10 @@ callback(const ops_parser_content_t *content_,void *arg_)
 				    ops_get_public_key_from_data(signer)))
 	    {
 	    puts("Good signature...\n");
-	    fputs(signed_data,stdout);
+	    fflush(stdout);
+	    write(1,signed_data,length);
 	    free(signed_data);
+	    signed_data=NULL;
 	    length=0;
 	    }
 	else
@@ -174,7 +181,12 @@ int main(int argc,char **argv)
 
     ops_parse(&opt);
 
-    free(signed_data);
+    if(armour)
+	ops_pop_dearmour(&opt);
+
+    if(signed_data)
+	free(signed_data);
+
     ops_keyring_free(&keyring);
     ops_finish();
 

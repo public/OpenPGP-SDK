@@ -1,2 +1,6 @@
 %HAVE_ALLOCA_H%
 #define TIME_T_FMT	%TIME_T_FMT%
+
+#ifdef DMALLOC
+# include <dmalloc.h>
+#endif

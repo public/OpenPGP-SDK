@@ -4,12 +4,10 @@
  *
  */
 
+#include "configure.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef DMALLOC
-# include <dmalloc.h>
-#endif
 
 #include "packet-show.h"
 #include <util.h>

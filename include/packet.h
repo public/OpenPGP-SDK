@@ -5,6 +5,8 @@
 #ifndef OPS_PACKET_H
 #define OPS_PACKET_H
 
+#include "configure.h"
+
 #include <time.h>
 #include <openssl/bn.h>
 #include "types.h"

@@ -1,6 +1,7 @@
 /** \file
  */
 
+#include "configure.h"
 #include "crypto.h"
 #include <openssl/md5.h>
 #include <openssl/sha.h>
@@ -9,10 +10,6 @@
 #include <openssl/err.h>
 #include <assert.h>
 #include <stdlib.h>
-
-#ifdef DMALLOC
-# include <dmalloc.h>
-#endif
 
 static void md5_init(ops_hash_t *hash)
     {

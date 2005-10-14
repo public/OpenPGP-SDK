@@ -274,7 +274,8 @@ ops_check_subkey_signature(const ops_public_key_t *key,
  * \param hash A hash structure of appropriate type that has been fed
  * the material to be signed. This MUST NOT have been finalised.
  * \param sig The signature to be verified.
- * \param signer The public key of the signer.  */
+ * \param signer The public key of the signer.
+ */
 ops_boolean_t
 ops_check_hash_signature(ops_hash_t *hash,
 			 const ops_signature_t *sig,

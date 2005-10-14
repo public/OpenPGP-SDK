@@ -13,10 +13,6 @@
 # include <alloca.h>
 #endif
 
-#ifdef DMALLOC
-# include <dmalloc.h>
-#endif
-
 void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
     {
     if(key->version == 2 || key->version == 3)

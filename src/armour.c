@@ -1,3 +1,4 @@
+#include "configure.h"
 #include "armour.h"
 #include "util.h"
 #include "crypto.h"
@@ -76,7 +77,12 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
 		}
 	    }
 	else if((ret=arg->reader(c,&length,0,arg->reader_arg)) != OPS_R_OK)
+	    {
+	    arg->opt->reader=reader;
+	    arg->opt->reader_arg=arg;
+
 	    return -1;
+	    }
 	}
     while(skip && c[0] == '\r');
 
@@ -683,3 +689,14 @@ void ops_push_dearmour(ops_parse_options_t *opt)
     opt->reader=armoured_data_reader;
     opt->reader_arg=arg;
     }
+
+void ops_pop_dearmour(ops_parse_options_t *opt)
+    {
+    dearmour_arg_t *arg=opt->reader_arg;
+
+    opt->reader_arg=arg->reader_arg;
+    opt->reader=arg->reader;
+
+    free(arg);
+    }
+

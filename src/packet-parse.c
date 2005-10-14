@@ -17,10 +17,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#ifdef DMALLOC
-# include <dmalloc.h>
-#endif
- 
 /**
  * limited_read_data reads the specified amount of the subregion's data 
  * into a data_t structure
@@ -1940,7 +1936,7 @@ int ops_parse_errs(ops_parse_options_t *opt, ops_ulong_list_t *errs)
 
     /* can only handle ops_reader_fd for now */
 
-    if (opt->reader!=ops_reader_fd)
+    if (opt->reader != ops_reader_fd)
 	{
 	printf("ops_parse_errs: can only handle ops_reader_fd\n");
 	return 0;
