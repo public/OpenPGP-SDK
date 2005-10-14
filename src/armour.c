@@ -579,6 +579,8 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	    else
 		{
 		content.content.armour_header.type=buf;
+		content.content.armour_header.headers=arg->headers;
+		memset(&arg->headers,'\0',sizeof arg->headers);
 		CB(OPS_PTAG_CT_ARMOUR_HEADER,&content);
 		base64(arg);
 		}
@@ -656,6 +658,8 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		if((ret=parse_headers(arg)) != OPS_R_OK)
 		    return ret;
 		content.content.armour_header.type=buf;
+		content.content.armour_header.headers=arg->headers;
+		memset(&arg->headers,'\0',sizeof arg->headers);
 		CB(OPS_PTAG_CT_ARMOUR_HEADER,&content);
 		base64(arg);
 		}

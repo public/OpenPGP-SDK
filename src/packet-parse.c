@@ -562,7 +562,6 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
-    case OPS_PTAG_CT_ARMOUR_HEADER:
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
     case OPS_PTAG_CT_UNARMOURED_TEXT:
@@ -571,6 +570,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
 	ops_headers_free(&c->content.signed_cleartext_header.headers);
+	break;
+
+    case OPS_PTAG_CT_ARMOUR_HEADER:
+	ops_headers_free(&c->content.armour_header.headers);
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -1938,7 +1941,7 @@ int ops_parse_errs(ops_parse_options_t *opt, ops_ulong_list_t *errs)
 
     if (opt->reader != ops_reader_fd)
 	{
-	printf("ops_parse_errs: can only handle ops_reader_fd\n");
+	fprintf(stderr,"ops_parse_errs: can only handle ops_reader_fd\n");
 	return 0;
 	}
 

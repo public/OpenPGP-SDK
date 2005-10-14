@@ -689,6 +689,7 @@ typedef struct
 typedef struct
     {
     const char *type;
+    ops_headers_t headers;
     } ops_armour_header_t;
 
 typedef struct
