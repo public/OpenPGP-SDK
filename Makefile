@@ -40,3 +40,6 @@ tags:
 
 test::
 	cd examples && make test
+
+doc::
+	cd doc && make

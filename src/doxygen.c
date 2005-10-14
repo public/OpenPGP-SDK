@@ -63,7 +63,12 @@
  */
 /**
  * @defgroup Utils Utils
- * These functions are of general utility
+ * These functions are of general utility.
+ * @ingroup PublicAPI
+ */
+/**
+ * @defgroup Verify Verify
+ * These functions are for verifying signatures.
  * @ingroup PublicAPI
  */
 /**

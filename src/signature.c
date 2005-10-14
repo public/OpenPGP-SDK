@@ -205,6 +205,17 @@ static ops_boolean_t finalise_signature(ops_hash_t *hash,
     return hash_and_check_signature(hash,sig,signer);
     }
 
+/**
+ * \ingroup Verify
+ *
+ * Verify a certification signature.
+ *
+ * \param key The public key that was signed.
+ * \param id The user ID that was signed.
+ * \param sig The signature.
+ * \param signer The public key of the signer.
+ * \param raw_packet The raw signature packet.
+ */
 ops_boolean_t
 ops_check_certification_signature(const ops_public_key_t *key,
 				  const ops_user_id_t *id,
@@ -228,6 +239,17 @@ ops_check_certification_signature(const ops_public_key_t *key,
     return finalise_signature(&hash,sig,signer,raw_packet);
     }
 
+/**
+ * \ingroup Verify
+ *
+ * Verify a subkey signature.
+ *
+ * \param key The public key whose subkey was signed.
+ * \param subkey The subkey of the public key that was signed.
+ * \param sig The signature.
+ * \param signer The public key of the signer.
+ * \param raw_packet The raw signature packet.
+ */
 ops_boolean_t
 ops_check_subkey_signature(const ops_public_key_t *key,
 			   const ops_public_key_t *subkey,
@@ -243,6 +265,16 @@ ops_check_subkey_signature(const ops_public_key_t *key,
     return finalise_signature(&hash,sig,signer,raw_packet);
     }
 
+/**
+ * \ingroup Verify
+ *
+ * Verify a signature on a hash (the hash will have already been fed
+ * the material that was being signed, for example signed cleartext).
+ *
+ * \param hash A hash structure of appropriate type that has been fed
+ * the material to be signed. This MUST NOT have been finalised.
+ * \param sig The signature to be verified.
+ * \param signer The public key of the signer.  */
 ops_boolean_t
 ops_check_hash_signature(ops_hash_t *hash,
 			 const ops_signature_t *sig,
