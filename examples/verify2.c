@@ -73,6 +73,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	    write(1,signed_data,length);
 	    free(signed_data);
 	    signed_data=NULL;
+	    free(signed_hash);
+	    signed_hash=NULL;
 	    length=0;
 	    }
 	else

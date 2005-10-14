@@ -543,6 +543,12 @@ void ops_headers_free(ops_headers_t *headers)
     headers->headers=NULL;
     }
 
+void ops_signed_cleartext_trailer_free(ops_signed_cleartext_trailer_t *trailer)
+    {
+    free(trailer->hash);
+    trailer->hash=NULL;
+    }
+
 /*! Free any memory allocated when parsing the packet content */
 void ops_parser_content_free(ops_parser_content_t *c)
     {
@@ -561,11 +567,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_SS_REVOCATION_KEY:
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
-    case OPS_PTAG_CT_SIGNATURE_HEADER:
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
-    case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
     case OPS_PTAG_CT_UNARMOURED_TEXT:
     case OPS_PTAG_CT_ARMOUR_TRAILER:
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
 	break;
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
@@ -574,6 +579,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 
     case OPS_PTAG_CT_ARMOUR_HEADER:
 	ops_headers_free(&c->content.armour_header.headers);
+	break;
+
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
+	ops_signed_cleartext_trailer_free(&c->content.signed_cleartext_trailer);
 	break;
 
     case OPS_PTAG_CT_TRUST:
