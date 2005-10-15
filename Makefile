@@ -6,18 +6,18 @@
 #
 SUBDIRS=src examples
 
-all: Makefiles include/configure.h headers default
+all: Makefiles include/openpgpsdk/configure.h headers default
 
 headers:
-	cd include && make headers
+	cd include/openpgpsdk && make headers
 
 default:
 	@set -e; for d in $(SUBDIRS); do \
 	(cd $$d; echo "+++ make in $$d"; make; echo "--- $$d"); \
 	done
 
-include/configure.h: include/configure.h.template configure
-	echo re-run configure
+include/openpgpsdk/configure.h: include/openpgpsdk/configure.h.template configure
+	echo re-run configure && exit 1
 
 force_depend:
 	@set -e; for d in $(SUBDIRS); do \

@@ -1,14 +1,13 @@
 /** \file
  */
 
-#include "packet.h"
-#include "crypto.h"
-#include "memory.h"
-#include "create.h"
+#include <openpgpsdk/packet.h>
+#include <openpgpsdk/crypto.h>
+#include <openpgpsdk/create.h>
 #include <assert.h>
 #include <string.h>
 
-#include "configure.h"
+#include <openpgpsdk/configure.h>
 #ifdef HAVE_ALLOCA_H
 # include <alloca.h>
 #endif

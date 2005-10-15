@@ -4,13 +4,13 @@
  *
  */
 
-#include "configure.h"
+#include <openpgpsdk/configure.h>
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "packet-show.h"
-#include <util.h>
+#include <openpgpsdk/packet-show.h>
+#include <openpgpsdk/util.h>
 
 /*
  * Arrays of value->text maps
@@ -197,7 +197,7 @@ static bit_map_t ss_key_server_prefs_map[] =
     { 0x80, "Key holder requests that this key only be modified or updated by the key holder or an administrator of the key server" },
     };
 
-#include "packet-show-cast.h"
+#include <openpgpsdk/packet-show-cast.h>
 
 /*
  * Private functions

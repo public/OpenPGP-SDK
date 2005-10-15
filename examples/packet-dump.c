@@ -1,12 +1,11 @@
-#include "packet.h"
-#include "packet-parse.h"
-#include "packet-show.h"
-#include "configure.h"
-#include "util.h"
-#include "lists.h"
-#include "ops_errors.h"
+#include <openpgpsdk/packet.h>
+#include <openpgpsdk/packet-parse.h>
+#include <openpgpsdk/packet-show.h>
+#include <openpgpsdk/configure.h>
+#include <openpgpsdk/util.h>
+#include <openpgpsdk/errors.h>
 #include <openpgpsdk/armour.h>
-#include "crypto.h"
+#include <openpgpsdk/crypto.h>
 
 #include <unistd.h>
 #include <stdio.h>

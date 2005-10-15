@@ -3,12 +3,11 @@
  */
 
 
-#include "packet.h"
-#include "packet-parse.h"
-#include "util.h"
+#include <openpgpsdk/packet.h>
+#include <openpgpsdk/packet-parse.h>
+#include <openpgpsdk/util.h>
 #include <openpgpsdk/compress.h>
-#include "lists.h"
-#include "ops_errors.h"
+#include <openpgpsdk/errors.h>
 
 #include <assert.h>
 #include <stdarg.h>

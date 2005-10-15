@@ -10,7 +10,7 @@
 #include <time.h>
 #include <openssl/bn.h>
 #include "types.h"
-#include "ops_errors.h"
+#include "errors.h"
 
 /** General-use structure for variable-length data 
  */

@@ -1,8 +1,7 @@
 /** \file
  */
 
-#include "memory.h"
-#include "create.h"
+#include <openpgpsdk/create.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

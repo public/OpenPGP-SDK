@@ -1,8 +1,8 @@
 /** \file
  */
 
-#include "create.h"
-#include "util.h"
+#include <openpgpsdk/create.h>
+#include <openpgpsdk/util.h>
 #include <string.h>
 #include <assert.h>
 

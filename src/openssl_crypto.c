@@ -1,8 +1,8 @@
 /** \file
  */
 
-#include "configure.h"
-#include "crypto.h"
+#include <openpgpsdk/configure.h>
+#include <openpgpsdk/crypto.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/dsa.h>

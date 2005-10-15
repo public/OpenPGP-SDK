@@ -1,8 +1,8 @@
-#include "packet-parse.h"
-#include "keyring.h"
+#include <openpgpsdk/packet-parse.h>
+#include <openpgpsdk/keyring.h>
 #include "keyring_local.h"
-#include "util.h"
-#include "signature.h"
+#include <openpgpsdk/util.h>
+#include <openpgpsdk/signature.h>
 #include <assert.h>
 #include <string.h>
 

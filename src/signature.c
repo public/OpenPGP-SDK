@@ -1,10 +1,9 @@
 /** \file
  */
 
-#include "signature.h"
-#include "crypto.h"
-#include "memory.h"
-#include "create.h"
+#include <openpgpsdk/signature.h>
+#include <openpgpsdk/crypto.h>
+#include <openpgpsdk/create.h>
 #include <assert.h>
 #include <string.h>
 

@@ -1,5 +1,5 @@
-#include "create.h"
-#include "util.h"
+#include <openpgpsdk/create.h>
+#include <openpgpsdk/util.h>
 #include <stdio.h>
 
 int main(int argc,char **argv)

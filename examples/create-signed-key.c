@@ -1,7 +1,7 @@
-#include "create.h"
-#include "util.h"
-#include "signature.h"
-#include "packet-parse.h"
+#include <openpgpsdk/create.h>
+#include <openpgpsdk/util.h>
+#include <openpgpsdk/signature.h>
+#include <openpgpsdk/packet-parse.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>

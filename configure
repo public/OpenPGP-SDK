@@ -100,7 +100,7 @@ create('examples/.depend');
 
 fileSubst('src/Makefile','#','');
 fileSubst('examples/Makefile','#','');
-fileSubst('include/configure.h','/*','*/');
+fileSubst('include/openpgpsdk/configure.h','/*','*/');
 
 print "make clean\n";
 system 'make clean' || exit;

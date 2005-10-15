@@ -1,7 +1,7 @@
 /** \file
  */
 
-#include "crypto.h"
+#include <openpgpsdk/crypto.h>
 #include <assert.h>
 
 void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length)

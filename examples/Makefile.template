@@ -38,11 +38,11 @@ clean:
 	rm -f packet-dump verify create-key *.o
 	rm -f TAGS
 
-.depend: *.[ch]
-	$(CC) $(CFLAGS) -E -MM *.c > .depend
+.depend: *.[ch] ../include/openpgpsdk/*.h
+	$(CC) $(CFLAGS) -E -M *.c > .depend
 
 force_depend:
-	$(CC) $(CFLAGS) -E -MM *.c > .depend
+	$(CC) $(CFLAGS) -E -M *.c > .depend
 
 Makefile: Makefile.template ../configure
 	echo Makefile is older than templates, rerun configure.

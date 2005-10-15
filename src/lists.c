@@ -4,7 +4,7 @@
  * Set of functions to manage a dynamic list
  */
 
-#include "lists.h"
+#include <openpgpsdk/lists.h>
 
 #include <stdlib.h>
 

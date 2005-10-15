@@ -1,12 +1,12 @@
 /** \file
  */
 
-#include "packet.h"
-#include "packet-parse.h"
-#include "util.h"
-#include "openpgpsdk/accumulate.h"
+#include <openpgpsdk/packet.h>
+#include <openpgpsdk/packet-parse.h>
+#include <openpgpsdk/util.h>
+#include <openpgpsdk/accumulate.h>
 #include "keyring_local.h"
-#include "signature.h"
+#include <openpgpsdk/signature.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

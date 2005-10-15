@@ -1,10 +1,10 @@
 /** \file 
  */
 
-#include "util.h"
-#include "packet-parse.h"
-#include "crypto.h"
-#include "create.h"
+#include <openpgpsdk/util.h>
+#include <openpgpsdk/packet-parse.h>
+#include <openpgpsdk/crypto.h>
+#include <openpgpsdk/create.h>
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>

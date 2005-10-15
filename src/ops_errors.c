@@ -1,8 +1,8 @@
 /** \file
  */
 
-#include "ops_errors.h"
-#include "util.h"
+#include <openpgpsdk/errors.h>
+#include <openpgpsdk/util.h>
 #include <stdlib.h>
 
 /** \ingroup Errors

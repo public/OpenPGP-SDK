@@ -1,9 +1,9 @@
-#include "packet.h"
-#include "packet-parse.h"
-#include "util.h"
+#include <openpgpsdk/packet.h>
+#include <openpgpsdk/packet-parse.h>
+#include <openpgpsdk/util.h>
 #include <openpgpsdk/accumulate.h>
-#include "keyring.h"
-#include "validate.h"
+#include <openpgpsdk/keyring.h>
+#include <openpgpsdk/validate.h>
 #include <unistd.h>
 #include <string.h>
 

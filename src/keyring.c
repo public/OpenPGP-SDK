@@ -1,7 +1,7 @@
 /** \file
  */
 
-#include "keyring.h"
+#include <openpgpsdk/keyring.h>
 #include "keyring_local.h"
 #include <stdlib.h>
 #include <string.h>
@@ -55,4 +55,5 @@ void ops_keyring_free(ops_keyring_t *keyring)
 const ops_public_key_t *
 ops_get_public_key_from_data(const ops_key_data_t *data)
     { return &data->pkey; }
+
 

@@ -1,7 +1,7 @@
-#include "configure.h"
+#include <openpgpsdk/configure.h>
 #include <openpgpsdk/armour.h>
-#include "util.h"
-#include "crypto.h"
+#include <openpgpsdk/util.h>
+#include <openpgpsdk/crypto.h>
 
 #include <string.h>
 #include <assert.h>
