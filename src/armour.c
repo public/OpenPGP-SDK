@@ -1,5 +1,5 @@
 #include "configure.h"
-#include "armour.h"
+#include <openpgpsdk/armour.h>
 #include "util.h"
 #include "crypto.h"
 

@@ -59,6 +59,8 @@ void ops_fast_create_rsa_public_key(ops_public_key_t *key,time_t time,
 				    BIGNUM *n,BIGNUM *e);
 void ops_create_rsa_public_key(ops_public_key_t *key,time_t time,
 			       const BIGNUM *n,const BIGNUM *e);
+void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
+			  ops_boolean_t make_packet);
 ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
 					  ops_create_options_t *opt);
 ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,

@@ -5,7 +5,7 @@
 #include "util.h"
 #include "lists.h"
 #include "ops_errors.h"
-#include "armour.h"
+#include <openpgpsdk/armour.h>
 #include "crypto.h"
 
 #include <unistd.h>

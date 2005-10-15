@@ -6,7 +6,7 @@
 #include "packet.h"
 #include "packet-parse.h"
 #include "util.h"
-#include "compress.h"
+#include <openpgpsdk/compress.h>
 #include "lists.h"
 #include "ops_errors.h"
 

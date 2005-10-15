@@ -1,7 +1,7 @@
 /** \file
  */
 
-#include "compress.h"
+#include <openpgpsdk/compress.h>
 #include <zlib.h>
 #include <assert.h>
 #include <string.h>

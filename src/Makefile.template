@@ -8,7 +8,7 @@ LIBS=libops.a -lcrypto -lz $(DM_LIB)
 
 all: Makefile headers .depend libops.a
 
-LIBOBJS = packet-parse.o util.o openssl_crypto.o accumulate.o build.o \
+LIBOBJS = packet-parse.o util.o openssl_crypto.o accumulate.o \
 	memory.o fingerprint.o hash.o keyring.o signature.o compress.o \
 	packet-show.o create.o validate.o lists.o ops_errors.o armour.o
 

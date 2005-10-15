@@ -1,7 +1,7 @@
 #include "packet.h"
 #include "packet-parse.h"
 #include "util.h"
-#include "accumulate.h"
+#include <openpgpsdk/accumulate.h>
 #include "keyring.h"
 #include "validate.h"
 #include <unistd.h>
