@@ -1,6 +1,6 @@
 /** \file 
  */
-
+ 
 #include <openpgpsdk/util.h>
 #include <openpgpsdk/packet-parse.h>
 #include <openpgpsdk/crypto.h>
