@@ -3,6 +3,7 @@
 
 #include <openpgpsdk/crypto.h>
 #include <assert.h>
+#include <string.h>
 
 void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length)
     {
@@ -58,4 +59,3 @@ ops_hash_algorithm_t ops_hash_algorithm_from_text(const char *hash)
 
     return OPS_HASH_UNKNOWN;
     }
-
