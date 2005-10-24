@@ -1124,9 +1124,9 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	break;
 
     case OPS_PTAG_SS_REVOCABLE:
-	if (!ops_limited_read (bool, 1, &subregion, opt))
+	if(!ops_limited_read(bool,1,&subregion,opt))
 	    return 0;
-	C.ss_revocable.revocable = !!bool;
+	C.ss_revocable.revocable=!!bool;
 	break;
 
     case OPS_PTAG_SS_ISSUER_KEY_ID:
@@ -1138,38 +1138,38 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
-	if (!read_data(&C.ss_preferred_ska.data,&subregion,opt))
+	if(!read_data(&C.ss_preferred_ska.data,&subregion,opt))
 	    return 0;
 	break;
 			    	
     case OPS_PTAG_SS_PREFERRED_HASH:
-	if (!read_data(&C.ss_preferred_hash.data,&subregion,opt))
+	if(!read_data(&C.ss_preferred_hash.data,&subregion,opt))
 	    return 0;
 	break;
 			    	
     case OPS_PTAG_SS_PREFERRED_COMPRESSION:
-	if (!read_data(&C.ss_preferred_compression.data,&subregion,opt))
+	if(!read_data(&C.ss_preferred_compression.data,&subregion,opt))
 	    return 0;
 	break;
 			    	
     case OPS_PTAG_SS_PRIMARY_USER_ID:
-	if (!ops_limited_read (bool, 1, &subregion, opt))
+	if(!ops_limited_read (bool,1,&subregion,opt))
 	    return 0;
 	C.ss_primary_user_id.primary_user_id = !!bool;
 	break;
  
     case OPS_PTAG_SS_KEY_FLAGS:
-	if (!read_data(&C.ss_key_flags.data,&subregion,opt))
+	if(!read_data(&C.ss_key_flags.data,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_KEY_SERVER_PREFS:
-	if (!read_data(&C.ss_key_server_prefs.data,&subregion,opt))
+	if(!read_data(&C.ss_key_server_prefs.data,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_FEATURES:
-	if (!read_data(&C.ss_features.data,&subregion,opt))
+	if(!read_data(&C.ss_features.data,&subregion,opt))
 	    return 0;
 	break;
 
@@ -1179,56 +1179,34 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	break;
 
     case OPS_PTAG_SS_NOTATION_DATA:
-
-	/* 4 octets of flags */
-
-	if (!limited_read_data(&C.ss_notation_data.flags, 4,
-			      &subregion, opt))
+	if(!limited_read_data(&C.ss_notation_data.flags,4,&subregion,opt))
 	    return 0;
-
-	/* 2 octets of name length */
-
-	if (!limited_read_size_t_scalar(&C.ss_notation_data.name.len, 2,
-					&subregion, opt))
+	if(!limited_read_size_t_scalar(&C.ss_notation_data.name.len,2,
+				       &subregion,opt))
 	    return 0;
-
-	/* 2 octets of value length */
-
-	if (!limited_read_size_t_scalar(&C.ss_notation_data.value.len, 2,
-					&subregion, opt))
+	if(!limited_read_size_t_scalar(&C.ss_notation_data.value.len,2,
+				       &subregion,opt))
 	    return 0;
-
-	/* name */
-
-	if (!limited_read_data(&C.ss_notation_data.name,
-		       C.ss_notation_data.name.len,
-		       &subregion, opt))
+	if(!limited_read_data(&C.ss_notation_data.name,
+			      C.ss_notation_data.name.len,&subregion,opt))
 	    return 0;
-
-	/* value  */
-
-	if (!limited_read_data(&C.ss_notation_data.value,
-		       C.ss_notation_data.value.len, 
-		       &subregion, opt))
+	if(!limited_read_data(&C.ss_notation_data.value,
+			      C.ss_notation_data.value.len,&subregion,opt))
 	    return 0;
-
 	break;
 
     case OPS_PTAG_SS_POLICY_URL:
-	if (!read_string(&C.ss_policy_url.text,
-		       &subregion, opt))
+	if(!read_string(&C.ss_policy_url.text,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_REGEXP:
-	if (!read_string(&C.ss_regexp.text,
-		       &subregion, opt))
+	if(!read_string(&C.ss_regexp.text,&subregion, opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_PREFERRED_KEY_SERVER:
-	if (!read_string(&C.ss_preferred_key_server.text,
-		       &subregion, opt))
+	if(!read_string(&C.ss_preferred_key_server.text,&subregion,opt))
 	    return 0;
 	break;
 
@@ -1243,48 +1221,43 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     case OPS_PTAG_SS_USERDEFINED08:
     case OPS_PTAG_SS_USERDEFINED09:
     case OPS_PTAG_SS_USERDEFINED10:
-	if (!read_data(&C.ss_userdefined.data,&subregion,opt))
+	if(!read_data(&C.ss_userdefined.data,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_RESERVED:
-	if (!read_data(&C.ss_unknown.data,&subregion,opt))
+	if(!read_data(&C.ss_unknown.data,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_REVOCATION_REASON:
 	/* first byte is the machine-readable code */
-	if (!ops_limited_read(&C.ss_revocation_reason.code, 1,
-			      &subregion, opt))
+	if(!ops_limited_read(&C.ss_revocation_reason.code,1,&subregion,opt))
 	    return 0;
 
 	/* the rest is a human-readable UTF-8 string */
-
-	if (!read_string(&C.ss_revocation_reason.text,
-		       &subregion, opt))
+	if(!read_string(&C.ss_revocation_reason.text,&subregion,opt))
 	    return 0;
 	break;
 
     case OPS_PTAG_SS_REVOCATION_KEY:
- 
 	/* octet 0 = class. Bit 0x80 must be set */
-	if (!ops_limited_read (&C.ss_revocation_key.class, 1, &subregion, opt))
+	if(!ops_limited_read (&C.ss_revocation_key.class,1,&subregion,opt))
 	    return 0;
-	if (!(C.ss_revocation_key.class & 0x80))
+	if(!(C.ss_revocation_key.class&0x80))
 	    {
-	    printf
-		("Warning: OPS_PTAG_SS_REVOCATION_KEY class: Bit 0x80 should be set\n");
+	    printf("Warning: OPS_PTAG_SS_REVOCATION_KEY class: "
+		   "Bit 0x80 should be set\n");
 	    return 0;
 	    }
  
 	/* octet 1 = algid */
-	if (!ops_limited_read (&C.ss_revocation_key.algid, 1, &subregion, opt))
+	if(!ops_limited_read(&C.ss_revocation_key.algid,1,&subregion,opt))
 	    return 0;
  
 	/* octets 2-21 = fingerprint */
-	if (!ops_limited_read
-	    (&C.ss_revocation_key.fingerprint[0], 20, &subregion,
-	     opt))
+	if(!ops_limited_read(&C.ss_revocation_key.fingerprint[0],20,&subregion,
+			     opt))
 	    return 0;
 	break;
  
