@@ -998,9 +998,11 @@ static int parse_v3_signature(ops_region_t *region,ops_parse_options_t *opt)
 
     if(!limited_read_time(&C.signature.creation_time,region,opt))
 	return 0;
+    C.signature.creation_time_set=ops_true;
 
-    if(!ops_limited_read(C.signature.signer_id,8,region,opt))
+    if(!ops_limited_read(C.signature.signer_id,OPS_KEY_ID_SIZE,region,opt))
 	return 0;
+    C.signature.signer_id_set=ops_true;
 
     if(!ops_limited_read(c,1,region,opt))
 	return 0;
@@ -1108,6 +1110,11 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     case OPS_PTAG_SS_KEY_EXPIRATION_TIME:
 	if(!limited_read_time(&C.ss_time.time,&subregion,opt))
 	    return 0;
+	if(content.tag == OPS_PTAG_SS_CREATION_TIME)
+	    {
+	    sig->creation_time=C.ss_time.time;
+	    sig->creation_time_set=ops_true;
+	    }
 	break;
 
     case OPS_PTAG_SS_TRUST:
@@ -1127,6 +1134,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 			     &subregion,opt))
 	    return 0;
 	memcpy(sig->signer_id,C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE);
+	sig->signer_id_set=ops_true;
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
@@ -1407,6 +1415,7 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_options_t *opt,
     unsigned char c[1];
     ops_parser_content_t content;
 
+    memset(&C.signature,'\0',sizeof C.signature);
     C.signature.version=OPS_SIG_V4;
     C.signature.v4_hashed_data_start=v4_hashed_data_start;
 

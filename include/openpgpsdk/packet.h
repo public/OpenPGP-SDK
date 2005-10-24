@@ -490,7 +490,7 @@ typedef struct
     {
     ops_sig_version_t		version;	/*!< signature version number */
     ops_sig_type_t		type;		/*!< signature type value */
-    time_t			creation_time;	/*!< creation time of the signature - only with v3 signatures*/
+    time_t			creation_time;	/*!< creation time of the signature */
     unsigned char		signer_id[OPS_KEY_ID_SIZE];	/*!< Eight-octet key ID of signer*/
     ops_public_key_algorithm_t	key_algorithm;	/*!< public key algorithm number */
     ops_hash_algorithm_t	hash_algorithm;	/*!< hashing algorithm number */
@@ -498,6 +498,8 @@ typedef struct
     ops_signature_union_t	signature;	/*!< signature parameters */
     size_t			v4_hashed_data_start; // only valid if accumulate is set
     size_t			v4_hashed_data_length;
+    ops_boolean_t		creation_time_set:1;
+    ops_boolean_t		signer_id_set:1;
     } ops_signature_t;
 
 /** The raw bytes of a signature subpacket */

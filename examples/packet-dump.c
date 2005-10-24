@@ -706,16 +706,17 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_indent(indent);
 	print_unsigned_int("Signature Version",
 	       content->signature.version);
-	if (content->signature.version == 3) 
+	if (content->signature.creation_time_set) 
 	    print_time("Signature Creation Time", content->signature.creation_time);
 
 	print_string_and_value("Signature Type",
 			       ops_show_sig_type(content->signature.type),
 			       content->signature.type);
 
-	print_hexdump_data("Signer ID",
-		      content->signature.signer_id,
-		      sizeof content->signature.signer_id);
+	if(content->signature.signer_id_set)
+	    print_hexdump_data("Signer ID",
+			       content->signature.signer_id,
+			       sizeof content->signature.signer_id);
 
 	print_string_and_value("Public Key Algorithm",
 			       ops_show_pka(content->signature.key_algorithm),
