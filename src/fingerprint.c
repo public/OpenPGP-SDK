@@ -76,7 +76,7 @@ void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key)
     if(key->version == 2 || key->version == 3)
 	{
 	unsigned char bn[8192];
-	int n=BN_num_bytes(key->key.rsa.n);
+	unsigned n=BN_num_bytes(key->key.rsa.n);
 
 	assert(n <= sizeof bn);
 	assert(key->algorithm == OPS_PKA_RSA);

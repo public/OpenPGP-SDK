@@ -21,7 +21,7 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 
 void ops_key_data_free(ops_key_data_t *key)
     {
-    int n;
+    unsigned n;
 
     for(n=0 ; n < key->nuids ; ++n)
 	ops_user_id_free(&key->uids[n]);

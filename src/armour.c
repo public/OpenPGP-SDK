@@ -45,7 +45,7 @@ typedef struct
 static void push_back(dearmour_arg_t *arg,const unsigned char *buf,
 		      unsigned length)
     {
-    int n;
+    unsigned n;
 
     assert(!arg->pushed_back);
     arg->pushed_back=malloc(length);
@@ -128,7 +128,7 @@ static int unarmoured_read_char(dearmour_arg_t *arg,ops_boolean_t skip)
 
 const char *ops_find_header(ops_headers_t *headers,const char *key)
     {
-    int n;
+    unsigned n;
 
     for(n=0 ; n < headers->nheaders ; ++n)
 	if(!strcmp(headers->headers[n].key,key))
@@ -138,7 +138,7 @@ const char *ops_find_header(ops_headers_t *headers,const char *key)
 
 void ops_dup_headers(ops_headers_t *dest,const ops_headers_t *src)
     {
-    int n;
+    unsigned n;
 
     dest->headers=malloc(src->nheaders*sizeof *dest->headers);
     dest->nheaders=src->nheaders;
@@ -366,7 +366,8 @@ static ops_reader_ret_t read4(dearmour_arg_t *arg,int *pc,int *pn,
 
 static ops_reader_ret_t decode64(dearmour_arg_t *arg)
     {
-    int n;
+    unsigned n;
+    int n2;
     unsigned long l;
     ops_parser_content_t content;
     int c;
@@ -449,11 +450,11 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
 	l >>= 8;
 	}
 
-    for(n=arg->buffered-1 ; n >= 0 ; --n)
+    for(n2=arg->buffered-1 ; n2 >= 0 ; --n2)
 	{
 	unsigned i;
 
-	arg->checksum ^= arg->buffer[n] << 16;
+	arg->checksum ^= arg->buffer[n2] << 16;
 	for(i=0 ; i < 8 ; i++)
 	    {
 	    arg->checksum <<= 1;
@@ -491,6 +492,8 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
     ops_parser_content_t content;
     ops_reader_ret_t ret;
     ops_boolean_t first;
+
+    OPS_USED(flags);
 
     if(arg->eof64 && !arg->buffered)
 	assert(arg->state == OUTSIDE_BLOCK || arg->state == AT_TRAILER_NAME);

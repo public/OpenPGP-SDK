@@ -112,7 +112,7 @@ void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_options_t *opt)
 
 static void dump_one_key_data(const ops_key_data_t *key)
     {
-    int n;
+    unsigned n;
 
     printf("Key ID: ");
     hexdump(key->keyid,8);

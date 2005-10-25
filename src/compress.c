@@ -32,6 +32,8 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
     ops_parser_content_t content;
     unsigned length=*plength;
 
+    OPS_USED(flags);
+
     if(arg->region->indeterminate && arg->inflate_ret == Z_STREAM_END
        && arg->stream.next_out == &arg->out[arg->offset])
 	return OPS_R_EOF;
@@ -46,7 +48,7 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 
     while(length > 0)
 	{
-	int len;
+	unsigned len;
 
 	if(&arg->out[arg->offset] == arg->stream.next_out)
 	    {
@@ -96,8 +98,8 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 		}
 	    arg->inflate_ret=ret;
 	    }
+	assert(arg->stream.next_out > &arg->out[arg->offset]);
 	len=arg->stream.next_out-&arg->out[arg->offset];
-	assert(len >= 0);
 	if(len > length)
 	    len=length;
 	memcpy(dest,&arg->out[arg->offset],len);

@@ -19,6 +19,8 @@ static ops_boolean_t skey_found;
 static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content,void *arg_)
     {
+    OPS_USED(arg_);
+
     if(content->tag == OPS_PTAG_CT_SECRET_KEY)
 	{
 	memcpy(&skey,&content->content.secret_key,sizeof skey);

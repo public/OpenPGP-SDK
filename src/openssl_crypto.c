@@ -31,7 +31,7 @@ static unsigned md5_finish(ops_hash_t *hash,unsigned char *out)
     return 16;
     }
 
-static ops_hash_t md5={OPS_HASH_MD5,md5_init,md5_add,md5_finish};
+static ops_hash_t md5={OPS_HASH_MD5,md5_init,md5_add,md5_finish,NULL};
 
 void ops_hash_md5(ops_hash_t *hash)
     {
@@ -59,7 +59,7 @@ static unsigned sha1_finish(ops_hash_t *hash,unsigned char *out)
     return 20;
     }
 
-static ops_hash_t sha1={OPS_HASH_SHA1,sha1_init,sha1_add,sha1_finish};
+static ops_hash_t sha1={OPS_HASH_SHA1,sha1_init,sha1_add,sha1_finish,NULL};
 
 void ops_hash_sha1(ops_hash_t *hash)
     {

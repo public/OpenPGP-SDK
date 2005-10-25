@@ -31,6 +31,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
     const ops_parser_content_union_t *content=&content_->content;
     const ops_key_data_t *signer;
 
+    OPS_USED(arg_);
+
     switch(content_->tag)
 	{
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:

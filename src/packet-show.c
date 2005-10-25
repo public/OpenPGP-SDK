@@ -212,9 +212,9 @@ static void list_init(list_t *list)
  
 static void list_free_strings(list_t *list)
     {
-    int i=0;
+    unsigned i;
 
-    for ( i=0; i < list->used; i++)
+    for(i=0; i < list->used ; i++)
 	{
 	free(list->strings[i]);
 	list->strings[i]=NULL;
@@ -371,7 +371,7 @@ static ops_text_t *text_from_bytemapped_octets(ops_data_t *data,
 
     ops_text_t *text=NULL;
     char *str;
-    int i=0;
+    unsigned i;
 
     /*! allocate and initialise ops_text_t structure to store derived strings */
     text=malloc(sizeof(ops_text_t));
@@ -381,7 +381,7 @@ static ops_text_t *text_from_bytemapped_octets(ops_data_t *data,
     ops_text_init(text);
 
     /*! for each octet in field ... */
-    for ( i=0; i < data->len; i++)
+    for(i=0 ; i < data->len ; i++)
 	{
 	/*! derive string from octet */
 	str=(*text_fn)(data->contents[i]);
@@ -407,7 +407,8 @@ static ops_text_t *showall_octets_bits(ops_data_t *data,bit_map_t **map,
     {
     ops_text_t *text=NULL;
     char *str;
-    int i=0, j=0;
+    unsigned i;
+    int j=0;
     unsigned char mask, bit;
 
     /*! allocate and initialise ops_text_t structure to store derived strings */
@@ -418,7 +419,7 @@ static ops_text_t *showall_octets_bits(ops_data_t *data,bit_map_t **map,
     ops_text_init(text);
 
     /*! for each octet in field ... */
-    for ( i=0; i < data->len; i++)
+    for(i=0 ; i < data->len ; i++)
 	{
 	/*! for each bit in octet ... */
 	for (j=0, mask=0x80; j<8; j++, mask = mask>>1 )
@@ -594,9 +595,9 @@ ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska
  * \return string or "Unknown"
  * \todo add reference
 */
-static char *ops_show_ss_feature(unsigned char octet,int offset)
+static char *ops_show_ss_feature(unsigned char octet,unsigned offset)
     {
-    if(offset < 0 || offset >= OPS_ARRAY_SIZE(ss_feature_map))
+    if(offset >= OPS_ARRAY_SIZE(ss_feature_map))
 	return "Unknown";
     return str_from_bitfield(octet,ss_feature_map[offset]);
     }
@@ -616,7 +617,8 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
     {
     ops_text_t *text=NULL;
     char *str;
-    int i=0, j=0;
+    unsigned i;
+    int j=0;
     unsigned char mask, bit;
 
      text=malloc(sizeof(ops_text_t));
@@ -625,7 +627,7 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
 
     ops_text_init(text);
 
-    for ( i=0; i < ss_features.data.len; i++)
+    for(i=0 ; i < ss_features.data.len ; i++)
 	{
 	for (j=0, mask=0x80; j<8; j++, mask = mask>>1 )
 	    {

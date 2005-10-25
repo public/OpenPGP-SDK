@@ -62,6 +62,7 @@ ops_writer_ret_t ops_writer_memory(const unsigned char *src,unsigned length,
     {
     ops_memory_t *mem=arg_;
 
+    OPS_USED(flags);
     ops_memory_add(mem,src,length);
     return OPS_W_OK;
     }

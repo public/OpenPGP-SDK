@@ -79,7 +79,7 @@ static void print_name(const char *name)
 
 static void print_text_breakdown( ops_text_t *text)
     {
-    int i=0;
+    unsigned i;
     char *prefix=".. ";
 
     /* these were recognised */
@@ -210,7 +210,7 @@ static void print_block(const char *name,const unsigned char *str,
 
 static void print_headers(const ops_headers_t *headers)
     {
-    int n;
+    unsigned n;
 
     for(n=0 ; n < headers->nheaders ; ++n)
 	printf("%s=%s\n",headers->headers[n].key,headers->headers[n].value);
@@ -275,6 +275,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
     const ops_parser_content_union_t *content=&content_->content;
     ops_text_t *text;
     char *str;
+
+    OPS_USED(arg_);
 
     switch(content_->tag)
 	{
@@ -706,7 +708,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	print_indent(indent);
 	print_unsigned_int("Signature Version",
 	       content->signature.version);
-	if (content->signature.creation_time_set) 
+	if(content->signature.creation_time_set) 
 	    print_time("Signature Creation Time", content->signature.creation_time);
 
 	print_string_and_value("Signature Type",
@@ -826,7 +828,7 @@ int main(int argc,char **argv)
     ops_parse_options_t opt;
     ops_reader_fd_arg_t arg;
     ops_ulong_list_t errors;
-    int i;
+    unsigned i;
     ops_boolean_t armour=ops_false;
     int ret;
     int ch;

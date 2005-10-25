@@ -74,7 +74,8 @@ our %Knowledge=(
 		cc => sub { return $Subst{CC} || chooseBinary('gcc','cc')
 			     || croak 'Can\'t find C compiler'; },
 		path => sub { return [split /:/,$ENV{PATH}]; },
-		time_t => sub { return typeInfo('time_t','time.h'); }
+		time_t => sub { return typeInfo('time_t','time.h'); },
+		base_cflags => sub { return '-Wall -Werror -W -g' if getKnowledge('cc') == 'gcc'; }
 	      );
 
 while(my $arg=shift) {
@@ -93,6 +94,7 @@ while(my $arg=shift) {
 checkHeaders(\@RHeaders);
 
 $Subst{'CC'}=getKnowledge('cc');
+$Subst{'CFLAGS'}.=' '.getKnowledge('base_cflags');
 
 findHeaders(\@Headers);
 investigateTypes(\@Types);
@@ -224,7 +226,7 @@ sub build {
 
     my $cflag='';
     $cflag='-c' if !defined $link;
-    my $cmd="$cc $Subst{CFLAGS} $Subst{INCLUDES} -Wall -Werror $cflag ".$f;
+    my $cmd="$cc $Subst{CFLAGS} $Subst{INCLUDES} $cflag ".$f;
     $cmd.=" $link" if defined $link;
     trace("$cmd\n--code--\n$code--------\n");
     my $ret=system("$cmd >> $LogFile 2>&1");

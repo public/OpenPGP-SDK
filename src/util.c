@@ -105,7 +105,10 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
     if(n == 0)
 	return OPS_R_EOF;
 
-    if(n != *plength)
+    if(n == -1)
+	return OPS_R_ERROR;
+
+    if((unsigned)n != *plength)
 	{
 	if(flags&OPS_RETURN_LENGTH)
 	    {
@@ -145,7 +148,12 @@ ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
     ops_writer_fd_arg_t *arg=arg_;
     int n=write(arg->fd,src,length);
 
-    if(n != length)
+    OPS_USED(flags);
+
+    if(n == -1)
+	return OPS_W_ERROR;
+
+    if((unsigned)n != length)
 	return OPS_W_ERROR;
 
     return OPS_W_OK;

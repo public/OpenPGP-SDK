@@ -310,7 +310,7 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
     {
     unsigned char c[4];
     unsigned t;
-    int n;
+    unsigned n;
 
     assert(length <= 4);
     assert(sizeof(*dest) >= 4);
@@ -531,7 +531,7 @@ void ops_packet_free(ops_packet_t *packet)
 
 void ops_headers_free(ops_headers_t *headers)
     {
-    int n;
+    unsigned n;
 
     for(n=0 ; n < headers->nheaders ; ++n)
 	{
@@ -1621,7 +1621,8 @@ static int parse_literal_data(ops_region_t *region,ops_parse_options_t *opt)
 
     while(region->length_read < region->length)
 	{
-	int l=region->length-region->length_read;
+	unsigned l=region->length-region->length_read;
+
 	if(l > sizeof C.literal_data_body.data)
 	    l=sizeof C.literal_data_body.data;
 
@@ -1920,11 +1921,10 @@ int ops_parse_and_save_errs(ops_parse_options_t *opt, ops_ulong_list_t *errors)
 
 int ops_parse_errs(ops_parse_options_t *opt, ops_ulong_list_t *errs)
     {
-    int err;
+    unsigned err;
     int r;
     unsigned long pktlen;
     ops_reader_fd_arg_t *arg;
-
     int orig_acc;
 
     /* can only handle ops_reader_fd for now */
@@ -1947,7 +1947,7 @@ int ops_parse_errs(ops_parse_options_t *opt, ops_ulong_list_t *errs)
 
     /* now parse each error in turn. */
 
-    for (err=0; err<errs->used; err++)
+    for(err=0; err < errs->used ; err++)
 	{
 
 	//	printf("\n***\n*** Error at offset %lu \n***\n",errs->ulongs[err]);

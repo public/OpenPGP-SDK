@@ -64,15 +64,15 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
     {
     unsigned char sigbuf[8192];
     unsigned char hashbuf[8192];
-    int n;
-    int keysize;
+    unsigned n;
+    unsigned keysize;
     unsigned char *prefix;
     int plen;
 
-    keysize=(BN_num_bits(rsa->n)+7)/8;
+    keysize=BN_num_bytes(rsa->n);
     // RSA key can't be bigger than 65535 bits, so...
     assert(keysize <= sizeof hashbuf);
-    assert(BN_num_bits(sig->sig) <= 8*sizeof sigbuf);
+    assert((unsigned)BN_num_bits(sig->sig) <= 8*sizeof sigbuf);
     BN_bn2bin(sig->sig,sigbuf);
 
     n=ops_rsa_public_decrypt(hashbuf,sigbuf,(BN_num_bits(sig->sig)+7)/8,rsa);
@@ -135,7 +135,6 @@ static void init_signature(ops_hash_t *hash,const ops_signature_t *sig,
     }
 
 static void hash_add_trailer(ops_hash_t *hash,const ops_signature_t *sig,
-			     const ops_public_key_t *signer,
 			     const unsigned char *raw_packet)
     {
     if(sig->version == OPS_SIG_V4)
@@ -199,7 +198,7 @@ static ops_boolean_t finalise_signature(ops_hash_t *hash,
 					const ops_public_key_t *signer,
 					const unsigned char *raw_packet)
     {
-    hash_add_trailer(hash,sig,signer,raw_packet);
+    hash_add_trailer(hash,sig,raw_packet);
     return hash_and_check_signature(hash,sig,signer);
     }
 
@@ -369,7 +368,7 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
 void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
 			 ops_secret_key_t *skey,ops_create_options_t *opt)
     {
-    assert(sig->hashed_data_length != -1);
+    assert(sig->hashed_data_length != (unsigned)-1);
 
     ops_memory_place_int(&sig->mem,sig->unhashed_count_offset,
 			 sig->mem.length-sig->unhashed_count_offset-2,2);

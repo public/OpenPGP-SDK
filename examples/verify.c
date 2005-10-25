@@ -13,6 +13,9 @@ int main(int argc,char **argv)
     ops_keyring_t keyring;
     ops_reader_fd_arg_t arg;
 
+    OPS_USED(argc);
+    OPS_USED(argv);
+
     ops_init();
 
     memset(&keyring,'\0',sizeof keyring);

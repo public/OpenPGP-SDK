@@ -12,8 +12,8 @@
 typedef struct
     {
     const ops_key_data_t *key;
-    int packet;
-    int offset;
+    unsigned packet;
+    unsigned offset;
     } validate_reader_arg_t;
 
 typedef struct
@@ -30,6 +30,7 @@ static ops_reader_ret_t key_data_reader(unsigned char *dest,unsigned *plength,
     {
     validate_reader_arg_t *arg=arg_;
 
+    OPS_USED(flags);
     if(arg->offset == arg->key->packets[arg->packet].length)
 	{
 	++arg->packet;
