@@ -75,7 +75,7 @@ our %Knowledge=(
 			     || croak 'Can\'t find C compiler'; },
 		path => sub { return [split /:/,$ENV{PATH}]; },
 		time_t => sub { return typeInfo('time_t','time.h'); },
-		base_cflags => sub { return '-Wall -Werror -W -g' if getKnowledge('cc') == 'gcc'; }
+		base_cflags => sub { return '-Wall -Werror -W -g' if getKnowledge('cc') eq 'gcc'; }
 	      );
 
 while(my $arg=shift) {
