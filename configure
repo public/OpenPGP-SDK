@@ -53,6 +53,10 @@ my %Args=(
 	  },
 	  '--maintainer' => sub {
 	      $Subst{CFLAGS}.=' -fno-builtin';
+	  },
+	  '--cc=' => sub {
+	      my $cc=shift;
+	      $Subst{CC}=$cc;
 	  }
 	 );
 
@@ -67,7 +71,7 @@ my @Types=qw(time_t);
 my @RHeaders=qw(openssl/bn.h zlib.h);
 
 our %Knowledge=(
-		cc => sub { return chooseBinary('gcc','cc')
+		cc => sub { return $Subst{CC} || chooseBinary('gcc','cc')
 			     || croak 'Can\'t find C compiler'; },
 		path => sub { return [split /:/,$ENV{PATH}]; },
 		time_t => sub { return typeInfo('time_t','time.h'); }
