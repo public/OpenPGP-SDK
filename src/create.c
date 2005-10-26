@@ -12,6 +12,14 @@ static int base_write(const void *src,unsigned length,
     return opt->writer(src,length,0,opt->arg) == OPS_W_OK;
     }
 
+/**
+ * \ingroup Create
+ *
+ * \param src
+ * \param length
+ * \param opt
+ */
+
 ops_boolean_t ops_write(const void *src,unsigned length,
 			ops_create_options_t *opt)
     {
