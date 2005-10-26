@@ -1,6 +1,6 @@
 /** \file
  */
- 
+
 #include <openpgpsdk/compress.h>
 #include <zlib.h>
 #include <assert.h>
