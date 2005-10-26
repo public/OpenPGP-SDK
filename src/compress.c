@@ -110,6 +110,13 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
     return OPS_R_OK;
     }
 
+/**
+ * \ingroup Utils
+ * 
+ * \param *region 	Pointer to a region
+ * \param *opt 		Options to use 
+*/
+
 int ops_decompress(ops_region_t *region,ops_parse_options_t *opt)
     {
     decompress_arg_t arg;
