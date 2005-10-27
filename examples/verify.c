@@ -9,7 +9,7 @@
 
 int main(int argc,char **argv)
     {
-    ops_parse_options_t opt;
+    ops_parse_info_t parse_info;
     ops_keyring_t keyring;
     ops_reader_fd_arg_t arg;
 
@@ -19,12 +19,12 @@ int main(int argc,char **argv)
     ops_init();
 
     memset(&keyring,'\0',sizeof keyring);
-    ops_parse_options_init(&opt);
+    ops_parse_info_init(&parse_info);
     arg.fd=0;
-    opt.reader_arg=&arg;
-    opt.reader=ops_reader_fd;
+    parse_info.reader_arg=&arg;
+    parse_info.reader=ops_reader_fd;
 
-    ops_parse_and_accumulate(&keyring,&opt);
+    ops_parse_and_accumulate(&keyring,&parse_info);
 
     ops_dump_keyring(&keyring);
 

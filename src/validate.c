@@ -134,18 +134,18 @@ validate_cb(const ops_parser_content_t *content_,void *arg_)
 
 static void validate_key_signatures(const ops_key_data_t *key,
 				    const ops_keyring_t *keyring)
-     {
-     ops_parse_options_t opt;
-     validate_cb_arg_t carg;
-     validate_reader_arg_t rarg;
+    {
+    ops_parse_info_t parse_info;
+    validate_cb_arg_t carg;
+    validate_reader_arg_t rarg;
 
-     memset(&rarg,'\0',sizeof rarg);
-     memset(&carg,'\0',sizeof carg);
+    memset(&rarg,'\0',sizeof rarg);
+    memset(&carg,'\0',sizeof carg);
 
-     ops_parse_options_init(&opt);
-     //    ops_parse_options(&opt,OPS_PTAG_CT_SIGNATURE,OPS_PARSE_PARSED);
-     opt.cb=validate_cb;
-    opt.reader=key_data_reader;
+    ops_parse_info_init(&parse_info);
+    //    ops_parse_options(&opt,OPS_PTAG_CT_SIGNATURE,OPS_PARSE_PARSED);
+    parse_info.cb=validate_cb;
+    parse_info.reader=key_data_reader;
 
     rarg.key=key;
     rarg.packet=0;
@@ -154,10 +154,10 @@ static void validate_key_signatures(const ops_key_data_t *key,
     carg.keyring=keyring;
     carg.rarg=&rarg;
 
-    opt.cb_arg=&carg;
-    opt.reader_arg=&rarg;
+    parse_info.cb_arg=&carg;
+    parse_info.reader_arg=&rarg;
 
-    ops_parse(&opt);
+    ops_parse(&parse_info);
 
     ops_public_key_free(&carg.pkey);
     if(carg.subkey.version)

@@ -67,9 +67,9 @@ ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
 				       const BIGNUM *e,
 				       ops_create_options_t *opt);
 
-void ops_fast_create_user_id(ops_user_id_t *id,char *user_id);
+void ops_fast_create_user_id(ops_user_id_t *id,unsigned char *user_id);
 ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
 				       ops_create_options_t *opt);
-ops_boolean_t ops_write_user_id(const char *user_id,ops_create_options_t *opt);
+ops_boolean_t ops_write_user_id(const unsigned char *user_id,ops_create_options_t *opt);
 
 #endif

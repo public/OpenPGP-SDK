@@ -24,7 +24,7 @@ static void print_indent()
 	printf("  ");
     }
 
-static void showtime(const unsigned char *name,time_t t)
+static void showtime(const char *name,time_t t)
     {
     printf("%s=" TIME_T_FMT " (%.24s)",name,t,ctime(&t));
     }
@@ -173,6 +173,12 @@ static void print_string(const char *name,const char *str)
 	++str;
 	}
     putchar('\n');
+    }
+
+static void print_utf8_string(const char *name,const unsigned char *str)
+    {
+    // \todo Do this better for non-English character sets
+    print_string(name,(const char *)str);
     }
 
 static void print_block(const char *name,const unsigned char *str,
@@ -366,7 +372,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
     case OPS_PTAG_CT_USER_ID:
 	/* XXX: how do we print UTF-8? */
 	print_tagname("USER ID");
-	print_string("user_id",content->user_id.user_id);
+	print_utf8_string("user_id",content->user_id.user_id);
 	break;
 
     case OPS_PTAG_CT_SIGNATURE:
@@ -619,7 +625,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
     case OPS_PTAG_SS_REGEXP:
 	start_subpacket(content_->tag);
 	print_hexdump("Regular Expression",
-		      content->ss_regexp.text,
+		      (unsigned char *)content->ss_regexp.text,
 		      strlen(content->ss_regexp.text));
 	print_string(NULL,
 		     content->ss_regexp.text);
@@ -635,7 +641,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
     case OPS_PTAG_SS_SIGNERS_USER_ID:
 	start_subpacket(content_->tag);
-	print_string("Signer's User ID",content->ss_signers_user_id.user_id);
+	print_utf8_string("Signer's User ID",content->ss_signers_user_id.user_id);
 	end_subpacket();
 	break;
 
@@ -825,7 +831,7 @@ static void usage()
 
 int main(int argc,char **argv)
     {
-    ops_parse_options_t opt;
+    ops_parse_info_t parse_info;
     ops_reader_fd_arg_t arg;
     ops_ulong_list_t errors;
     unsigned i;
@@ -852,25 +858,25 @@ int main(int argc,char **argv)
 	    }
 
 
-    ops_parse_options_init(&opt);
+    ops_parse_info_init(&parse_info);
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
-    ops_parse_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    opt.cb=callback;
+    ops_parse_info(&parse_info,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    parse_info.cb=callback;
 
     arg.fd=0;
-    opt.reader_arg=&arg;
-    opt.reader=ops_reader_fd;
+    parse_info.reader_arg=&arg;
+    parse_info.reader=ops_reader_fd;
 
     ops_ulong_list_init(&errors);
 
     if(armour)
 	{
-	opt.armour_allow_no_gap=ops_true;
-	opt.armour_allow_headers_without_gap=ops_true;
-	ops_push_dearmour(&opt);
+	parse_info.armour_allow_no_gap=ops_true;
+	parse_info.armour_allow_headers_without_gap=ops_true;
+	ops_push_dearmour(&parse_info);
 	}
 
-    ret=ops_parse_and_save_errs(&opt,&errors);
+    ret=ops_parse_and_save_errs(&parse_info,&errors);
 
     if (!ret)
 	{
@@ -880,7 +886,7 @@ int main(int argc,char **argv)
 	for (i=0; i<errors.used; i++)
 	    printf("offset: %lu\n", errors.ulongs[i]);
 
-	if (!ops_parse_errs(&opt,&errors))
+	if (!ops_parse_errs(&parse_info,&errors))
 	    printf("\n*** Warning: problems found when parsing errors\n");
 	}
 

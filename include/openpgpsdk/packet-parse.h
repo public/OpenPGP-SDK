@@ -48,7 +48,24 @@ typedef ops_reader_ret_t ops_packet_reader_t(unsigned char *dest,
 					     ops_reader_flags_t flags,
 					     void *arg);
 
-/** Structure to hold the options for parsing packets.
+/** \brief Structure to hold information about a packet parse.
+ *
+ *  This information includes options about the parse:
+ *  - whether the packet contents should be accumulated or not
+ *  - whether signature subpackets should be parsed or left raw
+ *
+ *  It contains options specific to the parsing of armoured data:
+ *  - whether headers are allowed in armoured data without a gap
+ *  - whether a blank line is allowed at the start of the armoured data
+ *  
+ *  It also specifies :
+ *  - the callback function to use and its arguments
+ *  - the reader function to use and its arguments
+ *
+ *  It also contains information about the current state of the parse:
+ *  - offset from the beginning
+ *  - the accumulated data, if any
+ *  - the size of the buffer, and how much has been used
  */
 
 typedef struct
@@ -77,13 +94,13 @@ typedef struct
 						  blank line */
     unsigned armour_allow_no_gap:1; /* allow no blank line at the
 				       start of armoured data */
-    } ops_parse_options_t;
+    } ops_parse_info_t;
 
-int ops_parse(ops_parse_options_t *opt);
-int ops_parse_and_save_errs(ops_parse_options_t *opt,ops_ulong_list_t *errs);
-int ops_parse_errs(ops_parse_options_t *opt,ops_ulong_list_t *errs);
+int ops_parse(ops_parse_info_t *parse_info);
+int ops_parse_and_save_errs(ops_parse_info_t *parse_info,ops_ulong_list_t *errs);
+int ops_parse_errs(ops_parse_info_t *parse_info,ops_ulong_list_t *errs);
 
-void ops_parse_and_validate(ops_parse_options_t *opt);
+void ops_parse_and_validate(ops_parse_info_t *parse_info);
 
 /** Used to specify whether subpackets should be returned raw, parsed or ignored.
  */
@@ -96,13 +113,13 @@ enum ops_parse_type_t
 
 /** Initialise structure 
  */
-#define ops_parse_options_init(opt) memset(opt,'\0',sizeof *opt)
+#define ops_parse_info_init(parse_info) memset(parse_info,'\0',sizeof *parse_info)
 
-void ops_parse_options(ops_parse_options_t *opt,ops_content_tag_t tag,
+void ops_parse_info(ops_parse_info_t *parse_info,ops_content_tag_t tag,
 		       ops_parse_type_t type);
 
 int ops_limited_read(unsigned char *dest,unsigned length,
-		     ops_region_t *region,ops_parse_options_t *opt);
+		     ops_region_t *region,ops_parse_info_t *parse_info);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

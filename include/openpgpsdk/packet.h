@@ -372,7 +372,7 @@ typedef struct
 /** Structure to hold one user id */
 typedef struct
     {
-    char *user_id;	/*!< User ID string */
+    unsigned char *user_id;	/*!< User ID - UTF-8 string */
     } ops_user_id_t;
 
 /** Structure to hold one user attribute */

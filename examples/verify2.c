@@ -121,7 +121,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
 int main(int argc,char **argv)
     {
-    ops_parse_options_t opt;
+    ops_parse_info_t parse_info;
     ops_reader_fd_arg_t arg;
     const char *keyfile;
     const char *verify;
@@ -147,7 +147,7 @@ int main(int argc,char **argv)
     ops_init();
 
     memset(&keyring,'\0',sizeof keyring);
-    ops_parse_options_init(&opt);
+    ops_parse_info_init(&parse_info);
 
     arg.fd=open(keyfile,O_RDONLY);
     if(arg.fd < 0)
@@ -156,16 +156,16 @@ int main(int argc,char **argv)
 	exit(1);
 	}
 
-    opt.reader_arg=&arg;
-    opt.reader=ops_reader_fd;
+    parse_info.reader_arg=&arg;
+    parse_info.reader=ops_reader_fd;
 
-    ops_parse_and_accumulate(&keyring,&opt);
+    ops_parse_and_accumulate(&keyring,&parse_info);
 
     close(arg.fd);
 
     ops_dump_keyring(&keyring);
 
-    ops_parse_options_init(&opt);
+    ops_parse_info_init(&parse_info);
 
     arg.fd=open(verify,O_RDONLY);
     if(arg.fd < 0)
@@ -174,18 +174,18 @@ int main(int argc,char **argv)
 	exit(2);
 	}
 
-    opt.reader_arg=&arg;
-    opt.reader=ops_reader_fd;
+    parse_info.reader_arg=&arg;
+    parse_info.reader=ops_reader_fd;
 
-    opt.cb=callback;
-
-    if(armour)
-	ops_push_dearmour(&opt);
-
-    ops_parse(&opt);
+    parse_info.cb=callback;
 
     if(armour)
-	ops_pop_dearmour(&opt);
+	ops_push_dearmour(&parse_info);
+
+    ops_parse(&parse_info);
+
+    if(armour)
+	ops_pop_dearmour(&parse_info);
 
     if(signed_data)
 	free(signed_data);

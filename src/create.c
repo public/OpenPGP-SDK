@@ -99,9 +99,9 @@ ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
  * \param user_id
  */
 
-void ops_fast_create_user_id(ops_user_id_t *id,char *user_id)
+void ops_fast_create_user_id(ops_user_id_t *id,unsigned char *user_id)
     {
-    id->user_id=user_id;;
+    id->user_id=user_id;
     }
 
 /**
@@ -117,9 +117,10 @@ void ops_fast_create_user_id(ops_user_id_t *id,char *user_id)
 ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
 				       ops_create_options_t *opt)
     {
+    // \todo don't use strlen for UTF-8 string
     return ops_write_ptag(OPS_PTAG_CT_USER_ID,opt)
-	&& ops_write_length(strlen(id->user_id),opt)
-	&& ops_write(id->user_id,strlen(id->user_id),opt);
+	&& ops_write_length(strlen((char *)id->user_id),opt)
+	&& ops_write(id->user_id,strlen((char *)id->user_id),opt);
     }
 
 /**
@@ -133,11 +134,11 @@ ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
  * \return return value from ops_write_struct_user_id()
  * \todo better descr of return value
  */
-ops_boolean_t ops_write_user_id(const char *user_id,ops_create_options_t *opt)
+ops_boolean_t ops_write_user_id(const unsigned char *user_id,ops_create_options_t *opt)
     {
     ops_user_id_t id;
 
-    id.user_id=(char *)user_id;
+    id.user_id=(unsigned char *)user_id;
     return ops_write_struct_user_id(&id,opt);
     }
 

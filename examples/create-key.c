@@ -6,7 +6,7 @@ int main(int argc,char **argv)
     {
     ops_writer_fd_arg_t arg;
     ops_create_options_t opt;
-    const char *id;
+    const unsigned char *id;
     const char *nstr;
     const char *estr;
     BIGNUM *n=NULL;
@@ -20,7 +20,7 @@ int main(int argc,char **argv)
     
     nstr=argv[1];
     estr=argv[2];
-    id=argv[3];
+    id=(unsigned char *)argv[3];
 
     BN_hex2bn(&n,nstr);
     BN_hex2bn(&e,estr);

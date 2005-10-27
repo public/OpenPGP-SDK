@@ -89,24 +89,24 @@ accumulate_cb(const ops_parser_content_t *content_,void *arg_)
  * \param *opt Options to use when parsing
 */
 
-void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_options_t *opt)
+void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_info_t *parse_info)
     {
     accumulate_arg_t arg;
 
-    assert(!opt->accumulate);
+    assert(!parse_info->accumulate);
 
     memset(&arg,'\0',sizeof arg);
 
     arg.keyring=keyring;
     /* Kinda weird, but to do with counting, and we put it back after */
     --keyring->nkeys;
-    arg.cb=opt->cb;
-    arg.cb_arg=opt->cb_arg;
+    arg.cb=parse_info->cb;
+    arg.cb_arg=parse_info->cb_arg;
 
-    opt->cb=accumulate_cb;
-    opt->cb_arg=&arg;
-    opt->accumulate=1;
-    ops_parse(opt);
+    parse_info->cb=accumulate_cb;
+    parse_info->cb_arg=&arg;
+    parse_info->accumulate=1;
+    ops_parse(parse_info);
     ++keyring->nkeys;
     }
 

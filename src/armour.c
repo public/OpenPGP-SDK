@@ -19,7 +19,7 @@ typedef struct
 	BASE64,
 	AT_TRAILER_NAME,
 	} state;
-    ops_parse_options_t *opt;
+    ops_parse_info_t *parse_info;
     ops_boolean_t seen_nl;
     ops_boolean_t prev_nl;
     // base64 stuff
@@ -39,8 +39,8 @@ typedef struct
     } dearmour_arg_t;
 
 // FIXME: move these to a common header
-#define CB(t,pc)	do { (pc)->tag=(t); if(arg->opt->cb(pc,arg->opt->cb_arg) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
-#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; arg->opt->cb(&content,arg->opt->cb_arg); return OPS_R_EARLY_EOF; } while(0)
+#define CB(t,pc)	do { (pc)->tag=(t); if(arg->parse_info->cb(pc,arg->parse_info->cb_arg) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
+#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; arg->parse_info->cb(&content,arg->parse_info->cb_arg); return OPS_R_EARLY_EOF; } while(0)
 
 static void push_back(dearmour_arg_t *arg,const unsigned char *buf,
 		      unsigned length)
@@ -61,9 +61,9 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
     ops_reader_ret_t ret;
     unsigned length=1;
 
-    reader=arg->opt->reader;
-    arg->opt->reader=arg->reader;
-    arg->opt->reader_arg=arg->reader_arg;
+    reader=arg->parse_info->reader;
+    arg->parse_info->reader=arg->reader;
+    arg->parse_info->reader_arg=arg->reader_arg;
 
     do
 	{
@@ -78,16 +78,16 @@ static int read_char(dearmour_arg_t *arg,ops_boolean_t skip)
 	    }
 	else if((ret=arg->reader(c,&length,0,arg->reader_arg)) != OPS_R_OK)
 	    {
-	    arg->opt->reader=reader;
-	    arg->opt->reader_arg=arg;
+	    arg->parse_info->reader=reader;
+	    arg->parse_info->reader_arg=arg;
 
 	    return -1;
 	    }
 	}
     while(skip && c[0] == '\r');
 
-    arg->opt->reader=reader;
-    arg->opt->reader_arg=arg;
+    arg->parse_info->reader=reader;
+    arg->parse_info->reader_arg=arg;
 
     arg->prev_nl=arg->seen_nl;
     arg->seen_nl=c[0] == '\n';
@@ -213,7 +213,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 	    {
 	    assert(memchr(body->data+1,'\n',body->length-1) == NULL);
 	    if(body->data[0] == '\n')
-		hash->add(hash,"\r",1);
+		hash->add(hash,(unsigned char *)"\r",1);
 	    hash->add(hash,body->data,body->length);
 	    CB(OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY,&content);
 	    body->length=0;
@@ -280,19 +280,19 @@ static ops_reader_ret_t parse_headers(dearmour_arg_t *arg)
 
 	    s=strchr(buf,':');
 	    if(!s)
-		if(!first && !arg->opt->armour_allow_headers_without_gap)
+		if(!first && !arg->parse_info->armour_allow_headers_without_gap)
 		    // then we have seriously malformed armour
 		    ERR("No colon in armour header");
 		else
 		    {
 		    if(first &&
-		       !(arg->opt->armour_allow_headers_without_gap
-			 || arg->opt->armour_allow_no_gap))
+		       !(arg->parse_info->armour_allow_headers_without_gap
+			 || arg->parse_info->armour_allow_no_gap))
 			ERR("No colon in armour header (2)");
 		    // then we have a nasty armoured block with no
 		    // headers, not even a blank line.
 		    buf[nbuf]='\n';
-		    push_back(arg,buf,nbuf+1);
+		    push_back(arg,(unsigned char *)buf,nbuf+1);
 		    break;
 		    }
 	    else
@@ -321,7 +321,7 @@ static ops_reader_ret_t parse_headers(dearmour_arg_t *arg)
     return OPS_R_OK;
     }
 
-static ops_reader_ret_t read4(dearmour_arg_t *arg,int *pc,int *pn,
+static ops_reader_ret_t read4(dearmour_arg_t *arg,int *pc,unsigned *pn,
 			      unsigned long *pl)
     {
     int n,c;
@@ -681,28 +681,28 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
     return OPS_R_OK;
     }
 
-void ops_push_dearmour(ops_parse_options_t *opt)
+void ops_push_dearmour(ops_parse_info_t *parse_info)
     {
     dearmour_arg_t *arg;
 
     arg=malloc(sizeof *arg);
     memset(arg,'\0',sizeof *arg);
 
-    arg->reader_arg=opt->reader_arg;
-    arg->reader=opt->reader;
-    arg->opt=opt;
+    arg->reader_arg=parse_info->reader_arg;
+    arg->reader=parse_info->reader;
+    arg->parse_info=parse_info;
     arg->seen_nl=ops_true;
 
-    opt->reader=armoured_data_reader;
-    opt->reader_arg=arg;
+    parse_info->reader=armoured_data_reader;
+    parse_info->reader_arg=arg;
     }
 
-void ops_pop_dearmour(ops_parse_options_t *opt)
+void ops_pop_dearmour(ops_parse_info_t *parse_info)
     {
-    dearmour_arg_t *arg=opt->reader_arg;
+    dearmour_arg_t *arg=parse_info->reader_arg;
 
-    opt->reader_arg=arg->reader_arg;
-    opt->reader=arg->reader;
+    parse_info->reader_arg=arg->reader_arg;
+    parse_info->reader=arg->reader;
 
     free(arg);
     }

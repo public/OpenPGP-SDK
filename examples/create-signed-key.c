@@ -34,17 +34,17 @@ callback(const ops_parser_content_t *content,void *arg_)
 static void get_key(const char *keyfile)
     {
     ops_reader_fd_arg_t arg;
-    ops_parse_options_t opt;
+    ops_parse_info_t parse_info;
 
-    ops_parse_options_init(&opt);
-    opt.cb=callback;
+    ops_parse_info_init(&parse_info);
+    parse_info.cb=callback;
 
     arg.fd=open(keyfile,O_RDONLY);
     assert(arg.fd >= 0);
-    opt.reader_arg=&arg;
-    opt.reader=ops_reader_fd;
+    parse_info.reader_arg=&arg;
+    parse_info.reader=ops_reader_fd;
 
-    ops_parse(&opt);
+    ops_parse(&parse_info);
 
     assert(skey_found);
     }
@@ -56,7 +56,7 @@ int main(int argc,char **argv)
     ops_create_signature_t sig;
     ops_user_id_t id;
     unsigned char keyid[OPS_KEY_ID_SIZE];
-    char *user_id; /* not const coz we use _fast_ */
+    unsigned char *user_id; /* not const coz we use _fast_ */
     const char *keyfile;
 
     if(argc != 3)
@@ -66,7 +66,7 @@ int main(int argc,char **argv)
 	}
 
     keyfile=argv[1];
-    user_id=argv[2];
+    user_id=(unsigned char *)argv[2];
 
     ops_init();
 

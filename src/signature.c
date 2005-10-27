@@ -224,14 +224,17 @@ ops_check_certification_signature(const ops_public_key_t *key,
 
     init_signature(&hash,sig,key);
 
+    // \todo Fix this. user_id is UTF-8 so strlen may not work
+    size_t user_id_len=strlen((char *)id->user_id);
+
     if(sig->version == OPS_SIG_V4)
 	{
 	ops_hash_add_int(&hash,0xb4,1);
-	ops_hash_add_int(&hash,strlen(id->user_id),4);
-	hash.add(&hash,id->user_id,strlen(id->user_id));
+	ops_hash_add_int(&hash,user_id_len,4);
+	hash.add(&hash,id->user_id,user_id_len);
 	}
     else
-	hash.add(&hash,id->user_id,strlen(id->user_id));
+	hash.add(&hash,id->user_id,user_id_len);
 
     return finalise_signature(&hash,sig,signer,raw_packet);
     }
@@ -313,9 +316,10 @@ void ops_signature_start(ops_create_signature_t *sig,
 
     init_signature(&sig->hash,&sig->sig,key);
 
+    // \todo Fix this. user_id is UTF-8 so strlen may not work
     ops_hash_add_int(&sig->hash,0xb4,1);
-    ops_hash_add_int(&sig->hash,strlen(id->user_id),4);
-    sig->hash.add(&sig->hash,id->user_id,strlen(id->user_id));
+    ops_hash_add_int(&sig->hash,strlen((char *)id->user_id),4);
+    sig->hash.add(&sig->hash,id->user_id,strlen((char *)id->user_id));
 
     // since this has subpackets and stuff, we have to buffer the whole
     // thing to get counts before writing.

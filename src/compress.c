@@ -12,7 +12,7 @@ typedef struct
     {
     ops_packet_reader_t *reader;
     void *reader_arg;
-    ops_parse_options_t *opt;
+    ops_parse_info_t *parse_info;
     ops_region_t *region;
     unsigned char in[DECOMPRESS_BUFFER];
     unsigned char out[DECOMPRESS_BUFFER];
@@ -21,7 +21,7 @@ typedef struct
     int inflate_ret;
     } decompress_arg_t;
 
-#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; arg->opt->cb(&content,arg->opt->cb_arg); return OPS_R_EARLY_EOF; } while(0)
+#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; arg->parse_info->cb(&content,arg->parse_info->cb_arg); return OPS_R_EARLY_EOF; } while(0)
 
 static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 					       unsigned *plength,
@@ -70,14 +70,14 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 		else
 		    n=sizeof arg->in;
 
-		arg->opt->reader=arg->reader;
-		arg->opt->reader_arg=arg->reader_arg;
+		arg->parse_info->reader=arg->reader;
+		arg->parse_info->reader_arg=arg->reader_arg;
 
-		if(!ops_limited_read(arg->in,n,arg->region,arg->opt))
+		if(!ops_limited_read(arg->in,n,arg->region,arg->parse_info))
 		    return OPS_R_EARLY_EOF;
 
-		arg->opt->reader=compressed_data_reader;
-		arg->opt->reader_arg=arg;
+		arg->parse_info->reader=compressed_data_reader;
+		arg->parse_info->reader_arg=arg;
 
 		arg->stream.next_in=arg->in;
 		arg->stream.avail_in=arg->region->indeterminate
@@ -114,20 +114,20 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
  * \ingroup Utils
  * 
  * \param *region 	Pointer to a region
- * \param *opt 		Options to use 
+ * \param *parse_info 	How to parse
 */
 
-int ops_decompress(ops_region_t *region,ops_parse_options_t *opt)
+int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info)
     {
     decompress_arg_t arg;
     int ret;
 
     memset(&arg,'\0',sizeof arg);
 
-    arg.reader_arg=opt->reader_arg;
-    arg.reader=opt->reader;
+    arg.reader_arg=parse_info->reader_arg;
+    arg.reader=parse_info->reader;
     arg.region=region;
-    arg.opt=opt;
+    arg.parse_info=parse_info;
 
     arg.stream.next_in=Z_NULL;
     arg.stream.avail_in=0;
@@ -143,8 +143,8 @@ int ops_decompress(ops_region_t *region,ops_parse_options_t *opt)
 	return 0;
 	}
 
-    opt->reader=compressed_data_reader;
-    opt->reader_arg=&arg;
+    parse_info->reader=compressed_data_reader;
+    parse_info->reader_arg=&arg;
 
-    return ops_parse(opt);
+    return ops_parse(parse_info);
     }
