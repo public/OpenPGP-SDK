@@ -335,14 +335,14 @@ typedef struct
 typedef enum
     {
     OPS_S2K_NONE=0,
-    } s2k_usage_t;
+    } ops_s2k_usage_t;
 
 /** ops_secret_key_t
  */
 typedef struct
     {
     ops_public_key_t		public_key;
-    s2k_usage_t			s2k_usage;
+    ops_s2k_usage_t		s2k_usage;
     unsigned			checksum;
     ops_secret_key_union_t	key;
     } ops_secret_key_t;
