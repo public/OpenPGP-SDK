@@ -323,16 +323,22 @@ typedef struct
     BIGNUM *u;
     } ops_rsa_secret_key_t;
 
+/** ops_secret_key_union_t
+ */ 
 typedef struct
     {
     ops_rsa_secret_key_t rsa;
     } ops_secret_key_union_t;
 
+/** s2k_usage_t
+ */
 typedef enum
     {
     OPS_S2K_NONE=0,
     } s2k_usage_t;
 
+/** ops_secret_key_t
+ */
 typedef struct
     {
     ops_public_key_t		public_key;
@@ -458,6 +464,7 @@ typedef struct
     BIGNUM			*s;	/*!< DSA value s */
     } ops_dsa_signature_t;
 
+/** ops_elgamal_signature_t */
 typedef struct
     {
     BIGNUM			*r;
@@ -511,7 +518,7 @@ typedef struct
     unsigned char		*raw;
     } ops_ss_raw_t;
 
-/** Signature Subpacket Type 5, Trust Level */
+/** Signature Subpacket : Trust Level */
 
 typedef struct
     {
@@ -519,22 +526,25 @@ typedef struct
     unsigned char		amount; /*<! Amount */
     } ops_ss_trust_t;
 
+/** Signature Subpacket : Revocable */
 typedef struct
 	{
 	ops_boolean_t	revocable;
 	} ops_ss_revocable_t;
 	
+/** Signature Subpacket : Time */
 typedef struct
     {
     time_t			time;
     } ops_ss_time_t;
 
+/** Signature Subpacket : Key ID */
 typedef struct
     {
     unsigned char		key_id[OPS_KEY_ID_SIZE];
     } ops_ss_key_id_t;
 
-/** SS Notation Data */
+/** Signature Subpacket : Notation Data */
 typedef struct
     {
     ops_data_t flags;
@@ -542,17 +552,19 @@ typedef struct
     ops_data_t value;
     } ops_ss_notation_data_t;
 
+/** Signature Subpacket : User Defined */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_userdefined_t;
 
+/** Signature Subpacket : Unknown */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_unknown_t;
 
-/** SS Preferred Symmetric Key Algorithm */
+/** Signature Subpacket : Preferred Symmetric Key Algorithm */
 typedef struct
     {
     ops_data_t data;
@@ -560,35 +572,37 @@ typedef struct
        so we cannot expect data->contents to be a null-terminated list */
     } ops_ss_preferred_ska_t;
 
-/** SS Preferrred Hash Algorithm */
+/** Signature Subpacket : Preferrred Hash Algorithm */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_preferred_hash_t;
 
-/** SS Preferred Compression */
+/** Signature Subpacket : Preferred Compression */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_preferred_compression_t;
 
-/** SS Key Flags */
+/** Signature Subpacket : Key Flags */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_key_flags_t;
 
-/** SS Key Server Preferences */
+/** Signature Subpacket : Key Server Preferences */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_key_server_prefs_t;
 
-/** SS Features */
+/** Signature Subpacket : Features */
 typedef struct
     {
     ops_data_t data;
     } ops_ss_features_t;
+
+/** ops_packet_t */
 
 typedef struct
     {
@@ -596,6 +610,7 @@ typedef struct
     unsigned char		*raw;
     } ops_packet_t;
 
+/** Types of Compression */
 typedef enum
     {
     OPS_C_NONE=0,
@@ -606,11 +621,13 @@ typedef enum
 
 // unlike most structures, this will feed its data as a stream
 // to the application instead of directly including it
+/** ops_compressed_t */
 typedef struct
     {
     ops_compression_type_t	type;
     } ops_compressed_t;
 
+/** ops_one_pass_signature_t */
 typedef struct
     {
     unsigned char		version;
@@ -621,26 +638,31 @@ typedef struct
     ops_boolean_t		nested;
     } ops_one_pass_signature_t;
 
+/** Signature Subpacket : Primary User ID */
 typedef struct
     {
     ops_boolean_t	primary_user_id;
     } ops_ss_primary_user_id_t;
 
+/** Signature Subpacket : Regexp */
 typedef struct
     {
     char *text;
     } ops_ss_regexp_t;
 
+/** Signature Subpacket : Policy URL */
 typedef struct
     {
     char *text;
     } ops_ss_policy_url_t;
 
+/** Signature Subpacket : Preferred Key Server */
 typedef struct
     {
     char *text;
     } ops_ss_preferred_key_server_t;
 
+/** Signature Subpacket : Revocation Key */
 typedef struct
     {
     unsigned char	class;
@@ -648,12 +670,14 @@ typedef struct
     unsigned char fingerprint[20];
     } ops_ss_revocation_key_t;
 
+/** Signature Subpacket : Revocation Reason */
 typedef struct
     {
     unsigned char code;
     char *text;
     } ops_ss_revocation_reason_t;
 
+/** literal_data_type_t */
 typedef enum
     {
     OPS_LDT_BINARY='b',
@@ -663,6 +687,7 @@ typedef enum
     OPS_LDT_LOCAL2='1'
     } literal_data_type_t;
 
+/** ops_literal_data_header_t */
 typedef struct
     {
     literal_data_type_t		format;
@@ -670,57 +695,67 @@ typedef struct
     time_t			modification_time;
     } ops_literal_data_header_t;
 
+/** ops_literal_data_body_t */
 typedef struct
     {
     unsigned			length;
     unsigned char		data[8192];
     } ops_literal_data_body_t;
 
+/** ops_armoured_header_value_t */
 typedef struct
     {
     char *key;
     char *value;
     } ops_armoured_header_value_t;
 
+/** ops_headers_t */
 typedef struct
     {
     ops_armoured_header_value_t *headers;
     unsigned nheaders;
     } ops_headers_t;
 
+/** ops_armour_header_t */
 typedef struct
     {
     const char *type;
     ops_headers_t headers;
     } ops_armour_header_t;
 
+/** ops_armour_trailer_t */
 typedef struct
     {
     const char *type;
     } ops_armour_trailer_t;
 
+/** ops_signed_cleartext_header_t */
 typedef struct
     {
     ops_headers_t headers;
     } ops_signed_cleartext_header_t;
 
+/** ops_signed_cleartext_body_t */
 typedef struct
     {
     unsigned			length;
     unsigned char		data[8192];
     } ops_signed_cleartext_body_t;
 
+/** ops_signed_cleartext_trailer_t */
 typedef struct
     {
     struct _ops_hash_t		*hash;	/*!< This will not have been finalised, but will have seen all the cleartext data in canonical form */
     } ops_signed_cleartext_trailer_t;
 
+/** ops_unarmoured_text_t */
 typedef struct
     {
     unsigned			length;
     unsigned char		*data;
     } ops_unarmoured_text_t;
 
+/** ops_parser_union_content_t */
 typedef union
     {
     ops_parser_error_t		error;
@@ -766,6 +801,7 @@ typedef union
     ops_unarmoured_text_t	unarmoured_text;
     } ops_parser_content_union_t;
 
+/** ops_parser_content_t */
 struct ops_parser_content_t
     {
     ops_content_tag_t		tag;
@@ -773,6 +809,7 @@ struct ops_parser_content_t
     ops_parser_content_union_t 	content;
     };
 
+/** ops_fingerprint_t */
 typedef struct
     {
     unsigned char 		fingerprint[20];
