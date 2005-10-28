@@ -1597,10 +1597,10 @@ parse_trust (ops_region_t *region, ops_parse_info_t *parse_info)
     {
     ops_parser_content_t content;
 
-    if (!read_data(&C.trust.data,region,parse_info))
+    if(!read_data(&C.trust.data,region,parse_info))
 	    return 0;
 
-    CB (OPS_PTAG_CT_TRUST, &content);
+    CB(OPS_PTAG_CT_TRUST, &content);
 
     return 1;
     }
