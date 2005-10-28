@@ -115,7 +115,7 @@ enum ops_parse_type_t
  */
 #define ops_parse_info_init(parse_info) memset(parse_info,'\0',sizeof *parse_info)
 
-void ops_parse_info(ops_parse_info_t *parse_info,ops_content_tag_t tag,
+void ops_parse_options(ops_parse_info_t *parse_info,ops_content_tag_t tag,
 		       ops_parse_type_t type);
 
 int ops_limited_read(unsigned char *dest,unsigned length,

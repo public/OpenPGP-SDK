@@ -816,7 +816,7 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
 
     // XXX: this test should be done for all packets, surely?
     if(region->length_read != region->length)
-	ERR1("Unconsumed data (%d)", region->length-region->length_read);
+	ERR1("Unconsumed data (%d)",region->length-region->length_read);
 
     CB(tag,&content);
 
@@ -862,9 +862,9 @@ static int parse_user_attribute(ops_region_t *region, ops_parse_info_t *parse_in
     /* xxx- treat as raw data for now. Could break down further
        into attribute sub-packets later - rachel */
 
-    assert (region->length_read == 0);  /* We should not have read anything so far */
+    assert(region->length_read == 0);  /* We should not have read anything so far */
 
-    if (!read_data(&C.user_attribute.data, region, parse_info))
+    if(!read_data(&C.user_attribute.data,region,parse_info))
 	return 0;
 
     CB(OPS_PTAG_CT_USER_ATTRIBUTE,&content);
@@ -1982,15 +1982,14 @@ int ops_parse_errs(ops_parse_info_t *parse_info, ops_ulong_list_t *errs)
 /**
  * \ingroup Parse
  *
- * ops_parse_info() specifies whether one or more signature subpacket types should
- *  be returned parsed or raw or ignored.
+ * ops_parse_options() specifies whether one or more signature
+ * subpacket types should be returned parsed or raw or ignored.
  *
  * \param	parse_info	Pointer to previously allocated structure
  * \param	tag	Packet tag. OPS_PTAG_SS_ALL for all SS tags; or one individual signature subpacket tag
  * \param	type	Parse type
- * \todo  XXX: Make all packet types optional, not just subpackets
- */
-void ops_parse_info(ops_parse_info_t *parse_info,
+ * \todo XXX: Make all packet types optional, not just subpackets */
+void ops_parse_options(ops_parse_info_t *parse_info,
 		       ops_content_tag_t tag,
 		       ops_parse_type_t type)
     {
@@ -2001,7 +2000,7 @@ void ops_parse_info(ops_parse_info_t *parse_info,
 	int n;
 
 	for(n=0 ; n < 256 ; ++n)
-	    ops_parse_info(parse_info,OPS_PTAG_SIGNATURE_SUBPACKET_BASE+n,
+	    ops_parse_options(parse_info,OPS_PTAG_SIGNATURE_SUBPACKET_BASE+n,
 			      type);
 	return;
 	}

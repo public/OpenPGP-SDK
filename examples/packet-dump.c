@@ -860,7 +860,7 @@ int main(int argc,char **argv)
 
     ops_parse_info_init(&parse_info);
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
-    ops_parse_info(&parse_info,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_options(&parse_info,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     parse_info.cb=callback;
 
     arg.fd=0;
