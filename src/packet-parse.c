@@ -900,14 +900,15 @@ static int parse_user_id(ops_region_t *region,ops_parse_info_t *parse_info)
     {
     ops_parser_content_t content;
 
-    assert (region->length_read == 0);  /* We should not have read anything so far */
+    assert(region->length_read == 0);  /* We should not have read anything so far */
 
     C.user_id.user_id=malloc(region->length+1);  /* XXX should we not like check malloc's return value? */
 
-    if (region->length && !ops_limited_read( C.user_id.user_id,region->length,region,parse_info))
+    if(region->length && !ops_limited_read(C.user_id.user_id,region->length,
+					   region,parse_info))
 	return 0;
 
-    C.user_id.user_id[region->length] = 0; /* terminate the string */
+    C.user_id.user_id[region->length]='\0'; /* terminate the string */
 
     CB(OPS_PTAG_CT_USER_ID,&content);
 
