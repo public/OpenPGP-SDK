@@ -221,11 +221,9 @@ ops_check_certification_signature(const ops_public_key_t *key,
 				  const unsigned char *raw_packet)
     {
     ops_hash_t hash;
+    size_t user_id_len=strlen((char *)id->user_id);
 
     init_signature(&hash,sig,key);
-
-    // \todo Fix this. user_id is UTF-8 so strlen may not work
-    size_t user_id_len=strlen((char *)id->user_id);
 
     if(sig->version == OPS_SIG_V4)
 	{
