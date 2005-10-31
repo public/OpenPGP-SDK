@@ -110,8 +110,8 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 
     if(n == -1)
 	{
-	ops_system_error_1(&parse_info->errors,OPS_E_READ_FAILED,"file descriptor %d",
-			   arg->fd);
+	ops_system_error_1(&parse_info->errors,OPS_E_READ_FAILED,"read",
+			   "file descriptor %d",arg->fd);
 	return OPS_R_ERROR;
 	}
 

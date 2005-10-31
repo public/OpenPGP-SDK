@@ -60,6 +60,6 @@ typedef struct ops_error
 void push_error(ops_error_t **errstack,ops_error_code_t errcode,int errno,
 		const char *file,int line,const char *comment,...);
 
-#define ops_system_error_1(err,code,fmt,arg)	do { push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,""); push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
+#define ops_system_error_1(err,code,syscall,fmt,arg)	do { push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,syscall); push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
 
 #endif /* OPS_ERRORS */
