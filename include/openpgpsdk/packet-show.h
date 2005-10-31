@@ -8,30 +8,30 @@
 #include "packet.h"
 #endif
 
-/** list_t
+/** ops_list_t
  */
 typedef struct
     {
     unsigned int size;/* num of array slots allocated */
     unsigned int used; /* num of array slots currently used */
     char **strings;
-    } list_t;
+    } ops_list_t;
 
 /** ops_text_t
  */
 typedef struct
     {
-    list_t known;
-    list_t unknown;
+    ops_list_t known;
+    ops_list_t unknown;
     } ops_text_t;
 
-/** bit_map_t
+/** ops_bit_map_t
  */
 typedef struct
     {
     unsigned char mask;
     char *string;
-    } bit_map_t;
+    } ops_bit_map_t;
 
 void ops_text_init(ops_text_t *text);
 void ops_text_free(ops_text_t *text);
@@ -56,10 +56,10 @@ char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code);
 ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features);
 
 ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags);
-char *ops_show_ss_key_flag(unsigned char octet, bit_map_t *map);
+char *ops_show_ss_key_flag(unsigned char octet, ops_bit_map_t *map);
 
 ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs);
-char *ops_show_ss_key_server_prefs(unsigned char octet, bit_map_t *map);
+char *ops_show_ss_key_server_prefs(unsigned char octet, ops_bit_map_t *map);
 
 ops_text_t *ops_showall_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data);
 

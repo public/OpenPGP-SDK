@@ -16,7 +16,7 @@
  * Arrays of value->text maps
  */
 
-static map_t packet_tag_map[] =
+static ops_map_t packet_tag_map[] =
     {
     { OPS_PTAG_CT_RESERVED,	  "Reserved" },
     { OPS_PTAG_CT_PK_SESSION_KEY, "Public-Key Encrypted Session Key" },
@@ -40,9 +40,9 @@ static map_t packet_tag_map[] =
     { OPS_PTAG_CT_MDC,			"Modification Detection Code" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
-typedef map_t packet_tag_map_t;
+typedef ops_map_t packet_tag_map_t;
 
-static map_t ss_type_map[] =
+static ops_map_t ss_type_map[] =
     {
     { OPS_PTAG_SS_CREATION_TIME,	"Signature Creation Time" },
     { OPS_PTAG_SS_EXPIRATION_TIME,	"Signature Expiration Time" },
@@ -65,10 +65,10 @@ static map_t ss_type_map[] =
     { OPS_PTAG_SS_FEATURES,		"Features" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
-typedef map_t ss_type_map_t;
+typedef ops_map_t ss_type_map_t;
 
 
-static map_t ss_rr_code_map[] =
+static ops_map_t ss_rr_code_map[] =
     {
     { 0x00,	"No reason specified" },
     { 0x01,	"Key is superseded" },
@@ -77,9 +77,9 @@ static map_t ss_rr_code_map[] =
     { 0x20,	"User ID information is no longer valid" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
-typedef map_t ss_rr_code_map_t;
+typedef ops_map_t ss_rr_code_map_t;
 
-static map_t sig_type_map[] =
+static ops_map_t sig_type_map[] =
     {
     { OPS_SIG_BINARY,		"Signature of a binary document" },
     { OPS_SIG_TEXT,		"Signature of a canonical text document" },
@@ -98,9 +98,9 @@ static map_t sig_type_map[] =
     { OPS_SIG_3RD_PARTY,	"Third-Party Confirmation signature" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
-typedef map_t sig_type_map_t;
+typedef ops_map_t sig_type_map_t;
 
-static map_t public_key_algorithm_map[] =
+static ops_map_t public_key_algorithm_map[] =
     {
     { OPS_PKA_RSA,		"RSA (Encrypt or Sign)" },
     { OPS_PKA_RSA_ENCRYPT_ONLY,	"RSA Encrypt-Only" },
@@ -124,9 +124,9 @@ static map_t public_key_algorithm_map[] =
     { OPS_PKA_PRIVATE10,		"Private/Experimental" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
-typedef map_t public_key_algorithm_map_t;
+typedef ops_map_t public_key_algorithm_map_t;
 
-static map_t symmetric_key_algorithm_map[] =
+static ops_map_t symmetric_key_algorithm_map[] =
     {
     { OPS_SKA_PLAINTEXT,	"Plaintext or unencrypted data" },
     { OPS_SKA_IDEA,		"IDEA" },
@@ -140,7 +140,7 @@ static map_t symmetric_key_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-static map_t hash_algorithm_map[] =
+static ops_map_t hash_algorithm_map[] =
     {
     { OPS_HASH_MD5,	"MD5" },
     { OPS_HASH_SHA1,	"SHA1" },
@@ -151,7 +151,7 @@ static map_t hash_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-static map_t compression_algorithm_map[] =
+static ops_map_t compression_algorithm_map[] =
     {
     { OPS_C_NONE,	"Uncompressed" },
     { OPS_C_ZIP,	"ZIP(RFC1951)" },
@@ -160,29 +160,29 @@ static map_t compression_algorithm_map[] =
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
-static bit_map_t ss_notation_data_map_byte0[] =
+static ops_bit_map_t ss_notation_data_map_byte0[] =
     {
     { 0x80,	"Human-readable" },
     { (unsigned char) NULL,	(char *) NULL },
     };
 
-static bit_map_t *ss_notation_data_map[] =
+static ops_bit_map_t *ss_notation_data_map[] =
     {
     ss_notation_data_map_byte0,
     };
 
-static bit_map_t ss_feature_map_byte0[] =
+static ops_bit_map_t ss_feature_map_byte0[] =
     {
     { 0x01,	"Modification Detection" },
     { (unsigned char) NULL,	(char *) NULL },
     };
 
-static bit_map_t *ss_feature_map[] =
+static ops_bit_map_t *ss_feature_map[] =
     {
     ss_feature_map_byte0,
     };
 
-static bit_map_t ss_key_flags_map[] =
+static ops_bit_map_t ss_key_flags_map[] =
     {
     { 0x01, "May be used to certify other keys" },
     { 0x02, "May be used to sign data" },
@@ -192,7 +192,7 @@ static bit_map_t ss_key_flags_map[] =
     { 0x80, "Private component may be in possession of more than one person"},
     };
 
-static bit_map_t ss_key_server_prefs_map[] = 
+static ops_bit_map_t ss_key_server_prefs_map[] = 
     {
     { 0x80, "Key holder requests that this key only be modified or updated by the key holder or an administrator of the key server" },
     };
@@ -203,14 +203,14 @@ static bit_map_t ss_key_server_prefs_map[] =
  * Private functions
  */
 
-static void list_init(list_t *list)
+static void list_init(ops_list_t *list)
     {
     list->size=0;
     list->used=0;
     list->strings=NULL;
     }
  
-static void list_free_strings(list_t *list)
+static void list_free_strings(ops_list_t *list)
     {
     unsigned i;
 
@@ -221,14 +221,14 @@ static void list_free_strings(list_t *list)
 	}
     }
 
-static void list_free(list_t *list)
+static void list_free(ops_list_t *list)
     {
     if (list->strings)
 	free(list->strings);
     list_init(list);
     }
 
-static unsigned int list_resize(list_t *list)
+static unsigned int list_resize(ops_list_t *list)
     {
     /* We only resize in one direction - upwards.
        Algorithm used : double the current size then add 1
@@ -250,7 +250,7 @@ static unsigned int list_resize(list_t *list)
 	}
     }
 
-static unsigned int add_str(list_t *list, char *str)
+static unsigned int add_str(ops_list_t *list, char *str)
     {
     if (list->size==list->used) 
 	if (!list_resize(list))
@@ -261,9 +261,9 @@ static unsigned int add_str(list_t *list, char *str)
     return 1;
     }
 
-static char *str_from_bitfield_or_null(unsigned char octet, bit_map_t *map)
+static char *str_from_bitfield_or_null(unsigned char octet, ops_bit_map_t *map)
     {
-    bit_map_t *row;
+    ops_bit_map_t *row;
 
     for ( row=map; row->string != NULL; row++ )
 	if (row->mask == octet) 
@@ -272,7 +272,7 @@ static char *str_from_bitfield_or_null(unsigned char octet, bit_map_t *map)
     return NULL;
     }
 
-static char *str_from_bitfield(unsigned char octet, bit_map_t *map)
+static char *str_from_bitfield(unsigned char octet, ops_bit_map_t *map)
     {
     char *str;
     str=str_from_bitfield_or_null(octet,map);
@@ -402,7 +402,7 @@ static ops_text_t *text_from_bytemapped_octets(ops_data_t *data,
  * of this byte array, derived from each bit of each octet.
  *
  */ 
-static ops_text_t *showall_octets_bits(ops_data_t *data,bit_map_t **map,
+static ops_text_t *showall_octets_bits(ops_data_t *data,ops_bit_map_t **map,
 				       size_t nmap)
     {
     ops_text_t *text=NULL;
@@ -651,7 +651,7 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
  * \return
  * \todo add reference
 */
-char *ops_show_ss_key_flag(unsigned char octet, bit_map_t *map)
+char *ops_show_ss_key_flag(unsigned char octet, ops_bit_map_t *map)
     {
     return str_from_bitfield(octet,map);
     }
@@ -706,7 +706,7 @@ ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
  * \todo add reference
  * \todo make typesafe
  */
-char *ops_show_ss_key_server_prefs(unsigned char prefs, bit_map_t *map)
+char *ops_show_ss_key_server_prefs(unsigned char prefs, ops_bit_map_t *map)
     {
     return str_from_bitfield(prefs,map);
     }

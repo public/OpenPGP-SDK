@@ -10,13 +10,13 @@
 typedef void (*ops_void_fptr)(void);
 #define ops_fcast(f) ((ops_void_fptr)f)
 
-/** map_t
+/** ops_map_t
  */
 typedef struct 
     {
     int type;
     char *string;
-    } map_t;
+    } ops_map_t;
 
 /** Boolean type */
 typedef unsigned ops_boolean_t;

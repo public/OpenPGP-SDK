@@ -18,9 +18,9 @@
  * error case sensibly (i.e. don't just print out the return string.
  * 
  */
-static char *str_from_map_or_null(int type, map_t *map)
+static char *str_from_map_or_null(int type, ops_map_t *map)
     {
-    map_t *row;
+    ops_map_t *row;
 
     for ( row=map; row->string != NULL; row++ )
 	if (row->type == type)
@@ -35,7 +35,7 @@ static char *str_from_map_or_null(int type, map_t *map)
  * Returns a readable string if found, "Unknown" if not.
  */
 
-char *ops_str_from_map(int type, map_t *map)
+char *ops_str_from_map(int type, ops_map_t *map)
     {
     char *str;
     str=str_from_map_or_null(type,map);

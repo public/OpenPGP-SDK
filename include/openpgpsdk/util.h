@@ -35,7 +35,7 @@ static inline void *_deconst(const void *p)
     { return (void *)p; }
 #define DECONST(type,p) (((type *(*)(const type *))ops_fcast(_deconst))(p))
 
-char *ops_str_from_map(int code, map_t *map);
+char *ops_str_from_map(int code, ops_map_t *map);
 
 /* number of elements in an array */
 #define OPS_ARRAY_SIZE(a)	(sizeof(a)/sizeof(*(a)))

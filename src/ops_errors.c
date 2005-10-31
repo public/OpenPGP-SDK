@@ -55,7 +55,7 @@ char *ops_error(ops_errcode_t errcode, ops_lang_t lang)
     if (lang!=OPS_LANG_ENGLISH)
 	return("Language not supported\n");
 
-    return(ops_str_from_map((int) errcode, (map_t *) error_map_english));
+    return(ops_str_from_map((int) errcode, (ops_map_t *) error_map_english));
     }
 
 /**
@@ -71,5 +71,5 @@ char *ops_errcode(ops_errcode_t errcode, ops_lang_t lang)
     if (lang!=OPS_LANG_ENGLISH)
 	return("Language not supported\n");
 
-    return(ops_str_from_map((int) errcode, (map_t *) errcode_name_map_english));
+    return(ops_str_from_map((int) errcode, (ops_map_t *) errcode_name_map_english));
     }

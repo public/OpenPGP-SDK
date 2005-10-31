@@ -27,8 +27,8 @@ typedef enum
     OPS_E_C=0x4000,	/* general creator error */
     } ops_errcode_t;
 
-typedef map_t ops_error_map_t;
-typedef map_t ops_errcode_name_map_t;
+typedef ops_map_t ops_error_map_t;
+typedef ops_map_t ops_errcode_name_map_t;
 
 
 typedef enum 
