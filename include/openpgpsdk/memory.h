@@ -8,6 +8,8 @@
 #ifndef OPS_MEMORY_H
 #define OPS_MEMORY_H
 
+/** ops_memory_t
+ */
 typedef struct 
     {
     unsigned char *buf;

@@ -8,6 +8,8 @@
 #include "packet.h"
 #endif
 
+/** list_t
+ */
 typedef struct
     {
     unsigned int size;/* num of array slots allocated */
@@ -15,13 +17,16 @@ typedef struct
     char **strings;
     } list_t;
 
+/** ops_text_t
+ */
 typedef struct
     {
     list_t known;
     list_t unknown;
     } ops_text_t;
 
-
+/** bit_map_t
+ */
 typedef struct
     {
     unsigned char mask;

@@ -4,6 +4,7 @@
 #ifndef OPS_LISTS_H
 #define OPS_LISTS_H
 
+/** ops_ulong_list_t */
 typedef struct
     {
     unsigned int size;/* num of array slots allocated */

@@ -10,6 +10,8 @@
 typedef void (*ops_void_fptr)(void);
 #define ops_fcast(f) ((ops_void_fptr)f)
 
+/** map_t
+ */
 typedef struct 
     {
     int type;
@@ -19,6 +21,7 @@ typedef struct
 /** Boolean type */
 typedef unsigned ops_boolean_t;
 
+/** ops_content_tag_t */
 typedef enum ops_content_tag_t ops_content_tag_t;
 
 /** 
@@ -36,7 +39,10 @@ typedef enum ops_content_tag_t ops_ss_type_t;
 /** Revocation Reason type */
 typedef unsigned char ops_ss_rr_code_t;
 
+/** ops_parse_type_t */
 typedef enum ops_parse_type_t ops_parse_type_t;
+
+/** ops_parser_content_t */
 typedef struct ops_parser_content_t ops_parser_content_t;
 
 /** Reader Flags */
@@ -51,6 +57,7 @@ typedef enum
     {
     OPS_WF_DUMMY,
     } ops_writer_flags_t;
+/** ops_writer_ret_t */
 typedef enum ops_writer_ret_t ops_writer_ret_t;
 
 

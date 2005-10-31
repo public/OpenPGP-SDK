@@ -9,6 +9,7 @@
 #include "packet.h"
 #include "lists.h"
 
+/** ops_region_t */
 typedef struct ops_region
     {
     struct ops_region *parent;
@@ -35,6 +36,7 @@ enum ops_reader_ret_t
     OPS_R_ERROR		=4,	/*!< if there was an error reading */
     };
 
+/** ops_parse_callback_return_t */
 typedef enum
     {
     OPS_RELEASE_MEMORY,
@@ -87,12 +89,12 @@ typedef struct
     unsigned char *accumulated;	/*!< the accumulated data */
     unsigned asize;	/*!< size of the buffer */
     unsigned alength;	/*!< used buffer */
-    unsigned armour_allow_headers_without_gap:1; /*< allow headers in
+    unsigned armour_allow_headers_without_gap:1; /*!< allow headers in
 						  armoured data that
 						  are not separated
 						  from the data by a
 						  blank line */
-    unsigned armour_allow_no_gap:1; /* allow no blank line at the
+    unsigned armour_allow_no_gap:1; /*!< allow no blank line at the
 				       start of armoured data */
     } ops_parse_info_t;
 
