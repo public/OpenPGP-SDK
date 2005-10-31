@@ -75,7 +75,10 @@ our %Knowledge=(
 			     || croak 'Can\'t find C compiler'; },
 		path => sub { return [split /:/,$ENV{PATH}]; },
 		time_t => sub { return typeInfo('time_t','time.h'); },
-		base_cflags => sub { return '-Wall -Werror -W -g' if getKnowledge('cc') eq 'gcc'; }
+		base_cflags => \&baseCFlags,
+		is_gcc => \&isGCC,
+		gcc_major => \&gccMajor,
+		gcc_version => \&gccVersion,
 	      );
 
 while(my $arg=shift) {
@@ -91,10 +94,10 @@ while(my $arg=shift) {
 
 #my $os=`uname -s`;
 
-checkHeaders(\@RHeaders);
-
 $Subst{'CC'}=getKnowledge('cc');
 $Subst{'CFLAGS'}.=' '.getKnowledge('base_cflags');
+
+checkHeaders(\@RHeaders);
 
 findHeaders(\@Headers);
 investigateTypes(\@Types);
@@ -304,3 +307,44 @@ sub findLibraries {
     return \@libs;
 }
 
+sub baseCFlags {
+    my $flags='';
+    if(getKnowledge('is_gcc')) {
+	$flags='-Wall -Werror -W -g';
+	my $v=getKnowledge('gcc_major');
+	$flags.=' -Wdeclaration-after-statement' if $v >= 3;
+    }
+    return $flags;
+}
+
+sub isGCC {
+    my $cc=getKnowledge('cc');
+
+    my $ret=build("int main()\n{\n#ifndef __GNUC__\n  syntax error\n#endif\n return 0; }\n");
+    trace("isGCC=$ret\n");
+    return $ret;
+}
+
+sub gccVersion {
+    return undef if !getKnowledge('is_gcc');
+
+    my $cc=getKnowledge('cc');
+    my $vstr=`$cc --version`;
+
+    my($v)=$vstr =~ /(\d+\.\d+\.\d+)/;
+
+    trace("gcc version=$v\n");
+
+    return $v;
+}
+
+sub gccMajor {
+    my $v=getKnowledge('gcc_version');
+    return undef if !defined $v;
+
+    ($v)=$v =~ /^(\d+)/;
+
+    trace("gcc major=$v\n");
+
+    return $v;
+}
