@@ -44,12 +44,13 @@ char *ops_errcode(ops_errcode_t errcode, ops_lang_t lang);
 typedef enum
     {
     OPS_E_READ_FAILED=1,
+    OPS_E_SYSTEM_ERROR=2,
     } ops_error_code_t;
     
 typedef struct ops_error
     {
     ops_error_code_t errcode;
-    int errno;	/*!< zero if not a system error */
+    int errno;	/*!< irrelevent unless errcode == OPS_E_SYSTEM_ERROR */
     char *comment;
     const char *file;
     int line;
@@ -59,6 +60,6 @@ typedef struct ops_error
 void push_error(ops_error_t **errstack,ops_error_code_t errcode,int errno,
 		const char *file,int line,const char *comment,...);
 
-#define ops_system_error_1(err,code,fmt,arg)	push_error(err,code,errno,__FILE__,__LINE__,fmt,arg)
+#define ops_system_error_1(err,code,fmt,arg)	do { push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,""); push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
 
 #endif /* OPS_ERRORS */

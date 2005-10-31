@@ -40,7 +40,7 @@ void push_error(ops_error_t **errstack,ops_error_code_t errcode,int errno,
 
     // alloc a new error and add it to the top of the stack
 
-    err = malloc(sizeof(ops_error_t));
+    err=malloc(sizeof(ops_error_t));
     assert(err);
 
     err->next=*errstack;
