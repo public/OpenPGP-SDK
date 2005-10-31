@@ -229,9 +229,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 
     assert(body->data[0] == '\n');
     assert(body->length == 1);
-    // and we don't send that one character, because its part of the trailer.
-    //    if(body->length)
-    //	CB(OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY,&content);
+    /* don't send that one character, because its part of the trailer. */
 
     trailer->hash=hash;
     CB(OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER,&content2);

@@ -85,9 +85,9 @@ ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
 	&& ops_write_scalar(type-OPS_PTAG_SIGNATURE_SUBPACKET_BASE,1,opt);
     }
 
-// XXX: the general idea of _fast_ is that it doesn't copy stuff
-// the safe (i.e. non _fast_) version will, and so will also need to
-// be freed.
+/* XXX: the general idea of _fast_ is that it doesn't copy stuff
+ * the safe (i.e. non _fast_) version will, and so will also need to
+ * be freed. */
 
 /**
  * \ingroup Create
@@ -117,7 +117,6 @@ void ops_fast_create_user_id(ops_user_id_t *id,unsigned char *user_id)
 ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
 				       ops_create_options_t *opt)
     {
-    // \todo don't use strlen for UTF-8 string
     return ops_write_ptag(OPS_PTAG_CT_USER_ID,opt)
 	&& ops_write_length(strlen((char *)id->user_id),opt)
 	&& ops_write(id->user_id,strlen((char *)id->user_id),opt);
@@ -171,8 +170,8 @@ void ops_fast_create_rsa_public_key(ops_public_key_t *key,time_t time,
     key->key.rsa.e=e;
     }
 
-// Note that we support v3 keys here because they're needed for
-// for verification - the writer doesn't allow them, though
+/* Note that we support v3 keys here because they're needed for
+ * for verification - the writer doesn't allow them, though */
 static int write_public_key_body(const ops_public_key_t *key,
 				  ops_create_options_t *opt)
     {

@@ -86,7 +86,7 @@ struct ops_parse_info
 
     ops_packet_reader_t *reader; /*!< the reader function to use to get the data to be parsed */
     void *reader_arg; /*!< the args to pass to the reader function */
-    // XXX: what do we do about offsets into compressed packets?
+    /* XXX: what do we do about offsets into compressed packets? */
     unsigned position; /*!< the offset from the beginning (with this reader) */
 
     unsigned accumulate:1;	/*!< set to accumulate packet data */

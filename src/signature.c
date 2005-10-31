@@ -70,7 +70,7 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
     int plen;
 
     keysize=BN_num_bytes(rsa->n);
-    // RSA key can't be bigger than 65535 bits, so...
+    /* RSA key can't be bigger than 65535 bits, so... */
     assert(keysize <= sizeof hashbuf);
     assert((unsigned)BN_num_bits(sig->sig) <= 8*sizeof sigbuf);
     BN_bn2bin(sig->sig,sigbuf);

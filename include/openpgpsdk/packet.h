@@ -223,8 +223,6 @@ typedef struct
     unsigned		length;		/*!< The length of the packet.  This value is set when we read and compute the
 					  length information, not at the same moment we create the packet tag structure.
 					  Only defined if #length_read is set. */  /* XXX: Ben, is this correct? */
-    //    unsigned		length_read;	/*!< How much bytes of this packet we have read so far - for internal use
-    //					  only. */
     unsigned		position;	/*!< The position (within the current reader) of the packet */
     } ops_ptag_t;
 
@@ -482,7 +480,7 @@ typedef union
     {
     ops_rsa_signature_t		rsa;	/*!< An RSA Signature */
     ops_dsa_signature_t		dsa;	/*!< A DSA Signature */
-    ops_elgamal_signature_t	elgamal; // deprecated
+    ops_elgamal_signature_t	elgamal; /* deprecated */
     ops_unknown_signature_t 	unknown; /* private or experimental */
     } ops_signature_union_t;
 
@@ -503,7 +501,7 @@ typedef struct
     ops_hash_algorithm_t	hash_algorithm;	/*!< hashing algorithm number */
     unsigned char		hash2[2];	/*!< high 2 bytes of hashed value - for quick test */
     ops_signature_union_t	signature;	/*!< signature parameters */
-    size_t			v4_hashed_data_start; // only valid if accumulate is set
+    size_t			v4_hashed_data_start; /* only valid if accumulate is set */
     size_t			v4_hashed_data_length;
     ops_boolean_t		creation_time_set:1;
     ops_boolean_t		signer_id_set:1;
@@ -619,8 +617,8 @@ typedef enum
     OPS_C_BZIP2=3,
     } ops_compression_type_t;
 
-// unlike most structures, this will feed its data as a stream
-// to the application instead of directly including it
+/* unlike most structures, this will feed its data as a stream
+ * to the application instead of directly including it */
 /** ops_compressed_t */
 typedef struct
     {

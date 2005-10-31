@@ -5,5 +5,5 @@
 # include <dmalloc.h>
 #endif
 
-// for silencing unused parameter warnings
+/* for silencing unused parameter warnings */
 #define OPS_USED(x)	(x)=(x)

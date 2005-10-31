@@ -311,8 +311,8 @@ sub baseCFlags {
     my $flags='';
     if(getKnowledge('is_gcc')) {
 	$flags='-Wall -Werror -W -g';
-	my $v=getKnowledge('gcc_major');
-	$flags.=' -Wdeclaration-after-statement' if $v >= 3;
+#	my $v=getKnowledge('gcc_major');
+#	$flags.=' -Wdeclaration-after-statement' if $v >= 3;
     }
     return $flags;
 }

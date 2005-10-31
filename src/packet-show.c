@@ -612,7 +612,7 @@ static char *ops_show_ss_feature(unsigned char octet,unsigned offset)
  * \todo make typesafe
  * \todo add reference
  */
-// XXX: shouldn't this use show_all_octets_bits?
+/* XXX: shouldn't this use show_all_octets_bits? */
 ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
     {
     ops_text_t *text=NULL;
