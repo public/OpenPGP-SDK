@@ -5,9 +5,11 @@
 #include <openpgpsdk/packet-parse.h>
 #include <openpgpsdk/crypto.h>
 #include <openpgpsdk/create.h>
+#include <openpgpsdk/errors.h>
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
+#include <errno.h> 
 
 /**
  * Searches the given map for the given type.
@@ -79,13 +81,13 @@ void ops_finish(void)
  * \ingroup Parse
  *
  * ops_reader_fd() attempts to read up to "plength" bytes from the file 
- * descriptor in "arg_" into the buffer starting at "dest" using the
+ * descriptor in "parse_info" into the buffer starting at "dest" using the
  * rules contained in "flags"
  *
  * \param	dest	Pointer to previously allocated buffer
  * \param	plength Number of bytes to try to read
  * \param	flags	Rules about reading to use
- * \param	arg_	Gets cast to ops_reader_fd_arg_t
+ * \param	parse_info	Gets cast to ops_reader_fd_arg_t
  *
  * \return	OPS_R_EOF 	if no bytes were read
  * \return	OPS_R_PARTIAL_READ	if not enough bytes were read, and OPS_RETURN_LENGTH is set in "flags"
@@ -97,16 +99,21 @@ void ops_finish(void)
  * \todo change arg_ to typesafe? 
  */
 ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
-			       ops_reader_flags_t flags,void *arg_)
+			       ops_reader_flags_t flags,
+			       ops_parse_info_t *parse_info)
     {
-    ops_reader_fd_arg_t *arg=arg_;
+    ops_reader_fd_arg_t *arg=parse_info->reader_arg;
     int n=read(arg->fd,dest,*plength);
 
     if(n == 0)
 	return OPS_R_EOF;
 
     if(n == -1)
+	{
+	ops_system_error_1(&parse_info->errors,OPS_E_READ_FAILED,"file descriptor %d",
+			   arg->fd);
 	return OPS_R_ERROR;
+	}
 
     if((unsigned)n != *plength)
 	{

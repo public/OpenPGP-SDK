@@ -45,10 +45,12 @@ typedef enum
 
 typedef ops_parse_callback_return_t
 ops_packet_parse_callback_t(const ops_parser_content_t *content,void *arg);
+
+struct ops_parse_info;
 typedef ops_reader_ret_t ops_packet_reader_t(unsigned char *dest,
 					     unsigned *plength,
 					     ops_reader_flags_t flags,
-					     void *arg);
+					     struct ops_parse_info *parse_info);
 
 /** \brief Structure to hold information about a packet parse.
  *
@@ -68,9 +70,11 @@ typedef ops_reader_ret_t ops_packet_reader_t(unsigned char *dest,
  *  - offset from the beginning
  *  - the accumulated data, if any
  *  - the size of the buffer, and how much has been used
+ *
+ *  It has a linked list of errors.
  */
 
-typedef struct
+struct ops_parse_info
     {
     unsigned char ss_raw[256/8]; /*!< one bit per signature-subpacket type; 
 				    set to get raw data */
@@ -96,7 +100,10 @@ typedef struct
 						  blank line */
     unsigned armour_allow_no_gap:1; /*!< allow no blank line at the
 				       start of armoured data */
-    } ops_parse_info_t;
+    ops_error_t * errors;
+    };
+
+typedef struct ops_parse_info ops_parse_info_t;
 
 int ops_parse(ops_parse_info_t *parse_info);
 int ops_parse_and_save_errs(ops_parse_info_t *parse_info,ops_ulong_list_t *errs);

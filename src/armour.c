@@ -485,9 +485,9 @@ static void base64(dearmour_arg_t *arg)
 static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 					     unsigned *plength,
 					     ops_reader_flags_t flags,
-					     void *arg_)
+					     ops_parse_info_t *parse_info)
     {
-    dearmour_arg_t *arg=arg_;
+    dearmour_arg_t *arg=parse_info->reader_arg;
     unsigned length=*plength;
     ops_parser_content_t content;
     ops_reader_ret_t ret;

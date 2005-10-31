@@ -160,7 +160,7 @@ static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
 				  ops_reader_flags_t flags,
 				  ops_parse_info_t *parse_info)
     {
-    ops_reader_ret_t ret=parse_info->reader(dest,plength,flags,parse_info->reader_arg);
+    ops_reader_ret_t ret=parse_info->reader(dest,plength,flags,parse_info); 
     if(ret != OPS_R_OK && ret != OPS_R_PARTIAL_READ)
 	return ret;
 

@@ -26,9 +26,10 @@ typedef struct
     } validate_cb_arg_t;
 
 static ops_reader_ret_t key_data_reader(unsigned char *dest,unsigned *plength,
-					ops_reader_flags_t flags,void *arg_)
+					ops_reader_flags_t flags,
+					ops_parse_info_t *parse_info)
     {
-    validate_reader_arg_t *arg=arg_;
+    validate_reader_arg_t *arg=parse_info->reader_arg;
 
     OPS_USED(flags);
     if(arg->offset == arg->key->packets[arg->packet].length)

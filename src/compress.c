@@ -26,9 +26,9 @@ typedef struct
 static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 					       unsigned *plength,
 					       ops_reader_flags_t flags,
-					       void *arg_)
+					       ops_parse_info_t *parse_info)
     {
-    decompress_arg_t *arg=arg_;
+    decompress_arg_t *arg=parse_info->reader_arg;
     ops_parser_content_t content;
     unsigned length=*plength;
 
