@@ -6,6 +6,7 @@
 #ifndef OPS_ERRORS
 #define OPS_ERRORS
 
+/** error codes */
 typedef enum 
     {
     OPS_E_OK=0x0000,	/* no error */
@@ -27,10 +28,13 @@ typedef enum
     OPS_E_C=0x4000,	/* general creator error */
     } ops_errcode_t;
 
+/** ops_error_map_t */
 typedef ops_map_t ops_error_map_t;
+
+/** ops_errcode_name_map_t */
 typedef ops_map_t ops_errcode_name_map_t;
 
-
+/** ops_lang_t */
 typedef enum 
     {
     OPS_LANG_ENGLISH=1
@@ -41,12 +45,17 @@ typedef enum
 char *ops_error(ops_errcode_t errcode, ops_lang_t lang);
 char *ops_errcode(ops_errcode_t errcode, ops_lang_t lang);
 
+/** ops_error_code_t
+ \todo Not sure why we have this as well as ops_errcode_t above,
+ 	will probably combine. RW 
+*/
 typedef enum
     {
     OPS_E_READ_FAILED=1,
     OPS_E_SYSTEM_ERROR=2,
     } ops_error_code_t;
     
+/** one entry in a linked list of errors */
 typedef struct ops_error
     {
     ops_error_code_t errcode;
