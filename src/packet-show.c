@@ -388,7 +388,10 @@ static ops_text_t *text_from_bytemapped_octets(ops_data_t *data,
 
 	/*! and add to text */
 	if (!add_str_from_octet_map(text,str,data->contents[i]))
+	    {
+	    ops_text_free(text);
 	    return NULL;
+	    }
 
 	}
     /*! All values have been added to either the known or the unknown list */
@@ -621,7 +624,7 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
     int j=0;
     unsigned char mask, bit;
 
-     text=malloc(sizeof(ops_text_t));
+    text=malloc(sizeof(ops_text_t));
     if (!text)
 	return NULL;
 
@@ -636,7 +639,10 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
 		{
 		str=ops_show_ss_feature ( bit, i );
 		if (!add_str_from_bit_map( text, str, bit))
+		    {
+		    ops_text_free(text);
 		    return NULL;
+		    }
 		}
 	    }
 	}
