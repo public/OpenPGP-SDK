@@ -752,7 +752,10 @@ ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_ser
 		{
 		str=ops_show_ss_key_server_prefs ( bit, &ss_key_server_prefs_map[0] );
 		if (!add_str_from_bit_map( text, str, bit))
+		    {
+		    ops_text_free(text);
 		    return NULL;
+		    }
 		}
 	    }
 /* xxx - must add error text if more than one octet. Only one currently specified -- rachel */
