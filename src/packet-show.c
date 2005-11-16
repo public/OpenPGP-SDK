@@ -697,7 +697,10 @@ ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
 		{
 		str=ops_show_ss_key_flag ( bit, &ss_key_flags_map[0] );
 		if (!add_str_from_bit_map( text, str, bit))
+		    {
+		    ops_text_free(text);
 		    return NULL;
+		    }
 		}
 	    }
 /* xxx - must add error text if more than one octet. Only one currently specified -- rachel */
