@@ -435,7 +435,10 @@ static ops_text_t *showall_octets_bits(ops_data_t *data,ops_bit_map_t **map,
 		else
 		    str=str_from_bitfield ( bit, map[i] );
 		if (!add_str_from_bit_map( text, str, bit))
+		    {
+		    ops_text_free(text);
 		    return NULL;
+		    }
 		}
 	    }
 	}
