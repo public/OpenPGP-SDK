@@ -170,7 +170,10 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg)
 
 	alg=ops_hash_algorithm_from_text(hashstr);
 	if(alg == OPS_HASH_UNKNOWN)
+	    {
+	    free(hash);
 	    ERR("Unknown hash algorithm");
+	    }
 	ops_hash_any(hash,alg);
 	}
     else
