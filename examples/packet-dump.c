@@ -873,7 +873,7 @@ int main(int argc,char **argv)
 	{
 	parse_info.armour_allow_no_gap=ops_true;
 	parse_info.armour_allow_headers_without_gap=ops_true;
-	ops_push_dearmour(&parse_info);
+	ops_reader_push_dearmour(&parse_info);
 	}
 
     ret=ops_parse_and_save_errs(&parse_info,&errors);

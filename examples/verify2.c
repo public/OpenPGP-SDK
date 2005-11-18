@@ -180,12 +180,12 @@ int main(int argc,char **argv)
     parse_info.cb=callback;
 
     if(armour)
-	ops_push_dearmour(&parse_info);
+	ops_reader_push_dearmour(&parse_info);
 
     ops_parse(&parse_info);
 
     if(armour)
-	ops_pop_dearmour(&parse_info);
+	ops_reader_pop_dearmour(&parse_info);
 
     if(signed_data)
 	free(signed_data);

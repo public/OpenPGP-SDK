@@ -682,7 +682,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
     return OPS_R_OK;
     }
 
-void ops_push_dearmour(ops_parse_info_t *parse_info)
+void ops_reader_push_dearmour(ops_parse_info_t *parse_info)
     {
     dearmour_arg_t *arg;
 
@@ -698,7 +698,7 @@ void ops_push_dearmour(ops_parse_info_t *parse_info)
     parse_info->reader_arg=arg;
     }
 
-void ops_pop_dearmour(ops_parse_info_t *parse_info)
+void ops_reader_pop_dearmour(ops_parse_info_t *parse_info)
     {
     dearmour_arg_t *arg=parse_info->reader_arg;
 
@@ -707,4 +707,3 @@ void ops_pop_dearmour(ops_parse_info_t *parse_info)
 
     free(arg);
     }
-
