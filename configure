@@ -36,7 +36,7 @@ my %Args=(
 	  '--with-openssl=' => sub {
 	      my $loc=shift;
 	      $Subst{INCLUDES}.=" -I $loc/include";
-	      $Subst{CRYPTO_LIBS}="$loc/libcrypto.a";
+	      $Subst{CRYPTO_LIBS}="$loc/lib/libcrypto.a";
 	  },
 	  '--with-zlib=' => sub {
 	      my $loc=shift;
