@@ -15,7 +15,8 @@ typedef enum
 
     /* reader errors */
     OPS_E_R=0x1000,	/* general reader error */
-    OPS_E_R_READ_FAILED=OPS_E_R+1,
+    OPS_E_R_READ_FAILED	=OPS_E_R+1,
+    OPS_E_R_EARLY_EOF	=OPS_E_R+2,
 
     /* writer errors */
     OPS_E_W=0x2000,	/* general writer error */
@@ -68,6 +69,8 @@ typedef struct ops_error
 
 void push_error(ops_error_t **errstack,ops_error_code_t errcode,int errno,
 		const char *file,int line,const char *comment,...);
+void print_error(ops_error_t *err);
+void print_errors(ops_error_t *errstack);
 
 #define ops_system_error_1(err,code,syscall,fmt,arg)	do { push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,syscall); push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
 

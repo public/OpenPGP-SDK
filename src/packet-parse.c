@@ -1894,35 +1894,21 @@ static int ops_parse_one_packet(ops_parse_info_t *parse_info,unsigned long *pktl
 
 int ops_parse(ops_parse_info_t *parse_info)
     {
-    int rtn;
-    ops_ulong_list_t errors;
-
-    ops_ulong_list_init(&errors);
-    rtn=ops_parse_and_save_errs(parse_info,&errors);
-    ops_ulong_list_free(&errors);
-    return rtn;
-    }
-
-int ops_parse_and_save_errs(ops_parse_info_t *parse_info, ops_ulong_list_t *errors)
-    {
     int r;
     unsigned long pktlen;
-    unsigned long offset=0;
-
     do
 	{
 	r=ops_parse_one_packet(parse_info,&pktlen);
-	if (!r)
-	    ops_ulong_list_add(errors,&offset);
-	offset+=pktlen;
+	//	offset+=pktlen;
 	} while (r!=-1);
 
-    return errors->used ? 0 : 1;
+    return parse_info->errors ? 0 : 1;
     }
 
 /**
  *
  * \return 1 if success, 0 otherwise
+ * XXX may not now be needed? RW
  */
 
 int ops_parse_errs(ops_parse_info_t *parse_info, ops_ulong_list_t *errs)

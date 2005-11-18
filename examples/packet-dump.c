@@ -833,8 +833,6 @@ int main(int argc,char **argv)
     {
     ops_parse_info_t parse_info;
     ops_reader_fd_arg_t arg;
-    ops_ulong_list_t errors;
-    unsigned i;
     ops_boolean_t armour=ops_false;
     int ret;
     int ch;
@@ -867,8 +865,6 @@ int main(int argc,char **argv)
     parse_info.reader_arg=&arg;
     parse_info.reader=ops_reader_fd;
 
-    ops_ulong_list_init(&errors);
-
     if(armour)
 	{
 	parse_info.armour_allow_no_gap=ops_true;
@@ -876,21 +872,11 @@ int main(int argc,char **argv)
 	ops_reader_push_dearmour(&parse_info);
 	}
 
-    ret=ops_parse_and_save_errs(&parse_info,&errors);
-
+    ret=ops_parse(&parse_info);
     if (!ret)
 	{
-	printf("\n*** Warning: errors were found when parsing input\n");
-	printf("\nError packets will be printed again, together with hexdump\n");
-
-	for (i=0; i<errors.used; i++)
-	    printf("offset: %lu\n", errors.ulongs[i]);
-
-	if (!ops_parse_errs(&parse_info,&errors))
-	    printf("\n*** Warning: problems found when parsing errors\n");
+	print_errors(parse_info.errors);
 	}
-
-    ops_ulong_list_free(&errors);
 
     return 0;
     }

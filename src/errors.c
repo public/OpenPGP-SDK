@@ -36,7 +36,6 @@ void push_error(ops_error_t **errstack,ops_error_code_t errcode,int errno,
     va_start(args, fmt);
     vsnprintf(comment,maxbuf+1,fmt,args);
     va_end(args);
-    printf("comment: %s\n", comment);
 
     // alloc a new error and add it to the top of the stack
 
@@ -53,4 +52,20 @@ void push_error(ops_error_t **errstack,ops_error_code_t errcode,int errno,
     err->line=line;
 
     err->comment=comment;
+    }
+
+void print_error(ops_error_t *err)
+    {
+    printf("%s:%d: ",err->file,err->line);
+    if (err->errcode==OPS_E_SYSTEM_ERROR)
+	printf("system error %d returned from %s\n",err->errno, err->comment);
+    else
+	printf("errcode=%d, errno=%d, comment=%s\n",err->errcode,err->errno,err->comment);
+    }
+
+void print_errors(ops_error_t *errstack)
+    {
+    ops_error_t *err;
+    for (err=errstack; err!=NULL; err=err->next)
+	print_error(err);
     }

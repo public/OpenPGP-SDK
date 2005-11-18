@@ -93,6 +93,9 @@ void ops_finish(void)
  * \return	OPS_R_PARTIAL_READ	if not enough bytes were read, and OPS_RETURN_LENGTH is set in "flags"
  * \return	OPS_R_EARLY_EOF	if not enough bytes were read, and OPS_RETURN_LENGTH was not set in "flags"
  * \return	OPS_R_OK	if expected length was read
+ * \return 	OPS_R_ERROR	if cannot read
+ *
+ * OPS_R_EARLY_EOF and OPS_R_ERROR push errors on the stack
  *
  * \sa enum opt_reader_ret_t
  *
@@ -123,7 +126,11 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 	    return OPS_R_PARTIAL_READ;
 	    }
 	else
+	    {
+	    ops_system_error_1(&parse_info->errors,OPS_E_R_EARLY_EOF,"read",
+			       "file descriptor %d",arg->fd);
 	    return OPS_R_EARLY_EOF;
+	    }
 	}
 #if 0
     printf("[read 0x%x: ",length);
