@@ -4,7 +4,7 @@ CC=%CC%
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include  %INCLUDES% %CFLAGS%
 LDFLAGS=-g %CFLAGS%
-LIBDEPS=../src/libops.a
+LIBDEPS=common.o ../src/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
 
 all: Makefile lib .depend packet-dump verify create-key create-signed-key \
