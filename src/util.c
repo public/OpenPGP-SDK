@@ -127,7 +127,7 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 	    }
 	else
 	    {
-	    ops_system_error_1(&parse_info->errors,OPS_E_R_EARLY_EOF,"read",
+	    ops_error_1(&parse_info->errors,OPS_E_R_EARLY_EOF,
 			       "file descriptor %d",arg->fd);
 	    return OPS_R_EARLY_EOF;
 	    }
@@ -157,18 +157,27 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
  * \todo change arg_ to typesafe? 
  */
 ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
-			       ops_writer_flags_t flags,void *arg_)
+			       ops_writer_flags_t flags,
+			       ops_create_info_t *create_info)
     {
-    ops_writer_fd_arg_t *arg=arg_;
+    ops_writer_fd_arg_t *arg=create_info->arg;
     int n=write(arg->fd,src,length);
 
     OPS_USED(flags);
 
     if(n == -1)
+	{
+	ops_system_error_1(&create_info->errors,OPS_E_W_WRITE_FAILED,"write",
+			   "file descriptor %d",arg->fd);
 	return OPS_W_ERROR;
+	}
 
     if((unsigned)n != length)
+	{
+	ops_error_1(&create_info->errors,OPS_E_W_WRITE_TOO_SHORT,
+			   "file descriptor %d",arg->fd);
 	return OPS_W_ERROR;
+	}
 
     return OPS_W_OK;
     }

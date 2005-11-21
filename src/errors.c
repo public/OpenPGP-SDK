@@ -22,6 +22,8 @@ static ops_errcode_name_map_t errcode_name_map[] =
     { OPS_E_R_EARLY_EOF, "OPS_E_R_EARLY_EOF" },
 
     { OPS_E_W,	"OPS_E_W" },
+    { OPS_E_W_WRITE_FAILED, "OPS_E_W_WRITE_FAILED" },
+    { OPS_E_W_WRITE_TOO_SHORT, "OPS_E_W_WRITE_TOO_SHORT" },
 
     { OPS_E_P,	"OPS_E_P" },
     { OPS_E_P_NOT_ENOUGH_DATA, "OPS_E_P_NOT_ENOUGH_DATA" },

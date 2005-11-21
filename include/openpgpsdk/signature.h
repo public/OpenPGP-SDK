@@ -26,7 +26,7 @@ void ops_signature_start(ops_create_signature_t *sig,
 			 const ops_user_id_t *id,ops_sig_type_t type);
 void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig);
 void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
-			 ops_secret_key_t *skey,ops_create_options_t *opt);
+			 ops_secret_key_t *skey,ops_create_info_t *opt);
 void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when);
 void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
 				     const unsigned char keyid[OPS_KEY_ID_SIZE]);

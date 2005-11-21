@@ -18,7 +18,7 @@ static unsigned char prefix_sha1[]={ 0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0E,
 // treated as an MPI.
 static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
 		     const ops_rsa_secret_key_t *srsa,
-		     ops_create_options_t *opt)
+		     ops_create_info_t *opt)
     {
     unsigned char hashbuf[8192];
     unsigned char sigbuf[8192];
@@ -322,18 +322,18 @@ void ops_signature_start(ops_create_signature_t *sig,
     // since this has subpackets and stuff, we have to buffer the whole
     // thing to get counts before writing.
     ops_memory_init(&sig->mem,100);
-    sig->opt.writer=ops_writer_memory;
-    sig->opt.arg=&sig->mem;
+    sig->info.writer=ops_writer_memory;
+    sig->info.arg=&sig->mem;
 
     // write nearly up to the first subpacket
-    ops_write_scalar(sig->sig.version,1,&sig->opt);
-    ops_write_scalar(sig->sig.type,1,&sig->opt);
-    ops_write_scalar(sig->sig.key_algorithm,1,&sig->opt);
-    ops_write_scalar(sig->sig.hash_algorithm,1,&sig->opt);
+    ops_write_scalar(sig->sig.version,1,&sig->info);
+    ops_write_scalar(sig->sig.type,1,&sig->info);
+    ops_write_scalar(sig->sig.key_algorithm,1,&sig->info);
+    ops_write_scalar(sig->sig.hash_algorithm,1,&sig->info);
 
     // dummy hashed subpacket count
     sig->hashed_count_offset=sig->mem.length;
-    ops_write_scalar(0,2,&sig->opt);
+    ops_write_scalar(0,2,&sig->info);
     }
 
 /**
@@ -351,7 +351,7 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
 			 sig->hashed_data_length,2);
     // dummy unhashed subpacket count
     sig->unhashed_count_offset=sig->mem.length;
-    ops_write_scalar(0,2,&sig->opt);
+    ops_write_scalar(0,2,&sig->info);
     }
 
 /**
@@ -362,13 +362,13 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
  * \param sig
  * \param key
  * \param skey
- * \param opt
+ * \param info
  *
  * \todo get a better description of how/when this is used
  */
 
 void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
-			 ops_secret_key_t *skey,ops_create_options_t *opt)
+			 ops_secret_key_t *skey,ops_create_info_t *info)
     {
     assert(sig->hashed_data_length != (unsigned)-1);
 
@@ -384,11 +384,11 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
     // XXX: technically, we could figure out how big the signature is
     // and write it directly to the output instead of via memory.
     assert(key->algorithm == OPS_PKA_RSA);
-    rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa,&sig->opt);
+    rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa,&sig->info);
 
-    ops_write_ptag(OPS_PTAG_CT_SIGNATURE,opt);
-    ops_write_length(sig->mem.length,opt);
-    ops_write(sig->mem.buf,sig->mem.length,opt);
+    ops_write_ptag(OPS_PTAG_CT_SIGNATURE,info);
+    ops_write_length(sig->mem.length,info);
+    ops_write(sig->mem.buf,sig->mem.length,info);
 
     ops_memory_release(&sig->mem);
     }
@@ -403,8 +403,8 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
  */
 void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
     {
-    ops_write_ss_header(5,OPS_PTAG_SS_CREATION_TIME,&sig->opt);
-    ops_write_scalar(when,4,&sig->opt);
+    ops_write_ss_header(5,OPS_PTAG_SS_CREATION_TIME,&sig->info);
+    ops_write_scalar(when,4,&sig->info);
     }
 
 /**
@@ -419,8 +419,8 @@ void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
 void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
 				     const unsigned char keyid[OPS_KEY_ID_SIZE])
     {
-    ops_write_ss_header(OPS_KEY_ID_SIZE+1,OPS_PTAG_SS_ISSUER_KEY_ID,&sig->opt);
-    ops_write(keyid,OPS_KEY_ID_SIZE,&sig->opt);
+    ops_write_ss_header(OPS_KEY_ID_SIZE+1,OPS_PTAG_SS_ISSUER_KEY_ID,&sig->info);
+    ops_write(keyid,OPS_KEY_ID_SIZE,&sig->info);
     }
 
 /**
@@ -434,6 +434,6 @@ void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
 void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 				       ops_boolean_t primary)
     {
-    ops_write_ss_header(2,OPS_PTAG_SS_PRIMARY_USER_ID,&sig->opt);
-    ops_write_scalar(primary,1,&sig->opt);
+    ops_write_ss_header(2,OPS_PTAG_SS_PRIMARY_USER_ID,&sig->info);
+    ops_write_scalar(primary,1,&sig->info);
     }

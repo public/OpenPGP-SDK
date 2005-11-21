@@ -58,9 +58,10 @@ void ops_memory_release(ops_memory_t *mem)
     }
 
 ops_writer_ret_t ops_writer_memory(const unsigned char *src,unsigned length,
-				   ops_writer_flags_t flags,void *arg_)
+				   ops_writer_flags_t flags,
+				   ops_create_info_t *create_info)
     {
-    ops_memory_t *mem=arg_;
+    ops_memory_t *mem=create_info->arg;
 
     OPS_USED(flags);
     ops_memory_add(mem,src,length);

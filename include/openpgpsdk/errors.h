@@ -1,18 +1,16 @@
 /** \file
  */
 
-#include "types.h"
-
 #ifndef OPS_ERRORS
 #define OPS_ERRORS
+
+#include "openpgpsdk/types.h"
 
 /** error codes */
 typedef enum 
     {
     OPS_E_OK=0x0000,	/* no error */
-
     OPS_E_FAIL=0x0001,	/* general error */
-
     OPS_E_SYSTEM_ERROR=0x0002, /* system error, look at errno for details */
 
     /* reader errors */
@@ -22,6 +20,8 @@ typedef enum
 
     /* writer errors */
     OPS_E_W=0x2000,	/* general writer error */
+    OPS_E_W_WRITE_FAILED = OPS_E_W+1,
+    OPS_E_W_WRITE_TOO_SHORT = OPS_E_W+2,
 
     /* parser errors */
     OPS_E_P=0x3000,	/* general parser error */
@@ -53,5 +53,6 @@ void print_error(ops_error_t *err);
 void print_errors(ops_error_t *errstack);
 
 #define ops_system_error_1(err,code,syscall,fmt,arg)	do { push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,syscall); push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
+#define ops_error_1(err,code,fmt,arg)	do { push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
 
 #endif /* OPS_ERRORS */

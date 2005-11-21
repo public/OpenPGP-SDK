@@ -17,7 +17,7 @@
 int main(int argc,char **argv)
     {
     ops_writer_fd_arg_t arg;
-    ops_create_options_t opt;
+    ops_create_info_t info;
     ops_create_signature_t sig;
     ops_user_id_t id;
     unsigned char keyid[OPS_KEY_ID_SIZE];
@@ -41,13 +41,13 @@ int main(int argc,char **argv)
     assert(skey);
 
     arg.fd=1;
-    opt.writer=ops_writer_fd;
-    opt.arg=&arg;
+    info.writer=ops_writer_fd;
+    info.arg=&arg;
 
-    ops_write_struct_public_key(&skey->public_key,&opt);
+    ops_write_struct_public_key(&skey->public_key,&info);
 
     ops_fast_create_user_id(&id,user_id);
-    ops_write_struct_user_id(&id,&opt);
+    ops_write_struct_user_id(&id,&info);
 
     ops_signature_start(&sig,&skey->public_key,&id,OPS_CERT_POSITIVE);
     ops_signature_add_creation_time(&sig,time(NULL));
@@ -59,7 +59,7 @@ int main(int argc,char **argv)
 
     ops_signature_hashed_subpackets_end(&sig);
 
-    ops_write_signature(&sig,&skey->public_key,skey,&opt);
+    ops_write_signature(&sig,&skey->public_key,skey,&info);
 
     ops_secret_key_free(skey);
 

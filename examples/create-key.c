@@ -5,7 +5,7 @@
 int main(int argc,char **argv)
     {
     ops_writer_fd_arg_t arg;
-    ops_create_options_t opt;
+    ops_create_info_t info;
     const unsigned char *id;
     const char *nstr;
     const char *estr;
@@ -26,11 +26,11 @@ int main(int argc,char **argv)
     BN_hex2bn(&e,estr);
 
     arg.fd=1;
-    opt.writer=ops_writer_fd;
-    opt.arg=&arg;
+    info.writer=ops_writer_fd;
+    info.arg=&arg;
 
-    ops_write_rsa_public_key(time(NULL),n,e,&opt);
-    ops_write_user_id(id,&opt);
+    ops_write_rsa_public_key(time(NULL),n,e,&info);
+    ops_write_user_id(id,&info);
 
     return 0;
     }

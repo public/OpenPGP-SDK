@@ -4,8 +4,9 @@
 #ifndef OPS_UTIL_H
 #define OPS_UTIL_H
 
-#include "packet-parse.h"
-#include "types.h"
+#include "openpgpsdk/types.h"
+#include "openpgpsdk/create.h"
+#include "openpgpsdk/packet-parse.h"
 #include <stdlib.h>
 
 #define ops_false	0
@@ -28,8 +29,9 @@ typedef struct
 void hexdump(const unsigned char *src,size_t length);
 ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 			       ops_reader_flags_t flags,ops_parse_info_t *parse_info);
+struct ops_create_info;
 ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
-			       ops_writer_flags_t flags,void *arg_);
+			       ops_writer_flags_t flags,struct ops_create_info *create_info);
 
 /* typesafe deconstification */
 static inline void *_deconst(const void *p)
