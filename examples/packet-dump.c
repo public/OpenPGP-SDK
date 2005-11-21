@@ -291,10 +291,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	break;
 
     case OPS_PARSER_ERRCODE:
-	printf("parse error: %s (0x%x): %s\n",
-	       ops_errcode(content->errcode.errcode, OPS_LANG_ENGLISH),
-	       content->errcode.errcode,
-	       ops_error(content->errcode.errcode, OPS_LANG_ENGLISH));
+	printf("parse error: %s\n",
+	       ops_errcode(content->errcode.errcode));
 	break;
 
     case OPS_PARSER_PACKET_END:
