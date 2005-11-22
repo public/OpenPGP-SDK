@@ -37,6 +37,8 @@ my %Args=(
 	      my $loc=shift;
 	      $Subst{INCLUDES}.=" -I $loc/include";
 	      $Subst{CRYPTO_LIBS}="$loc/lib/libcrypto.a";
+	      $Subst{CRYPTO_LIBS}="$loc/libcrypto.a"
+		  if !-f $Subst{CRYPTO_LIBS};
 	  },
 	  '--with-zlib=' => sub {
 	      my $loc=shift;
