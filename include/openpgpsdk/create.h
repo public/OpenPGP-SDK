@@ -19,32 +19,44 @@ enum ops_writer_ret_t
     OPS_W_ERROR		=1,
     };
 
-/** the writer function prototype */
 struct ops_create_info;
+/**
+ * \ingroup Create
+ * the writer function prototype
+ */
 typedef ops_writer_ret_t ops_packet_writer_t(const unsigned char *src,
 					     unsigned length,
 					     ops_writer_flags_t flags,
 					     struct ops_create_info *create_info);
 
-/** required information when writing */
+/**
+ * \ingroup Create
+ * This struct contains the required information about how to write
+ */
 struct ops_create_info
     {
-    ops_packet_writer_t *writer;
-    void *arg;
-    ops_error_t * errors;
+    ops_packet_writer_t *writer; /*!< the writer function */
+    void *arg;			/*!< arguments for the writer function */
+    ops_error_t * errors;	/*!< an error stack */
     };
+/**
+ * \ingroup Create
+ * Contains the required information about how to write
+ */
 typedef struct ops_create_info ops_create_info_t;
 
 
-/** needed for signature creation */
+/** \ingroup Create
+ * needed for signature creation
+ */
 typedef struct
     {
-    ops_packet_writer_t *writer;
-    void *arg;
-    ops_hash_t hash;
-    ops_signature_t sig;
-    ops_memory_t mem;
-    ops_create_info_t info;
+    ops_packet_writer_t *writer; /*!< The writer function */
+    void *arg;	/*!< Arguments for the writer function */
+    ops_hash_t hash; 
+    ops_signature_t sig; 
+    ops_memory_t mem; 
+    ops_create_info_t info; /*!< how to do the writing */
     unsigned hashed_count_offset;
     unsigned hashed_data_length;
     unsigned unhashed_count_offset;

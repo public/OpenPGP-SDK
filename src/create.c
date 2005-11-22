@@ -6,6 +6,9 @@
 #include <string.h>
 #include <assert.h>
 
+/*
+ * return 1 if OK, otherwise 0
+ */
 static int base_write(const void *src,unsigned length,
 		       ops_create_info_t *info)
     {
@@ -18,6 +21,7 @@ static int base_write(const void *src,unsigned length,
  * \param src
  * \param length
  * \param info
+ * \return 1 if OK, otherwise 0
  */
 
 ops_boolean_t ops_write(const void *src,unsigned length,
@@ -25,6 +29,14 @@ ops_boolean_t ops_write(const void *src,unsigned length,
     {
     return base_write(src,length,info);
     }
+
+/**
+ * \ingroup Create
+ * \param n
+ * \param length
+ * \param info
+ * \return ops_true if OK, otherwise ops_false
+ */
 
 ops_boolean_t ops_write_scalar(unsigned n,unsigned length,
 			       ops_create_info_t *info)
@@ -40,6 +52,15 @@ ops_boolean_t ops_write_scalar(unsigned n,unsigned length,
     return ops_true;
     }
 
+/** 
+ * \ingroup Create
+ * \param bn
+ * \param info
+ * \return 1 if OK, otherwise 0
+ * \todo This statement about the return value is true based on the assumption
+ *	that ops_true=1. Tidy this assumption up.
+ */
+
 ops_boolean_t ops_write_mpi(const BIGNUM *bn,ops_create_info_t *info)
     {
     unsigned char buf[8192];
@@ -51,6 +72,13 @@ ops_boolean_t ops_write_mpi(const BIGNUM *bn,ops_create_info_t *info)
 	&& ops_write(buf,(bits+7)/8,info);
     }
 
+/** 
+ * \ingroup Create
+ * \param tag
+ * \param info
+ * \return 1 if OK, otherwise 0
+ */
+
 ops_boolean_t ops_write_ptag(ops_content_tag_t tag,ops_create_info_t *info)
     {
     unsigned char c[1];
@@ -59,6 +87,13 @@ ops_boolean_t ops_write_ptag(ops_content_tag_t tag,ops_create_info_t *info)
 
     return base_write(c,1,info);
     }
+
+/** 
+ * \ingroup Create
+ * \param length
+ * \param info
+ * \return 1 if OK, otherwise 0
+ */
 
 ops_boolean_t ops_write_length(unsigned length,ops_create_info_t *info)
     {
@@ -78,6 +113,14 @@ ops_boolean_t ops_write_length(unsigned length,ops_create_info_t *info)
     return ops_write_scalar(0xff,1,info) && ops_write_scalar(length,4,info);
     }
 
+/** 
+ * \ingroup Create
+ * \param length
+ * \param type
+ * \param info
+ * \return 1 if OK, otherwise 0
+ */
+
 ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
 				  ops_create_info_t *info)
     {
@@ -92,8 +135,8 @@ ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
 /**
  * \ingroup Create
  *
- * ops_fast_create_user_id() sets id->user_id to the given "user_id".
- * This is fast because it is only copying a char*. However, if "user_id"
+ * ops_fast_create_user_id() sets id->user_id to the given user_id.
+ * This is fast because it is only copying a char*. However, if user_id
  * is changed or freed in the future, this could have injurious results.
  * \param id
  * \param user_id
@@ -107,7 +150,7 @@ void ops_fast_create_user_id(ops_user_id_t *id,unsigned char *user_id)
 /**
  * \ingroup Create
  *
- * Writes a User Id from the information held in #id and #info
+ * Writes a User Id from the information held in id and info
  *
  * \param id
  * \param info
@@ -160,6 +203,13 @@ static unsigned public_key_length(const ops_public_key_t *key)
     return 0;
     }
 
+/** 
+ * \ingroup Create
+ * \param key
+ * \param time
+ * \param n
+ * \param e
+*/
 void ops_fast_create_rsa_public_key(ops_public_key_t *key,time_t time,
 				    BIGNUM *n,BIGNUM *e)
     {
@@ -265,6 +315,13 @@ ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
 				   DECONST(BIGNUM,e));
     return ops_write_struct_public_key(&key,info);
     }
+
+/**
+ * \ingroup Create
+ * \param out
+ * \param key
+ * \param make_packet
+ */
 
 void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
 			  ops_boolean_t make_packet)
