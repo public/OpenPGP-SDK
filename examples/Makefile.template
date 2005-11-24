@@ -7,12 +7,12 @@ LDFLAGS=-g %CFLAGS%
 LIBDEPS=common.o ../src/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
 
-all: Makefile lib .depend packet-dump verify create-key create-signed-key \
+all: Makefile .depend packet-dump verify create-key create-signed-key \
      verify2 sign-detached
 
 test: test-dump test-verify test-verify-armoured test-create-key
 
-lib:
+../src/libops.a::
 	cd ../src && make
 
 packet-dump: packet-dump.o $(LIBDEPS)
@@ -72,7 +72,13 @@ test-verify: verify
 test-verify-amoured: verify2
 	./verify2 -a ../test/rsa-public-key-2719AF35.raw ../test/clearsign.txt
 
-test-create-key: $(SCRATCH)
+test-create-key: $(SCRATCH)/key.sec $(SCRATCH)/key.pub
+
+$(SCRATCH)/key.sec $(SCRATCH)/key.pub: $(SCRATCH) create-signed-key
 	./create-signed-key "A Test Key" $(SCRATCH)/key.sec $(SCRATCH)/key.pub
+
+test-sign-detached: $(SCRATCH)/key.sec sign-detached
+	echo "Sign this!" > $(SCRATCH)/to-be-signed-detached
+	./sign-detached $(SCRATCH)/key.sec "Why a user ID?" SHA1 $(SCRATCH)/to-be-signed-detached $(SCRATCH)/to-be-signed-detached.sig
 
 include .depend

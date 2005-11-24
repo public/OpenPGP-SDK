@@ -11,7 +11,8 @@ callback(const ops_parser_content_t *content,void *arg_)
 
     if(content->tag == OPS_PTAG_CT_SECRET_KEY)
 	{
-	memcpy(skey,&content->content.secret_key,sizeof skey);
+	*skey=malloc(sizeof **skey);
+	memcpy(*skey,&content->content.secret_key,sizeof **skey);
 	return OPS_KEEP_MEMORY;
 	}
 
