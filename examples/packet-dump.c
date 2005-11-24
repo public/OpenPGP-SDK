@@ -275,6 +275,44 @@ static void print_packet(const ops_packet_t *packet)
     printf("\n");
     }
 
+static void print_public_key(const ops_public_key_t *key)
+    {
+    print_unsigned_int("Version",key->version);
+    print_time("Creation Time", key->creation_time);
+    if(key->version == OPS_V3)
+	print_unsigned_int("Days Valid",key->days_valid);
+
+    print_string_and_value("Algorithm",ops_show_pka(key->algorithm),
+			   key->algorithm);
+
+    switch(key->algorithm)
+	{
+    case OPS_PKA_DSA:
+	print_bn("p",key->key.dsa.p);
+	print_bn("q",key->key.dsa.q);
+	print_bn("g",key->key.dsa.g);
+	print_bn("y",key->key.dsa.y);
+	break;
+
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	print_bn("n",key->key.rsa.n);
+	print_bn("e",key->key.rsa.e);
+	break;
+
+    case OPS_PKA_ELGAMAL:
+    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
+	print_bn("p",key->key.elgamal.p);
+	print_bn("g",key->key.elgamal.g);
+	print_bn("y",key->key.elgamal.y);
+	break;
+
+    default:
+	assert(0);
+	}
+    }
+
 static ops_parse_callback_return_t
 callback(const ops_parser_content_t *content_,void *arg_)
     {
@@ -321,45 +359,12 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
     case OPS_PTAG_CT_PUBLIC_KEY:
     case OPS_PTAG_CT_PUBLIC_SUBKEY:
-
 	if (content_->tag == OPS_PTAG_CT_PUBLIC_KEY)
 	    print_tagname("PUBLIC KEY");
 	else
 	    print_tagname("PUBLIC SUBKEY");
 
-	print_unsigned_int("Version",content->public_key.version);
-	print_time("Creation Time", content->public_key.creation_time);
-	print_unsigned_int("Days Valid",content->public_key.days_valid);
-
-	str=ops_show_pka(content->public_key.algorithm);
-	print_string_and_value("Algorithm",str,content->public_key.algorithm);
-
-	switch(content->public_key.algorithm)
-	    {
-	case OPS_PKA_DSA:
-	    print_bn("p",content->public_key.key.dsa.p);
-	    print_bn("q",content->public_key.key.dsa.q);
-	    print_bn("g",content->public_key.key.dsa.g);
-	    print_bn("y",content->public_key.key.dsa.y);
-	    break;
-
-	case OPS_PKA_RSA:
-	case OPS_PKA_RSA_ENCRYPT_ONLY:
-	case OPS_PKA_RSA_SIGN_ONLY:
-	    print_bn("n",content->public_key.key.rsa.n);
-	    print_bn("e",content->public_key.key.rsa.e);
-	    break;
-
-	case OPS_PKA_ELGAMAL:
-	case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	    print_bn("p",content->public_key.key.elgamal.p);
-	    print_bn("g",content->public_key.key.elgamal.g);
-	    print_bn("y",content->public_key.key.elgamal.y);
-	    break;
-
-	default:
-	    assert(0);
-	    }
+	print_public_key(&content->public_key);
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -775,7 +780,21 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
     case OPS_PTAG_CT_SECRET_KEY:
 	// XXX: fix me
-	printf("***RACHEL DO YOUR THING HERE***\n");
+	print_tagname("SECRET_KEY");
+	print_public_key(&content->secret_key.public_key);
+
+	switch(content->secret_key.public_key.algorithm)
+	    {
+	case OPS_PKA_RSA:
+	    print_bn("d",content->secret_key.key.rsa.d);
+	    print_bn("p",content->secret_key.key.rsa.p);
+	    print_bn("q",content->secret_key.key.rsa.q);
+	    print_bn("u",content->secret_key.key.rsa.u);
+	    break;
+
+	default:
+	    assert(0);
+	    }
 	break;
 
     case OPS_PTAG_CT_ARMOUR_HEADER:
