@@ -9,9 +9,6 @@
 
 #define OPS_MAX_HASH	64
 
-/** ops_hash_t */
-typedef struct _ops_hash_t ops_hash_t;
-
 typedef void ops_hash_init_t(ops_hash_t *hash);
 typedef void ops_hash_add_t(ops_hash_t *hash,const unsigned char *data,
 			unsigned length);

@@ -1682,7 +1682,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     if(!ops_limited_read(c,1,region,parse_info))
 	return 0;
     C.secret_key.s2k_usage=c[0];
-    assert(C.secret_key.s2k_usage == 0);
+    assert(C.secret_key.s2k_usage == OPS_S2K_NONE);
 
     switch(C.secret_key.public_key.algorithm)
 	{

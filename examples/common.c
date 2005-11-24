@@ -18,7 +18,7 @@ callback(const ops_parser_content_t *content,void *arg_)
     return OPS_RELEASE_MEMORY;
     }
     
-ops_secret_key_t *get_key(const char *keyfile)
+ops_secret_key_t *get_secret_key(const char *keyfile)
     {
     ops_reader_fd_arg_t arg;
     ops_parse_info_t parse_info;

@@ -8,9 +8,9 @@ LIBDEPS=common.o ../src/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
 
 all: Makefile lib .depend packet-dump verify create-key create-signed-key \
-     verify2
+     verify2 sign-detached
 
-test: test-dump test-verify
+test: test-dump test-verify test-verify-armoured test-create-key
 
 lib:
 	cd ../src && make
@@ -29,6 +29,9 @@ create-key: create-key.o $(LIBDEPS)
 
 create-signed-key: create-signed-key.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o create-signed-key create-signed-key.o $(LIBS)
+
+sign-detached: sign-detached.o $(LIBDEPS)
+	$(CC) $(LDFLAGS) -o sign-detached sign-detached.o $(LIBS)
 
 tags:
 	rm -f TAGS
@@ -50,6 +53,11 @@ Makefile: Makefile.template ../configure
 
 # tests
 
+SCRATCH=../scratch
+
+$(SCRATCH):
+	mkdir $(SCRATCH)
+
 test-dump: packet-dump
 	./packet-dump < ../test/dsa-public-key-2118CF83.raw
 	./packet-dump < ../test/rsa-public-key-2719AF35.raw
@@ -63,5 +71,8 @@ test-verify: verify
 
 test-verify-amoured: verify2
 	./verify2 -a ../test/rsa-public-key-2719AF35.raw ../test/clearsign.txt
+
+test-create-key: $(SCRATCH)
+	./create-signed-key "A Test Key" $(SCRATCH)/key.sec $(SCRATCH)/key.pub
 
 include .depend

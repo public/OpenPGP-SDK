@@ -24,6 +24,9 @@ typedef unsigned ops_boolean_t;
 /** ops_content_tag_t */
 typedef enum ops_content_tag_t ops_content_tag_t;
 
+/** ops_hash_t */
+typedef struct _ops_hash_t ops_hash_t;
+
 /** 
    keep both ops_content_tag_t and ops_packet_tag_t because we might
    want to introduce some bounds checking i.e. is this really a valid value

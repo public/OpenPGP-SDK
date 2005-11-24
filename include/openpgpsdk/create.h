@@ -45,23 +45,6 @@ struct ops_create_info
  */
 typedef struct ops_create_info ops_create_info_t;
 
-
-/** \ingroup Create
- * needed for signature creation
- */
-typedef struct
-    {
-    ops_packet_writer_t *writer; /*!< The writer function */
-    void *arg;	/*!< Arguments for the writer function */
-    ops_hash_t hash; 
-    ops_signature_t sig; 
-    ops_memory_t mem; 
-    ops_create_info_t info; /*!< how to do the writing */
-    unsigned hashed_count_offset;
-    unsigned hashed_data_length;
-    unsigned unhashed_count_offset;
-    } ops_create_signature_t;
-
 ops_boolean_t ops_write(const void *src,unsigned length,
 			ops_create_info_t *opt);
 ops_boolean_t ops_write_length(unsigned length,ops_create_info_t *opt);
@@ -88,5 +71,15 @@ void ops_fast_create_user_id(ops_user_id_t *id,unsigned char *user_id);
 ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
 				       ops_create_info_t *opt);
 ops_boolean_t ops_write_user_id(const unsigned char *user_id,ops_create_info_t *opt);
+
+void ops_create_rsa_secret_key(ops_secret_key_t *key,const BIGNUM *p,
+			       const BIGNUM *q,const BIGNUM *d,
+			       const BIGNUM *u,const BIGNUM *n,
+			       const BIGNUM *e);
+void ops_fast_create_rsa_secret_key(ops_secret_key_t *key,time_t time,
+				    BIGNUM *p,BIGNUM *q,BIGNUM *d,BIGNUM *u,
+				    BIGNUM *n,BIGNUM *e);
+ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
+					  ops_create_info_t *info);
 
 #endif

@@ -37,6 +37,7 @@ my %Args=(
 	      my $loc=shift;
 	      $Subst{INCLUDES}.=" -I $loc/include";
 	      $Subst{CRYPTO_LIBS}="$loc/lib/libcrypto.a";
+	      # assume developer version if library isn't in .../lib
 	      $Subst{CRYPTO_LIBS}="$loc/libcrypto.a"
 		  if !-f $Subst{CRYPTO_LIBS};
 	  },

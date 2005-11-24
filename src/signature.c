@@ -126,11 +126,16 @@ static void hash_add_key(ops_hash_t *hash,const ops_public_key_t *key)
     ops_memory_release(&mem);
     }
 
-static void init_signature(ops_hash_t *hash,const ops_signature_t *sig,
-			   const ops_public_key_t *key)
+static void common_init_signature(ops_hash_t *hash,const ops_signature_t *sig)
     {
     ops_hash_any(hash,sig->hash_algorithm);
     hash->init(hash);
+    }
+
+static void init_signature(ops_hash_t *hash,const ops_signature_t *sig,
+			   const ops_public_key_t *key)
+    {
+    common_init_signature(hash,sig);
     hash_add_key(hash,key);
     }
 
@@ -289,19 +294,20 @@ ops_check_hash_signature(ops_hash_t *hash,
 /**
  * \ingroup Create
  *
- * ops_signature_start() creates a V4 signature with a SHA1 hash.
+ * ops_signature_start() creates a V4 public key signature with a SHA1 hash.
  * 
- * \param sig
- * \param key
- * \param id
- * \param type
- * \todo Expand description.
+ * \param sig The signature structure to initialise
+ * \param key The public key to be signed
+ * \param id The user ID being bound to the key
+ * \param type Signature type
+ * \todo Expand description. Allow other hashes.
  */
-void ops_signature_start(ops_create_signature_t *sig,
-			 const ops_public_key_t *key,
-			 const ops_user_id_t *id,
-			 ops_sig_type_t type)
+void ops_signature_start_key_signature(ops_create_signature_t *sig,
+				       const ops_public_key_t *key,
+				       const ops_user_id_t *id,
+				       ops_sig_type_t type)
     {
+    memset(sig,'\0',sizeof *sig);
     // XXX: refactor with check (in several ways - check should probably
     // use the buffered writer to construct packets (done), and also should
     // share code for hash calculation)
@@ -314,7 +320,6 @@ void ops_signature_start(ops_create_signature_t *sig,
 
     init_signature(&sig->hash,&sig->sig,key);
 
-    // \todo Fix this. user_id is UTF-8 so strlen may not work
     ops_hash_add_int(&sig->hash,0xb4,1);
     ops_hash_add_int(&sig->hash,strlen((char *)id->user_id),4);
     sig->hash.add(&sig->hash,id->user_id,strlen((char *)id->user_id));
@@ -334,6 +339,64 @@ void ops_signature_start(ops_create_signature_t *sig,
     // dummy hashed subpacket count
     sig->hashed_count_offset=sig->mem.length;
     ops_write_scalar(0,2,&sig->info);
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Create a V4 public key signature over some plaintext.
+ * 
+ * \param sig The signature structure to initialise
+ * \param id
+ * \param type
+ * \todo Expand description. Allow other hashes.
+ */
+void ops_signature_start_plaintext_signature(ops_create_signature_t *sig,
+					     ops_hash_algorithm_t hash,
+					     ops_sig_type_t type)
+    {
+    memset(sig,'\0',sizeof *sig);
+    // XXX: refactor with check (in several ways - check should probably
+    // use the buffered writer to construct packets (done), and also should
+    // share code for hash calculation)
+    sig->sig.version=OPS_SIG_V4;
+    sig->sig.hash_algorithm=hash;
+    sig->sig.type=type;
+
+    sig->hashed_data_length=-1;
+
+    common_init_signature(&sig->hash,&sig->sig);
+
+    // since this has subpackets and stuff, we have to buffer the whole
+    // thing to get counts before writing.
+    ops_memory_init(&sig->mem,100);
+    sig->info.writer=ops_writer_memory;
+    sig->info.arg=&sig->mem;
+
+    // write nearly up to the first subpacket
+    ops_write_scalar(sig->sig.version,1,&sig->info);
+    ops_write_scalar(sig->sig.type,1,&sig->info);
+    ops_write_scalar(sig->sig.key_algorithm,1,&sig->info);
+    ops_write_scalar(sig->sig.hash_algorithm,1,&sig->info);
+
+    // dummy hashed subpacket count
+    sig->hashed_count_offset=sig->mem.length;
+    ops_write_scalar(0,2,&sig->info);
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Add plaintext data to a signature-to-be.
+ *
+ * \param sig The signature-to-be.
+ * \param buf The plaintext data.
+ * \param length The amount of plaintext data.
+ */
+void ops_signature_add_data(ops_create_signature_t *sig,const void *buf,
+			    size_t length)
+    {
+    sig->hash.add(&sig->hash,buf,length);
     }
 
 /**
