@@ -4,8 +4,7 @@
 
 int main(int argc,char **argv)
     {
-    ops_writer_fd_arg_t arg;
-    ops_create_info_t info;
+    ops_create_info_t *info;
     const unsigned char *id;
     const char *nstr;
     const char *estr;
@@ -25,12 +24,13 @@ int main(int argc,char **argv)
     BN_hex2bn(&n,nstr);
     BN_hex2bn(&e,estr);
 
-    arg.fd=1;
-    info.writer=ops_writer_fd;
-    info.arg=&arg;
+    info=ops_create_info_new();
+    ops_create_info_set_writer_fd(info,1);
 
-    ops_write_rsa_public_key(time(NULL),n,e,&info);
-    ops_write_user_id(id,&info);
+    ops_write_rsa_public_key(time(NULL),n,e,info);
+    ops_write_user_id(id,info);
+
+    ops_create_info_delete(info);
 
     return 0;
     }

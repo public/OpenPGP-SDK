@@ -5,6 +5,19 @@
 #include <openpgpsdk/util.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
+
+/**
+ * \ingroup Create
+ * This struct contains the required information about how to write
+ */
+struct ops_create_info
+    {
+    ops_writer_t *writer; /*!< the writer function */
+    void *arg;			/*!< arguments for the writer function */
+    ops_writer_destroyer_t *destroyer;
+    ops_error_t *errors;	/*!< an error stack */
+    };
 
 /*
  * return true if OK, otherwise false
@@ -12,7 +25,7 @@
 static ops_boolean_t base_write(const void *src,unsigned length,
 				ops_create_info_t *info)
     {
-    return info->writer(src,length,0,info) == OPS_W_OK;
+    return info->writer(src,length,0,&info->errors,info->arg) == OPS_W_OK;
     }
 
 /**
@@ -400,16 +413,19 @@ ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
 void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
 			  ops_boolean_t make_packet)
     {
-    ops_create_info_t info;
+    ops_create_info_t *info;
+
+    info=ops_create_info_new();
 
     ops_memory_init(out,128);
-    info.writer=ops_writer_memory;
-    info.arg=out;
+    ops_create_info_set_writer_memory(info,out);
 
-    write_public_key_body(key,&info);
+    write_public_key_body(key,info);
 
     if(make_packet)
 	ops_memory_make_packet(out,OPS_PTAG_CT_PUBLIC_KEY);
+
+    ops_create_info_delete(info);
     }
 
 /**
@@ -464,4 +480,128 @@ ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
     return ops_write_ptag(OPS_PTAG_CT_SECRET_KEY,info)
 	&& ops_write_length(1+4+1+1+secret_key_length(key)+2,info)
 	&& write_secret_key_body(key,info);
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Create a new ops_create_info_t structure.
+ *
+ * \return the new structure.
+ */
+ops_create_info_t *ops_create_info_new(void)
+    { return ops_mallocz(sizeof(ops_create_info_t)); }
+
+/**
+ * \ingroup Create
+ *
+ * Delete an ops_create_info_t structure. If a writer is active, then
+ * that is also deleted.
+ *
+ * \param info the structure to be deleted.
+ */
+void ops_create_info_delete(ops_create_info_t *info)
+    {
+    if(info->destroyer)
+	{
+	info->destroyer(info->arg);
+	info->destroyer=NULL;
+	}
+
+    free(info);
+    }
+
+typedef struct
+    {
+    int fd;
+    } writer_fd_arg_t;
+
+static ops_writer_ret_t fd_writer(const unsigned char *src,unsigned length,
+				  ops_writer_flags_t flags,
+				  ops_error_t **errors,void *arg_)
+    {
+    writer_fd_arg_t *arg=arg_;
+    int n=write(arg->fd,src,length);
+
+    OPS_USED(flags);
+
+    if(n == -1)
+	{
+	ops_system_error_1(errors,OPS_E_W_WRITE_FAILED,"write",
+			   "file descriptor %d",arg->fd);
+	return OPS_W_ERROR;
+	}
+
+    if((unsigned)n != length)
+	{
+	ops_error_1(errors,OPS_E_W_WRITE_TOO_SHORT,
+		    "file descriptor %d",arg->fd);
+	return OPS_W_ERROR;
+	}
+
+    return OPS_W_OK;
+    }
+
+static void fd_destroyer(void *arg)
+    {
+    free(arg);
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Set the writer in info to be a stock writer that writes to a file
+ * descriptor. If another writer has already been set, then that is
+ * first destroyed.
+ * 
+ * \param info The info structure
+ * \param fd The file descriptor
+ *
+ */
+
+void ops_create_info_set_writer_fd(ops_create_info_t *info,int fd)
+    {
+    writer_fd_arg_t *arg=malloc(sizeof *arg);
+
+    arg->fd=fd;
+    ops_create_info_set_writer(info,fd_writer,fd_destroyer,arg);
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Set a writer in info. If another writer has already been set, then
+ * that is first destroyed.
+ *
+ * \param info The info structure
+ * \param writer The writer
+ * \param destroyer The destroyer
+ * \param arg The argument for the writer and destroyer
+ */
+void ops_create_info_set_writer(ops_create_info_t *info,
+				ops_writer_t *writer,
+				ops_writer_destroyer_t *destroyer,
+				void *arg)
+    {
+    ops_create_info_close_writer(info);
+    info->writer=writer;
+    info->destroyer=destroyer;
+    info->arg=arg;
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Close the writer currently set in info.
+ *
+ * \param info The info structure
+ */
+void ops_create_info_close_writer(ops_create_info_t *info)
+    {
+    if(info->destroyer)
+	info->destroyer(info->arg);
+
+    info->writer=NULL;
+    info->destroyer=NULL;
+    info->arg=NULL;
     }

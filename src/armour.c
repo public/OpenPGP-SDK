@@ -686,8 +686,7 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info)
     {
     dearmour_arg_t *arg;
 
-    arg=malloc(sizeof *arg);
-    memset(arg,'\0',sizeof *arg);
+    arg=ops_mallocz(sizeof *arg);
 
     arg->reader_arg=parse_info->reader_arg;
     arg->reader=parse_info->reader;

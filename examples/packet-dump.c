@@ -230,7 +230,6 @@ static void print_unsigned_int(char *name, unsigned int val)
 
 static void print_string_and_value( char *name, char *str, unsigned char value)
     {
-
     print_name(name);
 
     printf("%s", str);

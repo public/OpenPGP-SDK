@@ -19,19 +19,9 @@ typedef struct
     int fd; /*!< file descriptor */
     } ops_reader_fd_arg_t;
 
-/** Arguments for writer_fd
- */
-typedef struct
-    {
-    int fd; /*!< file descriptor */
-    } ops_writer_fd_arg_t;
-
 void hexdump(const unsigned char *src,size_t length);
 ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 			       ops_reader_flags_t flags,ops_parse_info_t *parse_info);
-struct ops_create_info;
-ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
-			       ops_writer_flags_t flags,struct ops_create_info *create_info);
 
 /* typesafe deconstification */
 static inline void *_deconst(const void *p)
@@ -42,5 +32,8 @@ char *ops_str_from_map(int code, ops_map_t *map);
 
 /* number of elements in an array */
 #define OPS_ARRAY_SIZE(a)	(sizeof(a)/sizeof(*(a)))
+
+/** Allocate zeroed memory */
+void *ops_mallocz(size_t n);
 
 #endif

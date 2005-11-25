@@ -57,15 +57,33 @@ void ops_memory_release(ops_memory_t *mem)
     mem->buf=NULL;
     }
 
-ops_writer_ret_t ops_writer_memory(const unsigned char *src,unsigned length,
-				   ops_writer_flags_t flags,
-				   ops_create_info_t *create_info)
+static ops_writer_ret_t memory_writer(const unsigned char *src,unsigned length,
+				      ops_writer_flags_t flags,
+				      ops_error_t **errors,
+				      void *arg)
     {
-    ops_memory_t *mem=create_info->arg;
+    ops_memory_t *mem=arg;
 
     OPS_USED(flags);
+    OPS_USED(errors);
     ops_memory_add(mem,src,length);
     return OPS_W_OK;
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Set a memory writer. Note that it is the caller's resposibility to
+ * release mem.
+ *
+ * \param info The info structure
+ * \param mem The memory structure
+ */
+
+void ops_create_info_set_writer_memory(ops_create_info_t *info,
+				       ops_memory_t *mem)
+    {
+    ops_create_info_set_writer(info,memory_writer,NULL,mem);
     }
 
 void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)

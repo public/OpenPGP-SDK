@@ -57,7 +57,7 @@ char *ops_errcode(const ops_errcode_t errcode)
  *
  */
 
-void push_error(ops_error_t **errstack,ops_errcode_t errcode,int errno,
+void push_error(ops_error_t **errstack,ops_errcode_t errcode,int sys_errno,
 		const char *file,int line,const char *fmt,...)
     {
     // first get the varargs and generate the comment
@@ -83,7 +83,7 @@ void push_error(ops_error_t **errstack,ops_errcode_t errcode,int errno,
 
     // fill in the details
     err->errcode=errcode;
-    err->errno=errno;
+    err->sys_errno=sys_errno;
     err->file=file;
     err->line=line;
 
@@ -94,11 +94,10 @@ void print_error(ops_error_t *err)
     {
     printf("%s:%d: ",err->file,err->line);
     if (err->errcode==OPS_E_SYSTEM_ERROR)
-	printf("system error %d returned from %s()\n",err->errno, err->comment);
-    else
-	printf("%s, %s\n",
-	       ops_errcode(err->errcode),
+	printf("system error %d returned from %s()\n",err->sys_errno,
 	       err->comment);
+    else
+	printf("%s, %s\n",ops_errcode(err->errcode),err->comment);
     }
 
 void print_errors(ops_error_t *errstack)

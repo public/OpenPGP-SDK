@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
-#include <errno.h> 
+#include <string.h>
 
 /**
  * Searches the given map for the given type.
@@ -140,44 +140,11 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
     return OPS_R_OK;
     }
 
-/**
- * \ingroup Create
- *
- * ops_writer_fd() attempts to write up to #length bytes 
- * to the file descriptor in #arg_ from the buffer #src 
- * using the rules contained in #flags
- * 
- * \param	src
- * \param	length Number of bytes to try to write
- * \param	flags	Rules to use
- * \param	arg_	Gets cast to #ops_writer_fd_arg_t
- *
- * \return	OPS_W_ERROR 	if not enough bytes written
- * \return	OPS_W_OK if all bytes written
- * \todo change arg_ to typesafe? 
- */
-ops_writer_ret_t ops_writer_fd(const unsigned char *src,unsigned length,
-			       ops_writer_flags_t flags,
-			       ops_create_info_t *create_info)
+void *ops_mallocz(size_t n)
     {
-    ops_writer_fd_arg_t *arg=create_info->arg;
-    int n=write(arg->fd,src,length);
+    void *m=malloc(n);
 
-    OPS_USED(flags);
+    memset(m,'\0',n);
 
-    if(n == -1)
-	{
-	ops_system_error_1(&create_info->errors,OPS_E_W_WRITE_FAILED,"write",
-			   "file descriptor %d",arg->fd);
-	return OPS_W_ERROR;
-	}
-
-    if((unsigned)n != length)
-	{
-	ops_error_1(&create_info->errors,OPS_E_W_WRITE_TOO_SHORT,
-			   "file descriptor %d",arg->fd);
-	return OPS_W_ERROR;
-	}
-
-    return OPS_W_OK;
+    return m;
     }

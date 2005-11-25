@@ -989,7 +989,7 @@ static int parse_v3_signature(ops_region_t *region,ops_parse_info_t *parse_info)
     unsigned char c[1];
     ops_parser_content_t content;
 
-    C.signature.version=OPS_SIG_V3;
+    C.signature.version=OPS_V3;
 
     /* hash info length */
     if(!ops_limited_read(c,1,region,parse_info))
@@ -1395,7 +1395,7 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *parse_info,
     ops_parser_content_t content;
 
     memset(&C.signature,'\0',sizeof C.signature);
-    C.signature.version=OPS_SIG_V4;
+    C.signature.version=OPS_V4;
     C.signature.v4_hashed_data_start=v4_hashed_data_start;
 
     if(!ops_limited_read(c,1,region,parse_info))

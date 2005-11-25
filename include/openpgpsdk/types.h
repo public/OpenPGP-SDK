@@ -63,5 +63,10 @@ typedef enum
 /** ops_writer_ret_t */
 typedef enum ops_writer_ret_t ops_writer_ret_t;
 
+/**
+ * \ingroup Create
+ * Contains the required information about how to write
+ */
+typedef struct ops_create_info ops_create_info_t;
 
 #endif

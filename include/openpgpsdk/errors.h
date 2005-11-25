@@ -5,6 +5,7 @@
 #define OPS_ERRORS
 
 #include "openpgpsdk/types.h"
+#include <errno.h> 
 
 /** error codes */
 typedef enum 
@@ -38,7 +39,7 @@ typedef ops_map_t ops_errcode_name_map_t;
 typedef struct ops_error
     {
     ops_errcode_t errcode;
-    int errno;	/*!< irrelevent unless errcode == OPS_E_SYSTEM_ERROR */
+    int sys_errno; /*!< irrelevent unless errcode == OPS_E_SYSTEM_ERROR */
     char *comment;
     const char *file;
     int line;
@@ -47,7 +48,7 @@ typedef struct ops_error
 
 char *ops_errcode(const ops_errcode_t errcode);
 
-void push_error(ops_error_t **errstack,ops_errcode_t errcode,int errno,
+void push_error(ops_error_t **errstack,ops_errcode_t errcode,int sys_errno,
 		const char *file,int line,const char *comment,...);
 void print_error(ops_error_t *err);
 void print_errors(ops_error_t *errstack);

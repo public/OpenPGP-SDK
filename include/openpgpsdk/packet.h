@@ -298,10 +298,21 @@ typedef union
     ops_elgamal_public_key_t	elgamal;	/*!< An ElGamal public key */
     } ops_public_key_union_t;
 
+/** Version.
+ * OpenPGP has two different protocol versions: version 3 and version 4.
+ *
+ * \see RFC2440bis-12 5.2
+ */
+typedef enum
+    {
+    OPS_V3=3,	/*<! Version 3 */
+    OPS_V4=4,	/*<! Version 4 */
+    } ops_version_t;
+
 /** Structure to hold one pgp public key */
 typedef struct
     {
-    unsigned 			version;	/*!< version of the key (v3, v4...) */
+    ops_version_t		version;	/*!< version of the key (v3, v4...) */
     time_t			creation_time;  /*!< when the key was created.  Note that interpretation varies with key
 						  version. */
     unsigned			days_valid;	/*!< validity period of the key in days since creation.  A value of 0
@@ -384,17 +395,6 @@ typedef struct
     {
     ops_data_t data; /*!< User Attribute */
     } ops_user_attribute_t;
-
-/** Signature Version.
- * OpenPGP has two different signature versions: version 3 and version 4.
- *
- * \see RFC2440bis-12 5.2
- */
-typedef enum
-    {
-    OPS_SIG_V3=3,	/*<! Version 3 Signature */
-    OPS_SIG_V4=4,	/*<! Version 4 Signature */
-    } ops_sig_version_t;
 
 /** Signature Type.
  * OpenPGP defines different signature types that allow giving different meanings to signatures.  Signature types
@@ -484,16 +484,16 @@ typedef union
     ops_unknown_signature_t 	unknown; /* private or experimental */
     } ops_signature_union_t;
 
+#define OPS_KEY_ID_SIZE		8
+
 /** Struct to hold a signature packet.
  *
  * \see RFC2440bis-12 5.2.2
  * \see RFC2440bis-12 5.2.3
  */
-#define OPS_KEY_ID_SIZE		8
-/** signature */
 typedef struct
     {
-    ops_sig_version_t		version;	/*!< signature version number */
+    ops_version_t		version;	/*!< signature version number */
     ops_sig_type_t		type;		/*!< signature type value */
     time_t			creation_time;	/*!< creation time of the signature */
     unsigned char		signer_id[OPS_KEY_ID_SIZE];	/*!< Eight-octet key ID of signer*/

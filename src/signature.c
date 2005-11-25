@@ -7,6 +7,30 @@
 #include <assert.h>
 #include <string.h>
 
+/** \ingroup Create
+ * needed for signature creation
+ */
+struct ops_create_signature
+    {
+    ops_hash_t hash; 
+    ops_signature_t sig; 
+    ops_memory_t mem; 
+    ops_create_info_t *info; /*!< how to do the writing */
+    unsigned hashed_count_offset;
+    unsigned hashed_data_length;
+    unsigned unhashed_count_offset;
+    };
+
+ops_create_signature_t *ops_create_signature_new()
+    { return ops_mallocz(sizeof(ops_create_signature_t)); }
+
+void ops_create_signature_delete(ops_create_signature_t *sig)
+    {
+    ops_create_info_delete(sig->info);
+    sig->info=NULL;
+    free(sig);
+    }
+
 static unsigned char prefix_md5[]={ 0x30,0x20,0x30,0x0C,0x06,0x08,0x2A,0x86,
 				    0x48,0x86,0xF7,0x0D,0x02,0x05,0x05,0x00,
 				    0x04,0x10 };
@@ -142,7 +166,7 @@ static void init_signature(ops_hash_t *hash,const ops_signature_t *sig,
 static void hash_add_trailer(ops_hash_t *hash,const ops_signature_t *sig,
 			     const unsigned char *raw_packet)
     {
-    if(sig->version == OPS_SIG_V4)
+    if(sig->version == OPS_V4)
 	{
 	if(raw_packet)
 	    hash->add(hash,raw_packet+sig->v4_hashed_data_start,
@@ -230,7 +254,7 @@ ops_check_certification_signature(const ops_public_key_t *key,
 
     init_signature(&hash,sig,key);
 
-    if(sig->version == OPS_SIG_V4)
+    if(sig->version == OPS_V4)
 	{
 	ops_hash_add_int(&hash,0xb4,1);
 	ops_hash_add_int(&hash,user_id_len,4);
@@ -307,11 +331,12 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
 				       const ops_user_id_t *id,
 				       ops_sig_type_t type)
     {
-    memset(sig,'\0',sizeof *sig);
+    sig->info=ops_create_info_new();
+
     // XXX: refactor with check (in several ways - check should probably
     // use the buffered writer to construct packets (done), and also should
     // share code for hash calculation)
-    sig->sig.version=OPS_SIG_V4;
+    sig->sig.version=OPS_V4;
     sig->sig.hash_algorithm=OPS_HASH_SHA1;
     sig->sig.key_algorithm=key->algorithm;
     sig->sig.type=type;
@@ -327,18 +352,17 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
     // since this has subpackets and stuff, we have to buffer the whole
     // thing to get counts before writing.
     ops_memory_init(&sig->mem,100);
-    sig->info.writer=ops_writer_memory;
-    sig->info.arg=&sig->mem;
+    ops_create_info_set_writer_memory(sig->info,&sig->mem);
 
     // write nearly up to the first subpacket
-    ops_write_scalar(sig->sig.version,1,&sig->info);
-    ops_write_scalar(sig->sig.type,1,&sig->info);
-    ops_write_scalar(sig->sig.key_algorithm,1,&sig->info);
-    ops_write_scalar(sig->sig.hash_algorithm,1,&sig->info);
+    ops_write_scalar(sig->sig.version,1,sig->info);
+    ops_write_scalar(sig->sig.type,1,sig->info);
+    ops_write_scalar(sig->sig.key_algorithm,1,sig->info);
+    ops_write_scalar(sig->sig.hash_algorithm,1,sig->info);
 
     // dummy hashed subpacket count
     sig->hashed_count_offset=sig->mem.length;
-    ops_write_scalar(0,2,&sig->info);
+    ops_write_scalar(0,2,sig->info);
     }
 
 /**
@@ -352,14 +376,17 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
  * \todo Expand description. Allow other hashes.
  */
 void ops_signature_start_plaintext_signature(ops_create_signature_t *sig,
+					     ops_secret_key_t *key,
 					     ops_hash_algorithm_t hash,
 					     ops_sig_type_t type)
     {
-    memset(sig,'\0',sizeof *sig);
+    sig->info=ops_create_info_new();
+
     // XXX: refactor with check (in several ways - check should probably
     // use the buffered writer to construct packets (done), and also should
     // share code for hash calculation)
-    sig->sig.version=OPS_SIG_V4;
+    sig->sig.version=OPS_V4;
+    sig->sig.key_algorithm=key->public_key.algorithm;
     sig->sig.hash_algorithm=hash;
     sig->sig.type=type;
 
@@ -370,18 +397,17 @@ void ops_signature_start_plaintext_signature(ops_create_signature_t *sig,
     // since this has subpackets and stuff, we have to buffer the whole
     // thing to get counts before writing.
     ops_memory_init(&sig->mem,100);
-    sig->info.writer=ops_writer_memory;
-    sig->info.arg=&sig->mem;
+    ops_create_info_set_writer_memory(sig->info,&sig->mem);
 
     // write nearly up to the first subpacket
-    ops_write_scalar(sig->sig.version,1,&sig->info);
-    ops_write_scalar(sig->sig.type,1,&sig->info);
-    ops_write_scalar(sig->sig.key_algorithm,1,&sig->info);
-    ops_write_scalar(sig->sig.hash_algorithm,1,&sig->info);
+    ops_write_scalar(sig->sig.version,1,sig->info);
+    ops_write_scalar(sig->sig.type,1,sig->info);
+    ops_write_scalar(sig->sig.key_algorithm,1,sig->info);
+    ops_write_scalar(sig->sig.hash_algorithm,1,sig->info);
 
     // dummy hashed subpacket count
     sig->hashed_count_offset=sig->mem.length;
-    ops_write_scalar(0,2,&sig->info);
+    ops_write_scalar(0,2,sig->info);
     }
 
 /**
@@ -414,7 +440,7 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
 			 sig->hashed_data_length,2);
     // dummy unhashed subpacket count
     sig->unhashed_count_offset=sig->mem.length;
-    ops_write_scalar(0,2,&sig->info);
+    ops_write_scalar(0,2,sig->info);
     }
 
 /**
@@ -447,7 +473,7 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
     // XXX: technically, we could figure out how big the signature is
     // and write it directly to the output instead of via memory.
     assert(key->algorithm == OPS_PKA_RSA);
-    rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa,&sig->info);
+    rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa,sig->info);
 
     ops_write_ptag(OPS_PTAG_CT_SIGNATURE,info);
     ops_write_length(sig->mem.length,info);
@@ -466,8 +492,8 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
  */
 void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
     {
-    ops_write_ss_header(5,OPS_PTAG_SS_CREATION_TIME,&sig->info);
-    ops_write_scalar(when,4,&sig->info);
+    ops_write_ss_header(5,OPS_PTAG_SS_CREATION_TIME,sig->info);
+    ops_write_scalar(when,4,sig->info);
     }
 
 /**
@@ -482,8 +508,8 @@ void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
 void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
 				     const unsigned char keyid[OPS_KEY_ID_SIZE])
     {
-    ops_write_ss_header(OPS_KEY_ID_SIZE+1,OPS_PTAG_SS_ISSUER_KEY_ID,&sig->info);
-    ops_write(keyid,OPS_KEY_ID_SIZE,&sig->info);
+    ops_write_ss_header(OPS_KEY_ID_SIZE+1,OPS_PTAG_SS_ISSUER_KEY_ID,sig->info);
+    ops_write(keyid,OPS_KEY_ID_SIZE,sig->info);
     }
 
 /**
@@ -497,6 +523,6 @@ void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
 void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 				       ops_boolean_t primary)
     {
-    ops_write_ss_header(2,OPS_PTAG_SS_PRIMARY_USER_ID,&sig->info);
-    ops_write_scalar(primary,1,&sig->info);
+    ops_write_ss_header(2,OPS_PTAG_SS_PRIMARY_USER_ID,sig->info);
+    ops_write_scalar(primary,1,sig->info);
     }
