@@ -122,10 +122,16 @@ int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
     int n;
 
     orsa=RSA_new();
-    orsa->n=rsa->n;
+    orsa->n=rsa->n;	// XXX: do we need n?
     orsa->d=srsa->d;
-    orsa->p=srsa->p;
-    orsa->q=srsa->q;
+    orsa->p=srsa->q;
+    orsa->q=srsa->p;
+
+    /* debug */
+    orsa->e=rsa->e;
+    assert(RSA_check_key(orsa) == 1);
+    orsa->e=NULL;
+    /* end debug */
 
     n=RSA_private_encrypt(length,in,out,orsa,RSA_NO_PADDING);
 

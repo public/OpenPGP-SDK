@@ -42,18 +42,18 @@ int main(int argc,char **argv)
     secfile=argv[2];
     pubfile=argv[3];
 
+    ops_init();
+
     f4=BN_new();
     BN_set_word(f4,RSA_F4);
 
     rsa=RSA_new();
     RSA_generate_key_ex(rsa,1024,f4,NULL);
 
-    ops_init();
-
     info=ops_create_info_new();
 
     // OpenSSL has p and q reversed relative to OpenPGP
-    ops_fast_create_rsa_secret_key(&skey,time(NULL),rsa->q,rsa->p,rsa->d,
+    ops_fast_create_rsa_secret_key(&skey,time(NULL),rsa->d,rsa->q,rsa->p,
 				   rsa->iqmp,rsa->n,rsa->e);
 
     fd=open(secfile,O_CREAT|O_TRUNC|O_WRONLY,0666);

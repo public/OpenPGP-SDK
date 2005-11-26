@@ -6,21 +6,33 @@
 #include <openpgpsdk/validate.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 
 int main(int argc,char **argv)
     {
     ops_parse_info_t parse_info;
     ops_keyring_t keyring;
     ops_reader_fd_arg_t arg;
+    const char *target;
 
-    OPS_USED(argc);
-    OPS_USED(argv);
+    if(argc != 2)
+	{
+	fprintf(stderr,"%s <file to verify>\n",argv[0]);
+	exit(1);
+	}
+
+    target=argv[1];
 
     ops_init();
 
     memset(&keyring,'\0',sizeof keyring);
     ops_parse_info_init(&parse_info);
-    arg.fd=0;
+    arg.fd=open(target,O_RDONLY);
+    if(arg.fd < 0)
+	{
+	perror(target);
+	exit(2);
+	}
     parse_info.reader_arg=&arg;
     parse_info.reader=ops_reader_fd;
 

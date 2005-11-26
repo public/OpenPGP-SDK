@@ -82,7 +82,7 @@ validate_cb(const ops_parser_content_t *content_,void *arg_)
 	 arg->user_id=content->user_id;
 	 return OPS_KEEP_MEMORY;
 
-     case OPS_PTAG_CT_SIGNATURE:
+     case OPS_PTAG_CT_SIGNATURE_FOOTER:
 	 printf("  type=%02x signer_id=",content->signature.type);
 	 hexdump(content->signature.signer_id,
 		 sizeof content->signature.signer_id);
