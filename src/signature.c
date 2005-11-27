@@ -59,8 +59,9 @@ static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
     assert(keysize <= sizeof hashbuf);
     assert(10+hashsize <= keysize);
 
-    hashbuf[0]=1;
-    for(n=1 ; n < keysize-hashsize-1 ; ++n)
+    hashbuf[0]=0;
+    hashbuf[1]=1;
+    for(n=2 ; n < keysize-hashsize-1 ; ++n)
 	hashbuf[n]=0xff;
     hashbuf[n++]=0;
 
@@ -468,7 +469,8 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
     sig->hash.add(&sig->hash,sig->mem.buf,sig->unhashed_count_offset);
     ops_hash_add_int(&sig->hash,sig->sig.version,1);
     ops_hash_add_int(&sig->hash,0xff,1);
-    ops_hash_add_int(&sig->hash,sig->hashed_data_length,4);
+    // +6 for version, type, pk alg, hash alg, hashed subpacket length
+    ops_hash_add_int(&sig->hash,sig->hashed_data_length+6,4);
 
     // XXX: technically, we could figure out how big the signature is
     // and write it directly to the output instead of via memory.
