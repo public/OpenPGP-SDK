@@ -12,6 +12,15 @@
 # include <alloca.h>
 #endif
 
+/**
+ * \ingroup Utils
+ *
+ * Calculate a public key fingerprint.
+ *
+ * \param fp Where to put the calculated fingerprint
+ * \param key The key for which the fingerprint is calculated
+ */
+
 void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
     {
     if(key->version == 2 || key->version == 3)
@@ -65,12 +74,10 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
 /**
  * \ingroup Utils
  *
- * Not sure what this does
+ * Calculate the Key ID from the public key.
  *
- * \param keyid
- * \param key
- *
- * \todo Get descr from Ben for ops_keyid()
+ * \param keyid Space for the calculated ID to be stored
+ * \param key The key for which the ID is calculated
  */
 
 void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key)

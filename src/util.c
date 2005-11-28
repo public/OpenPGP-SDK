@@ -56,8 +56,8 @@ void hexdump(const unsigned char *src,size_t length)
 /**
  * \ingroup Utils
  *
- * ops_init() just calls ops_crypto_init()
- * \todo Ask Ben why we need this extra layer
+ * Initialise OpenPGP:SDK. This <b>must</b> be called before any other
+ * OpenPGP:SDK function is used.
  */
 
 void ops_init(void)
@@ -68,8 +68,9 @@ void ops_init(void)
 /**
  * \ingroup Utils
  *
- * ops_finish() just calls ops_crypto_finish()
- * \todo Ask Ben why we need this extra layer
+ * Close down OpenPGP:SDK, release any resources under the control of
+ * the library. No OpenPGP:SDK function other than ops_init() should
+ * be called after this function.
  */
 
 void ops_finish(void)
