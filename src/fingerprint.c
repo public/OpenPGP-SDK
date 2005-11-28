@@ -20,7 +20,9 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
 	int n;
 	ops_hash_t md5;
 
-	assert(key->algorithm == OPS_PKA_RSA);
+	assert(key->algorithm == OPS_PKA_RSA
+	       || key->algorithm == OPS_PKA_RSA_ENCRYPT_ONLY
+	       || key->algorithm == OPS_PKA_RSA_SIGN_ONLY );
 
 	ops_hash_md5(&md5);
 	md5.init(&md5);
@@ -79,7 +81,9 @@ void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key)
 	unsigned n=BN_num_bytes(key->key.rsa.n);
 
 	assert(n <= sizeof bn);
-	assert(key->algorithm == OPS_PKA_RSA);
+	assert(key->algorithm == OPS_PKA_RSA
+	       || key->algorithm == OPS_PKA_RSA_ENCRYPT_ONLY
+	       || key->algorithm == OPS_PKA_RSA_SIGN_ONLY );
 	BN_bn2bin(key->key.rsa.n,bn);
 	memcpy(keyid,bn+n-8,8);
 	}
