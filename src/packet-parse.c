@@ -939,6 +939,7 @@ void ops_signature_free(ops_signature_t *sig)
     switch(sig->key_algorithm)
 	{
     case OPS_PKA_RSA:
+    case OPS_PKA_RSA_SIGN_ONLY:
 	free_BN(&sig->signature.rsa.sig);
 	break;
 
@@ -1026,6 +1027,7 @@ static int parse_v3_signature(ops_region_t *region,ops_parse_info_t *parse_info)
     switch(C.signature.key_algorithm)
 	{
     case OPS_PKA_RSA:
+    case OPS_PKA_RSA_SIGN_ONLY:
 	if(!limited_read_mpi(&C.signature.signature.rsa.sig,region,parse_info))
 	    return 0;
 	break;

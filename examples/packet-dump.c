@@ -406,6 +406,7 @@ callback(const ops_parser_content_t *content_,void *arg_)
 	switch(content->signature.key_algorithm)
 	    {
 	case OPS_PKA_RSA:
+	case OPS_PKA_RSA_SIGN_ONLY:
 	    print_bn("sig",content->signature.signature.rsa.sig);
 	    break;
 
