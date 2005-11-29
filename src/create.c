@@ -7,15 +7,22 @@
 #include <assert.h>
 #include <unistd.h>
 
+struct ops_writer_info
+    {
+    ops_writer_t *writer;
+    ops_writer_finaliser_t *finaliser;
+    ops_writer_destroyer_t *destroyer;
+    void *arg;
+    ops_writer_info_t *next;
+    };
+
 /**
  * \ingroup Create
  * This struct contains the required information about how to write
  */
 struct ops_create_info
     {
-    ops_writer_t *writer; /*!< the writer function */
-    void *arg;			/*!< arguments for the writer function */
-    ops_writer_destroyer_t *destroyer;
+    ops_writer_info_t winfo;
     ops_error_t *errors;	/*!< an error stack */
     };
 
@@ -25,7 +32,7 @@ struct ops_create_info
 static ops_boolean_t base_write(const void *src,unsigned length,
 				ops_create_info_t *info)
     {
-    return info->writer(src,length,0,&info->errors,info->arg) == OPS_W_OK;
+    return info->winfo.writer(src,length,&info->errors,&info->winfo);
     }
 
 /**
@@ -492,6 +499,42 @@ ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
 ops_create_info_t *ops_create_info_new(void)
     { return ops_mallocz(sizeof(ops_create_info_t)); }
 
+static ops_boolean_t writer_info_finalise(ops_error_t **errors,
+					  ops_writer_info_t *winfo)
+    {
+    ops_boolean_t ret=ops_true;
+
+    if(winfo->next && !writer_info_finalise(errors,winfo->next))
+	{
+	winfo->finaliser=NULL;
+	return ops_false;
+	}
+    if(winfo->finaliser)
+	{
+	ret=winfo->finaliser(errors,winfo);
+	winfo->finaliser=NULL;
+	}
+    return ret;
+    }
+
+static void writer_info_delete(ops_writer_info_t *winfo)
+    {
+    // we should have finalised before deleting
+    assert(!winfo->finaliser);
+    if(winfo->next)
+	{
+	writer_info_delete(winfo->next);
+	free(winfo->next);
+	winfo->next=NULL;
+	}
+    if(winfo->destroyer)
+	{
+	winfo->destroyer(winfo);
+	winfo->destroyer=NULL;
+	}
+    winfo->writer=NULL;
+    }
+
 /**
  * \ingroup Create
  *
@@ -502,12 +545,7 @@ ops_create_info_t *ops_create_info_new(void)
  */
 void ops_create_info_delete(ops_create_info_t *info)
     {
-    if(info->destroyer)
-	{
-	info->destroyer(info->arg);
-	info->destroyer=NULL;
-	}
-
+    writer_info_delete(&info->winfo);
     free(info);
     }
 
@@ -516,35 +554,33 @@ typedef struct
     int fd;
     } writer_fd_arg_t;
 
-static ops_writer_ret_t fd_writer(const unsigned char *src,unsigned length,
-				  ops_writer_flags_t flags,
-				  ops_error_t **errors,void *arg_)
+static ops_boolean_t fd_writer(const unsigned char *src,unsigned length,
+			       ops_error_t **errors,
+			       ops_writer_info_t *winfo)
     {
-    writer_fd_arg_t *arg=arg_;
+    writer_fd_arg_t *arg=ops_writer_get_arg(winfo);
     int n=write(arg->fd,src,length);
-
-    OPS_USED(flags);
 
     if(n == -1)
 	{
 	ops_system_error_1(errors,OPS_E_W_WRITE_FAILED,"write",
 			   "file descriptor %d",arg->fd);
-	return OPS_W_ERROR;
+	return ops_false;
 	}
 
     if((unsigned)n != length)
 	{
 	ops_error_1(errors,OPS_E_W_WRITE_TOO_SHORT,
 		    "file descriptor %d",arg->fd);
-	return OPS_W_ERROR;
+	return ops_false;
 	}
 
-    return OPS_W_OK;
+    return ops_true;
     }
 
-static void fd_destroyer(void *arg)
+static void fd_destroyer(ops_writer_info_t *winfo)
     {
-    free(arg);
+    free(ops_writer_get_arg(winfo));
     }
 
 /**
@@ -559,34 +595,80 @@ static void fd_destroyer(void *arg)
  *
  */
 
-void ops_create_info_set_writer_fd(ops_create_info_t *info,int fd)
+void ops_writer_set_fd(ops_create_info_t *info,int fd)
     {
     writer_fd_arg_t *arg=malloc(sizeof *arg);
 
     arg->fd=fd;
-    ops_create_info_set_writer(info,fd_writer,fd_destroyer,arg);
+    ops_writer_set(info,fd_writer,NULL,fd_destroyer,arg);
     }
 
 /**
  * \ingroup Create
  *
- * Set a writer in info. If another writer has already been set, then
- * that is first destroyed.
+ * Set a writer in info. There should not be another writer set.
  *
  * \param info The info structure
  * \param writer The writer
  * \param destroyer The destroyer
  * \param arg The argument for the writer and destroyer
  */
-void ops_create_info_set_writer(ops_create_info_t *info,
-				ops_writer_t *writer,
-				ops_writer_destroyer_t *destroyer,
-				void *arg)
+void ops_writer_set(ops_create_info_t *info,
+		    ops_writer_t *writer,
+		    ops_writer_finaliser_t *finaliser,
+		    ops_writer_destroyer_t *destroyer,
+		    void *arg)
     {
-    ops_create_info_close_writer(info);
-    info->writer=writer;
-    info->destroyer=destroyer;
-    info->arg=arg;
+    assert(!info->winfo.writer);
+    info->winfo.writer=writer;
+    info->winfo.finaliser=finaliser;
+    info->winfo.destroyer=destroyer;
+    info->winfo.arg=arg;
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Push a writer in info. There must already be another writer set.
+ *
+ * \param info The info structure
+ * \param writer The writer
+ * \param destroyer The destroyer
+ * \param arg The argument for the writer and destroyer
+ */
+void ops_writer_push(ops_create_info_t *info,
+		     ops_writer_t *writer,
+		     ops_writer_finaliser_t *finaliser,
+		     ops_writer_destroyer_t *destroyer,
+		     void *arg)
+    {
+    ops_writer_info_t *copy=ops_mallocz(sizeof *copy);
+
+    assert(info->winfo.writer);
+    *copy=info->winfo;
+    info->winfo.next=copy;
+
+    info->winfo.writer=writer;
+    info->winfo.finaliser=finaliser;
+    info->winfo.destroyer=destroyer;
+    info->winfo.arg=arg;
+    }
+
+void ops_writer_pop(ops_create_info_t *info)
+    {
+    ops_writer_info_t *next;
+
+    // Make sure the finaliser has been called.
+    assert(!info->winfo.finaliser);
+    // Makew sure this is a stacked writer
+    assert(info->winfo.next);
+    if(info->winfo.destroyer)
+	info->winfo.destroyer(&info->winfo);
+
+    next=info->winfo.next;
+    info->winfo=*next;
+
+    free(next);
     }
 
 /**
@@ -596,12 +678,51 @@ void ops_create_info_set_writer(ops_create_info_t *info,
  *
  * \param info The info structure
  */
-void ops_create_info_close_writer(ops_create_info_t *info)
+ops_boolean_t ops_writer_close(ops_create_info_t *info)
     {
-    if(info->destroyer)
-	info->destroyer(info->arg);
+    ops_boolean_t ret=writer_info_finalise(&info->errors,&info->winfo);
 
-    info->writer=NULL;
-    info->destroyer=NULL;
-    info->arg=NULL;
+    writer_info_delete(&info->winfo);
+
+    return ret;
     }
+
+/**
+ * \ingroup Create
+ *
+ * Get the arg supplied to ops_create_info_set_writer().
+ *
+ * \param winfo The writer_info structure
+ * \return The arg
+ */
+void *ops_writer_get_arg(ops_writer_info_t *winfo)
+    { return winfo->arg; }
+
+/**
+ * \ingroup Create
+ *
+ * Write to the next writer down in the stack.
+ *
+ * \param src The data to write.
+ * \param length The length of src.
+ * \param flags The writer flags.
+ * \param errors A place to store errors.
+ * \param info The writer_info structure.
+ * \return Success - if ops_false, then errors should contain the error.
+ */
+ops_boolean_t ops_stacked_write(const void *src,unsigned length,
+				ops_error_t **errors,ops_writer_info_t *winfo)
+    {
+    return winfo->next->writer(src,length,errors,winfo->next);
+    }
+
+/**
+ * \ingroup Create
+ *
+ * Free the arg. Many writers just have a malloc()ed lump of storage, this
+ * function releases it.
+ *
+ * \param winfo the info structure.
+ */
+void ops_writer_generic_destroyer(ops_writer_info_t *winfo)
+    { free(ops_writer_get_arg(winfo)); }

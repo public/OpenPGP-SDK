@@ -18,6 +18,7 @@ typedef unsigned ops_hash_finish_t(ops_hash_t *hash,unsigned char *out);
 struct _ops_hash_t
     {
     ops_hash_algorithm_t algorithm;
+    const char *name;
     ops_hash_init_t *init;
     ops_hash_add_t *add;
     ops_hash_finish_t *finish;
@@ -30,6 +31,7 @@ void ops_hash_md5(ops_hash_t *hash);
 void ops_hash_sha1(ops_hash_t *hash);
 void ops_hash_any(ops_hash_t *hash,ops_hash_algorithm_t alg);
 ops_hash_algorithm_t ops_hash_algorithm_from_text(const char *hash);
+const char *ops_text_from_hash(ops_hash_t *hash);
 unsigned ops_hash_size(ops_hash_algorithm_t alg);
 
 void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length);

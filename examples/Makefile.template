@@ -6,7 +6,8 @@ CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include  %INCLUDES% %CFLAGS%
 LDFLAGS=-g %CFLAGS%
 LIBDEPS=common.o ../src/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
-EXES=packet-dump verify create-key create-signed-key verify2 sign-detached
+EXES=packet-dump verify create-key create-signed-key verify2 sign-detached \
+     sign-inline
 
 all: Makefile .depend $(EXES)
 
@@ -32,6 +33,9 @@ create-signed-key: create-signed-key.o $(LIBDEPS)
 
 sign-detached: sign-detached.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o sign-detached sign-detached.o $(LIBS)
+
+sign-inline: sign-inline.o $(LIBDEPS)
+	$(CC) $(LDFLAGS) -o sign-inline sign-inline.o $(LIBS)
 
 tags:
 	rm -f TAGS
@@ -80,5 +84,10 @@ $(SCRATCH)/key.sec $(SCRATCH)/key.pub: $(SCRATCH) create-signed-key
 test-sign-detached: $(SCRATCH)/key.sec sign-detached
 	echo "Sign this!" > $(SCRATCH)/to-be-signed-detached
 	./sign-detached $(SCRATCH)/key.sec "Why a user ID?" SHA1 $(SCRATCH)/to-be-signed-detached $(SCRATCH)/to-be-signed-detached.sig
+
+test-sign-inline: $(SCRATCH)/key.sec sign-inline
+	echo "Sign this!" > $(SCRATCH)/to-be-signed-inline
+	echo "- test dash-escaping" >> $(SCRATCH)/to-be-signed-inline
+	./sign-inline $(SCRATCH)/key.sec "Why a user ID?" SHA1 $(SCRATCH)/to-be-signed-inline $(SCRATCH)/to-be-signed-inline.sig
 
 include .depend

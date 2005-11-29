@@ -57,17 +57,15 @@ void ops_memory_release(ops_memory_t *mem)
     mem->buf=NULL;
     }
 
-static ops_writer_ret_t memory_writer(const unsigned char *src,unsigned length,
-				      ops_writer_flags_t flags,
+static ops_boolean_t memory_writer(const unsigned char *src,unsigned length,
 				      ops_error_t **errors,
-				      void *arg)
+				      ops_writer_info_t *winfo)
     {
-    ops_memory_t *mem=arg;
+    ops_memory_t *mem=ops_writer_get_arg(winfo);
 
-    OPS_USED(flags);
     OPS_USED(errors);
     ops_memory_add(mem,src,length);
-    return OPS_W_OK;
+    return ops_true;
     }
 
 /**
@@ -83,7 +81,7 @@ static ops_writer_ret_t memory_writer(const unsigned char *src,unsigned length,
 void ops_create_info_set_writer_memory(ops_create_info_t *info,
 				       ops_memory_t *mem)
     {
-    ops_create_info_set_writer(info,memory_writer,NULL,mem);
+    ops_writer_set(info,memory_writer,NULL,NULL,mem);
     }
 
 void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)

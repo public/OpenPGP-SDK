@@ -528,3 +528,15 @@ void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
     ops_write_ss_header(2,OPS_PTAG_SS_PRIMARY_USER_ID,sig->info);
     ops_write_scalar(primary,1,sig->info);
     }
+
+/**
+ * \ingroup Create
+ *
+ * Get the hash structure in use for the signature.
+ *
+ * \param sig The signature structure.
+ * \return The hash structure.
+ */
+ops_hash_t *ops_signature_get_hash(ops_create_signature_t *sig)
+    { return &sig->hash; }
+

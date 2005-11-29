@@ -1,6 +1,9 @@
 /** \file
  */
 
+#ifndef OPS_SIGNATURE_H
+#define OPS_SIGNATURE_H
+
 #include "packet.h"
 #include "util.h"
 #include "create.h"
@@ -36,6 +39,7 @@ void ops_signature_start_plaintext_signature(ops_create_signature_t *sig,
 					     ops_sig_type_t type);
 void ops_signature_add_data(ops_create_signature_t *sig,const void *buf,
 			    size_t length);
+ops_hash_t *ops_signature_get_hash(ops_create_signature_t *sig);
 void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig);
 void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
 			 ops_secret_key_t *skey,ops_create_info_t *opt);
@@ -44,3 +48,5 @@ void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
 				     const unsigned char keyid[OPS_KEY_ID_SIZE]);
 void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 				       ops_boolean_t primary);
+
+#endif

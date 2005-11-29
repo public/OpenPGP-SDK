@@ -2,6 +2,8 @@
 #include <openpgpsdk/armour.h>
 #include <openpgpsdk/util.h>
 #include <openpgpsdk/crypto.h>
+#include <openpgpsdk/create.h>
+#include <openpgpsdk/signature.h>
 
 #include <string.h>
 #include <assert.h>
@@ -705,4 +707,193 @@ void ops_reader_pop_dearmour(ops_parse_info_t *parse_info)
     parse_info->reader=arg->reader;
 
     free(arg);
+    }
+
+typedef struct
+    {
+    ops_boolean_t seen_nl:1;
+    ops_boolean_t seen_cr:1;
+    ops_create_signature_t *sig;
+    } dash_escaped_arg_t;
+
+static ops_boolean_t dash_escaped_writer(const unsigned char *src,
+					 unsigned length,
+					 ops_error_t **errors,
+					 ops_writer_info_t *winfo)
+    {
+    dash_escaped_arg_t *arg=ops_writer_get_arg(winfo);
+    unsigned n;
+
+    // XXX: make this efficient
+    for(n=0 ; n < length ; ++n)
+	{
+	if(arg->seen_nl)
+	    {
+	    if(src[n] == '-' && !ops_stacked_write("- ",2,errors,winfo))
+		return ops_false;
+	    arg->seen_nl=ops_false;
+	    }
+	arg->seen_nl=src[n] == '\n';
+	if(arg->seen_nl && !arg->seen_cr)
+	    {
+	    if(!ops_stacked_write("\r",1,errors,winfo))
+		return ops_false;
+	    ops_signature_add_data(arg->sig,"\r",1);
+	    }
+	arg->seen_cr=src[n] == '\r';
+	if(!ops_stacked_write(&src[n],1,errors,winfo))
+	    return ops_false;
+	ops_signature_add_data(arg->sig,&src[n],1);
+	}
+
+    return ops_true;
+    }
+
+void dash_escaped_destroyer(ops_writer_info_t *winfo)
+    {
+    dash_escaped_arg_t *arg=ops_writer_get_arg(winfo);
+
+    free(arg);
+    }
+
+// XXX: should return errors.
+void ops_writer_push_dash_escaped(ops_create_info_t *info,
+				  ops_create_signature_t *sig)
+    {
+    static char header[]="-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: ";
+    const char *hash=ops_text_from_hash(ops_signature_get_hash(sig));
+    dash_escaped_arg_t *arg=ops_mallocz(sizeof *arg);
+
+    ops_write(header,sizeof header-1,info);
+    ops_write(hash,strlen(hash),info);
+    ops_write("\r\n\r\n",4,info);
+    arg->seen_nl=ops_true;
+    arg->sig=sig;
+    ops_writer_push(info,dash_escaped_writer,NULL,dash_escaped_destroyer,arg);
+    }
+
+typedef struct
+    {
+    unsigned pos;
+    unsigned char t;
+    } base64_arg_t;
+
+static char b64map[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+"0123456789+/";
+
+static ops_boolean_t base64_writer(const unsigned char *src,
+				      unsigned length,
+				      ops_error_t **errors,
+				      ops_writer_info_t *winfo)
+    {
+    base64_arg_t *arg=ops_writer_get_arg(winfo);
+    unsigned n;
+
+    for(n=0 ; n < length ; )
+	{
+	if(arg->pos == 0)
+	    {
+	    /* XXXXXX00 00000000 00000000 */
+	    if(!ops_stacked_write(&b64map[src[n] >> 2],1,errors,winfo))
+		return ops_false;
+
+	    /* 000000XX xxxx0000 00000000 */
+	    arg->t=(src[n++]&3) << 4;
+	    arg->pos=1;
+	    }
+	else if(arg->pos == 1)
+	    {
+	    /* 000000xx XXXX0000 00000000 */
+	    arg->t+=src[n] >> 4;
+	    if(!ops_stacked_write(&b64map[arg->t],1,errors,winfo))
+		return ops_false;
+
+	    /* 00000000 0000XXXX xx000000 */
+	    arg->t=(src[n++]&0xf) << 2;
+	    arg->pos=2;
+	    }
+	else if(arg->pos == 2)
+	    {
+	    /* 00000000 0000xxxx XX000000 */
+	    arg->t+=src[n] >> 6;
+	    if(!ops_stacked_write(&b64map[arg->t],1,errors,winfo))
+		return ops_false;
+
+	    /* 00000000 00000000 00XXXXXX */
+	    if(!ops_stacked_write(&b64map[src[n++]&0x3f],1,errors,winfo))
+		return ops_false;
+
+	    arg->pos=0;
+	    }
+	}
+
+    return ops_true;
+    }
+
+static ops_boolean_t signature_finaliser(ops_error_t **errors,
+					 ops_writer_info_t *winfo)
+    {
+    base64_arg_t *arg=ops_writer_get_arg(winfo);
+    static char trailer[]="\r\n-----END PGP SIGNATURE-----\r\n";
+
+    if(arg->pos)
+	{
+	if(!ops_stacked_write(&b64map[arg->t],1,errors,winfo))
+	    return ops_false;
+	if(arg->pos == 1 && !ops_stacked_write("==",2,errors,winfo))
+	    return ops_false;
+	if(arg->pos == 2 && !ops_stacked_write("=",1,errors,winfo))
+	    return ops_false;
+	}
+    if(!ops_stacked_write(trailer,sizeof trailer-1,errors,winfo))
+	return ops_false;
+
+    return ops_true;
+    }
+
+typedef struct
+    {
+    unsigned pos;
+    } linebreak_arg_t;
+
+#define BREAKPOS	76
+
+static ops_boolean_t linebreak_writer(const unsigned char *src,
+					 unsigned length,
+					 ops_error_t **errors,
+					 ops_writer_info_t *winfo)
+    {
+    linebreak_arg_t *arg=ops_writer_get_arg(winfo);
+    unsigned n;
+
+    for(n=0 ; n < length ; ++n,++arg->pos)
+	{
+	if(src[n] == '\r' || src[n] == '\n')
+	    arg->pos=0;
+
+	if(arg->pos == BREAKPOS)
+	    {
+	    if(!ops_stacked_write("\r\n",2,errors,winfo))
+		return ops_false;
+	    arg->pos=0;
+	    }
+	if(!ops_stacked_write(&src[n],1,errors,winfo))
+	    return ops_false;
+	}
+
+    return ops_true;
+    }
+
+// XXX: should return errors.
+void ops_writer_switch_to_signature(ops_create_info_t *info)
+    {
+    static char header[]="\r\n-----BEGIN PGP SIGNATURE-----\r\n\r\n";
+
+    ops_writer_pop(info);
+    ops_write(header,sizeof header-1,info);
+    ops_writer_push(info,linebreak_writer,NULL,ops_writer_generic_destroyer,
+		    ops_mallocz(sizeof(linebreak_arg_t)));
+    ops_writer_push(info,base64_writer,signature_finaliser,
+		    ops_writer_generic_destroyer,
+		    ops_mallocz(sizeof(base64_arg_t)));
     }

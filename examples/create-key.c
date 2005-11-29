@@ -25,7 +25,7 @@ int main(int argc,char **argv)
     BN_hex2bn(&e,estr);
 
     info=ops_create_info_new();
-    ops_create_info_set_writer_fd(info,1);
+    ops_writer_set_fd(info,1);
 
     ops_write_rsa_public_key(time(NULL),n,e,info);
     ops_write_user_id(id,info);

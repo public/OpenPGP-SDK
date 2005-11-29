@@ -62,11 +62,11 @@ int main(int argc,char **argv)
 	perror(secfile);
 	exit(2);
 	}
-    ops_create_info_set_writer_fd(info,fd);
+    ops_writer_set_fd(info,fd);
 
     ops_write_struct_secret_key(&skey,info);
 
-    ops_create_info_close_writer(info);
+    ops_writer_close(info);
 
     close(fd);
 
@@ -76,7 +76,7 @@ int main(int argc,char **argv)
 	perror(pubfile);
 	exit(2);
 	}
-    ops_create_info_set_writer_fd(info,fd);
+    ops_writer_set_fd(info,fd);
 
     ops_write_struct_public_key(&skey.public_key,info);
 

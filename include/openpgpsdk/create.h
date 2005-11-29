@@ -10,36 +10,41 @@
 #include "memory.h"
 #include "errors.h"
 
-/** expected return values from the writer function
- */
-
-enum ops_writer_ret_t
-    {
-    OPS_W_OK		=0,
-    OPS_W_ERROR		=1,
-    };
-
+typedef struct ops_writer_info ops_writer_info_t;
 /**
  * \ingroup Create
  * the writer function prototype
  */
-typedef ops_writer_ret_t ops_writer_t(const unsigned char *src,
+typedef ops_boolean_t ops_writer_t(const unsigned char *src,
 				      unsigned length,
-				      ops_writer_flags_t flags,
 				      ops_error_t **errors,
-				      void *arg);
-
-typedef void ops_writer_destroyer_t(void *arg);
-
-void ops_create_info_set_writer(ops_create_info_t *info,
-				ops_writer_t *writer,
-				ops_writer_destroyer_t *destroyer,
-				void *arg);
+				      ops_writer_info_t *winfo);
+typedef ops_boolean_t ops_writer_finaliser_t(ops_error_t **errors,
+					     ops_writer_info_t *winfo);
+typedef void ops_writer_destroyer_t(ops_writer_info_t *winfo);
 
 ops_create_info_t *ops_create_info_new(void);
 void ops_create_info_delete(ops_create_info_t *info);
-void ops_create_info_set_writer_fd(ops_create_info_t *info,int fd);
-void ops_create_info_close_writer(ops_create_info_t *info);
+void *ops_writer_get_arg(ops_writer_info_t *winfo);
+ops_boolean_t ops_stacked_write(const void *src,unsigned length,
+				ops_error_t **errors,
+				ops_writer_info_t *winfo);
+
+void ops_writer_set(ops_create_info_t *info,
+		    ops_writer_t *writer,
+		    ops_writer_finaliser_t *finaliser,
+		    ops_writer_destroyer_t *destroyer,
+		    void *arg);
+void ops_writer_push(ops_create_info_t *info,
+		     ops_writer_t *writer,
+		     ops_writer_finaliser_t *finaliser,
+		     ops_writer_destroyer_t *destroyer,
+		     void *arg);
+void ops_writer_pop(ops_create_info_t *info);
+void ops_writer_generic_destroyer(ops_writer_info_t *winfo);
+
+void ops_writer_set_fd(ops_create_info_t *info,int fd);
+ops_boolean_t ops_writer_close(ops_create_info_t *info);
 
 ops_boolean_t ops_write(const void *src,unsigned length,
 			ops_create_info_t *opt);
