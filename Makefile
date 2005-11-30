@@ -1,7 +1,3 @@
-#
-# $Id$
-#
-
 # order of build of subdirs is important
 #
 SUBDIRS=src examples

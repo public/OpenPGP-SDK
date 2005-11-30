@@ -4,6 +4,7 @@
 #include <openpgpsdk/crypto.h>
 #include <openpgpsdk/create.h>
 #include <openpgpsdk/signature.h>
+#include <openpgpsdk/version.h>
 
 #include <string.h>
 #include <assert.h>
@@ -887,7 +888,8 @@ static ops_boolean_t linebreak_writer(const unsigned char *src,
 // XXX: should return errors.
 void ops_writer_switch_to_signature(ops_create_info_t *info)
     {
-    static char header[]="\r\n-----BEGIN PGP SIGNATURE-----\r\n\r\n";
+    static char header[]="\r\n-----BEGIN PGP SIGNATURE-----\r\nVersion: "
+	OPS_VERSION_STRING "\r\n\r\n";
 
     ops_writer_pop(info);
     ops_write(header,sizeof header-1,info);
