@@ -51,23 +51,25 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
 	}
     else
 	{
-	ops_memory_t mem;
+	ops_memory_t *mem=ops_memory_new();
 	ops_hash_t sha1;
+	size_t l;
 
-	memset(&mem,'\0',sizeof mem);
-
-	ops_build_public_key(&mem,key,ops_false);
+	ops_build_public_key(mem,key,ops_false);
 
 	ops_hash_sha1(&sha1);
 	sha1.init(&sha1);
 
+	l=ops_memory_get_length(mem);
+
 	ops_hash_add_int(&sha1,0x99,1);
-	ops_hash_add_int(&sha1,mem.length,2);
-	sha1.add(&sha1,mem.buf,mem.length);
+	ops_hash_add_int(&sha1,l,2);
+	sha1.add(&sha1,ops_memory_get_data(mem),l);
 	sha1.finish(&sha1,fp->fingerprint);
+
 	fp->length=20;
 
-	ops_memory_release(&mem);
+	ops_memory_free(mem);
 	}
     }
 

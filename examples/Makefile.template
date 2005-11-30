@@ -88,6 +88,7 @@ test-sign-detached: $(SCRATCH)/key.sec sign-detached
 test-sign-inline: $(SCRATCH)/key.sec sign-inline
 	echo "Sign this!" > $(SCRATCH)/to-be-signed-inline
 	echo "- test dash-escaping" >> $(SCRATCH)/to-be-signed-inline
+	echo "and test trailing whitespace   " >> $(SCRATCH)/to-be-signed-inline
 	./sign-inline $(SCRATCH)/key.sec "Why a user ID?" SHA1 $(SCRATCH)/to-be-signed-inline $(SCRATCH)/to-be-signed-inline.sig
 
 include .depend

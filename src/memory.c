@@ -6,6 +6,13 @@
 #include <string.h>
 #include <assert.h>
 
+struct ops_memory
+    {
+    unsigned char *buf;
+    size_t length;
+    size_t allocated;
+    };
+
 void ops_memory_init(ops_memory_t *mem,size_t initial_size)
     {
     mem->length=0;
@@ -51,10 +58,18 @@ void ops_memory_place_int(ops_memory_t *mem,unsigned offset,unsigned n,
 	mem->buf[offset++]=n >> (length*8);
     }
 
+/**
+ * Unlike ops_memory_release(), this retains the allocated memory but
+ * sets the length of stored data to zero.
+ */
+void ops_memory_clear(ops_memory_t *mem)
+    { mem->length=0; }
+
 void ops_memory_release(ops_memory_t *mem)
     {
     free(mem->buf);
     mem->buf=NULL;
+    mem->length=0;
     }
 
 static ops_boolean_t memory_writer(const unsigned char *src,unsigned length,
@@ -75,8 +90,7 @@ static ops_boolean_t memory_writer(const unsigned char *src,unsigned length,
  * release mem.
  *
  * \param info The info structure
- * \param mem The memory structure
- */
+ * \param mem The memory structure */
 
 void ops_create_info_set_writer_memory(ops_create_info_t *info,
 				       ops_memory_t *mem)
@@ -118,3 +132,18 @@ void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)
 
     out->length+=extra+1;
     }
+
+ops_memory_t *ops_memory_new()
+    { return ops_mallocz(sizeof(ops_memory_t)); }
+
+void ops_memory_free(ops_memory_t *mem)
+    {
+    ops_memory_release(mem);
+    free(mem);
+    }
+
+size_t ops_memory_get_length(const ops_memory_t *mem)
+    { return mem->length; }
+
+void *ops_memory_get_data(ops_memory_t *mem)
+    { return mem->buf; }

@@ -718,6 +718,7 @@ typedef struct
     ops_boolean_t seen_nl:1;
     ops_boolean_t seen_cr:1;
     ops_create_signature_t *sig;
+    ops_memory_t *trailing;
     } dash_escaped_arg_t;
 
 static ops_boolean_t dash_escaped_writer(const unsigned char *src,
@@ -731,23 +732,44 @@ static ops_boolean_t dash_escaped_writer(const unsigned char *src,
     // XXX: make this efficient
     for(n=0 ; n < length ; ++n)
 	{
+	unsigned l;
+
 	if(arg->seen_nl)
 	    {
 	    if(src[n] == '-' && !ops_stacked_write("- ",2,errors,winfo))
 		return ops_false;
 	    arg->seen_nl=ops_false;
 	    }
+
 	arg->seen_nl=src[n] == '\n';
+
 	if(arg->seen_nl && !arg->seen_cr)
 	    {
 	    if(!ops_stacked_write("\r",1,errors,winfo))
 		return ops_false;
 	    ops_signature_add_data(arg->sig,"\r",1);
 	    }
+
 	arg->seen_cr=src[n] == '\r';
+
 	if(!ops_stacked_write(&src[n],1,errors,winfo))
 	    return ops_false;
-	ops_signature_add_data(arg->sig,&src[n],1);
+
+	/* trailing whitespace isn't included in the signature */
+	if(src[n] == ' ' || src[n] == '\t')
+	    ops_memory_add(arg->trailing,&src[n],1);
+	else
+	    {
+	    if((l=ops_memory_get_length(arg->trailing)))
+		{
+		if(!arg->seen_nl && !arg->seen_cr)
+		    ops_signature_add_data(arg->sig,
+					   ops_memory_get_data(arg->trailing),
+					   l);
+		ops_memory_clear(arg->trailing);
+		}
+	    ops_signature_add_data(arg->sig,&src[n],1);
+	    }
 	}
 
     return ops_true;
@@ -757,6 +779,7 @@ void dash_escaped_destroyer(ops_writer_info_t *winfo)
     {
     dash_escaped_arg_t *arg=ops_writer_get_arg(winfo);
 
+    ops_memory_free(arg->trailing);
     free(arg);
     }
 
@@ -773,6 +796,7 @@ void ops_writer_push_dash_escaped(ops_create_info_t *info,
     ops_write("\r\n\r\n",4,info);
     arg->seen_nl=ops_true;
     arg->sig=sig;
+    arg->trailing=ops_memory_new();
     ops_writer_push(info,dash_escaped_writer,NULL,dash_escaped_destroyer,arg);
     }
 
@@ -911,7 +935,6 @@ void ops_writer_switch_to_signature(ops_create_info_t *info)
 
     ops_writer_push(info,linebreak_writer,NULL,ops_writer_generic_destroyer,
 		    ops_mallocz(sizeof(linebreak_arg_t)));
-
 
     base64=ops_mallocz(sizeof *base64);
     base64->checksum=CRC24_INIT;

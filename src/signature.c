@@ -14,7 +14,7 @@ struct ops_create_signature
     {
     ops_hash_t hash; 
     ops_signature_t sig; 
-    ops_memory_t mem; 
+    ops_memory_t *mem; 
     ops_create_info_t *info; /*!< how to do the writing */
     unsigned hashed_count_offset;
     unsigned hashed_data_length;
@@ -139,16 +139,17 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
 
 static void hash_add_key(ops_hash_t *hash,const ops_public_key_t *key)
     {
-    ops_memory_t mem;
+    ops_memory_t *mem=ops_memory_new();
+    size_t l;
 
-    memset(&mem,'\0',sizeof mem);
-    ops_build_public_key(&mem,key,ops_false);
+    ops_build_public_key(mem,key,ops_false);
 
+    l=ops_memory_get_length(mem);
     ops_hash_add_int(hash,0x99,1);
-    ops_hash_add_int(hash,mem.length,2);
-    hash->add(hash,mem.buf,mem.length);
+    ops_hash_add_int(hash,l,2);
+    hash->add(hash,ops_memory_get_data(mem),l);
 
-    ops_memory_release(&mem);
+    ops_memory_free(mem);
     }
 
 static void common_init_signature(ops_hash_t *hash,const ops_signature_t *sig)
@@ -314,7 +315,25 @@ ops_check_hash_signature(ops_hash_t *hash,
 
     return finalise_signature(hash,sig,signer,NULL);
     }
-    
+
+static void start_signature(ops_create_signature_t *sig)
+    {
+    // since this has subpackets and stuff, we have to buffer the whole
+    // thing to get counts before writing.
+    sig->mem=ops_memory_new();
+    ops_memory_init(sig->mem,100);
+    ops_create_info_set_writer_memory(sig->info,sig->mem);
+
+    // write nearly up to the first subpacket
+    ops_write_scalar(sig->sig.version,1,sig->info);
+    ops_write_scalar(sig->sig.type,1,sig->info);
+    ops_write_scalar(sig->sig.key_algorithm,1,sig->info);
+    ops_write_scalar(sig->sig.hash_algorithm,1,sig->info);
+
+    // dummy hashed subpacket count
+    sig->hashed_count_offset=ops_memory_get_length(sig->mem);
+    ops_write_scalar(0,2,sig->info);
+    }    
 
 /**
  * \ingroup Create
@@ -350,20 +369,7 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
     ops_hash_add_int(&sig->hash,strlen((char *)id->user_id),4);
     sig->hash.add(&sig->hash,id->user_id,strlen((char *)id->user_id));
 
-    // since this has subpackets and stuff, we have to buffer the whole
-    // thing to get counts before writing.
-    ops_memory_init(&sig->mem,100);
-    ops_create_info_set_writer_memory(sig->info,&sig->mem);
-
-    // write nearly up to the first subpacket
-    ops_write_scalar(sig->sig.version,1,sig->info);
-    ops_write_scalar(sig->sig.type,1,sig->info);
-    ops_write_scalar(sig->sig.key_algorithm,1,sig->info);
-    ops_write_scalar(sig->sig.hash_algorithm,1,sig->info);
-
-    // dummy hashed subpacket count
-    sig->hashed_count_offset=sig->mem.length;
-    ops_write_scalar(0,2,sig->info);
+    start_signature(sig);
     }
 
 /**
@@ -394,21 +400,7 @@ void ops_signature_start_plaintext_signature(ops_create_signature_t *sig,
     sig->hashed_data_length=-1;
 
     common_init_signature(&sig->hash,&sig->sig);
-
-    // since this has subpackets and stuff, we have to buffer the whole
-    // thing to get counts before writing.
-    ops_memory_init(&sig->mem,100);
-    ops_create_info_set_writer_memory(sig->info,&sig->mem);
-
-    // write nearly up to the first subpacket
-    ops_write_scalar(sig->sig.version,1,sig->info);
-    ops_write_scalar(sig->sig.type,1,sig->info);
-    ops_write_scalar(sig->sig.key_algorithm,1,sig->info);
-    ops_write_scalar(sig->sig.hash_algorithm,1,sig->info);
-
-    // dummy hashed subpacket count
-    sig->hashed_count_offset=sig->mem.length;
-    ops_write_scalar(0,2,sig->info);
+    start_signature(sig);
     }
 
 /**
@@ -436,11 +428,12 @@ void ops_signature_add_data(ops_create_signature_t *sig,const void *buf,
 
 void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
     {
-    sig->hashed_data_length=sig->mem.length-sig->hashed_count_offset-2;
-    ops_memory_place_int(&sig->mem,sig->hashed_count_offset,
+    sig->hashed_data_length=ops_memory_get_length(sig->mem)
+	-sig->hashed_count_offset-2;
+    ops_memory_place_int(sig->mem,sig->hashed_count_offset,
 			 sig->hashed_data_length,2);
     // dummy unhashed subpacket count
-    sig->unhashed_count_offset=sig->mem.length;
+    sig->unhashed_count_offset=ops_memory_get_length(sig->mem);
     ops_write_scalar(0,2,sig->info);
     }
 
@@ -460,13 +453,16 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
 void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
 			 ops_secret_key_t *skey,ops_create_info_t *info)
     {
+    size_t l=ops_memory_get_length(sig->mem);
+
     assert(sig->hashed_data_length != (unsigned)-1);
 
-    ops_memory_place_int(&sig->mem,sig->unhashed_count_offset,
-			 sig->mem.length-sig->unhashed_count_offset-2,2);
+    ops_memory_place_int(sig->mem,sig->unhashed_count_offset,
+			 l-sig->unhashed_count_offset-2,2);
 
     // add the packet from version number to end of hashed subpackets
-    sig->hash.add(&sig->hash,sig->mem.buf,sig->unhashed_count_offset);
+    sig->hash.add(&sig->hash,ops_memory_get_data(sig->mem),
+		  sig->unhashed_count_offset);
     ops_hash_add_int(&sig->hash,sig->sig.version,1);
     ops_hash_add_int(&sig->hash,0xff,1);
     // +6 for version, type, pk alg, hash alg, hashed subpacket length
@@ -478,10 +474,11 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
     rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa,sig->info);
 
     ops_write_ptag(OPS_PTAG_CT_SIGNATURE,info);
-    ops_write_length(sig->mem.length,info);
-    ops_write(sig->mem.buf,sig->mem.length,info);
+    l=ops_memory_get_length(sig->mem);
+    ops_write_length(l,info);
+    ops_write(ops_memory_get_data(sig->mem),l,info);
 
-    ops_memory_release(&sig->mem);
+    ops_memory_free(sig->mem);
     }
 
 /**

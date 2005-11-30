@@ -75,18 +75,12 @@ accumulate_cb(const ops_parser_content_t *content_,void *arg_)
 /**
  * \ingroup Parse
  *
- * ops_parse_and_accumulate() parses packets from an input stream until EOF or error.
+ * Parse packets from an input stream until EOF or error.
  *
- * The parsed data is added to "keyring".
+ * Key data found in the parsed data is added to #keyring.
  *
- * Once all the input data has been parsed:
- * - the keyring is printed to stdout
- * - each signature on the keyring is validated, with the result printed to stdout
- *
- * \sa See Detailed Description for usage.
- *
- * \param *keyring Pointer to an existing keyring
- * \param *opt Options to use when parsing
+ * \param keyring Pointer to an existing keyring
+ * \param opt Options to use when parsing
 */
 
 void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_info_t *parse_info)
