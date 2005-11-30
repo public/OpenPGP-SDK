@@ -368,6 +368,20 @@ static ops_reader_ret_t read4(dearmour_arg_t *arg,int *pc,unsigned *pn,
     return OPS_R_OK;
     }
 
+static unsigned crc24(unsigned checksum,unsigned char c)
+    {
+    unsigned i;
+
+    checksum ^= c << 16;
+    for(i=0 ; i < 8 ; i++)
+	{
+	checksum <<= 1;
+	if(checksum & 0x1000000)
+	    checksum ^= CRC24_POLY;
+	}
+    return checksum&0xffffffL;
+    }
+
 static ops_reader_ret_t decode64(dearmour_arg_t *arg)
     {
     unsigned n;
@@ -455,18 +469,7 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg)
 	}
 
     for(n2=arg->buffered-1 ; n2 >= 0 ; --n2)
-	{
-	unsigned i;
-
-	arg->checksum ^= arg->buffer[n2] << 16;
-	for(i=0 ; i < 8 ; i++)
-	    {
-	    arg->checksum <<= 1;
-	    if(arg->checksum & 0x1000000)
-		arg->checksum ^= CRC24_POLY;
-	    }
-	}
-    arg->checksum &= 0xffffffL;
+	arg->checksum=crc24(arg->checksum,arg->buffer[n2]);
 
     if(arg->eof64 && arg->read_checksum != arg->checksum)
 	ERR("Checksum mismatch");
@@ -777,21 +780,22 @@ typedef struct
     {
     unsigned pos;
     unsigned char t;
+    unsigned checksum;
     } base64_arg_t;
 
 static char b64map[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 "0123456789+/";
 
 static ops_boolean_t base64_writer(const unsigned char *src,
-				      unsigned length,
-				      ops_error_t **errors,
-				      ops_writer_info_t *winfo)
+				   unsigned length,ops_error_t **errors,
+				   ops_writer_info_t *winfo)
     {
     base64_arg_t *arg=ops_writer_get_arg(winfo);
     unsigned n;
 
     for(n=0 ; n < length ; )
 	{
+	arg->checksum=crc24(arg->checksum,src[n]);
 	if(arg->pos == 0)
 	    {
 	    /* XXXXXX00 00000000 00000000 */
@@ -836,6 +840,7 @@ static ops_boolean_t signature_finaliser(ops_error_t **errors,
     {
     base64_arg_t *arg=ops_writer_get_arg(winfo);
     static char trailer[]="\r\n-----END PGP SIGNATURE-----\r\n";
+    unsigned char c[3];
 
     if(arg->pos)
 	{
@@ -846,12 +851,21 @@ static ops_boolean_t signature_finaliser(ops_error_t **errors,
 	if(arg->pos == 2 && !ops_stacked_write("=",1,errors,winfo))
 	    return ops_false;
 	}
-    if(!ops_stacked_write(trailer,sizeof trailer-1,errors,winfo))
+    /* Ready for the checksum */
+    if(!ops_stacked_write("\r\n=",3,errors,winfo))
 	return ops_false;
 
-    return ops_true;
-    }
+    arg->pos=0; /* get ready to write the checksum */
 
+    c[0]=arg->checksum >> 16;
+    c[1]=arg->checksum >> 8;
+    c[2]=arg->checksum;
+    /* push the checksum through our own writer */
+    if(!base64_writer(c,3,errors,winfo))
+	return ops_false;
+
+    return ops_stacked_write(trailer,sizeof trailer-1,errors,winfo);
+    }
 typedef struct
     {
     unsigned pos;
@@ -890,12 +904,17 @@ void ops_writer_switch_to_signature(ops_create_info_t *info)
     {
     static char header[]="\r\n-----BEGIN PGP SIGNATURE-----\r\nVersion: "
 	OPS_VERSION_STRING "\r\n\r\n";
+    base64_arg_t *base64;
 
     ops_writer_pop(info);
     ops_write(header,sizeof header-1,info);
+
     ops_writer_push(info,linebreak_writer,NULL,ops_writer_generic_destroyer,
 		    ops_mallocz(sizeof(linebreak_arg_t)));
+
+
+    base64=ops_mallocz(sizeof *base64);
+    base64->checksum=CRC24_INIT;
     ops_writer_push(info,base64_writer,signature_finaliser,
-		    ops_writer_generic_destroyer,
-		    ops_mallocz(sizeof(base64_arg_t)));
+		    ops_writer_generic_destroyer,base64);
     }

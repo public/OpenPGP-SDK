@@ -42,6 +42,10 @@ void ops_writer_push(ops_create_info_t *info,
 		     void *arg);
 void ops_writer_pop(ops_create_info_t *info);
 void ops_writer_generic_destroyer(ops_writer_info_t *winfo);
+ops_boolean_t ops_writer_passthrough(const unsigned char *src,
+				     unsigned length,
+				     ops_error_t **errors,
+				     ops_writer_info_t *winfo);
 
 void ops_writer_set_fd(ops_create_info_t *info,int fd);
 ops_boolean_t ops_writer_close(ops_create_info_t *info);

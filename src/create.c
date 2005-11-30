@@ -499,20 +499,23 @@ ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
 ops_create_info_t *ops_create_info_new(void)
     { return ops_mallocz(sizeof(ops_create_info_t)); }
 
+/* Note that we finalise from the top down, so we don't use writers below
+ * that have already been finalised
+ */
 static ops_boolean_t writer_info_finalise(ops_error_t **errors,
 					  ops_writer_info_t *winfo)
     {
     ops_boolean_t ret=ops_true;
 
-    if(winfo->next && !writer_info_finalise(errors,winfo->next))
-	{
-	winfo->finaliser=NULL;
-	return ops_false;
-	}
     if(winfo->finaliser)
 	{
 	ret=winfo->finaliser(errors,winfo);
 	winfo->finaliser=NULL;
+	}
+    if(winfo->next && !writer_info_finalise(errors,winfo->next))
+	{
+	winfo->finaliser=NULL;
+	return ops_false;
 	}
     return ret;
     }
@@ -726,3 +729,15 @@ ops_boolean_t ops_stacked_write(const void *src,unsigned length,
  */
 void ops_writer_generic_destroyer(ops_writer_info_t *winfo)
     { free(ops_writer_get_arg(winfo)); }
+
+/**
+ * \ingroup Create
+ *
+ * A writer that just writes to the next one down. Useful for when you
+ * want to insert just a finaliser into the stack.
+ */
+ops_boolean_t ops_writer_passthrough(const unsigned char *src,
+				     unsigned length,
+				     ops_error_t **errors,
+				     ops_writer_info_t *winfo)
+    { return ops_stacked_write(src,length,errors,winfo); }
