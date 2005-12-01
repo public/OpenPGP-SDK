@@ -92,8 +92,7 @@ static ops_boolean_t memory_writer(const unsigned char *src,unsigned length,
  * \param info The info structure
  * \param mem The memory structure */
 
-void ops_create_info_set_writer_memory(ops_create_info_t *info,
-				       ops_memory_t *mem)
+void ops_writer_set_memory(ops_create_info_t *info,ops_memory_t *mem)
     {
     ops_writer_set(info,memory_writer,NULL,NULL,mem);
     }

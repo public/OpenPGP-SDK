@@ -425,7 +425,7 @@ void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
     info=ops_create_info_new();
 
     ops_memory_init(out,128);
-    ops_create_info_set_writer_memory(info,out);
+    ops_writer_set_memory(info,out);
 
     write_public_key_body(key,info);
 

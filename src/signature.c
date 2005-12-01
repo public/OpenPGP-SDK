@@ -322,7 +322,7 @@ static void start_signature(ops_create_signature_t *sig)
     // thing to get counts before writing.
     sig->mem=ops_memory_new();
     ops_memory_init(sig->mem,100);
-    ops_create_info_set_writer_memory(sig->info,sig->mem);
+    ops_writer_set_memory(sig->info,sig->mem);
 
     // write nearly up to the first subpacket
     ops_write_scalar(sig->sig.version,1,sig->info);

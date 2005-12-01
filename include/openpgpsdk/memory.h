@@ -23,8 +23,7 @@ void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag);
 void ops_memory_clear(ops_memory_t *mem);
 void ops_memory_release(ops_memory_t *mem);
 
-void ops_create_info_set_writer_memory(ops_create_info_t *info,
-				       ops_memory_t *mem);
+void ops_writer_set_memory(ops_create_info_t *info,ops_memory_t *mem);
 
 size_t ops_memory_get_length(const ops_memory_t *mem);
 void *ops_memory_get_data(ops_memory_t *mem);
