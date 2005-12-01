@@ -127,14 +127,19 @@ int main(int argc,char **argv)
     const char *verify;
     int ch;
     ops_boolean_t armour=ops_false;
+    ops_boolean_t verbose=ops_false;
 
     pname=argv[0];
 
-    while((ch=getopt(argc,argv,"a")) != -1)
+    while((ch=getopt(argc,argv,"av")) != -1)
 	switch(ch)
 	    {
 	case 'a':
 	    armour=ops_true;
+	    break;
+
+	case 'v':
+	    verbose=ops_true;
 	    break;
 
 	default:
@@ -163,7 +168,8 @@ int main(int argc,char **argv)
 
     close(arg.fd);
 
-    ops_dump_keyring(&keyring);
+    if(verbose)
+	ops_dump_keyring(&keyring);
 
     ops_parse_info_init(&parse_info);
 
