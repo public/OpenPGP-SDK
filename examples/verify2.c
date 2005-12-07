@@ -25,13 +25,13 @@ static unsigned char *signed_data;
 static ops_hash_t *signed_hash;
 
 // FIXME: should this be a part of the library?
-static ops_parse_callback_return_t
-callback(const ops_parser_content_t *content_,void *arg_)
+static ops_parse_cb_return_t
+callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     const ops_parser_content_union_t *content=&content_->content;
     const ops_key_data_t *signer;
 
-    OPS_USED(arg_);
+    OPS_USED(cbinfo);
 
     switch(content_->tag)
 	{
@@ -121,8 +121,8 @@ callback(const ops_parser_content_t *content_,void *arg_)
 
 int main(int argc,char **argv)
     {
-    ops_parse_info_t parse_info;
-    ops_reader_fd_arg_t arg;
+    ops_parse_info_t *pinfo;
+    int fd;
     const char *keyfile;
     const char *verify;
     int ch;
@@ -152,46 +152,46 @@ int main(int argc,char **argv)
     ops_init();
 
     memset(&keyring,'\0',sizeof keyring);
-    ops_parse_info_init(&parse_info);
 
-    arg.fd=open(keyfile,O_RDONLY);
-    if(arg.fd < 0)
+    pinfo=ops_parse_info_new();
+
+    fd=open(keyfile,O_RDONLY);
+    if(fd < 0)
 	{
 	perror(keyfile);
 	exit(1);
 	}
 
-    parse_info.reader_arg=&arg;
-    parse_info.reader=ops_reader_fd;
+    ops_reader_set_fd(pinfo,fd);
 
-    ops_parse_and_accumulate(&keyring,&parse_info);
+    ops_parse_and_accumulate(&keyring,pinfo);
 
-    close(arg.fd);
+    close(fd);
 
     if(verbose)
 	ops_dump_keyring(&keyring);
 
-    ops_parse_info_init(&parse_info);
+    ops_parse_info_delete(pinfo);
+    pinfo=ops_parse_info_new();
 
-    arg.fd=open(verify,O_RDONLY);
-    if(arg.fd < 0)
+    fd=open(verify,O_RDONLY);
+    if(fd < 0)
 	{
 	perror(verify);
 	exit(2);
 	}
 
-    parse_info.reader_arg=&arg;
-    parse_info.reader=ops_reader_fd;
+    ops_reader_set_fd(pinfo,fd);
 
-    parse_info.cb=callback;
-
-    if(armour)
-	ops_reader_push_dearmour(&parse_info);
-
-    ops_parse(&parse_info);
+    ops_parse_cb_set(pinfo,callback,NULL);
 
     if(armour)
-	ops_reader_pop_dearmour(&parse_info);
+	ops_reader_push_dearmour(pinfo,ops_false,ops_false);
+
+    ops_parse(pinfo);
+
+    if(armour)
+	ops_reader_pop_dearmour(pinfo);
 
     if(signed_data)
 	free(signed_data);

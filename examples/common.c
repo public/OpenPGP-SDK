@@ -4,10 +4,10 @@
 #include <fcntl.h>
 #include <assert.h>
 
-static ops_parse_callback_return_t
-callback(const ops_parser_content_t *content,void *arg_)
+static ops_parse_cb_return_t
+callback(const ops_parser_content_t *content,ops_parse_cb_info_t *cbinfo)
     {
-    ops_secret_key_t **skey=arg_;
+    ops_secret_key_t **skey=ops_parse_cb_get_arg(cbinfo);
 
     if(content->tag == OPS_PTAG_CT_SECRET_KEY)
 	{
@@ -21,22 +21,20 @@ callback(const ops_parser_content_t *content,void *arg_)
     
 ops_secret_key_t *get_secret_key(const char *keyfile)
     {
-    ops_reader_fd_arg_t arg;
-    ops_parse_info_t parse_info;
+    ops_parse_info_t *pinfo;
     ops_secret_key_t *skey;
+    int fd;
 
-    ops_parse_info_init(&parse_info);
-    parse_info.cb=callback;
-
-    arg.fd=open(keyfile,O_RDONLY);
-    assert(arg.fd >= 0);
-    parse_info.reader_arg=&arg;
-    parse_info.reader=ops_reader_fd;
+    pinfo=ops_parse_info_new();
 
     skey=NULL;
-    parse_info.cb_arg=&skey;
+    ops_parse_cb_set(pinfo,callback,&skey);
 
-    ops_parse(&parse_info);
+    fd=open(keyfile,O_RDONLY);
+    assert(fd >= 0);
+    ops_reader_set_fd(pinfo,fd);
+
+    ops_parse(pinfo);
 
     return skey;
     }

@@ -6,6 +6,7 @@
 #include <openpgpsdk/util.h>
 #include <openpgpsdk/accumulate.h>
 #include "keyring_local.h"
+#include "parse_local.h"
 #include <openpgpsdk/signature.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -13,18 +14,16 @@
 
 typedef struct
     {
-    ops_packet_parse_callback_t *cb;
-    void *cb_arg;
     ops_keyring_t *keyring;
     } accumulate_arg_t;
 
 /**
  * \ingroup Callbacks
  */
-static ops_parse_callback_return_t
-accumulate_cb(const ops_parser_content_t *content_,void *arg_)
+static ops_parse_cb_return_t
+accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
-    accumulate_arg_t *arg=arg_;
+    accumulate_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
     const ops_parser_content_union_t *content=&content_->content;
     ops_keyring_t *keyring=arg->keyring;
     ops_key_data_t *cur=&keyring->keys[keyring->nkeys];
@@ -67,9 +66,7 @@ accumulate_cb(const ops_parser_content_t *content_,void *arg_)
 
     // XXX: we now exclude so many things, we should either drop this or
     // do something to pass on copies of the stuff we keep
-    if(arg->cb)
-	return arg->cb(content_,arg->cb_arg);
-    return OPS_RELEASE_MEMORY;
+    return ops_parse_stacked_cb(content_,cbinfo);
     }
 
 /**
@@ -83,23 +80,23 @@ accumulate_cb(const ops_parser_content_t *content_,void *arg_)
  * \param opt Options to use when parsing
 */
 
-void ops_parse_and_accumulate(ops_keyring_t *keyring,ops_parse_info_t *parse_info)
+void ops_parse_and_accumulate(ops_keyring_t *keyring,
+			      ops_parse_info_t *parse_info)
     {
     accumulate_arg_t arg;
 
-    assert(!parse_info->accumulate);
+    assert(!parse_info->rinfo.accumulate);
 
     memset(&arg,'\0',sizeof arg);
 
     arg.keyring=keyring;
     /* Kinda weird, but to do with counting, and we put it back after */
     --keyring->nkeys;
-    arg.cb=parse_info->cb;
-    arg.cb_arg=parse_info->cb_arg;
 
-    parse_info->cb=accumulate_cb;
-    parse_info->cb_arg=&arg;
-    parse_info->accumulate=1;
+    ops_parse_cb_push(parse_info,accumulate_cb,&arg);
+
+    parse_info->rinfo.accumulate=ops_true;
+
     ops_parse(parse_info);
     ++keyring->nkeys;
     }

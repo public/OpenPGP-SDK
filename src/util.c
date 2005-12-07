@@ -78,6 +78,13 @@ void ops_finish(void)
     ops_crypto_finish();
     }
 
+/** Arguments for reader_fd
+ */
+typedef struct
+    {
+    int fd; /*!< file descriptor */
+    } reader_fd_arg_t;
+
 /**
  * \ingroup Parse
  *
@@ -102,19 +109,23 @@ void ops_finish(void)
  *
  * \todo change arg_ to typesafe? 
  */
-ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
-			       ops_reader_flags_t flags,
-			       ops_parse_info_t *parse_info)
+static ops_reader_ret_t reader_fd(unsigned char *dest,unsigned *plength,
+				  ops_reader_flags_t flags,
+				  ops_error_t **errors,
+				  ops_reader_info_t *rinfo,
+				  ops_parse_cb_info_t *cbinfo)
     {
-    ops_reader_fd_arg_t *arg=parse_info->reader_arg;
+    reader_fd_arg_t *arg=ops_reader_get_arg(rinfo);
     int n=read(arg->fd,dest,*plength);
+
+    OPS_USED(cbinfo);
 
     if(n == 0)
 	return OPS_R_EOF;
 
     if(n == -1)
 	{
-	ops_system_error_1(&parse_info->errors,OPS_E_R_READ_FAILED,"read",
+	OPS_SYSTEM_ERROR_1(errors,OPS_E_R_READ_FAILED,"read",
 			   "file descriptor %d",arg->fd);
 	return OPS_R_ERROR;
 	}
@@ -128,8 +139,7 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
 	    }
 	else
 	    {
-	    ops_error_1(&parse_info->errors,OPS_E_R_EARLY_EOF,
-			       "file descriptor %d",arg->fd);
+	    OPS_ERROR_1(errors,OPS_E_R_EARLY_EOF,"file descriptor %d",arg->fd);
 	    return OPS_R_EARLY_EOF;
 	    }
 	}
@@ -139,6 +149,14 @@ ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
     putchar(']');
 #endif
     return OPS_R_OK;
+    }
+
+void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd)
+    {
+    reader_fd_arg_t *arg=malloc(sizeof *arg);
+
+    arg->fd=fd;
+    ops_reader_set(pinfo,reader_fd,arg);
     }
 
 void *ops_mallocz(size_t n)

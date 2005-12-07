@@ -41,69 +41,42 @@ typedef enum
     {
     OPS_RELEASE_MEMORY,
     OPS_KEEP_MEMORY
-    } ops_parse_callback_return_t;
+    } ops_parse_cb_return_t;
 
-typedef ops_parse_callback_return_t
-ops_packet_parse_callback_t(const ops_parser_content_t *content,void *arg);
+typedef struct ops_parse_cb_info ops_parse_cb_info_t;
 
-struct ops_parse_info;
-typedef ops_reader_ret_t ops_packet_reader_t(unsigned char *dest,
-					     unsigned *plength,
-					     ops_reader_flags_t flags,
-					     struct ops_parse_info *parse_info);
-
-/** \brief Structure to hold information about a packet parse.
- *
- *  This information includes options about the parse:
- *  - whether the packet contents should be accumulated or not
- *  - whether signature subpackets should be parsed or left raw
- *
- *  It contains options specific to the parsing of armoured data:
- *  - whether headers are allowed in armoured data without a gap
- *  - whether a blank line is allowed at the start of the armoured data
- *  
- *  It also specifies :
- *  - the callback function to use and its arguments
- *  - the reader function to use and its arguments
- *
- *  It also contains information about the current state of the parse:
- *  - offset from the beginning
- *  - the accumulated data, if any
- *  - the size of the buffer, and how much has been used
- *
- *  It has a linked list of errors.
- */
-
-struct ops_parse_info
-    {
-    unsigned char ss_raw[256/8]; /*!< one bit per signature-subpacket type; 
-				    set to get raw data */
-    unsigned char ss_parsed[256/8]; /*!< one bit per signature-subpacket type;
-				       set to get parsed data */
-
-    ops_packet_parse_callback_t *cb; /*!< the callback function to use when parsing */
-    void *cb_arg; /*!< the args to pass to the callback function */
-
-    ops_packet_reader_t *reader; /*!< the reader function to use to get the data to be parsed */
-    void *reader_arg; /*!< the args to pass to the reader function */
-    /* XXX: what do we do about offsets into compressed packets? */
-    unsigned position; /*!< the offset from the beginning (with this reader) */
-
-    unsigned accumulate:1;	/*!< set to accumulate packet data */
-    unsigned char *accumulated;	/*!< the accumulated data */
-    unsigned asize;	/*!< size of the buffer */
-    unsigned alength;	/*!< used buffer */
-    unsigned armour_allow_headers_without_gap:1; /*!< allow headers in
-						  armoured data that
-						  are not separated
-						  from the data by a
-						  blank line */
-    unsigned armour_allow_no_gap:1; /*!< allow no blank line at the
-				       start of armoured data */
-    ops_error_t * errors;
-    };
+typedef ops_parse_cb_return_t
+ops_parse_cb_t(const ops_parser_content_t *content,
+	       ops_parse_cb_info_t *cbinfo);
 
 typedef struct ops_parse_info ops_parse_info_t;
+typedef struct ops_reader_info ops_reader_info_t;
+
+typedef ops_reader_ret_t ops_reader_t(unsigned char *dest,
+				      unsigned *plength,
+				      ops_reader_flags_t flags,
+				      ops_error_t **errors,
+				      ops_reader_info_t *rinfo,
+				      ops_parse_cb_info_t *cbinfo);
+typedef void ops_reader_destroyer_t(ops_reader_info_t *rinfo);
+
+ops_parse_info_t *ops_parse_info_new(void);
+void ops_parse_info_delete(ops_parse_info_t *pinfo);
+ops_error_t *ops_parse_info_get_errors(ops_parse_info_t *pinfo);
+
+void ops_parse_cb_set(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);
+void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);
+void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg);
+void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg);
+
+void *ops_reader_get_arg(ops_reader_info_t *rinfo);
+void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo);
+
+ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
+				   ops_parse_cb_info_t *cbinfo);
+ops_parse_cb_return_t ops_parse_stacked_cb(const ops_parser_content_t *content,
+					   ops_parse_cb_info_t *cbinfo);
+ops_reader_info_t *ops_parse_get_rinfo(ops_parse_info_t *pinfo);
 
 int ops_parse(ops_parse_info_t *parse_info);
 int ops_parse_and_save_errs(ops_parse_info_t *parse_info,ops_ulong_list_t *errs);
@@ -120,15 +93,23 @@ enum ops_parse_type_t
     OPS_PARSE_IGNORE 	/*!< Ignore - Return Nothing*/
     };
 
-/** Initialise structure 
- */
-#define ops_parse_info_init(parse_info) memset(parse_info,'\0',sizeof *parse_info)
-
 void ops_parse_options(ops_parse_info_t *parse_info,ops_content_tag_t tag,
 		       ops_parse_type_t type);
 
-int ops_limited_read(unsigned char *dest,unsigned length,
-		     ops_region_t *region,ops_parse_info_t *parse_info);
+ops_boolean_t ops_limited_read(unsigned char *dest,unsigned length,
+			       ops_region_t *region,ops_error_t **errors,
+			       ops_reader_info_t *rinfo,
+			       ops_parse_cb_info_t *cbinfo);
+ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
+				       ops_region_t *region,
+				       ops_error_t **errors,
+				       ops_reader_info_t *rinfo,
+				       ops_parse_cb_info_t *cbinfo);
+ops_reader_ret_t ops_stacked_read(unsigned char *dest,unsigned *length,
+			       ops_reader_flags_t flags,
+			       ops_error_t **errors,
+			       ops_reader_info_t *rinfo,
+			       ops_parse_cb_info_t *cbinfo);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

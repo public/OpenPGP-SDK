@@ -10,10 +10,10 @@
 
 int main(int argc,char **argv)
     {
-    ops_parse_info_t parse_info;
+    ops_parse_info_t *pinfo;
     ops_keyring_t keyring;
-    ops_reader_fd_arg_t arg;
     const char *target;
+    int fd;
 
     if(argc != 2)
 	{
@@ -26,17 +26,18 @@ int main(int argc,char **argv)
     ops_init();
 
     memset(&keyring,'\0',sizeof keyring);
-    ops_parse_info_init(&parse_info);
-    arg.fd=open(target,O_RDONLY);
-    if(arg.fd < 0)
+
+    pinfo=ops_parse_info_new();
+
+    fd=open(target,O_RDONLY);
+    if(fd < 0)
 	{
 	perror(target);
 	exit(2);
 	}
-    parse_info.reader_arg=&arg;
-    parse_info.reader=ops_reader_fd;
+    ops_reader_set_fd(pinfo,fd);
 
-    ops_parse_and_accumulate(&keyring,&parse_info);
+    ops_parse_and_accumulate(&keyring,pinfo);
 
     ops_dump_keyring(&keyring);
 

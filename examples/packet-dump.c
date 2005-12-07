@@ -312,14 +312,14 @@ static void print_public_key(const ops_public_key_t *key)
 	}
     }
 
-static ops_parse_callback_return_t
-callback(const ops_parser_content_t *content_,void *arg_)
+static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
+				      ops_parse_cb_info_t *cbinfo)
     {
     const ops_parser_content_union_t *content=&content_->content;
     ops_text_t *text;
     char *str;
 
-    OPS_USED(arg_);
+    OPS_USED(cbinfo);
 
     switch(content_->tag)
 	{
@@ -848,8 +848,7 @@ static void usage()
 
 int main(int argc,char **argv)
     {
-    ops_parse_info_t parse_info;
-    ops_reader_fd_arg_t arg;
+    ops_parse_info_t *pinfo;
     ops_boolean_t armour=ops_false;
     int ret;
     int ch;
@@ -873,27 +872,22 @@ int main(int argc,char **argv)
 	    }
 
 
-    ops_parse_info_init(&parse_info);
+    pinfo=ops_parse_info_new();
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
-    ops_parse_options(&parse_info,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    parse_info.cb=callback;
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 
-    arg.fd=0;
-    parse_info.reader_arg=&arg;
-    parse_info.reader=ops_reader_fd;
+    ops_parse_cb_set(pinfo,callback,NULL);
+
+    ops_reader_set_fd(pinfo,0);
 
     if(armour)
-	{
-	parse_info.armour_allow_no_gap=ops_true;
-	parse_info.armour_allow_headers_without_gap=ops_true;
-	ops_reader_push_dearmour(&parse_info);
-	}
+	ops_reader_push_dearmour(pinfo,ops_true,ops_true);
 
-    ret=ops_parse(&parse_info);
+    ret=ops_parse(pinfo);
     if (!ret)
-	{
-	print_errors(parse_info.errors);
-	}
+	ops_print_errors(ops_parse_info_get_errors(pinfo));
+
+    ops_parse_info_delete(pinfo);
 
     return 0;
     }

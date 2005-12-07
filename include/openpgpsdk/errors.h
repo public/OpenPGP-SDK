@@ -48,12 +48,12 @@ typedef struct ops_error
 
 char *ops_errcode(const ops_errcode_t errcode);
 
-void push_error(ops_error_t **errstack,ops_errcode_t errcode,int sys_errno,
+void ops_push_error(ops_error_t **errstack,ops_errcode_t errcode,int sys_errno,
 		const char *file,int line,const char *comment,...);
-void print_error(ops_error_t *err);
-void print_errors(ops_error_t *errstack);
+void ops_print_error(ops_error_t *err);
+void ops_print_errors(ops_error_t *errstack);
 
-#define ops_system_error_1(err,code,syscall,fmt,arg)	do { push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,syscall); push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
-#define ops_error_1(err,code,fmt,arg)	do { push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
+#define OPS_SYSTEM_ERROR_1(err,code,syscall,fmt,arg)	do { ops_push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,syscall); ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
+#define OPS_ERROR_1(err,code,fmt,arg)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
 
 #endif /* OPS_ERRORS */

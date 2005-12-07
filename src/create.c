@@ -566,14 +566,14 @@ static ops_boolean_t fd_writer(const unsigned char *src,unsigned length,
 
     if(n == -1)
 	{
-	ops_system_error_1(errors,OPS_E_W_WRITE_FAILED,"write",
+	OPS_SYSTEM_ERROR_1(errors,OPS_E_W_WRITE_FAILED,"write",
 			   "file descriptor %d",arg->fd);
 	return ops_false;
 	}
 
     if((unsigned)n != length)
 	{
-	ops_error_1(errors,OPS_E_W_WRITE_TOO_SHORT,
+	OPS_ERROR_1(errors,OPS_E_W_WRITE_TOO_SHORT,
 		    "file descriptor %d",arg->fd);
 	return ops_false;
 	}

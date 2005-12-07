@@ -10,9 +10,6 @@
 
 typedef struct
     {
-    ops_packet_reader_t *reader;
-    void *reader_arg;
-    ops_parse_info_t *parse_info;
     ops_region_t *region;
     unsigned char in[DECOMPRESS_BUFFER];
     unsigned char out[DECOMPRESS_BUFFER];
@@ -21,14 +18,16 @@ typedef struct
     int inflate_ret;
     } decompress_arg_t;
 
-#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; arg->parse_info->cb(&content,arg->parse_info->cb_arg); return OPS_R_EARLY_EOF; } while(0)
+#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,cbinfo); return OPS_R_EARLY_EOF; } while(0)
 
 static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 					       unsigned *plength,
 					       ops_reader_flags_t flags,
-					       ops_parse_info_t *parse_info)
+					       ops_error_t **errors,
+					       ops_reader_info_t *rinfo,
+					       ops_parse_cb_info_t *cbinfo)
     {
-    decompress_arg_t *arg=parse_info->reader_arg;
+    decompress_arg_t *arg=ops_reader_get_arg(rinfo);
     ops_parser_content_t content;
     unsigned length=*plength;
 
@@ -70,14 +69,9 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 		else
 		    n=sizeof arg->in;
 
-		arg->parse_info->reader=arg->reader;
-		arg->parse_info->reader_arg=arg->reader_arg;
-
-		if(!ops_limited_read(arg->in,n,arg->region,arg->parse_info))
+		if(!ops_stacked_limited_read(arg->in,n,arg->region,
+					     errors,rinfo,cbinfo))
 		    return OPS_R_EARLY_EOF;
-
-		arg->parse_info->reader=compressed_data_reader;
-		arg->parse_info->reader_arg=arg;
 
 		arg->stream.next_in=arg->in;
 		arg->stream.avail_in=arg->region->indeterminate
@@ -124,10 +118,8 @@ int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info)
 
     memset(&arg,'\0',sizeof arg);
 
-    arg.reader_arg=parse_info->reader_arg;
-    arg.reader=parse_info->reader;
+
     arg.region=region;
-    arg.parse_info=parse_info;
 
     arg.stream.next_in=Z_NULL;
     arg.stream.avail_in=0;
@@ -143,8 +135,7 @@ int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info)
 	return 0;
 	}
 
-    parse_info->reader=compressed_data_reader;
-    parse_info->reader_arg=&arg;
+    ops_reader_push(parse_info,compressed_data_reader,&arg);
 
     return ops_parse(parse_info);
     }

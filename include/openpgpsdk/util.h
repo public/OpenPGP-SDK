@@ -12,16 +12,8 @@
 #define ops_false	0
 #define ops_true	1
 
-/** Arguments for reader_fd
- */
-typedef struct
-    {
-    int fd; /*!< file descriptor */
-    } ops_reader_fd_arg_t;
-
 void hexdump(const unsigned char *src,size_t length);
-ops_reader_ret_t ops_reader_fd(unsigned char *dest,unsigned *plength,
-			       ops_reader_flags_t flags,ops_parse_info_t *parse_info);
+void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd);
 
 /* typesafe deconstification */
 static inline void *_deconst(const void *p)
