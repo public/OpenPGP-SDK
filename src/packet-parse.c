@@ -105,7 +105,8 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
     }
 
 /*! \todo descr for CB macro */
-#define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if((cbinfo)->cb(pc,(cbinfo)->arg) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
+/*! \todo check other callback functions to check they match this usage */
+#define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if((cbinfo)->cb(pc,(cbinfo)) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
 #define CBP(info,t,pc) CB(&(info)->cbinfo,t,pc)
 /*! macro to save typing */
 #define C		content.content
@@ -2093,7 +2094,12 @@ void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo)
 
 ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
 				   ops_parse_cb_info_t *cbinfo)
-    { return cbinfo->cb(content,cbinfo); }
+    { 
+    if (cbinfo->cb)
+	return cbinfo->cb(content,cbinfo); 
+    else
+	return OPS_FINISHED;
+    }
 
 ops_parse_cb_return_t ops_parse_stacked_cb(const ops_parser_content_t *content,
 					   ops_parse_cb_info_t *cbinfo)

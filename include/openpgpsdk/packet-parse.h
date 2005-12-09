@@ -40,7 +40,8 @@ enum ops_reader_ret_t
 typedef enum
     {
     OPS_RELEASE_MEMORY,
-    OPS_KEEP_MEMORY
+    OPS_KEEP_MEMORY,
+    OPS_FINISHED
     } ops_parse_cb_return_t;
 
 typedef struct ops_parse_cb_info ops_parse_cb_info_t;
