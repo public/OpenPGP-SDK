@@ -753,6 +753,36 @@ typedef struct
     unsigned char		*data;
     } ops_unarmoured_text_t;
 
+typedef enum
+    {
+    OPS_PKSK_V3=3
+    } ops_pk_session_key_version_t;
+
+typedef struct
+    {
+    BIGNUM			*encrypted_m;
+    } ops_pk_session_key_parameters_rsa_t;
+
+typedef struct
+    {
+    BIGNUM			*g_to_k;
+    BIGNUM		        *encrypted_m;
+    } ops_pk_session_key_parameters_elgamal_t;
+
+typedef union
+    {
+    ops_pk_session_key_parameters_rsa_t		rsa;
+    ops_pk_session_key_parameters_elgamal_t	elgamal;
+    } ops_pk_session_key_parameters_t;
+
+typedef struct
+    {
+    ops_pk_session_key_version_t version;
+    unsigned char		key_id[OPS_KEY_ID_SIZE];
+    ops_public_key_algorithm_t	algorithm;
+    ops_pk_session_key_parameters_t parameters;
+    } ops_pk_session_key_t;
+
 /** ops_parser_union_content_t */
 typedef union
     {
@@ -797,6 +827,7 @@ typedef union
     ops_signed_cleartext_body_t	signed_cleartext_body;
     ops_signed_cleartext_trailer_t signed_cleartext_trailer;
     ops_unarmoured_text_t	unarmoured_text;
+    ops_pk_session_key_t	pk_session_key;
     } ops_parser_content_union_t;
 
 /** ops_parser_content_t */
@@ -840,6 +871,7 @@ void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_rea
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
 void ops_secret_key_free(ops_secret_key_t *key);
+void ops_pk_session_key_free(ops_pk_session_key_t *sk);
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

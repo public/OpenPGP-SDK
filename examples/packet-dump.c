@@ -831,6 +831,31 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	print_string("type",content->armour_header.type);
 	break;
 
+    case OPS_PTAG_CT_PK_SESSION_KEY:
+	print_tagname("PUBLIC KEY SESSION KEY");
+	printf("Version: %d\n",content->pk_session_key.version);
+	print_hexdump("key ID",content->pk_session_key.key_id,
+		      sizeof content->pk_session_key.key_id);
+	printf("Algorithm: %d\n",content->pk_session_key.algorithm);
+	switch(content->pk_session_key.algorithm)
+	    {
+	case OPS_PKA_RSA:
+	    print_bn("encrypted_m",
+		     content->pk_session_key.parameters.rsa.encrypted_m);
+	    break;
+
+	case OPS_PKA_ELGAMAL:
+	    print_bn("g_to_k",
+		     content->pk_session_key.parameters.elgamal.g_to_k);
+	    print_bn("encrypted_m",
+		     content->pk_session_key.parameters.elgamal.encrypted_m);
+	    break;
+
+	default:
+	    assert(0);
+	    }
+	break;
+
     default:
 	print_tagname("UNKNOWN PACKET TYPE");
 	fprintf(stderr,"packet-dump: unknown tag=%d (0x%x)\n",content_->tag,

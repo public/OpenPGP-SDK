@@ -730,6 +730,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_secret_key_free(&c->content.secret_key);
 	break;
 
+    case OPS_PTAG_CT_PK_SESSION_KEY:
+	ops_pk_session_key_free(&c->content.pk_session_key);
+	break;
+
     default:
 	fprintf(stderr,"Can't free %d (0x%x)\n",c->tag,c->tag);
 	assert(0);
@@ -740,6 +744,24 @@ static void free_BN(BIGNUM **pp)
     {
     BN_free(*pp);
     *pp=NULL;
+    }
+
+void ops_pk_session_key_free(ops_pk_session_key_t *sk)
+    {
+    switch(sk->algorithm)
+	{
+    case OPS_PKA_RSA:
+	free_BN(&sk->parameters.rsa.encrypted_m);
+	break;
+
+    case OPS_PKA_ELGAMAL:
+	free_BN(&sk->parameters.elgamal.g_to_k);
+	free_BN(&sk->parameters.elgamal.encrypted_m);
+	break;
+
+    default:
+	assert(0);
+	}
     }
 
 /*! Free the memory used when parsing a public key */
@@ -1757,6 +1779,56 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     return 1;
     }
 
+static int parse_pk_session_key(ops_region_t *region,
+				ops_parse_info_t *parse_info)
+    {
+    unsigned char c[1];
+    ops_parser_content_t content;
+
+    if(!limited_read(c,1,region,parse_info))
+	return 0;
+    C.pk_session_key.version=c[0];
+    if(C.pk_session_key.version != OPS_PKSK_V3)
+	ERR1P(parse_info,
+	      "Bad public-key encrypted session key version (%d)",
+	      C.pk_session_key.version);
+
+    if(!limited_read(C.pk_session_key.key_id,
+		     sizeof C.pk_session_key.key_id,region,parse_info))
+	return 0;
+
+    if(!limited_read(c,1,region,parse_info))
+	return 0;
+    C.pk_session_key.algorithm=c[0];
+    switch(C.pk_session_key.algorithm)
+	{
+    case OPS_PKA_RSA:
+	if(!limited_read_mpi(&C.pk_session_key.parameters.rsa.encrypted_m,
+			     region,parse_info))
+	    return 0;
+	break;
+
+    case OPS_PKA_ELGAMAL:
+	if(!limited_read_mpi(&C.pk_session_key.parameters.elgamal.g_to_k,
+			     region,parse_info)
+	   || limited_read_mpi(&C.pk_session_key.parameters.elgamal.encrypted_m,
+			     region,parse_info))
+	    return 0;
+	break;
+
+    default:
+	ERR1P(parse_info,
+	      "Unknown public key algorithm in session key (%d)",
+	      C.pk_session_key.algorithm);
+	return 0;
+	}
+
+    CBP(parse_info,OPS_PTAG_CT_PK_SESSION_KEY,&content);
+
+    return 1;
+    }
+    
+
 /** Parse one packet.
  *
  * This function parses the packet tag.  It computes the value of the
@@ -1872,6 +1944,10 @@ static int ops_parse_one_packet(ops_parse_info_t *parse_info,
 
     case OPS_PTAG_CT_SECRET_KEY:
 	r=parse_secret_key(&region,parse_info);
+	break;
+
+    case OPS_PTAG_CT_PK_SESSION_KEY:
+	r=parse_pk_session_key(&region,parse_info);
 	break;
 
     default:
