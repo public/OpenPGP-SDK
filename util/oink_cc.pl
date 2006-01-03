@@ -45,10 +45,10 @@ if($is_compile) {
       }
     }
     close O;
-    close F;
+    close F || croak "Errors in parse: $! $?";
     $cmd="$cc  ".join(' ',@args2);
     print "$cmd\n";
-    system $cmd;
+    system($cmd) == 0 || croak "Errors in compile: $?";
 } else {
     my $cmd="$cc ".join(' ',@args);
     print STDERR "$cmd\n";
