@@ -42,7 +42,7 @@ tags:
 	find . -name '*.[ch]' | xargs etags -a
 
 clean:
-	rm -f $(EXES) *.o
+	rm -f $(EXES) *.o *.i
 	rm -f TAGS
 
 .depend: *.[ch] ../include/openpgpsdk/*.h

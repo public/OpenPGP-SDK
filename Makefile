@@ -24,6 +24,7 @@ clean:
 	@set -e; for d in $(SUBDIRS); do \
 	(cd $$d; echo "+++ make clean in $$d"; make clean; echo "--- $$d"); \
 	done
+	find . -name '*.core' | xargs rm
 
 Makefiles:
 	@set -e; for d in $(SUBDIRS); do \
@@ -43,3 +44,10 @@ doc::
 coverity::
 	cov-build --dir coverity make
 	cd coverity && cov-analyze -e emit/ --outputdir output/ --enable VOLATILE --security --enable CHROOT --enable OPEN_ARGS --enable SECURE_CODING --enable SECURE_TEMP --enable TAINTED_POINTER --enable TOCTTOU && cov-commit-errors -e ./emit -o ./output -d /home/rachel/openpgpsdk/coverity/database/ --name ben
+
+oink:
+	rm -rf oink-links
+	mkdir oink-links
+	cd oink-links \
+	&& find ../src ../examples -name '*.[ihc]' -exec ln -s {} \; \
+	&& ln -s ../util/Makefile.oink Makefile

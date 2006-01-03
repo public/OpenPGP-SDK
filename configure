@@ -13,6 +13,8 @@ $|=1;
 our $Log;
 our $LogFile='/dev/null';
 
+my $use_oink;
+
 sub trace {
     return if !$Log;
 
@@ -60,7 +62,10 @@ my %Args=(
 	  '--cc=' => sub {
 	      my $cc=shift;
 	      $Subst{CC}=$cc;
-	  }
+	  },
+	  '--oink=' => sub {
+	      $Subst{OINK}=shift;
+	  },
 	 );
 
 my %Functions=(
@@ -98,6 +103,7 @@ while(my $arg=shift) {
 #my $os=`uname -s`;
 
 $Subst{'CC'}=getKnowledge('cc');
+
 $Subst{'CFLAGS'}.=' '.getKnowledge('base_cflags');
 
 checkHeaders(\@RHeaders);
@@ -108,13 +114,24 @@ my $libs=findLibraries(\%Functions);
 $Subst{'LIBS'}=join(' ',map { "-l$_" } @$libs);
 #exit;
 
+if($Subst{OINK}) {
+    use Cwd;
+    my $path=getcwd();
+    $Subst{CC}="$path/util/oink_cc.pl --cc=$Subst{CC}";
+}
+
 fixSubst();
+
+my $path=`pwd`;
+chomp $path;
+
 
 create('src/.depend');
 create('examples/.depend');
 
 fileSubst('src/Makefile','#','');
 fileSubst('examples/Makefile','#','');
+fileSubst('util/Makefile.oink','#','');
 fileSubst('include/openpgpsdk/configure.h','/*','*/');
 
 print "make clean\n";

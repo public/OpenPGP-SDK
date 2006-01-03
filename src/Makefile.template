@@ -23,7 +23,7 @@ tags:
 	find . -name '*.[ch]' | xargs etags -a
 
 clean:
-	rm -f packet-dump verify *.o
+	rm -f packet-dump verify *.o *.i
 	rm -f libops.a TAGS
 
 .depend: *.[ch] ../include/openpgpsdk/*.h
