@@ -1881,10 +1881,9 @@ static int ops_parse_one_packet(ops_parse_info_t *parse_info,
 	r=0;
 	}
 
-    /* Ensure that the entire packet has been consumed (so long as
-       there haven't been errors) */
+    /* Ensure that the entire packet has been consumed */
 
-    if(region.length != region.length_read && r)
+    if(region.length != region.length_read)
 	{
 	ops_data_t remainder;
 
