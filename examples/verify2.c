@@ -186,7 +186,7 @@ int main(int argc,char **argv)
     ops_parse_cb_set(pinfo,callback,NULL);
 
     if(armour)
-	ops_reader_push_dearmour(pinfo,ops_false,ops_false);
+	ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
 
     ops_parse(pinfo);
 

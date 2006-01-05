@@ -30,6 +30,11 @@ typedef struct
 						  blank line */
     ops_boolean_t allow_no_gap:1; /*!< allow no blank line at the
 				       start of armoured data */
+    ops_boolean_t allow_trailing_whitespace:1; /*!< allow armoured
+						 stuff to have
+						 trailing whitespace
+						 where we wouldn't
+						 strictly expect it */
 
     // base64 stuff
     unsigned buffered;
@@ -451,6 +456,9 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	if(ret != OPS_R_OK || n != 4)
 	    ERR(cbinfo,"Error in checksum");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_true);
+	if(arg->allow_trailing_whitespace)
+	    while(c == ' ' || c == '\t')
+		c=read_char(arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
 	    ERR(cbinfo,"Badly terminated checksum");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
@@ -571,6 +579,11 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	     /* Consume final NL */
 	     if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
 		 return OPS_R_EOF;
+	     if(arg->allow_trailing_whitespace)
+		 while(c == ' ' || c == '\t')
+		     if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,
+						ops_true)) < 0)
+			 return OPS_R_EOF;
 	     if(c != '\n')
 		 /* wasn't a header line after all */
 		 break;
@@ -697,7 +710,9 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
     }
 
 void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
-			      ops_boolean_t without_gap,ops_boolean_t no_gap)
+			      ops_boolean_t without_gap,
+			      ops_boolean_t no_gap,
+			      ops_boolean_t trailing_whitespace)
     {
     dearmour_arg_t *arg;
 
@@ -705,6 +720,7 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
     arg->seen_nl=ops_true;
     arg->allow_headers_without_gap=without_gap;
     arg->allow_no_gap=no_gap;
+    arg->allow_trailing_whitespace=trailing_whitespace;
 
     ops_reader_push(parse_info,armoured_data_reader,arg);
     }

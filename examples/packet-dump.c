@@ -906,7 +906,7 @@ int main(int argc,char **argv)
     ops_reader_set_fd(pinfo,0);
 
     if(armour)
-	ops_reader_push_dearmour(pinfo,ops_true,ops_true);
+	ops_reader_push_dearmour(pinfo,ops_true,ops_true,ops_true);
 
     ret=ops_parse(pinfo);
     if (!ret)
