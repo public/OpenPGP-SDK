@@ -69,7 +69,8 @@ static void push_back(dearmour_arg_t *arg,const unsigned char *buf,
     }
     
 static int read_char(dearmour_arg_t *arg,ops_error_t **errors,
-		     ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo,
+		     ops_reader_info_t *rinfo,
+		     ops_parse_cb_info_t *cbinfo,
 		     ops_boolean_t skip)
     {
     unsigned char c[1];
@@ -96,6 +97,35 @@ static int read_char(dearmour_arg_t *arg,ops_error_t **errors,
     arg->seen_nl=c[0] == '\n';
 
     return c[0];
+    }
+
+static int eat_whitespace(int first,
+			  dearmour_arg_t *arg,ops_error_t **errors,
+			  ops_reader_info_t *rinfo,
+			  ops_parse_cb_info_t *cbinfo,
+			  ops_boolean_t skip)
+    {
+    int c=first;
+
+    while(c == ' ' || c == '\t')
+	c=read_char(arg,errors,rinfo,cbinfo,skip);
+
+    return c;
+    }
+
+static int read_and_eat_whitespace(dearmour_arg_t *arg,
+				   ops_error_t **errors,
+				   ops_reader_info_t *rinfo,
+				   ops_parse_cb_info_t *cbinfo,
+				   ops_boolean_t skip)
+    {
+    int c;
+
+    do
+	c=read_char(arg,errors,rinfo,cbinfo,skip);
+    while(c == ' ' || c == '\t');
+
+    return c;
     }
 
 static void flush(dearmour_arg_t *arg,ops_parse_cb_info_t *cbinfo)
@@ -441,7 +471,7 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	{
 	// then we saw padding
 	assert(c == '=');
-	c=read_char(arg,errors,rinfo,cbinfo,ops_true);
+	c=read_and_eat_whitespace(arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
 	    ERR(cbinfo,"No newline at base64 end");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
@@ -457,8 +487,7 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	    ERR(cbinfo,"Error in checksum");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_true);
 	if(arg->allow_trailing_whitespace)
-	    while(c == ' ' || c == '\t')
-		c=read_char(arg,errors,rinfo,cbinfo,ops_true);
+	    c=eat_whitespace(c,arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
 	    ERR(cbinfo,"Badly terminated checksum");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
@@ -580,10 +609,9 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	     if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
 		 return OPS_R_EOF;
 	     if(arg->allow_trailing_whitespace)
-		 while(c == ' ' || c == '\t')
-		     if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,
-						ops_true)) < 0)
-			 return OPS_R_EOF;
+		 if((c=eat_whitespace(c,arg,errors,rinfo,cbinfo,
+				      ops_true)) < 0)
+		    return OPS_R_EOF;
 	     if(c != '\n')
 		 /* wasn't a header line after all */
 		 break;
@@ -680,6 +708,10 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	     /* Consume final NL */
 	     if((c=read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
 		 return OPS_R_EARLY_EOF;
+	     if(arg->allow_trailing_whitespace)
+		 if((c=eat_whitespace(c,arg,errors,rinfo,cbinfo,
+				      ops_true)) < 0)
+		    return OPS_R_EOF;
 	     if(c != '\n')
 		 /* wasn't a trailer line after all */
 		 ERR(cbinfo,"Bad ASCII armour trailer (3)");
