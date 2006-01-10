@@ -25,6 +25,7 @@ clean:
 	(cd $$d; echo "+++ make clean in $$d"; make clean; echo "--- $$d"); \
 	done
 	find . -name '*.core' | xargs rm
+	rm -rf oink-links
 
 Makefiles:
 	@set -e; for d in $(SUBDIRS); do \
