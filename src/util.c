@@ -159,6 +159,64 @@ void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd)
     ops_reader_set(pinfo,reader_fd,arg);
     }
 
+typedef struct
+    {
+    const unsigned char *buffer;
+    size_t length;
+    size_t offset;
+    } reader_mem_arg_t;
+
+static ops_reader_ret_t reader_mem(unsigned char *dest,unsigned *plength,
+				   ops_reader_flags_t flags,
+				   ops_error_t **errors,
+				   ops_reader_info_t *rinfo,
+				   ops_parse_cb_info_t *cbinfo)
+    {
+    reader_mem_arg_t *arg=ops_reader_get_arg(rinfo);
+    unsigned n;
+
+    OPS_USED(cbinfo);
+
+    if(arg->offset+*plength > arg->length)
+	n=arg->length-arg->offset;
+    else
+	n=*plength;
+
+    if(n == 0)
+	return OPS_R_EOF;
+
+    memcpy(dest,arg->buffer+arg->offset,n);
+    arg->offset+=n;
+
+    if(n != *plength)
+	{
+	if(flags&OPS_RETURN_LENGTH)
+	    {
+	    *plength=n;
+	    return OPS_R_PARTIAL_READ;
+	    }
+	else
+	    {
+	    OPS_ERROR(errors,OPS_E_R_EARLY_EOF,"memory block");
+	    return OPS_R_EARLY_EOF;
+	    }
+	}
+
+    return OPS_R_OK;
+    }
+
+// Note that its the caller's responsibility to ensure buffer continues to
+// exist
+void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
+			   size_t length)
+    {
+    reader_mem_arg_t *arg=malloc(sizeof *arg);
+
+    arg->buffer=buffer;
+    arg->length=length;
+    ops_reader_set(pinfo,reader_mem,arg);
+    }
+
 void *ops_mallocz(size_t n)
     {
     void *m=malloc(n);
@@ -167,3 +225,4 @@ void *ops_mallocz(size_t n)
 
     return m;
     }
+

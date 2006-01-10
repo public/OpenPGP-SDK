@@ -14,6 +14,8 @@
 
 void hexdump(const unsigned char *src,size_t length);
 void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd);
+void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
+			   size_t length);
 
 /* typesafe deconstification */
 static inline void *_deconst(const void *p)

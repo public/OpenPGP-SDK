@@ -870,7 +870,8 @@ static void usage()
     {
     fprintf(stderr,"%s [-a] [-b] <file name>\n\n",pname);
     fprintf(stderr,"-a\tRead armoured data\n"
-	    "-b\tDon't buffer stdout/stderr\n");
+	    "-b\tDon't buffer stdout/stderr\n"
+	    "-B\tRead via a memory buffer\n");
     exit(1);
     }
 
@@ -881,10 +882,12 @@ int main(int argc,char **argv)
     int ret;
     int ch;
     int fd;
+    ops_boolean_t buffer_read=ops_false;
+    unsigned char buffer[10240];
 
     pname=argv[0];
 
-    while((ch=getopt(argc,argv,"ab")) != -1)
+    while((ch=getopt(argc,argv,"abB")) != -1)
 	switch(ch)
 	    {
 	case 'a':
@@ -894,6 +897,10 @@ int main(int argc,char **argv)
 	case 'b':
 	    setvbuf(stdout,NULL,_IONBF,0);
 	    setvbuf(stderr,NULL,_IONBF,0);
+	    break;
+
+	case 'B':
+	    buffer_read=ops_true;
 	    break;
 
 	default:
@@ -918,7 +925,20 @@ int main(int argc,char **argv)
 
     ops_parse_cb_set(pinfo,callback,NULL);
 
-    ops_reader_set_fd(pinfo,fd);
+    if(buffer_read)
+	{
+	int n;
+
+	n=read(fd,buffer,sizeof buffer);
+	if(n < 0)
+	    {
+	    perror(argv[0]);
+	    exit(3);
+	    }
+	ops_reader_set_memory(pinfo,buffer,n);
+	}
+    else
+	ops_reader_set_fd(pinfo,fd);
 
     if(armour)
 	ops_reader_push_dearmour(pinfo,ops_true,ops_true,ops_true);

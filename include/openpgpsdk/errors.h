@@ -54,6 +54,7 @@ void ops_print_error(ops_error_t *err);
 void ops_print_errors(ops_error_t *errstack);
 
 #define OPS_SYSTEM_ERROR_1(err,code,syscall,fmt,arg)	do { ops_push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,syscall); ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
+#define OPS_ERROR(err,code,fmt)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt); } while(0)
 #define OPS_ERROR_1(err,code,fmt,arg)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
 
 #endif /* OPS_ERRORS */
