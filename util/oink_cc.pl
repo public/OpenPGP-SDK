@@ -38,8 +38,8 @@ if($is_compile) {
     open(O,">$ifile") || croak "$ifile: $!";
     while(my $line=<F>) {
       if($line =~ /^\# (\d+) "([^\/<].+)"(.*)$/) {
-#	print O "# $1 \"$pwd/$2\"$3\n";
-	print O $line;
+	print O "# $1 \"$pwd/$2\"$3\n";
+#	print O $line;
       } else {
 	print O $line;
       }
