@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 static int indent=0;
 static const char *pname;
@@ -867,7 +868,9 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 
 static void usage()
     {
-    fprintf(stderr,"%s [-a]\n",pname);
+    fprintf(stderr,"%s [-a] [-b] <file name>\n\n",pname);
+    fprintf(stderr,"-a\tRead armoured data\n"
+	    "-b\tDon't buffer stdout/stderr\n");
     exit(1);
     }
 
@@ -877,6 +880,7 @@ int main(int argc,char **argv)
     ops_boolean_t armour=ops_false;
     int ret;
     int ch;
+    int fd;
 
     pname=argv[0];
 
@@ -895,7 +899,18 @@ int main(int argc,char **argv)
 	default:
 	    usage();
 	    }
+    argc-=optind;
+    argv+=optind;
 
+    if(argc != 1)
+	usage();
+
+    fd=open(argv[0],O_RDONLY);
+    if(fd < 0)
+	{
+	perror(argv[0]);
+	exit(2);
+	}
 
     pinfo=ops_parse_info_new();
     //    ops_parse_packet_options(&opt,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
@@ -903,7 +918,7 @@ int main(int argc,char **argv)
 
     ops_parse_cb_set(pinfo,callback,NULL);
 
-    ops_reader_set_fd(pinfo,0);
+    ops_reader_set_fd(pinfo,fd);
 
     if(armour)
 	ops_reader_push_dearmour(pinfo,ops_true,ops_true,ops_true);
