@@ -23,6 +23,7 @@ struct ops_parse_cb_info
     ops_parse_cb_info_t *next;
     };
 
+#define NTAGS	0x100
 /** \brief Structure to hold information about a packet parse.
  *
  *  This information includes options about the parse:
@@ -47,9 +48,9 @@ struct ops_parse_cb_info
 
 struct ops_parse_info
     {
-    unsigned char ss_raw[256/8]; /*!< one bit per signature-subpacket type; 
+    unsigned char ss_raw[NTAGS/8]; /*!< one bit per signature-subpacket type; 
 				    set to get raw data */
-    unsigned char ss_parsed[256/8]; /*!< one bit per signature-subpacket type;
+    unsigned char ss_parsed[NTAGS/8]; /*!< one bit per signature-subpacket type;
 				       set to get parsed data */
 
     ops_reader_info_t rinfo;

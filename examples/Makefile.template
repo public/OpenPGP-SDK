@@ -37,7 +37,7 @@ sign-detached: sign-detached.o $(LIBDEPS)
 sign-inline: sign-inline.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o sign-inline sign-inline.o $(LIBS)
 
-decrypt: decrypt.o $(LIBPDEPS)
+decrypt: decrypt.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o decrypt decrypt.o $(LIBS)
 
 

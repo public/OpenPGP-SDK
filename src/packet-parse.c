@@ -1755,6 +1755,8 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
 	{
 	int n;
+	ops_parser_content_t pc;
+	char *passphrase;
 
 	assert(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
 	       || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED);
@@ -1763,11 +1765,18 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	    return 0;
 	C.secret_key.algorithm=c[0];
 
+	if(!limited_read(c,1,region,parse_info))
+	    return 0;
+	C.secret_key.s2k_specifier=c[0];
+
 	n=ops_block_size(C.secret_key.algorithm);
 	assert(n > 0 && n <= OPS_MAX_BLOCK_SIZE);
 
 	if(!limited_read(C.secret_key.iv,n,region,parse_info))
 	    return 0;
+
+	pc.content.passphrase=&passphrase;
+	CBP(parse_info,OPS_PTAG_CMD_GET_PASSPHRASE,&pc);
 	}
 
     switch(C.secret_key.public_key.algorithm)
@@ -1783,6 +1792,8 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	break;
 
     default:
+	fprintf(stderr,"Unexpected aglorithm: %d\n",
+		C.secret_key.public_key.algorithm);
 	assert(0);
 	}
 
@@ -2134,7 +2145,7 @@ void ops_parse_options(ops_parse_info_t *parse_info,
 	}
 
     assert(tag >= OPS_PTAG_SIGNATURE_SUBPACKET_BASE
-	   && tag <= OPS_PTAG_SIGNATURE_SUBPACKET_BASE+255);
+	   && tag <= OPS_PTAG_SIGNATURE_SUBPACKET_BASE+NTAGS-1);
     t8=(tag-OPS_PTAG_SIGNATURE_SUBPACKET_BASE)/8;
     t7=1 << ((tag-OPS_PTAG_SIGNATURE_SUBPACKET_BASE)&7);
     switch(type)

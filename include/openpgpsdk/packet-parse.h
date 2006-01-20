@@ -89,9 +89,9 @@ void ops_parse_and_validate(ops_parse_info_t *parse_info);
  */
 enum ops_parse_type_t
     {
-    OPS_PARSE_RAW,	/*!< Return Raw */
-    OPS_PARSE_PARSED,	/*!< Return Parsed */
-    OPS_PARSE_IGNORE 	/*!< Ignore - Return Nothing*/
+    OPS_PARSE_RAW,	/*!< Callback Raw */
+    OPS_PARSE_PARSED,	/*!< Callback Parsed */
+    OPS_PARSE_IGNORE 	/*!< Don't callback */
     };
 
 void ops_parse_options(ops_parse_info_t *parse_info,ops_content_tag_t tag,

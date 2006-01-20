@@ -198,6 +198,9 @@ enum ops_content_tag_t
     OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY	=0x300+7,
     OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER=0x300+8,
     OPS_PTAG_CT_UNARMOURED_TEXT		=0x300+9,
+
+    /* commands to the callback */
+    OPS_PTAG_CMD_GET_PASSPHRASE		=0x400,
     };
 
 /** Structure to hold one parse error string. */
@@ -386,6 +389,7 @@ typedef struct
     {
     ops_public_key_t		public_key;
     ops_s2k_usage_t		s2k_usage;
+    ops_s2k_specifier_t		s2k_specifier;
     ops_symmetric_algorithm_t	algorithm;
     unsigned char		iv[OPS_MAX_BLOCK_SIZE];
     unsigned			checksum;
@@ -843,6 +847,7 @@ typedef union
     ops_signed_cleartext_trailer_t signed_cleartext_trailer;
     ops_unarmoured_text_t	unarmoured_text;
     ops_pk_session_key_t	pk_session_key;
+    char		      **passphrase; /*< point to a char * to be filled in - this is to work around the constness of content */
     } ops_parser_content_union_t;
 
 /** ops_parser_content_t */

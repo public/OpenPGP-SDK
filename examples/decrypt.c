@@ -11,6 +11,39 @@ static char *pname;
 static ops_keyring_t keyring;
 
 static ops_parse_cb_return_t
+cb_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    const ops_parser_content_union_t *content=&content_->content;
+    char buffer[1024];
+    size_t n;
+
+    OPS_USED(cbinfo);
+
+    switch(content_->tag)
+	{
+    case OPS_PARSER_PTAG:
+	break;
+
+    case OPS_PTAG_CMD_GET_PASSPHRASE:
+	printf("Passphrase: ");
+	fgets(buffer,sizeof buffer,stdin);
+	n=strlen(buffer);
+	if(n && buffer[n-1] == '\n')
+	    buffer[--n]='\0';
+	*content->passphrase=malloc(n+1);
+	strcpy(*content->passphrase,buffer);
+	return OPS_KEEP_MEMORY;
+
+    default:
+	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
+		content_->tag);
+	exit(1);
+	}
+
+    return OPS_RELEASE_MEMORY;
+    }
+
+static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     //    const ops_parser_content_union_t *content=&content_->content;
@@ -72,6 +105,8 @@ int main(int argc,char **argv)
 	}
 
     ops_reader_set_fd(pinfo,fd);
+
+    ops_parse_cb_set(pinfo,cb_secret_key,NULL);
 
     ops_parse_and_accumulate(&keyring,pinfo);
 
