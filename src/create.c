@@ -326,7 +326,7 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
 	return ops_false;
     
     // XXX: for now, no secret key encryption, so s2k == 0
-    assert(key->s2k_usage == OPS_S2K_NONE);
+    assert(key->s2k_usage == OPS_S2KU_NONE);
 
     push_secret_key_checksum_writer(info);
 
@@ -465,7 +465,7 @@ void ops_fast_create_rsa_secret_key(ops_secret_key_t *key,time_t time,
     key->key.rsa.q=q;
     key->key.rsa.u=u;
 
-    key->s2k_usage=OPS_S2K_NONE;
+    key->s2k_usage=OPS_S2KU_NONE;
 
     // XXX: sanity check and add errors...
     }

@@ -1752,7 +1752,23 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     if(!limited_read(c,1,region,parse_info))
 	return 0;
     C.secret_key.s2k_usage=c[0];
-    assert(C.secret_key.s2k_usage == OPS_S2K_NONE);
+    if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
+	{
+	int n;
+
+	assert(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
+	       || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED);
+
+	if(!limited_read(c,1,region,parse_info))
+	    return 0;
+	C.secret_key.algorithm=c[0];
+
+	n=ops_block_size(C.secret_key.algorithm);
+	assert(n > 0 && n <= OPS_MAX_BLOCK_SIZE);
+
+	if(!limited_read(C.secret_key.iv,n,region,parse_info))
+	    return 0;
+	}
 
     switch(C.secret_key.public_key.algorithm)
 	{

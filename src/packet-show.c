@@ -128,15 +128,15 @@ typedef ops_map_t public_key_algorithm_map_t;
 
 static ops_map_t symmetric_key_algorithm_map[] =
     {
-    { OPS_SKA_PLAINTEXT,	"Plaintext or unencrypted data" },
-    { OPS_SKA_IDEA,		"IDEA" },
-    { OPS_SKA_TRIPLEDES,	"TripleDES" },
-    { OPS_SKA_CAST5,		"CAST5" },
-    { OPS_SKA_BLOWFISH,		"Blowfish" },
-    { OPS_SKA_AES_128,		"AES(128-bit key)" },
-    { OPS_SKA_AES_192,		"AES(192-bit key)" },
-    { OPS_SKA_AES_256, 		"AES(256-bit key)" },
-    { OPS_SKA_TWOFISH, 		"Twofish(256-bit key)" },
+    { OPS_SA_PLAINTEXT,		"Plaintext or unencrypted data" },
+    { OPS_SA_IDEA,		"IDEA" },
+    { OPS_SA_TRIPLEDES,		"TripleDES" },
+    { OPS_SA_CAST5,		"CAST5" },
+    { OPS_SA_BLOWFISH,		"Blowfish" },
+    { OPS_SA_AES_128,		"AES(128-bit key)" },
+    { OPS_SA_AES_192,		"AES(192-bit key)" },
+    { OPS_SA_AES_256, 		"AES(256-bit key)" },
+    { OPS_SA_TWOFISH, 		"Twofish(256-bit key)" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 

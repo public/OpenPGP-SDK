@@ -343,18 +343,19 @@ typedef struct
  */
 typedef enum
     {
-    OPS_S2K_NONE=0,
+    OPS_S2KU_NONE=0,
+    OPS_S2KU_ENCRYPTED_AND_HASHED=254,
+    OPS_S2KU_ENCRYPTED=255
     } ops_s2k_usage_t;
 
-/** ops_secret_key_t
+/** s2k_specifier_t
  */
-typedef struct
+typedef enum
     {
-    ops_public_key_t		public_key;
-    ops_s2k_usage_t		s2k_usage;
-    unsigned			checksum;
-    ops_secret_key_union_t	key;
-    } ops_secret_key_t;
+    OPS_S2KS_SIMPLE=0,
+    OPS_S2KS_SALTED=1,
+    OPS_S2KS_ITERATED_AND_SALTED=3
+    } ops_s2k_specifier_t;
 
 /** Symmetric Key Algorithm Numbers.
  * OpenPGP assigns a unique Algorithm Number to each algorithm that is part of OpenPGP.
@@ -365,17 +366,31 @@ typedef struct
  */
 typedef enum
     {
-    OPS_SKA_PLAINTEXT	=0, /*!< Plaintext or unencrypted data */
-    OPS_SKA_IDEA	=1, /*!< IDEA */
-    OPS_SKA_TRIPLEDES	=2, /*!< TripleDES */
-    OPS_SKA_CAST5	=3, /*!< CAST5 */
-    OPS_SKA_BLOWFISH	=4, /*!< Blowfish */
-    OPS_SKA_AES_128	=7, /*!< AES with 128-bit key (AES) */
-    OPS_SKA_AES_192	=8, /*!< AES with 192-bit key */
-    OPS_SKA_AES_256	=9, /*!< AES with 256-bit key */
-    OPS_SKA_TWOFISH	=10, /*!< Twofish with 256-bit key (TWOFISH) */
+    OPS_SA_PLAINTEXT	=0, /*!< Plaintext or unencrypted data */
+    OPS_SA_IDEA		=1, /*!< IDEA */
+    OPS_SA_TRIPLEDES	=2, /*!< TripleDES */
+    OPS_SA_CAST5	=3, /*!< CAST5 */
+    OPS_SA_BLOWFISH	=4, /*!< Blowfish */
+    OPS_SA_AES_128	=7, /*!< AES with 128-bit key (AES) */
+    OPS_SA_AES_192	=8, /*!< AES with 192-bit key */
+    OPS_SA_AES_256	=9, /*!< AES with 256-bit key */
+    OPS_SA_TWOFISH	=10, /*!< Twofish with 256-bit key (TWOFISH) */
+    } ops_symmetric_algorithm_t;
 
-    } ops_symmetric_key_algorithm_t;
+// Maximum block size for symmetric crypto
+#define OPS_MAX_BLOCK_SIZE	16
+
+/** ops_secret_key_t
+ */
+typedef struct
+    {
+    ops_public_key_t		public_key;
+    ops_s2k_usage_t		s2k_usage;
+    ops_symmetric_algorithm_t	algorithm;
+    unsigned char		iv[OPS_MAX_BLOCK_SIZE];
+    unsigned			checksum;
+    ops_secret_key_union_t	key;
+    } ops_secret_key_t;
 
 /** Structure to hold one trust packet's data */
 
