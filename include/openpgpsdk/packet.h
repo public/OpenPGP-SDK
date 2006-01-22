@@ -139,13 +139,11 @@ enum ops_content_tag_t
     OPS_PTAG_CT_SK_IP_DATA		=18,	/*!< Sym. Encrypted and Integrity Protected Data Packet */
     OPS_PTAG_CT_MDC			=19,	/*!< Modification Detection Code Packet */
 
-    OPS_PARSER_ERROR			=0x100,	/*!< Internal Use: Parser Error */
-    OPS_PARSER_PTAG			=0x101,	/*!< Internal Use: The packet is the "Packet Tag" itself - used when
+    OPS_PARSER_PTAG			=0x100,	/*!< Internal Use: The packet is the "Packet Tag" itself - used when
 						     callback sends back the PTag. */
-    OPS_PTAG_RAW_SS			=0x102,	/*!< Internal Use: content is raw sig subtag */
-    OPS_PTAG_SS_ALL			=0x103,	/*!< Internal Use: select all subtags */
-    OPS_PARSER_PACKET_END		=0x104,
-    OPS_PARSER_ERRCODE			=0x105, /*! < Internal Use: Parser Error with errcode returned */
+    OPS_PTAG_RAW_SS			=0x101,	/*!< Internal Use: content is raw sig subtag */
+    OPS_PTAG_SS_ALL			=0x102,	/*!< Internal Use: select all subtags */
+    OPS_PARSER_PACKET_END		=0x103,
 
     /* signature subpackets (0x200-2ff) (type+0x200) */
     /* only those we can parse are listed here */
@@ -198,9 +196,17 @@ enum ops_content_tag_t
     OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY	=0x300+7,
     OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER=0x300+8,
     OPS_PTAG_CT_UNARMOURED_TEXT		=0x300+9,
+    OPS_PTAG_CT_ENCRYPTED_SECRET_KEY	=0x300+10, // In this case the algorithm specific fields will not be initialised
 
     /* commands to the callback */
     OPS_PTAG_CMD_GET_PASSPHRASE		=0x400,
+
+
+    /* Errors */
+    OPS_PARSER_ERROR			=0x500,	/*!< Internal Use: Parser Error */
+    OPS_PARSER_ERRCODE			=0x500+1, /*! < Internal Use: Parser Error with errcode returned */
+    OPS_PARSER_ERROR_UNKNOWN_TAG	=0x500+2,
+    OPS_PARSER_ERROR_PACKET_CONSUMED	=0x500+3,
     };
 
 /** Structure to hold one parse error string. */
@@ -335,11 +341,17 @@ typedef struct
     BIGNUM *u;
     } ops_rsa_secret_key_t;
 
+typedef struct
+    {
+    BIGNUM *x;
+    } ops_dsa_secret_key_t;
+
 /** ops_secret_key_union_t
  */ 
 typedef struct
     {
     ops_rsa_secret_key_t rsa;
+    ops_dsa_secret_key_t dsa;
     } ops_secret_key_union_t;
 
 /** s2k_usage_t
@@ -348,7 +360,8 @@ typedef enum
     {
     OPS_S2KU_NONE=0,
     OPS_S2KU_ENCRYPTED_AND_HASHED=254,
-    OPS_S2KU_ENCRYPTED=255
+    OPS_S2KU_ENCRYPTED=255,
+    OPS_S2KU_NOT_SET=256
     } ops_s2k_usage_t;
 
 /** s2k_specifier_t

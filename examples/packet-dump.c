@@ -34,7 +34,10 @@ static void print_bn( const char *name, const BIGNUM *bn)
     {
     print_indent();
     printf("%s=",name);
-    BN_print_fp(stdout,bn);
+    if(bn)
+	BN_print_fp(stdout,bn);
+    else
+	puts("(unset)");
     printf("\n");
     }
 
@@ -779,9 +782,17 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	    }
 	break;
 
+    case OPS_PTAG_CMD_GET_PASSPHRASE:
+	printf(">>> ASKED FOR PASSPHRASE <<<\n");
+	break;
+
     case OPS_PTAG_CT_SECRET_KEY:
+    case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY:
 	// XXX: fix me
-	print_tagname("SECRET_KEY");
+	if(content_->tag == OPS_PTAG_CT_SECRET_KEY)
+	    print_tagname("SECRET_KEY");
+	else
+	    print_tagname("ENCRYPTED_SECRET_KEY");
 	print_public_key(&content->secret_key.public_key);
 
 	switch(content->secret_key.public_key.algorithm)
@@ -791,6 +802,10 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	    print_bn("p",content->secret_key.key.rsa.p);
 	    print_bn("q",content->secret_key.key.rsa.q);
 	    print_bn("u",content->secret_key.key.rsa.u);
+	    break;
+
+	case OPS_PKA_DSA:
+	    print_bn("x",content->secret_key.key.dsa.x);
 	    break;
 
 	default:

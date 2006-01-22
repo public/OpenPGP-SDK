@@ -1,11 +1,13 @@
 #include <openpgpsdk/packet-parse.h>
 #include <openpgpsdk/util.h>
-#include <unistd.h>
-#include <string.h>
 #include <openpgpsdk/keyring.h>
-#include <fcntl.h>
 #include <openpgpsdk/accumulate.h>
 #include <openpgpsdk/armour.h>
+
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <assert.h>
 
 static char *pname;
 static ops_keyring_t keyring;
@@ -13,18 +15,26 @@ static ops_keyring_t keyring;
 static ops_parse_cb_return_t
 cb_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
-    const ops_parser_content_union_t *content=&content_->content;
-    char buffer[1024];
-    size_t n;
+    //    const ops_parser_content_union_t *content=&content_->content;
+    //    char buffer[1024];
+    //    size_t n;
 
     OPS_USED(cbinfo);
 
     switch(content_->tag)
 	{
     case OPS_PARSER_PTAG:
+    case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY: // we get these because we didn't prompt
+    case OPS_PARSER_ERROR_UNKNOWN_TAG:
+    case OPS_PARSER_ERROR_PACKET_CONSUMED: // only happens after another error we've deemed to be OK
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
+    case OPS_PTAG_CT_SIGNATURE_FOOTER:
+    case OPS_PTAG_CT_SIGNATURE:
+    case OPS_PTAG_CT_TRUST:
 	break;
 
     case OPS_PTAG_CMD_GET_PASSPHRASE:
+	/*
 	printf("Passphrase: ");
 	fgets(buffer,sizeof buffer,stdin);
 	n=strlen(buffer);
@@ -33,10 +43,14 @@ cb_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	*content->passphrase=malloc(n+1);
 	strcpy(*content->passphrase,buffer);
 	return OPS_KEEP_MEMORY;
+	*/
+	// we don't want to prompt when reading the keyring
+	break;
 
     default:
 	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
 		content_->tag);
+	assert(0);
 	exit(1);
 	}
 
@@ -54,7 +68,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     default:
 	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
 		content_->tag);
-	exit(1);
+	assert(0);
 	}
 
     return OPS_RELEASE_MEMORY;

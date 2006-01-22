@@ -118,6 +118,7 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
 /*! set error text in content and run CallBack to handle warning, do not return */
 #define WARN(warn)	do { C.error.error=warn; CB(OPS_PARSER_ERROR,&content);; } while(0)
 #define WARNP(info,warn)	do { C.error.error=warn; CBP(info,OPS_PARSER_ERROR,&content); } while(0)
+#define SWARNP(errtype,info,warn)	do { C.error.error=warn; CBP(info,errtype,&content); } while(0)
 /*! \todo descr ERR1 macro */
 #define ERR1P(info,fmt,x)	do { format_error(&content,(fmt),(x)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 
@@ -594,6 +595,12 @@ void ops_signed_cleartext_trailer_free(ops_signed_cleartext_trailer_t *trailer)
     trailer->hash=NULL;
     }
 
+void ops_cmd_get_passphrase_free(char **passphrase)
+    {
+    free(*passphrase);
+    *passphrase=NULL;
+    }
+
 /*! Free any memory allocated when parsing the packet content */
 void ops_parser_content_free(ops_parser_content_t *c)
     {
@@ -724,14 +731,21 @@ void ops_parser_content_free(ops_parser_content_t *c)
 
     case OPS_PARSER_ERROR:
     case OPS_PARSER_ERRCODE:
+    case OPS_PARSER_ERROR_UNKNOWN_TAG:
+    case OPS_PARSER_ERROR_PACKET_CONSUMED:
 	break;
 
     case OPS_PTAG_CT_SECRET_KEY:
+    case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY:
 	ops_secret_key_free(&c->content.secret_key);
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
 	ops_pk_session_key_free(&c->content.pk_session_key);
+	break;
+
+    case OPS_PTAG_CMD_GET_PASSPHRASE:
+	ops_cmd_get_passphrase_free(c->content.passphrase);
 	break;
 
     default:
@@ -1735,11 +1749,38 @@ void ops_secret_key_free(ops_secret_key_t *key)
 	free_BN(&key->key.rsa.u);
 	break;
 
+    case OPS_PKA_DSA:
+	free_BN(&key->key.dsa.x);
+	break;
+
     default:
+	fprintf(stderr,"Unknown algorithm: %d\n",key->public_key.algorithm);
 	assert(0);
 	}
 
     ops_public_key_free(&key->public_key);
+    }
+
+static int consume_packet(ops_region_t *region,ops_parse_info_t *parse_info,
+			  ops_boolean_t warn)
+    {
+    ops_data_t remainder;
+    ops_parser_content_t content;
+
+    if(read_data(&remainder,region,parse_info))
+	{
+	/* now throw it away */
+	data_free(&remainder);
+	if(warn)
+	    SWARNP(OPS_PARSER_ERROR_PACKET_CONSUMED,parse_info,
+		   "Remainder of packet consumed and discarded.");
+	}
+    else if(warn)
+	WARNP(parse_info,"Problem consuming remainder of error packet.");
+    else
+	return 0;
+
+    return 1;
     }
 
 static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
@@ -1747,20 +1788,16 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     ops_parser_content_t content;
     unsigned char c[1];
 
+    memset(&content,'\0',sizeof content);
     if(!parse_public_key_data(&C.secret_key.public_key,region,parse_info))
 	return 0;
     if(!limited_read(c,1,region,parse_info))
 	return 0;
     C.secret_key.s2k_usage=c[0];
-    if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
+
+    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
+       || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
 	{
-	int n;
-	ops_parser_content_t pc;
-	char *passphrase;
-
-	assert(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
-	       || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED);
-
 	if(!limited_read(c,1,region,parse_info))
 	    return 0;
 	C.secret_key.algorithm=c[0];
@@ -1768,6 +1805,18 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	if(!limited_read(c,1,region,parse_info))
 	    return 0;
 	C.secret_key.s2k_specifier=c[0];
+	}
+    else if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
+	{
+	C.secret_key.algorithm=C.secret_key.s2k_usage;
+	C.secret_key.s2k_usage=OPS_S2KU_NOT_SET;
+	}
+
+    if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
+	{
+	int n;
+	ops_parser_content_t pc;
+	char *passphrase;
 
 	n=ops_block_size(C.secret_key.algorithm);
 	assert(n > 0 && n <= OPS_MAX_BLOCK_SIZE);
@@ -1775,8 +1824,16 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	if(!limited_read(C.secret_key.iv,n,region,parse_info))
 	    return 0;
 
+	passphrase=NULL;
 	pc.content.passphrase=&passphrase;
 	CBP(parse_info,OPS_PTAG_CMD_GET_PASSPHRASE,&pc);
+	if(!passphrase)
+	    {
+	    if(!consume_packet(region,parse_info,ops_false))
+	       return 0;
+	    CBP(parse_info,OPS_PTAG_CT_ENCRYPTED_SECRET_KEY,&content);
+	    return 1;
+	    }
 	}
 
     switch(C.secret_key.public_key.algorithm)
@@ -1854,7 +1911,6 @@ static int parse_pk_session_key(ops_region_t *region,
 
     return 1;
     }
-    
 
 /** Parse one packet.
  *
@@ -1980,25 +2036,14 @@ static int ops_parse_one_packet(ops_parse_info_t *parse_info,
     default:
 	format_error(&content,"Format error (unknown content tag %d)",
 		     C.ptag.content_tag);
-	CBP(parse_info,OPS_PARSER_ERROR,&content);
+	CBP(parse_info,OPS_PARSER_ERROR_UNKNOWN_TAG,&content);
 	r=0;
 	}
 
     /* Ensure that the entire packet has been consumed */
 
     if(region.length != region.length_read)
-	{
-	ops_data_t remainder;
-
-	if (read_data(&remainder,&region,parse_info))
-	    {
-	    /* now throw it away */
-	    data_free(&remainder);
-	    WARNP(parse_info,"Remainder of packet consumed and discarded.");
-	    }
-	else
-	    WARNP(parse_info,"Problem consuming remainder of error packet.");
-	}
+	consume_packet(&region,parse_info,ops_true);
 
     /* set pktlen */
 

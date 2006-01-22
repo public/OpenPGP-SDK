@@ -31,6 +31,8 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     switch(content_->tag)
 	{
     case OPS_PTAG_CT_PUBLIC_KEY:
+    case OPS_PTAG_CT_SECRET_KEY:
+    case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY:
 	//	printf("New key\n");
 	++keyring->nkeys;
 	EXPAND_ARRAY(keyring,keys);

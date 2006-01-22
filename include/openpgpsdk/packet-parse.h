@@ -91,7 +91,7 @@ enum ops_parse_type_t
     {
     OPS_PARSE_RAW,	/*!< Callback Raw */
     OPS_PARSE_PARSED,	/*!< Callback Parsed */
-    OPS_PARSE_IGNORE 	/*!< Don't callback */
+    OPS_PARSE_IGNORE, 	/*!< Don't callback */
     };
 
 void ops_parse_options(ops_parse_info_t *parse_info,ops_content_tag_t tag,
