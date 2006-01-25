@@ -6,6 +6,7 @@
 #include <openpgpsdk/errors.h>
 #include <openpgpsdk/armour.h>
 #include <openpgpsdk/crypto.h>
+#include <openpgpsdk/keyring.h>
 
 #include <unistd.h>
 #include <stdio.h>
@@ -16,6 +17,7 @@
 
 static int indent=0;
 static const char *pname;
+static ops_keyring_t keyring;
 
 static void print_indent()
     {
@@ -165,17 +167,22 @@ static void print_tagname(const char *str)
     printf("%s packet\n", str);
     }
 
+static void print_escaped(const unsigned char *data,size_t length)
+    {
+    while(length-- > 0)
+	{
+	if((*data >= 0x20 && *data < 0x7f && *data != '%') || *data == '\n')
+	    putchar(*data);
+	else
+	    printf("%%%02x",*data);
+	++data;
+	}
+    }
+
 static void print_string(const char *name,const char *str)
     {
     print_name(name);
-    while(*str)
-	{
-	if(*str >= 0x20 && *str < 0x7f && *str != '%')
-	    putchar(*str);
-	else
-	    printf("%%%02x",(unsigned char)*str);
-	++str;
-	}
+    print_escaped(str,strlen(str));
     putchar('\n');
     }
 
@@ -322,8 +329,17 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
     const ops_parser_content_union_t *content=&content_->content;
     ops_text_t *text;
     char *str;
+    ops_key_data_t *decrypter;
+    const ops_secret_key_t *secret;
+    static ops_boolean_t unarmoured;
 
     OPS_USED(cbinfo);
+
+    if(unarmoured && content_->tag != OPS_PTAG_CT_UNARMOURED_TEXT)
+	{
+	unarmoured=ops_false;
+	puts("UNARMOURED TEXT ends");
+	}
 
     switch(content_->tag)
 	{
@@ -341,8 +357,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	break;
 
     case OPS_PARSER_PTAG:
-
-	if (content->ptag.content_tag==OPS_PTAG_CT_PUBLIC_KEY)
+	if(content->ptag.content_tag == OPS_PTAG_CT_PUBLIC_KEY)
 	    {
 	    indent=0;
 	    printf("\n*** NEXT KEY ***\n");
@@ -358,6 +373,10 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	/*
 	print_tagname(ops_str_from_single_packet_tag(content->ptag.content_tag));
 	*/
+	break;
+
+    case OPS_PTAG_CT_SE_DATA:
+	print_tagname("SYMMETRIC ENCRYPTED DATA");
 	break;
 
     case OPS_PTAG_CT_PUBLIC_KEY:
@@ -782,7 +801,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	    }
 	break;
 
-    case OPS_PTAG_CMD_GET_PASSPHRASE:
+    case OPS_PARSER_CMD_GET_PASSPHRASE:
 	printf(">>> ASKED FOR PASSPHRASE <<<\n");
 	break;
 
@@ -837,9 +856,15 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	break;
 
     case OPS_PTAG_CT_UNARMOURED_TEXT:
-	print_tagname("UNARMOURED TEXT");
-	print_block("unarmoured text",content->unarmoured_text.data,
-		    content->unarmoured_text.length);
+	if(!unarmoured)
+	    {
+	    print_tagname("UNARMOURED TEXT");
+	    unarmoured=ops_true;
+	    }
+	putchar('[');
+	print_escaped(content->unarmoured_text.data,
+		      content->unarmoured_text.length);
+	putchar(']');
 	break;
 
     case OPS_PTAG_CT_ARMOUR_TRAILER:
@@ -870,6 +895,25 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	default:
 	    assert(0);
 	    }
+
+	/* Now get hold of session key for later on */
+
+	decrypter=ops_keyring_find_key_by_id(&keyring,
+					     content->pk_session_key.key_id);
+	if(!decrypter || !ops_key_is_secret(decrypter))
+	    break;
+
+	puts("[Decryption key found in keyring]");
+
+	secret=ops_get_secret_key_from_data(decrypter);
+	while(!secret)
+	    {
+	    /* then it must be encrypted */
+	    char *phrase=ops_get_passphrase();
+	    secret=ops_decrypt_secret_key_from_data(decrypter,phrase);
+	    free(phrase);
+	    }
+	
 	break;
 
     default:
@@ -899,10 +943,11 @@ int main(int argc,char **argv)
     int fd;
     ops_boolean_t buffer_read=ops_false;
     unsigned char buffer[10240];
+    const char *keyring_file=NULL;
 
     pname=argv[0];
 
-    while((ch=getopt(argc,argv,"abB")) != -1)
+    while((ch=getopt(argc,argv,"abBk:")) != -1)
 	switch(ch)
 	    {
 	case 'a':
@@ -918,6 +963,10 @@ int main(int argc,char **argv)
 	    buffer_read=ops_true;
 	    break;
 
+	case 'k':
+	    keyring_file=optarg;
+	    break;
+
 	default:
 	    usage();
 	    }
@@ -926,6 +975,9 @@ int main(int argc,char **argv)
 
     if(argc != 1)
 	usage();
+
+    if(keyring_file)
+	ops_keyring_read(&keyring,keyring_file);
 
     fd=open(argv[0],O_RDONLY);
     if(fd < 0)

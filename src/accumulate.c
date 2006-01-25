@@ -27,6 +27,7 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     const ops_parser_content_union_t *content=&content_->content;
     ops_keyring_t *keyring=arg->keyring;
     ops_key_data_t *cur=&keyring->keys[keyring->nkeys];
+    const ops_public_key_t *pkey;
 
     switch(content_->tag)
 	{
@@ -37,14 +38,23 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	++keyring->nkeys;
 	EXPAND_ARRAY(keyring,keys);
 
+	if(content_->tag == OPS_PTAG_CT_PUBLIC_KEY)
+	    pkey=&content->public_key;
+	else
+	    pkey=&content->secret_key.public_key;
+
 	memset(&keyring->keys[keyring->nkeys],'\0',
 	       sizeof keyring->keys[keyring->nkeys]);
 
-	ops_keyid(keyring->keys[keyring->nkeys].keyid,&content->public_key);
-	ops_fingerprint(&keyring->keys[keyring->nkeys].fingerprint,
-			&content->public_key);
+	ops_keyid(keyring->keys[keyring->nkeys].keyid,pkey);
+	ops_fingerprint(&keyring->keys[keyring->nkeys].fingerprint,pkey);
 
-	keyring->keys[keyring->nkeys].pkey=content->public_key;
+	keyring->keys[keyring->nkeys].type=content_->tag;
+
+	if(content_->tag == OPS_PTAG_CT_PUBLIC_KEY)
+	    keyring->keys[keyring->nkeys].key.pkey=*pkey;
+	else
+	    keyring->keys[keyring->nkeys].key.skey=content->secret_key;
 	return OPS_KEEP_MEMORY;
 
     case OPS_PTAG_CT_USER_ID:

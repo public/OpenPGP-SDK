@@ -1,11 +1,12 @@
 /** \file
  */
 
-#include "util.h"
-#include "packet.h"
-
 #ifndef OPS_CRYPTO_H
 #define OPS_CRYPTO_H
+
+#include "util.h"
+#include "packet.h"
+#include "packet-parse.h"
 
 #define OPS_MAX_HASH	64
 
@@ -22,6 +23,20 @@ struct _ops_hash_t
     ops_hash_init_t *init;
     ops_hash_add_t *add;
     ops_hash_finish_t *finish;
+    void *data;
+    };
+
+typedef void ops_decrypt_init_t(ops_decrypt_t *decrypt);
+typedef size_t ops_decrypt_decrypt_t(ops_decrypt_t *decrypt,void *out,
+				     const void *in,int count);
+typedef void ops_decrypt_finish_t(ops_decrypt_t *decrypt);
+
+struct _ops_decrypt_t
+    {
+    ops_symmetric_algorithm_t algorithm;
+    ops_decrypt_init_t *init;
+    ops_decrypt_decrypt_t *decrypt;
+    ops_decrypt_finish_t *finish;
     void *data;
     };
 
@@ -46,5 +61,10 @@ int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
 			    const ops_rsa_public_key_t *rsa);
 
 unsigned ops_block_size(ops_symmetric_algorithm_t alg);
+
+int ops_decrypt_data(ops_region_t *region,ops_parse_info_t *parse_info);
+
+void ops_decrypt_any(ops_decrypt_t *decrypt,
+		     ops_symmetric_algorithm_t algorithm);
 
 #endif

@@ -64,14 +64,16 @@ typedef void ops_reader_destroyer_t(ops_reader_info_t *rinfo);
 ops_parse_info_t *ops_parse_info_new(void);
 void ops_parse_info_delete(ops_parse_info_t *pinfo);
 ops_error_t *ops_parse_info_get_errors(ops_parse_info_t *pinfo);
+ops_decrypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo);
 
 void ops_parse_cb_set(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);
 void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);
+void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo);
 void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg);
 void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg);
+void *ops_reader_get_arg_from_pinfo(ops_parse_info_t *pinfo);
 
 void *ops_reader_get_arg(ops_reader_info_t *rinfo);
-void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo);
 
 ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
 				   ops_parse_cb_info_t *cbinfo);

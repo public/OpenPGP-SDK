@@ -13,58 +13,46 @@ static char *pname;
 static ops_keyring_t keyring;
 
 static ops_parse_cb_return_t
-cb_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
-    {
-    //    const ops_parser_content_union_t *content=&content_->content;
-    //    char buffer[1024];
-    //    size_t n;
-
-    OPS_USED(cbinfo);
-
-    switch(content_->tag)
-	{
-    case OPS_PARSER_PTAG:
-    case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY: // we get these because we didn't prompt
-    case OPS_PARSER_ERROR_UNKNOWN_TAG:
-    case OPS_PARSER_ERROR_PACKET_CONSUMED: // only happens after another error we've deemed to be OK
-    case OPS_PTAG_CT_SIGNATURE_HEADER:
-    case OPS_PTAG_CT_SIGNATURE_FOOTER:
-    case OPS_PTAG_CT_SIGNATURE:
-    case OPS_PTAG_CT_TRUST:
-	break;
-
-    case OPS_PTAG_CMD_GET_PASSPHRASE:
-	/*
-	printf("Passphrase: ");
-	fgets(buffer,sizeof buffer,stdin);
-	n=strlen(buffer);
-	if(n && buffer[n-1] == '\n')
-	    buffer[--n]='\0';
-	*content->passphrase=malloc(n+1);
-	strcpy(*content->passphrase,buffer);
-	return OPS_KEEP_MEMORY;
-	*/
-	// we don't want to prompt when reading the keyring
-	break;
-
-    default:
-	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
-		content_->tag);
-	assert(0);
-	exit(1);
-	}
-
-    return OPS_RELEASE_MEMORY;
-    }
-
-static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
-    //    const ops_parser_content_union_t *content=&content_->content;
+    const ops_parser_content_union_t *content=&content_->content;
+    static ops_boolean_t skipping;
+    static const ops_key_data_t *decrypter;
+
     OPS_USED(cbinfo);
+
+    if(content_->tag != OPS_PTAG_CT_UNARMOURED_TEXT && skipping)
+	{
+	puts("...end of skip");
+	skipping=ops_false;
+	}
 
     switch(content_->tag)
 	{
+    case OPS_PTAG_CT_UNARMOURED_TEXT:
+	if(!skipping)
+	    {
+	    puts("Skipping...");
+	    skipping=ops_true;
+	    }
+	fwrite(content->unarmoured_text.data,1,
+	       content->unarmoured_text.length,stdout);
+	break;
+
+    case OPS_PTAG_CT_ARMOUR_HEADER:
+    case OPS_PARSER_PTAG:
+	break;
+
+    case OPS_PTAG_CT_PK_SESSION_KEY:
+	if(decrypter)
+	    break;
+
+	decrypter=ops_keyring_find_key_by_id(&keyring,
+					     content->pk_session_key.key_id);
+	if(!decrypter)
+	    break;
+	break;
+	
     default:
 	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
 		content_->tag);
@@ -107,24 +95,7 @@ int main(int argc,char **argv)
 
     ops_init();
 
-    memset(&keyring,'\0',sizeof keyring);
-
-    pinfo=ops_parse_info_new();
-
-    fd=open(keyfile,O_RDONLY);
-    if(fd < 0)
-	{
-	perror(keyfile);
-	exit(1);
-	}
-
-    ops_reader_set_fd(pinfo,fd);
-
-    ops_parse_cb_set(pinfo,cb_secret_key,NULL);
-
-    ops_parse_and_accumulate(&keyring,pinfo);
-
-    close(fd);
+    ops_keyring_read(&keyring,keyfile);
 
     pinfo=ops_parse_info_new();
 

@@ -127,7 +127,7 @@ enum ops_content_tag_t
     OPS_PTAG_CT_PUBLIC_KEY		= 6,	/*!< Public Key Packet */
     OPS_PTAG_CT_SECRET_SUBKEY		= 7,	/*!< Secret Subkey Packet */
     OPS_PTAG_CT_COMPRESSED		= 8,	/*!< Compressed Data Packet */
-    OPS_PTAG_CT_SK_DATA			= 9,	/*!< Symmetrically Encrypted Data Packet */
+    OPS_PTAG_CT_SE_DATA			= 9,	/*!< Symmetrically Encrypted Data Packet */
     OPS_PTAG_CT_MARKER			=10,	/*!< Marker Packet */
     OPS_PTAG_CT_LITERAL_DATA		=11,	/*!< Literal Data Packet */
     OPS_PTAG_CT_TRUST			=12,	/*!< Trust Packet */
@@ -197,16 +197,16 @@ enum ops_content_tag_t
     OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER=0x300+8,
     OPS_PTAG_CT_UNARMOURED_TEXT		=0x300+9,
     OPS_PTAG_CT_ENCRYPTED_SECRET_KEY	=0x300+10, // In this case the algorithm specific fields will not be initialised
+    OPS_PTAG_CT_SE_DATA_HEADER		=0x300+11,
+    OPS_PTAG_CT_SE_DATA_BODY		=0x300+12,
 
     /* commands to the callback */
-    OPS_PTAG_CMD_GET_PASSPHRASE		=0x400,
+    OPS_PARSER_CMD_GET_PASSPHRASE	=0x400,
 
 
     /* Errors */
     OPS_PARSER_ERROR			=0x500,	/*!< Internal Use: Parser Error */
     OPS_PARSER_ERRCODE			=0x500+1, /*! < Internal Use: Parser Error with errcode returned */
-    OPS_PARSER_ERROR_UNKNOWN_TAG	=0x500+2,
-    OPS_PARSER_ERROR_PACKET_CONSUMED	=0x500+3,
     };
 
 /** Structure to hold one parse error string. */
@@ -314,6 +314,7 @@ typedef union
  */
 typedef enum
     {
+    OPS_V2=2,	/*<! Version 2 (essentially the same as v3) */
     OPS_V3=3,	/*<! Version 3 */
     OPS_V4=4,	/*<! Version 4 */
     } ops_version_t;
@@ -393,8 +394,30 @@ typedef enum
     OPS_SA_TWOFISH	=10, /*!< Twofish with 256-bit key (TWOFISH) */
     } ops_symmetric_algorithm_t;
 
+/** Hashing Algorithm Numbers.
+ * OpenPGP assigns a unique Algorithm Number to each algorithm that is part of OpenPGP.
+ * 
+ * This lists algorithm numbers for hash algorithms.
+ *
+ * \see RFC2440bis-12 9.4
+ */
+typedef enum
+    {
+    OPS_HASH_UNKNOWN	=-1,	/*!< used to indicate errors */
+    OPS_HASH_MD5	= 1,	/*!< MD5 */
+    OPS_HASH_SHA1	= 2,	/*!< SHA-1 */
+    OPS_HASH_RIPEMD	= 3,	/*!< RIPEMD160 */
+
+    OPS_HASH_SHA256	= 8,	/*!< SHA256 */
+    OPS_HASH_SHA384	= 9,	/*!< SHA384 */
+    OPS_HASH_SHA512	=10,	/*!< SHA512 */
+    } ops_hash_algorithm_t;
+
 // Maximum block size for symmetric crypto
 #define OPS_MAX_BLOCK_SIZE	16
+
+// Salt size for hashing
+#define OPS_SALT_SIZE		8
 
 /** ops_secret_key_t
  */
@@ -404,6 +427,9 @@ typedef struct
     ops_s2k_usage_t		s2k_usage;
     ops_s2k_specifier_t		s2k_specifier;
     ops_symmetric_algorithm_t	algorithm;
+    ops_hash_algorithm_t	hash_algorithm;
+    unsigned char		salt[OPS_SALT_SIZE];
+    unsigned char		iterations;
     unsigned char		iv[OPS_MAX_BLOCK_SIZE];
     unsigned			checksum;
     ops_secret_key_union_t	key;
@@ -461,25 +487,6 @@ typedef enum
 
     OPS_SIG_3RD_PARTY	=0x50,	/*<! Third-Party Confirmation signature */
     } ops_sig_type_t;
-
-/** Hashing Algorithm Numbers.
- * OpenPGP assigns a unique Algorithm Number to each algorithm that is part of OpenPGP.
- * 
- * This lists algorithm numbers for hash algorithms.
- *
- * \see RFC2440bis-12 9.4
- */
-typedef enum
-    {
-    OPS_HASH_UNKNOWN	=-1,	/*!< used to indicate errors */
-    OPS_HASH_MD5	= 1,	/*!< MD5 */
-    OPS_HASH_SHA1	= 2,	/*!< SHA-1 */
-    OPS_HASH_RIPEMD	= 3,	/*!< RIPEMD160 */
-
-    OPS_HASH_SHA256	= 8,	/*!< SHA256 */
-    OPS_HASH_SHA384	= 9,	/*!< SHA384 */
-    OPS_HASH_SHA512	=10,	/*!< SHA512 */
-    } ops_hash_algorithm_t;
 
 /** Struct to hold parameters of an RSA signature */
 typedef struct

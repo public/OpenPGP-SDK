@@ -27,5 +27,14 @@ void ops_keyring_free(ops_keyring_t *keyring);
 void ops_dump_keyring(const ops_keyring_t *keyring);
 const ops_public_key_t *
 ops_get_public_key_from_data(const ops_key_data_t *data);
+ops_boolean_t ops_key_is_secret(const ops_key_data_t *data);
+const ops_secret_key_t *
+ops_get_secret_key_from_data(const ops_key_data_t *data);
+ops_secret_key_t *ops_decrypt_secret_key_from_data(ops_key_data_t *key,
+						   const char *pphrase);
+
+void ops_keyring_read(ops_keyring_t *keyring,const char *file);
+
+char *ops_get_passphrase(void);
 
 #endif

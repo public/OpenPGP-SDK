@@ -27,7 +27,7 @@ static ops_map_t packet_tag_map[] =
     { OPS_PTAG_CT_PUBLIC_KEY,		"Public Key" },
     { OPS_PTAG_CT_SECRET_SUBKEY,		"Secret Subkey" },
     { OPS_PTAG_CT_COMPRESSED,		"Compressed Data" },
-    { OPS_PTAG_CT_SK_DATA,		"Symmetrically Encrypted Data" },
+    { OPS_PTAG_CT_SE_DATA,		"Symmetrically Encrypted Data" },
     { OPS_PTAG_CT_MARKER,		"Marker" },
     { OPS_PTAG_CT_LITERAL_DATA,		"Literal Data" },
     { OPS_PTAG_CT_TRUST,	       	"Trust" },

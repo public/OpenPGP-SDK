@@ -26,7 +26,10 @@ typedef enum
 
     /* parser errors */
     OPS_E_P=0x3000,	/* general parser error */
-    OPS_E_P_NOT_ENOUGH_DATA=OPS_E_P+1,
+    OPS_E_P_NOT_ENOUGH_DATA	=OPS_E_P+1,
+    OPS_E_P_UNKNOWN_TAG		=OPS_E_P+2,
+    OPS_E_P_PACKET_CONSUMED	=OPS_E_P+3,
+    OPS_E_P_MPI_FORMAT_ERROR	=OPS_E_P+4,
 
     /* creator errors */
     OPS_E_C=0x4000,	/* general creator error */

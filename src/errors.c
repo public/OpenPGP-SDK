@@ -11,6 +11,8 @@
 
 #include "openpgpsdk/util.h"
 
+#define ERR(code)	{ code, #code }
+
 static ops_errcode_name_map_t errcode_name_map[] = 
     {
     { OPS_E_OK, "OPS_E_OK" },
@@ -27,6 +29,9 @@ static ops_errcode_name_map_t errcode_name_map[] =
 
     { OPS_E_P,	"OPS_E_P" },
     { OPS_E_P_NOT_ENOUGH_DATA, "OPS_E_P_NOT_ENOUGH_DATA" },
+    { OPS_E_P_UNKNOWN_TAG,"OPS_E_P_UNKNOWN_TAG" },
+    { OPS_E_P_PACKET_CONSUMED,"OPS_E_P_PACKET_CONSUMED" },
+    ERR(OPS_E_P_MPI_FORMAT_ERROR),
 
     { OPS_E_C,	"OPS_E_C" },
 

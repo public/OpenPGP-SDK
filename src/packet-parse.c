@@ -112,13 +112,13 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
 #define C		content.content
 /*! set error code in content and run CallBack to handle error */
 #define ERRCODE(cbinfo,err)	do { C.errcode.errcode=err; CB(cbinfo,OPS_PARSER_ERRCODE,&content); } while(0)
+#define ERRCODEP(pinfo,err)	do { C.errcode.errcode=err; CBP(pinfo,OPS_PARSER_ERRCODE,&content); } while(0)
 /*! set error text in content and run CallBack to handle error, then return */
 #define ERR(cbinfo,err)	do { C.error.error=err; CB(cbinfo,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 #define ERRP(info,err)	do { C.error.error=err; CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 /*! set error text in content and run CallBack to handle warning, do not return */
 #define WARN(warn)	do { C.error.error=warn; CB(OPS_PARSER_ERROR,&content);; } while(0)
 #define WARNP(info,warn)	do { C.error.error=warn; CBP(info,OPS_PARSER_ERROR,&content); } while(0)
-#define SWARNP(errtype,info,warn)	do { C.error.error=warn; CBP(info,errtype,&content); } while(0)
 /*! \todo descr ERR1 macro */
 #define ERR1P(info,fmt,x)	do { format_error(&content,(fmt),(x)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 
@@ -475,7 +475,10 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
 	return 0;
 
     if((buf[0] >> nonzero) != 0 || !(buf[0]&(1 << (nonzero-1))))
-	ERRP(parse_info,"MPI format error");  /* XXX: Ben, one part of this constraint does not apply to encrypted MPIs the draft says. -- peter */
+	{
+	ERRCODEP(parse_info,OPS_E_P_MPI_FORMAT_ERROR);  /* XXX: Ben, one part of this constraint does not apply to encrypted MPIs the draft says. -- peter */
+	return 0;
+	}
 
     *pbn=BN_bin2bn(buf,length,NULL);
     return 1;
@@ -623,6 +626,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_CT_UNARMOURED_TEXT:
     case OPS_PTAG_CT_ARMOUR_TRAILER:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
+    case OPS_PTAG_CT_SE_DATA:
 	break;
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
@@ -731,8 +735,6 @@ void ops_parser_content_free(ops_parser_content_t *c)
 
     case OPS_PARSER_ERROR:
     case OPS_PARSER_ERRCODE:
-    case OPS_PARSER_ERROR_UNKNOWN_TAG:
-    case OPS_PARSER_ERROR_PACKET_CONSUMED:
 	break;
 
     case OPS_PTAG_CT_SECRET_KEY:
@@ -744,7 +746,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_pk_session_key_free(&c->content.pk_session_key);
 	break;
 
-    case OPS_PTAG_CMD_GET_PASSPHRASE:
+    case OPS_PARSER_CMD_GET_PASSPHRASE:
 	ops_cmd_get_passphrase_free(c->content.passphrase);
 	break;
 
@@ -1772,8 +1774,7 @@ static int consume_packet(ops_region_t *region,ops_parse_info_t *parse_info,
 	/* now throw it away */
 	data_free(&remainder);
 	if(warn)
-	    SWARNP(OPS_PARSER_ERROR_PACKET_CONSUMED,parse_info,
-		   "Remainder of packet consumed and discarded.");
+	    ERRCODEP(parse_info,OPS_E_P_PACKET_CONSUMED);
 	}
     else if(warn)
 	WARNP(parse_info,"Problem consuming remainder of error packet.");
@@ -1805,14 +1806,36 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	if(!limited_read(c,1,region,parse_info))
 	    return 0;
 	C.secret_key.s2k_specifier=c[0];
+
+	assert(C.secret_key.s2k_specifier == OPS_S2KS_SIMPLE
+	       || C.secret_key.s2k_specifier == OPS_S2KS_SALTED
+	       || C.secret_key.s2k_specifier == OPS_S2KS_ITERATED_AND_SALTED);
+
+	if(!limited_read(c,1,region,parse_info))
+	    return 0;
+	C.secret_key.hash_algorithm=c[0];
+
+	if(C.secret_key.s2k_specifier != OPS_S2KS_SIMPLE
+	   && !limited_read(C.secret_key.salt,8,region,parse_info))
+	    return 0;
+
+	if(C.secret_key.s2k_specifier == OPS_S2KS_ITERATED_AND_SALTED)
+	    {
+	    if(!limited_read(c,1,region,parse_info))
+		return 0;
+	    C.secret_key.iterations=c[0];
+	    }
 	}
     else if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
 	{
+	// this is V3 style, looks just like a V4 simple hash
 	C.secret_key.algorithm=C.secret_key.s2k_usage;
-	C.secret_key.s2k_usage=OPS_S2KU_NOT_SET;
+	C.secret_key.s2k_usage=OPS_S2KU_ENCRYPTED;
+	C.secret_key.s2k_specifier=OPS_S2KS_SIMPLE;
 	}
 
-    if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
+    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
+       || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
 	{
 	int n;
 	ops_parser_content_t pc;
@@ -1826,7 +1849,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 
 	passphrase=NULL;
 	pc.content.passphrase=&passphrase;
-	CBP(parse_info,OPS_PTAG_CMD_GET_PASSPHRASE,&pc);
+	CBP(parse_info,OPS_PARSER_CMD_GET_PASSPHRASE,&pc);
 	if(!passphrase)
 	    {
 	    if(!consume_packet(region,parse_info,ops_false))
@@ -1910,6 +1933,18 @@ static int parse_pk_session_key(ops_region_t *region,
     CBP(parse_info,OPS_PTAG_CT_PK_SESSION_KEY,&content);
 
     return 1;
+    }
+
+static int parse_se_data(ops_region_t *region,ops_parse_info_t *parse_info)
+    {
+    ops_parser_content_t content;
+
+    /* there's no info to go with this, so just announce it */
+    CBP(parse_info,OPS_PTAG_CT_SE_DATA,&content);
+
+    /* The content of an encrypted data packet is more OpenPGP packets
+       once decompressed, so recursively handle them */
+    return ops_decrypt_data(region,parse_info);
     }
 
 /** Parse one packet.
@@ -2033,10 +2068,14 @@ static int ops_parse_one_packet(ops_parse_info_t *parse_info,
 	r=parse_pk_session_key(&region,parse_info);
 	break;
 
+    case OPS_PTAG_CT_SE_DATA:
+	r=parse_se_data(&region,parse_info);
+	break;
+
     default:
 	format_error(&content,"Format error (unknown content tag %d)",
 		     C.ptag.content_tag);
-	CBP(parse_info,OPS_PARSER_ERROR_UNKNOWN_TAG,&content);
+	ERRCODEP(parse_info,OPS_E_P_UNKNOWN_TAG);
 	r=0;
 	}
 
@@ -2242,7 +2281,7 @@ void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo)
 ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
 				   ops_parse_cb_info_t *cbinfo)
     { 
-    if (cbinfo->cb)
+    if(cbinfo->cb)
 	return cbinfo->cb(content,cbinfo); 
     else
 	return OPS_FINISHED;
@@ -2270,8 +2309,14 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
 void *ops_reader_get_arg(ops_reader_info_t *rinfo)
     { return rinfo->arg; }
 
+void *ops_reader_get_arg_from_pinfo(ops_parse_info_t *pinfo)
+    { return pinfo->rinfo.arg; }
+
 ops_error_t *ops_parse_info_get_errors(ops_parse_info_t *pinfo)
     { return pinfo->errors; }
+
+ops_decrypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo)
+    { return pinfo->decrypt; }
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */
