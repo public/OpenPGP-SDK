@@ -18,6 +18,7 @@
 static int indent=0;
 static const char *pname;
 static ops_keyring_t keyring;
+static ops_boolean_t passphrase_prompt;
 
 static void print_indent()
     {
@@ -804,7 +805,15 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	break;
 
     case OPS_PARSER_CMD_GET_PASSPHRASE:
-	printf(">>> ASKED FOR PASSPHRASE <<<\n");
+	if(passphrase_prompt)
+	    {
+	    *content->passphrase=ops_get_passphrase();
+	    if(!**content->passphrase)
+		break;
+	    return OPS_KEEP_MEMORY;
+	    }
+	else
+	    printf(">>> ASKED FOR PASSPHRASE <<<\n");
 	break;
 
     case OPS_PTAG_CT_SECRET_KEY:
@@ -816,7 +825,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	    print_tagname("ENCRYPTED_SECRET_KEY");
 	print_public_key(&content->secret_key.public_key);
 	printf("S2K Usage: %d\n",content->secret_key.s2k_usage);
-	printf("S2K Specifier: %d\n",content->secret_key.s2k_usage);
+	printf("S2K Specifier: %d\n",content->secret_key.s2k_specifier);
 	printf("Symmetric algorithm: %d\n",content->secret_key.algorithm);
 	printf("Hash algorithm: %d\n",content->secret_key.hash_algorithm);
 	print_hexdump("Salt",content->secret_key.salt,
@@ -942,7 +951,10 @@ static void usage()
     fprintf(stderr,"%s [-a] [-b] <file name>\n\n",pname);
     fprintf(stderr,"-a\tRead armoured data\n"
 	    "-b\tDon't buffer stdout/stderr\n"
-	    "-B\tRead via a memory buffer\n");
+	    "-B\tRead via a memory buffer\n"
+	    "-k <file>\tRead in a keyring\n"
+	    "-p\tPrompt for passphrases\n");
+    
     exit(1);
     }
 
@@ -959,7 +971,7 @@ int main(int argc,char **argv)
 
     pname=argv[0];
 
-    while((ch=getopt(argc,argv,"abBk:")) != -1)
+    while((ch=getopt(argc,argv,"abBk:p")) != -1)
 	switch(ch)
 	    {
 	case 'a':
@@ -977,6 +989,10 @@ int main(int argc,char **argv)
 
 	case 'k':
 	    keyring_file=optarg;
+	    break;
+
+	case 'p':
+	    passphrase_prompt=ops_true;
 	    break;
 
 	default:

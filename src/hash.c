@@ -59,3 +59,14 @@ ops_hash_algorithm_t ops_hash_algorithm_from_text(const char *hash)
 
     return OPS_HASH_UNKNOWN;
     }
+
+unsigned ops_hash(unsigned char *out,ops_hash_algorithm_t alg,const void *in,
+		  size_t length)
+    {
+    ops_hash_t hash;
+
+    ops_hash_any(&hash,alg);
+    hash.init(&hash);
+    hash.add(&hash,in,length);
+    return hash.finish(&hash,out);
+    }

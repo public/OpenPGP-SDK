@@ -48,6 +48,8 @@ void ops_hash_any(ops_hash_t *hash,ops_hash_algorithm_t alg);
 ops_hash_algorithm_t ops_hash_algorithm_from_text(const char *hash);
 const char *ops_text_from_hash(ops_hash_t *hash);
 unsigned ops_hash_size(ops_hash_algorithm_t alg);
+unsigned ops_hash(unsigned char *out,ops_hash_algorithm_t alg,const void *in,
+		  size_t length);
 
 void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length);
 

@@ -1832,6 +1832,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	C.secret_key.algorithm=C.secret_key.s2k_usage;
 	C.secret_key.s2k_usage=OPS_S2KU_ENCRYPTED;
 	C.secret_key.s2k_specifier=OPS_S2KS_SIMPLE;
+	C.secret_key.hash_algorithm=OPS_HASH_MD5;
 	}
 
     if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
@@ -1840,6 +1841,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	int n;
 	ops_parser_content_t pc;
 	char *passphrase;
+	unsigned char hash[OPS_MAX_HASH];
 
 	n=ops_block_size(C.secret_key.algorithm);
 	assert(n > 0 && n <= OPS_MAX_BLOCK_SIZE);
@@ -1857,6 +1859,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	    CBP(parse_info,OPS_PTAG_CT_ENCRYPTED_SECRET_KEY,&content);
 	    return 1;
 	    }
+
+	ops_hash(hash,C.secret_key.hash_algorithm,passphrase,
+		 strlen(passphrase));
 	}
 
     switch(C.secret_key.public_key.algorithm)
