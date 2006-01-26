@@ -1823,7 +1823,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	    {
 	    if(!limited_read(c,1,region,parse_info))
 		return 0;
-	    C.secret_key.iterations=c[0];
+	    C.secret_key.iterations=(16+(c[0]&15)) << ((c[0] >> 4)+6);
 	    }
 	}
     else if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
@@ -1873,6 +1873,12 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.p,region,parse_info)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.q,region,parse_info)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.u,region,parse_info))
+	    return 0;
+	break;
+
+
+    case OPS_PKA_DSA:
+	if(!limited_read_mpi(&C.secret_key.key.dsa.x,region,parse_info))
 	    return 0;
 	break;
 

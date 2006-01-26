@@ -428,7 +428,7 @@ typedef struct
     ops_symmetric_algorithm_t	algorithm;
     ops_hash_algorithm_t	hash_algorithm;
     unsigned char		salt[OPS_SALT_SIZE];
-    unsigned char		iterations;
+    unsigned			iterations;
     unsigned char		iv[OPS_MAX_BLOCK_SIZE];
     unsigned			checksum;
     ops_secret_key_union_t	key;
