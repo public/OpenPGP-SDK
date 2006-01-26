@@ -362,7 +362,6 @@ typedef enum
     OPS_S2KU_NONE=0,
     OPS_S2KU_ENCRYPTED_AND_HASHED=254,
     OPS_S2KU_ENCRYPTED=255,
-    OPS_S2KU_NOT_SET=256
     } ops_s2k_usage_t;
 
 /** s2k_specifier_t
