@@ -37,10 +37,12 @@ static void print_bn( const char *name, const BIGNUM *bn)
     print_indent();
     printf("%s=",name);
     if(bn)
+	{
 	BN_print_fp(stdout,bn);
+	putchar('\n');
+	}
     else
 	puts("(unset)");
-    printf("\n");
     }
 
 static void print_time( char *name, time_t time)
@@ -813,6 +815,16 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	else
 	    print_tagname("ENCRYPTED_SECRET_KEY");
 	print_public_key(&content->secret_key.public_key);
+	printf("S2K Usage: %d\n",content->secret_key.s2k_usage);
+	printf("S2K Specifier: %d\n",content->secret_key.s2k_usage);
+	printf("Symmetric algorithm: %d\n",content->secret_key.algorithm);
+	printf("Hash algorithm: %d\n",content->secret_key.hash_algorithm);
+	print_hexdump("Salt",content->secret_key.salt,
+		      sizeof content->secret_key.salt);
+	printf("Iterations: %d\n",content->secret_key.iterations);
+	print_hexdump("IV",content->secret_key.iv,
+		      ops_block_size(content->secret_key.algorithm));
+	printf("Checksum: %04x\n",content->secret_key.checksum);
 
 	switch(content->secret_key.public_key.algorithm)
 	    {
