@@ -26,6 +26,10 @@ struct _ops_hash_t
     void *data;
     };
 
+typedef void ops_decrypt_set_iv_t(ops_decrypt_t *decrypt,
+				  const unsigned char *iv);
+typedef void ops_decrypt_set_key_t(ops_decrypt_t *decrypt,
+				   const unsigned char *key);
 typedef void ops_decrypt_init_t(ops_decrypt_t *decrypt);
 typedef size_t ops_decrypt_decrypt_t(ops_decrypt_t *decrypt,void *out,
 				     const void *in,int count);
@@ -34,9 +38,17 @@ typedef void ops_decrypt_finish_t(ops_decrypt_t *decrypt);
 struct _ops_decrypt_t
     {
     ops_symmetric_algorithm_t algorithm;
+    size_t blocksize;
+    size_t keysize;
+    ops_decrypt_set_iv_t *set_iv; /* Call this before init! */
+    ops_decrypt_set_iv_t *set_key; /* Call this before init! */
     ops_decrypt_init_t *init;
     ops_decrypt_decrypt_t *decrypt;
     ops_decrypt_finish_t *finish;
+    unsigned char iv[OPS_MAX_BLOCK_SIZE];
+    unsigned char civ[OPS_MAX_BLOCK_SIZE];
+    unsigned char key[OPS_MAX_KEY_SIZE];
+    int num;
     void *data;
     };
 
@@ -66,7 +78,10 @@ unsigned ops_block_size(ops_symmetric_algorithm_t alg);
 
 int ops_decrypt_data(ops_region_t *region,ops_parse_info_t *parse_info);
 
-void ops_decrypt_any(ops_decrypt_t *decrypt,
-		     ops_symmetric_algorithm_t algorithm);
+void ops_decrypt_any(ops_decrypt_t *decrypt,ops_symmetric_algorithm_t alg);
+
+void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_decrypt_t *decrypt,
+			     ops_region_t *region);
+void ops_reader_pop_decrypt(ops_parse_info_t *pinfo);
 
 #endif

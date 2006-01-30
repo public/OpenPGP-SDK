@@ -71,6 +71,7 @@ void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);
 void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo);
 void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg);
 void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg);
+void ops_reader_pop(ops_parse_info_t *pinfo);
 void *ops_reader_get_arg_from_pinfo(ops_parse_info_t *pinfo);
 
 void *ops_reader_get_arg(ops_reader_info_t *rinfo);

@@ -415,6 +415,9 @@ typedef enum
 // Maximum block size for symmetric crypto
 #define OPS_MAX_BLOCK_SIZE	16
 
+// Maximum key size for symmetric crypto
+#define OPS_MAX_KEY_SIZE	32
+
 // Salt size for hashing
 #define OPS_SALT_SIZE		8
 

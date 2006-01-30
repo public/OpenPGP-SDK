@@ -1788,6 +1788,10 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     {
     ops_parser_content_t content;
     unsigned char c[1];
+    ops_decrypt_t decrypt;
+    int ret=1;
+    ops_region_t encregion;
+    ops_region_t *saved_region=NULL;
 
     memset(&content,'\0',sizeof content);
     if(!parse_public_key_data(&C.secret_key.public_key,region,parse_info))
@@ -1862,6 +1866,19 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 
 	ops_hash(hash,C.secret_key.hash_algorithm,passphrase,
 		 strlen(passphrase));
+
+	ops_decrypt_any(&decrypt,C.secret_key.algorithm);
+	decrypt.set_iv(&decrypt,C.secret_key.iv);
+	decrypt.set_key(&decrypt,hash);
+
+	ops_reader_push_decrypt(parse_info,&decrypt,region);
+
+	/* Since all known encryption for PGP doesn't compress, we can limit
+	   to the same length as the current region (for now) */
+	ops_init_subregion(&encregion,NULL);
+	encregion.length=region->length-region->length_read;
+	saved_region=region;
+	region=&encregion;
 	}
 
     switch(C.secret_key.public_key.algorithm)
@@ -1873,20 +1890,30 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.p,region,parse_info)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.q,region,parse_info)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.u,region,parse_info))
-	    return 0;
+	    ret=0;
 	break;
 
 
     case OPS_PKA_DSA:
 	if(!limited_read_mpi(&C.secret_key.key.dsa.x,region,parse_info))
-	    return 0;
+	    ret=0;
 	break;
 
     default:
 	fprintf(stderr,"Unexpected aglorithm: %d\n",
 		C.secret_key.public_key.algorithm);
+	ret=0;
 	assert(0);
 	}
+
+    if(saved_region)
+	{
+	ops_reader_pop_decrypt(parse_info);
+	region=saved_region;
+	}
+
+    if(!ret)
+	return 0;
 
     if(!limited_read_scalar(&C.secret_key.checksum,2,region,parse_info))
 	return 0;
@@ -2315,6 +2342,14 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
     *rinfo=pinfo->rinfo;
     pinfo->rinfo.next=rinfo;
     ops_reader_set(pinfo,reader,arg);
+    }
+
+void ops_reader_pop(ops_parse_info_t *pinfo)
+    { 
+    ops_reader_info_t *next=pinfo->rinfo.next;
+
+    pinfo->rinfo=*next;
+    free(next);
     }
 
 void *ops_reader_get_arg(ops_reader_info_t *rinfo)
