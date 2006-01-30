@@ -102,7 +102,7 @@ cb_keyring_read(const ops_parser_content_t *content_,
     case OPS_PARSER_ERRCODE:
 	break;
 
-    case OPS_PARSER_CMD_GET_PASSPHRASE:
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
 	// we don't want to prompt when reading the keyring
 	break;
 
@@ -184,8 +184,8 @@ static ops_parse_cb_return_t decrypt_cb(const ops_parser_content_t *content_,
     case OPS_PTAG_CT_TRUST:
 	break;
 
-    case OPS_PARSER_CMD_GET_PASSPHRASE:
-	*content->passphrase=arg->pphrase;
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+	*content->secret_key_passphrase.passphrase=arg->pphrase;
 	return OPS_KEEP_MEMORY;
 
     case OPS_PARSER_ERRCODE:

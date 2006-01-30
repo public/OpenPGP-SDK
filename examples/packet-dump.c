@@ -326,6 +326,48 @@ static void print_public_key(const ops_public_key_t *key)
 	}
     }
 
+static void print_secret_key(ops_content_tag_t tag,const ops_secret_key_t *sk)
+    {
+    if(tag == OPS_PTAG_CT_SECRET_KEY)
+	print_tagname("SECRET_KEY");
+    else
+	print_tagname("ENCRYPTED_SECRET_KEY");
+    print_public_key(&sk->public_key);
+    printf("S2K Usage: %d\n",sk->s2k_usage);
+    printf("S2K Specifier: %d\n",sk->s2k_specifier);
+    printf("Symmetric algorithm: %d\n",sk->algorithm);
+    printf("Hash algorithm: %d\n",sk->hash_algorithm);
+    print_hexdump("Salt",sk->salt,sizeof sk->salt);
+    printf("Octet count: %d\n",sk->octet_count);
+    print_hexdump("IV",sk->iv,ops_block_size(sk->algorithm));
+
+    /* no more set if encrypted */
+    if(tag == OPS_PTAG_CT_ENCRYPTED_SECRET_KEY)
+	return;
+
+    switch(sk->public_key.algorithm)
+	{
+    case OPS_PKA_RSA:
+	print_bn("d",sk->key.rsa.d);
+	print_bn("p",sk->key.rsa.p);
+	print_bn("q",sk->key.rsa.q);
+	print_bn("u",sk->key.rsa.u);
+	break;
+
+    case OPS_PKA_DSA:
+	print_bn("x",sk->key.dsa.x);
+	break;
+
+    default:
+	assert(0);
+	}
+
+    if(sk->s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
+	print_hexdump("Checkhash",sk->checkhash,OPS_CHECKHASH_SIZE);
+    else
+	printf("Checksum: %04x\n",sk->checksum);
+    }
+
 static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 				      ops_parse_cb_info_t *cbinfo)
     {
@@ -804,11 +846,13 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	    }
 	break;
 
-    case OPS_PARSER_CMD_GET_PASSPHRASE:
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
 	if(passphrase_prompt)
 	    {
-	    *content->passphrase=ops_get_passphrase();
-	    if(!**content->passphrase)
+	    print_secret_key(OPS_PTAG_CT_ENCRYPTED_SECRET_KEY,
+			     content->secret_key_passphrase.secret_key);
+	    *content->secret_key_passphrase.passphrase=ops_get_passphrase();
+	    if(!**content->secret_key_passphrase.passphrase)
 		break;
 	    return OPS_KEEP_MEMORY;
 	    }
@@ -818,49 +862,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 
     case OPS_PTAG_CT_SECRET_KEY:
     case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY:
-	// XXX: fix me
-	if(content_->tag == OPS_PTAG_CT_SECRET_KEY)
-	    print_tagname("SECRET_KEY");
-	else
-	    print_tagname("ENCRYPTED_SECRET_KEY");
-	print_public_key(&content->secret_key.public_key);
-	printf("S2K Usage: %d\n",content->secret_key.s2k_usage);
-	printf("S2K Specifier: %d\n",content->secret_key.s2k_specifier);
-	printf("Symmetric algorithm: %d\n",content->secret_key.algorithm);
-	printf("Hash algorithm: %d\n",content->secret_key.hash_algorithm);
-	print_hexdump("Salt",content->secret_key.salt,
-		      sizeof content->secret_key.salt);
-	printf("Octet count: %d\n",content->secret_key.octet_count);
-	print_hexdump("IV",content->secret_key.iv,
-		      ops_block_size(content->secret_key.algorithm));
-
-	/* no more set if encrypted */
-	if(content_->tag == OPS_PTAG_CT_ENCRYPTED_SECRET_KEY)
-	    break;
-
-	switch(content->secret_key.public_key.algorithm)
-	    {
-	case OPS_PKA_RSA:
-	    print_bn("d",content->secret_key.key.rsa.d);
-	    print_bn("p",content->secret_key.key.rsa.p);
-	    print_bn("q",content->secret_key.key.rsa.q);
-	    print_bn("u",content->secret_key.key.rsa.u);
-	    break;
-
-	case OPS_PKA_DSA:
-	    print_bn("x",content->secret_key.key.dsa.x);
-	    break;
-
-	default:
-	    assert(0);
-	    }
-
-	if(content->secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
-	    print_hexdump("Checkhash",content->secret_key.checkhash,
-			  OPS_CHECKHASH_SIZE);
-	else
-	    printf("Checksum: %04x\n",content->secret_key.checksum);
-
+	print_secret_key(content_->tag,&content->secret_key);
 	break;
 
     case OPS_PTAG_CT_ARMOUR_HEADER:

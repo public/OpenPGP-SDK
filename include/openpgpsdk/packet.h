@@ -201,7 +201,7 @@ enum ops_content_tag_t
     OPS_PTAG_CT_SE_DATA_BODY		=0x300+12,
 
     /* commands to the callback */
-    OPS_PARSER_CMD_GET_PASSPHRASE	=0x400,
+    OPS_PARSER_CMD_GET_SK_PASSPHRASE	=0x400,
 
 
     /* Errors */
@@ -828,6 +828,12 @@ typedef struct
     ops_pk_session_key_parameters_t parameters;
     } ops_pk_session_key_t;
 
+typedef struct
+    {
+    const ops_secret_key_t     *secret_key;
+    char		       **passphrase; /* point somewhere that gets filled in to work around constness of content */
+    } ops_secret_key_passphrase_t;
+
 /** ops_parser_union_content_t */
 typedef union
     {
@@ -873,7 +879,7 @@ typedef union
     ops_signed_cleartext_trailer_t signed_cleartext_trailer;
     ops_unarmoured_text_t	unarmoured_text;
     ops_pk_session_key_t	pk_session_key;
-    char		      **passphrase; /*< point to a char * to be filled in - this is to work around the constness of content */
+    ops_secret_key_passphrase_t	secret_key_passphrase;
     } ops_parser_content_union_t;
 
 /** ops_parser_content_t */

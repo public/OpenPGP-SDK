@@ -598,10 +598,10 @@ void ops_signed_cleartext_trailer_free(ops_signed_cleartext_trailer_t *trailer)
     trailer->hash=NULL;
     }
 
-void ops_cmd_get_passphrase_free(char **passphrase)
+void ops_cmd_get_passphrase_free(ops_secret_key_passphrase_t *skp)
     {
-    free(*passphrase);
-    *passphrase=NULL;
+    free(skp->passphrase);
+    skp->passphrase=NULL;
     }
 
 /*! Free any memory allocated when parsing the packet content */
@@ -746,8 +746,8 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_pk_session_key_free(&c->content.pk_session_key);
 	break;
 
-    case OPS_PARSER_CMD_GET_PASSPHRASE:
-	ops_cmd_get_passphrase_free(c->content.passphrase);
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+	ops_cmd_get_passphrase_free(&c->content.secret_key_passphrase);
 	break;
 
     default:
@@ -1861,16 +1861,18 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	if(!limited_read(C.secret_key.iv,n,region,parse_info))
 	    return 0;
 
-	/* Let callbacks see what they're about to be passphrased for */
-	CBP(parse_info,OPS_PTAG_CT_ENCRYPTED_SECRET_KEY,&content);
-
+	memset(&pc,'\0',sizeof pc);
 	passphrase=NULL;
-	pc.content.passphrase=&passphrase;
-	CBP(parse_info,OPS_PARSER_CMD_GET_PASSPHRASE,&pc);
+	pc.content.secret_key_passphrase.passphrase=&passphrase;
+	pc.content.secret_key_passphrase.secret_key=&C.secret_key;
+	CBP(parse_info,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
 	if(!passphrase)
 	    {
 	    if(!consume_packet(region,parse_info,ops_false))
 	       return 0;
+
+	    CBP(parse_info,OPS_PTAG_CT_ENCRYPTED_SECRET_KEY,&content);
+
 	    return 1;
 	    }
 
