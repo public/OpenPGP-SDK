@@ -830,15 +830,13 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	printf("Hash algorithm: %d\n",content->secret_key.hash_algorithm);
 	print_hexdump("Salt",content->secret_key.salt,
 		      sizeof content->secret_key.salt);
-	printf("Iterations: %d\n",content->secret_key.iterations);
+	printf("Octet count: %d\n",content->secret_key.octet_count);
 	print_hexdump("IV",content->secret_key.iv,
 		      ops_block_size(content->secret_key.algorithm));
 
 	/* no more set if encrypted */
 	if(content_->tag == OPS_PTAG_CT_ENCRYPTED_SECRET_KEY)
 	    break;
-
-	printf("Checksum: %04x\n",content->secret_key.checksum);
 
 	switch(content->secret_key.public_key.algorithm)
 	    {
@@ -856,6 +854,13 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	default:
 	    assert(0);
 	    }
+
+	if(content->secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
+	    print_hexdump("Checkhash",content->secret_key.checkhash,
+			  OPS_CHECKHASH_SIZE);
+	else
+	    printf("Checksum: %04x\n",content->secret_key.checksum);
+
 	break;
 
     case OPS_PTAG_CT_ARMOUR_HEADER:

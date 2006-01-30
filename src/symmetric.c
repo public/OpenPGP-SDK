@@ -3,34 +3,11 @@
 #include <assert.h>
 #include <openssl/cast.h>
 
-unsigned ops_block_size(ops_symmetric_algorithm_t alg)
-    {
-    // perhaps do this via the underlying algorithm later
-    switch(alg)
-	{
-    case OPS_SA_PLAINTEXT:
-	return 1;
-
-    case OPS_SA_IDEA:
-    case OPS_SA_TRIPLEDES:
-    case OPS_SA_CAST5:
-    case OPS_SA_BLOWFISH:
-    case OPS_SA_TWOFISH:
-	return 8;
-
-    case OPS_SA_AES_128:
-    case OPS_SA_AES_192:
-    case OPS_SA_AES_256:
-	return 16;
-	}
-
-    return 0;
-    }
-
 typedef struct
     {
     unsigned char decrypted[1024];
     size_t decrypted_count;
+    size_t decrypted_offset;
     ops_decrypt_t *decrypt;
     ops_region_t *region;
     } encrypted_arg_t;
@@ -58,8 +35,9 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
 	    else
 		n=length;
 
-	    memcpy(dest,arg->decrypted,n);
+	    memcpy(dest,arg->decrypted+arg->decrypted_offset,n);
 	    arg->decrypted_count-=n;
+	    arg->decrypted_offset+=n;
 	    length-=n;
 	    dest+=n;
 	    }
@@ -88,6 +66,8 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
 						       arg->decrypted,
 						       buffer,n);
 	    assert(arg->decrypted_count > 0);
+
+	    arg->decrypted_offset=0;
 	    }
 	}
 
@@ -173,16 +153,39 @@ static ops_decrypt_t cast5=
     TRAILER
     };
 
-void ops_decrypt_any(ops_decrypt_t *decrypt,ops_symmetric_algorithm_t alg)
+static ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
     {
     switch(alg)
 	{
     case OPS_SA_CAST5:
-	*decrypt=cast5;
-	break;
+	return &cast5;
 
     default:
 	assert(0);
 	}
+
+    return NULL;
     }
 
+void ops_decrypt_any(ops_decrypt_t *decrypt,ops_symmetric_algorithm_t alg)
+    { *decrypt=*get_proto(alg); }
+
+unsigned ops_block_size(ops_symmetric_algorithm_t alg)
+    {
+    ops_decrypt_t *p=get_proto(alg);
+
+    if(!p)
+	return 0;
+
+    return p->blocksize;
+    }
+
+unsigned ops_key_size(ops_symmetric_algorithm_t alg)
+    {
+    ops_decrypt_t *p=get_proto(alg);
+
+    if(!p)
+	return 0;
+
+    return p->keysize;
+    }

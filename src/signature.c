@@ -217,7 +217,7 @@ static ops_boolean_t hash_and_check_signature(ops_hash_t *hash,
 					      const ops_public_key_t *signer)
     {
     int n;
-    unsigned char hashout[OPS_MAX_HASH];
+    unsigned char hashout[OPS_MAX_HASH_SIZE];
 
     n=hash->finish(hash,hashout);
 

@@ -421,6 +421,9 @@ typedef enum
 // Salt size for hashing
 #define OPS_SALT_SIZE		8
 
+// Hash size for secret key check
+#define OPS_CHECKHASH_SIZE	20
+
 /** ops_secret_key_t
  */
 typedef struct
@@ -431,10 +434,11 @@ typedef struct
     ops_symmetric_algorithm_t	algorithm;
     ops_hash_algorithm_t	hash_algorithm;
     unsigned char		salt[OPS_SALT_SIZE];
-    unsigned			iterations;
+    unsigned			octet_count;
     unsigned char		iv[OPS_MAX_BLOCK_SIZE];
-    unsigned			checksum;
     ops_secret_key_union_t	key;
+    unsigned			checksum;
+    unsigned char		checkhash[OPS_CHECKHASH_SIZE];
     } ops_secret_key_t;
 
 /** Structure to hold one trust packet's data */

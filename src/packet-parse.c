@@ -1792,6 +1792,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     int ret=1;
     ops_region_t encregion;
     ops_region_t *saved_region=NULL;
+    size_t checksum_length=2;
 
     memset(&content,'\0',sizeof content);
     if(!parse_public_key_data(&C.secret_key.public_key,region,parse_info))
@@ -1799,6 +1800,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     if(!limited_read(c,1,region,parse_info))
 	return 0;
     C.secret_key.s2k_usage=c[0];
+
+    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
+	checksum_length=20;
 
     if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
        || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
@@ -1827,7 +1831,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	    {
 	    if(!limited_read(c,1,region,parse_info))
 		return 0;
-	    C.secret_key.iterations=(16+(c[0]&15)) << ((c[0] >> 4)+6);
+	    C.secret_key.octet_count=(16+(c[0]&15)) << ((c[0] >> 4)+6);
 	    }
 	}
     else if(C.secret_key.s2k_usage != OPS_S2KU_NONE)
@@ -1845,7 +1849,11 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	int n;
 	ops_parser_content_t pc;
 	char *passphrase;
-	unsigned char hash[OPS_MAX_HASH];
+	unsigned char key[OPS_MAX_KEY_SIZE+OPS_MAX_HASH_SIZE];
+	ops_hash_t hashes[(OPS_MAX_KEY_SIZE+OPS_MIN_HASH_SIZE-1)/OPS_MIN_HASH_SIZE];
+	int keysize;
+	int hashsize;
+	size_t l;
 
 	n=ops_block_size(C.secret_key.algorithm);
 	assert(n > 0 && n <= OPS_MAX_BLOCK_SIZE);
@@ -1866,17 +1874,75 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	    return 1;
 	    }
 
-	ops_hash(hash,C.secret_key.hash_algorithm,passphrase,
-		 strlen(passphrase));
+	keysize=ops_key_size(C.secret_key.algorithm);
+	assert(keysize > 0 && keysize <= OPS_MAX_KEY_SIZE);
+
+	hashsize=ops_hash_size(C.secret_key.hash_algorithm);
+	assert(hashsize > 0 && hashsize <= OPS_MAX_HASH_SIZE);
+
+	for(n=0 ; n*hashsize < keysize ; ++n)
+	    {
+	    int i;
+
+	    ops_hash_any(&hashes[n],C.secret_key.hash_algorithm);
+	    hashes[n].init(&hashes[n]);
+	    // preload hashes with zeroes...
+	    for(i=0 ; i < n ; ++i)
+		hashes[n].add(&hashes[n],"",1);
+	    }
+
+	l=strlen(passphrase);
+
+	for(n=0 ; n*hashsize < keysize ; ++n)
+	    {
+	    unsigned i;
+
+	    switch(C.secret_key.s2k_specifier)
+		{
+	    case OPS_S2KS_SALTED:
+		hashes[n].add(&hashes[n],C.secret_key.salt,OPS_SALT_SIZE);
+		// flow through...
+	    case OPS_S2KS_SIMPLE:
+		hashes[n].add(&hashes[n],passphrase,l);
+		break;
+
+	    case OPS_S2KS_ITERATED_AND_SALTED:
+		for(i=0 ; i < C.secret_key.octet_count ; i+=l+OPS_SALT_SIZE)
+		    {
+		    int j=l+OPS_SALT_SIZE;
+
+		    if(i+j > C.secret_key.octet_count && i != 0)
+			j=C.secret_key.octet_count-i;
+
+		    hashes[n].add(&hashes[n],C.secret_key.salt,
+				  j > OPS_SALT_SIZE ? OPS_SALT_SIZE : j);
+		    if(j > OPS_SALT_SIZE)
+			hashes[n].add(&hashes[n],passphrase,j-OPS_SALT_SIZE);
+		    }
+			
+		}
+	    }
+
+	for(n=0 ; n*hashsize < keysize ; ++n)
+	    {
+	    int r=hashes[n].finish(&hashes[n],key+n*hashsize);
+	    assert(r == hashsize);
+	    }
 
 	ops_decrypt_any(&decrypt,C.secret_key.algorithm);
 	decrypt.set_iv(&decrypt,C.secret_key.iv);
-	decrypt.set_key(&decrypt,hash);
+	decrypt.set_key(&decrypt,key);
 
+	/* We need to prevent the decrypter from reading the trailing
+	   checksum */
+	region->length-=checksum_length;
 	ops_reader_push_decrypt(parse_info,&decrypt,region);
 
-	/* Since all known encryption for PGP doesn't compress, we can limit
-	   to the same length as the current region (for now) */
+	/* Since all known encryption for PGP doesn't compress, we can
+	   limit to the same length as the current region (for now),
+	   allowing for the trailing checksum.
+	*/
+
 	ops_init_subregion(&encregion,NULL);
 	encregion.length=region->length-region->length_read;
 	saved_region=region;
@@ -1911,15 +1977,27 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     if(saved_region)
 	{
 	ops_reader_pop_decrypt(parse_info);
+	assert(region->length_read == region->length);
 	region=saved_region;
+	/* put back checksum data */
+	region->length+=checksum_length;
 	}
 
     if(!ret)
 	return 0;
 
-    if(!limited_read_scalar(&C.secret_key.checksum,2,region,parse_info))
-	return 0;
     // XXX: check the checksum
+
+    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
+	{
+	if(!limited_read(C.secret_key.checkhash,20,region,parse_info))
+	    return 0;
+	}
+    else
+	{
+	if(!limited_read_scalar(&C.secret_key.checksum,2,region,parse_info))
+	    return 0;
+	}
 
     CBP(parse_info,OPS_PTAG_CT_SECRET_KEY,&content);
 

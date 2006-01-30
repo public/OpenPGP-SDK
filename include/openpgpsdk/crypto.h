@@ -8,7 +8,8 @@
 #include "packet.h"
 #include "packet-parse.h"
 
-#define OPS_MAX_HASH	64
+#define OPS_MAX_HASH_SIZE	64
+#define OPS_MIN_HASH_SIZE	16
 
 typedef void ops_hash_init_t(ops_hash_t *hash);
 typedef void ops_hash_add_t(ops_hash_t *hash,const unsigned char *data,
@@ -75,6 +76,7 @@ int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
 			    const ops_rsa_public_key_t *rsa);
 
 unsigned ops_block_size(ops_symmetric_algorithm_t alg);
+unsigned ops_key_size(ops_symmetric_algorithm_t alg);
 
 int ops_decrypt_data(ops_region_t *region,ops_parse_info_t *parse_info);
 
