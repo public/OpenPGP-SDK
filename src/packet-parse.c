@@ -1935,14 +1935,10 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	decrypt.set_iv(&decrypt,C.secret_key.iv);
 	decrypt.set_key(&decrypt,key);
 
-	/* We need to prevent the decrypter from reading the trailing
-	   checksum */
-	region->length-=checksum_length;
 	ops_reader_push_decrypt(parse_info,&decrypt,region);
 
 	/* Since all known encryption for PGP doesn't compress, we can
-	   limit to the same length as the current region (for now),
-	   allowing for the trailing checksum.
+	   limit to the same length as the current region (for now).
 	*/
 
 	ops_init_subregion(&encregion,NULL);
@@ -1976,30 +1972,32 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	assert(0);
 	}
 
-    if(saved_region)
+    if(ret)
+	{
+	// XXX: check the checksum
+
+	if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
+	    {
+	    if(!limited_read(C.secret_key.checkhash,20,region,parse_info))
+		return 0;
+	    }
+	else
+	    {
+	    if(!limited_read_scalar(&C.secret_key.checksum,2,region,
+				    parse_info))
+		return 0;
+	    }
+	}
+
+    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
+       || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
 	{
 	ops_reader_pop_decrypt(parse_info);
 	assert(region->length_read == region->length);
-	region=saved_region;
-	/* put back checksum data */
-	region->length+=checksum_length;
 	}
 
     if(!ret)
 	return 0;
-
-    // XXX: check the checksum
-
-    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
-	{
-	if(!limited_read(C.secret_key.checkhash,20,region,parse_info))
-	    return 0;
-	}
-    else
-	{
-	if(!limited_read_scalar(&C.secret_key.checksum,2,region,parse_info))
-	    return 0;
-	}
 
     CBP(parse_info,OPS_PTAG_CT_SECRET_KEY,&content);
 
