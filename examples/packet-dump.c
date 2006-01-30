@@ -833,6 +833,11 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	printf("Iterations: %d\n",content->secret_key.iterations);
 	print_hexdump("IV",content->secret_key.iv,
 		      ops_block_size(content->secret_key.algorithm));
+
+	/* no more set if encrypted */
+	if(content_->tag == OPS_PTAG_CT_ENCRYPTED_SECRET_KEY)
+	    break;
+
 	printf("Checksum: %04x\n",content->secret_key.checksum);
 
 	switch(content->secret_key.public_key.algorithm)

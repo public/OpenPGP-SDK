@@ -1853,6 +1853,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	if(!limited_read(C.secret_key.iv,n,region,parse_info))
 	    return 0;
 
+	/* Let callbacks see what they're about to be passphrased for */
+	CBP(parse_info,OPS_PTAG_CT_ENCRYPTED_SECRET_KEY,&content);
+
 	passphrase=NULL;
 	pc.content.passphrase=&passphrase;
 	CBP(parse_info,OPS_PARSER_CMD_GET_PASSPHRASE,&pc);
@@ -1860,7 +1863,6 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	    {
 	    if(!consume_packet(region,parse_info,ops_false))
 	       return 0;
-	    CBP(parse_info,OPS_PTAG_CT_ENCRYPTED_SECRET_KEY,&content);
 	    return 1;
 	    }
 
