@@ -1932,6 +1932,8 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	    assert(r == hashsize);
 	    }
 
+	free(passphrase);
+
 	ops_decrypt_any(&decrypt,C.secret_key.algorithm);
 	decrypt.set_iv(&decrypt,C.secret_key.iv);
 	decrypt.set_key(&decrypt,key);
