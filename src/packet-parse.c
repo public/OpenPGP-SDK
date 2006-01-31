@@ -1982,29 +1982,30 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	assert(0);
 	}
 
-    if(ret)
+    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
 	{
-	// XXX: check the checksum
+	unsigned char hash[20];
 
-	if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
-	    {
-	    unsigned char hash[20];
-
-	    ops_reader_pop_hash(parse_info);
-	    checkhash.finish(&checkhash,hash);
+	ops_reader_pop_hash(parse_info);
+	checkhash.finish(&checkhash,hash);
 	    
+	if(ret)
+	    {
 	    if(!limited_read(C.secret_key.checkhash,20,region,parse_info))
 		return 0;
 
 	    if(memcmp(hash,C.secret_key.checkhash,20))
 		ERRP(parse_info,"Hash mismatch in secret key");
 	    }
-	else
+	}
+    else
+	{
+	unsigned short sum;
+
+	sum=ops_reader_pop_sum16(parse_info);
+
+	if(ret)
 	    {
-	    unsigned short sum;
-
-	    sum=ops_reader_pop_sum16(parse_info);
-
 	    if(!limited_read_scalar(&C.secret_key.checksum,2,region,
 				    parse_info))
 		return 0;
@@ -2018,7 +2019,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
        || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
 	{
 	ops_reader_pop_decrypt(parse_info);
-	assert(region->length_read == region->length);
+	assert(!ret || region->length_read == region->length);
 	}
 
     if(!ret)
