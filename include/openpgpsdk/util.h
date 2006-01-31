@@ -30,4 +30,8 @@ char *ops_str_from_map(int code, ops_map_t *map);
 /** Allocate zeroed memory */
 void *ops_mallocz(size_t n);
 
+// Do a sum mod 65536 of all bytes read (as needed for secret keys)
+void ops_reader_push_sum16(ops_parse_info_t *pinfo);
+unsigned short ops_reader_pop_sum16(ops_parse_info_t *pinfo);
+
 #endif

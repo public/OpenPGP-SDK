@@ -86,4 +86,8 @@ void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_decrypt_t *decrypt,
 			     ops_region_t *region);
 void ops_reader_pop_decrypt(ops_parse_info_t *pinfo);
 
+// Hash everything that's read
+void ops_reader_push_hash(ops_parse_info_t *pinfo,ops_hash_t *hash);
+void ops_reader_pop_hash(ops_parse_info_t *pinfo);
+
 #endif

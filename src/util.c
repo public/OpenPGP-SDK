@@ -226,3 +226,43 @@ void *ops_mallocz(size_t n)
     return m;
     }
 
+typedef struct
+    {
+    unsigned short sum;
+    } sum16_arg_t;
+
+static ops_reader_ret_t sum16_reader(unsigned char *dest,
+				    unsigned *plength,
+				    ops_reader_flags_t flags,
+				    ops_error_t **errors,
+				    ops_reader_info_t *rinfo,
+				    ops_parse_cb_info_t *cbinfo)
+    {
+    sum16_arg_t *arg=ops_reader_get_arg(rinfo);
+    ops_reader_ret_t ret=ops_stacked_read(dest,plength,flags,errors,rinfo,
+					  cbinfo);
+    unsigned n;
+
+    for(n=0 ; n < *plength ; ++n)
+	arg->sum=(arg->sum+dest[n])&0xffff;
+
+    return ret;
+    }
+
+void ops_reader_push_sum16(ops_parse_info_t *pinfo)
+    {
+    sum16_arg_t *arg=ops_mallocz(sizeof *arg);
+
+    ops_reader_push(pinfo,sum16_reader,arg);
+    }
+
+unsigned short ops_reader_pop_sum16(ops_parse_info_t *pinfo)
+    {
+    sum16_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(pinfo));
+    unsigned short sum=arg->sum;
+
+    ops_reader_pop(pinfo);
+    free(arg);
+
+    return sum;
+    }

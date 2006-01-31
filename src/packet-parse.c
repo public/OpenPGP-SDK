@@ -1793,6 +1793,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     ops_region_t encregion;
     ops_region_t *saved_region=NULL;
     size_t checksum_length=2;
+    ops_hash_t checkhash;
 
     memset(&content,'\0',sizeof content);
     if(!parse_public_key_data(&C.secret_key.public_key,region,parse_info))
@@ -1940,12 +1941,19 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	/* Since all known encryption for PGP doesn't compress, we can
 	   limit to the same length as the current region (for now).
 	*/
-
 	ops_init_subregion(&encregion,NULL);
 	encregion.length=region->length-region->length_read;
 	saved_region=region;
 	region=&encregion;
 	}
+
+    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
+	{
+	ops_hash_sha1(&checkhash);
+	ops_reader_push_hash(parse_info,&checkhash);
+	}
+    else
+	ops_reader_push_sum16(parse_info);
 
     switch(C.secret_key.public_key.algorithm)
 	{
@@ -1978,14 +1986,29 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 
 	if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
 	    {
+	    unsigned char hash[20];
+
+	    ops_reader_pop_hash(parse_info);
+	    checkhash.finish(&checkhash,hash);
+	    
 	    if(!limited_read(C.secret_key.checkhash,20,region,parse_info))
 		return 0;
+
+	    if(memcmp(hash,C.secret_key.checkhash,20))
+		ERRP(parse_info,"Hash mismatch in secret key");
 	    }
 	else
 	    {
+	    unsigned short sum;
+
+	    sum=ops_reader_pop_sum16(parse_info);
+
 	    if(!limited_read_scalar(&C.secret_key.checksum,2,region,
 				    parse_info))
 		return 0;
+
+	    if(sum != C.secret_key.checksum)
+		ERRP(parse_info,"Checksum mistmatch in secret key");
 	    }
 	}
 
