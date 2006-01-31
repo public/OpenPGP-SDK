@@ -1056,5 +1056,7 @@ int main(int argc,char **argv)
 
     ops_parse_info_delete(pinfo);
 
+    ops_finish();
+
     return 0;
     }
