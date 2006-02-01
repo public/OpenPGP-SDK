@@ -1016,6 +1016,8 @@ int main(int argc,char **argv)
     if(argc != 1)
 	usage();
 
+    setvbuf(stdout,NULL,_IONBF,0);
+
     if(keyring_file)
 	ops_keyring_read(&keyring,keyring_file);
 
