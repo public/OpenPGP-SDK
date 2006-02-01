@@ -2,6 +2,7 @@
 #include <string.h>
 #include <assert.h>
 #include <openssl/cast.h>
+#include <openssl/idea.h>
 
 typedef struct
     {
@@ -114,6 +115,12 @@ static void std_set_iv(ops_decrypt_t *decrypt,const unsigned char *iv)
 static void std_set_key(ops_decrypt_t *decrypt,const unsigned char *key)
     { memcpy(decrypt->key,key,decrypt->keysize); }
 
+static void std_finish(ops_decrypt_t *decrypt)
+    {
+    free(decrypt->data);
+    decrypt->data=NULL;
+    }
+
 static void cast5_init(ops_decrypt_t *decrypt)
     {
     free(decrypt->data);
@@ -132,12 +139,6 @@ static size_t cast5_decrypt(ops_decrypt_t *decrypt,void *out,const void *in,
     return count;
     }
 
-static void std_finish(ops_decrypt_t *decrypt)
-    {
-    free(decrypt->data);
-    decrypt->data=NULL;
-    }
-
 #define TRAILER		"","","",0,NULL
 
 static ops_decrypt_t cast5=
@@ -153,12 +154,53 @@ static ops_decrypt_t cast5=
     TRAILER
     };
 
+static void idea_init(ops_decrypt_t *decrypt)
+    {
+    IDEA_KEY_SCHEDULE ks;
+
+    assert(decrypt->keysize == IDEA_KEY_LENGTH);
+
+    free(decrypt->data);
+    decrypt->data=malloc(sizeof(IDEA_KEY_SCHEDULE));
+
+    idea_set_encrypt_key(decrypt->key,&ks);
+    idea_set_decrypt_key(&ks,decrypt->data);
+
+    memcpy(decrypt->civ,decrypt->iv,decrypt->blocksize);
+    decrypt->num=0;
+    }
+
+static size_t idea_decrypt(ops_decrypt_t *decrypt,void *out,const void *in,
+			    int count)
+    {
+    idea_cfb64_encrypt(in,out,count,decrypt->data,decrypt->civ,&decrypt->num,
+		       0);
+
+    return count;
+    }
+
+static ops_decrypt_t idea=
+    {
+    OPS_SA_IDEA,
+    IDEA_BLOCK,
+    IDEA_KEY_LENGTH,
+    std_set_iv,
+    std_set_key,
+    idea_init,
+    idea_decrypt,
+    std_finish,
+    TRAILER
+    };
+
 static ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
     {
     switch(alg)
 	{
     case OPS_SA_CAST5:
 	return &cast5;
+
+    case OPS_SA_IDEA:
+	return &idea;
 
     default:
 	assert(0);
