@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <termios.h>
 
 ops_key_data_t *
 ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
@@ -144,6 +145,34 @@ void ops_keyring_read(ops_keyring_t *keyring,const char *file)
     ops_parse_info_delete(pinfo);
     }
 
+static void echo_off()
+    {
+    struct termios term;
+    int r;
+
+    r=tcgetattr(0,&term);
+    assert(r >= 0);
+
+    term.c_lflag &= ~ECHO;
+
+    r=tcsetattr(0,TCSANOW,&term);
+    assert(r >= 0);
+    }
+	
+static void echo_on()
+    {
+    struct termios term;
+    int r;
+
+    r=tcgetattr(0,&term);
+    assert(r >= 0);
+
+    term.c_lflag |= ECHO;
+
+    r=tcsetattr(0,TCSANOW,&term);
+    assert(r >= 0);
+    }
+
 char *ops_get_passphrase(void)
     {
     char buffer[1024];
@@ -151,7 +180,13 @@ char *ops_get_passphrase(void)
     size_t n;
 
     printf("Passphrase: ");
+
+    echo_off();
     fgets(buffer,sizeof buffer,stdin);
+    echo_on();
+
+    putchar('\n');
+
     n=strlen(buffer);
     if(n && buffer[n-1] == '\n')
 	buffer[--n]='\0';
