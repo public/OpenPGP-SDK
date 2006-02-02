@@ -305,8 +305,8 @@ ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
 static ops_boolean_t limited_read(unsigned char *dest,unsigned length,
 				  ops_region_t *region,ops_parse_info_t *info)
     {
-    return ops_limited_read(dest,length,region,&info->errors,&info->rinfo,
-			    &info->cbinfo);
+    return ops_limited_read(dest,length,region,&info->errors,
+			    &info->rinfo,&info->cbinfo);
     }
 
 /** Skip over length bytes of this packet.
@@ -461,8 +461,12 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
                                 is given in bits, so the largest we should
                                 ever need for the buffer is 8192 bytes. */
     ops_parser_content_t content;
+    ops_boolean_t ret;
 
-    if(!limited_read_scalar(&length,2,region,parse_info))
+    parse_info->reading_mpi_length=ops_true;
+    ret=limited_read_scalar(&length,2,region,parse_info);
+    parse_info->reading_mpi_length=ops_false;
+    if(!ret)
 	return 0;
 
     nonzero=length&7; /* there should be this many zero bits in the MS byte */
@@ -1957,6 +1961,8 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     else
 	ops_reader_push_sum16(parse_info);
 
+    parse_info->reading_v3_secret=C.secret_key.public_key.version != OPS_V4;
+
     switch(C.secret_key.public_key.algorithm)
 	{
     case OPS_PKA_RSA:
@@ -1981,6 +1987,8 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	ret=0;
 	assert(0);
 	}
+
+    parse_info->reading_v3_secret=ops_false;
 
     if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
 	{
@@ -2447,6 +2455,7 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
 
     *rinfo=pinfo->rinfo;
     pinfo->rinfo.next=rinfo;
+    rinfo->pinfo=pinfo;
     ops_reader_set(pinfo,reader,arg);
     }
 

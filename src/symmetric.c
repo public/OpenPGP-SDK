@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <openssl/cast.h>
 #include <openssl/idea.h>
+#include "parse_local.h"
 
 typedef struct
     {
@@ -11,6 +12,7 @@ typedef struct
     size_t decrypted_offset;
     ops_decrypt_t *decrypt;
     ops_region_t *region;
+    ops_boolean_t prev_read_was_plain:1;
     } encrypted_arg_t;
 
 static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
@@ -25,11 +27,27 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
 
     OPS_USED(flags);
 
+    // V3 MPIs have the count plain and the cipher is reset after each count
+    if(arg->prev_read_was_plain && !rinfo->pinfo->reading_mpi_length)
+	{
+	assert(rinfo->pinfo->reading_v3_secret);
+	arg->decrypt->init(arg->decrypt);
+	arg->prev_read_was_plain=ops_false;
+	}
+    else if(rinfo->pinfo->reading_v3_secret
+	    && rinfo->pinfo->reading_mpi_length)
+	arg->prev_read_was_plain=ops_true;
+
     while(length > 0)
 	{
 	if(arg->decrypted_count)
 	    {
 	    unsigned n;
+
+	    // if we are reading v3 we should never read more than
+	    // we're asked for
+	    assert(length >= arg->decrypted_count
+		   || !rinfo->pinfo->reading_v3_secret);
 
 	    if(length > arg->decrypted_count)
 		n=arg->decrypted_count;
@@ -59,13 +77,26 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
 	    else
 		n=sizeof buffer;
 
+	    // we can only read as much as we're asked for in v3 keys
+	    // because they're partially unencrypted!
+	    if(rinfo->pinfo->reading_v3_secret && n > length)
+		n=length;
+
 	    if(!ops_stacked_limited_read(buffer,n,arg->region,errors,rinfo,
 					 cbinfo))
 		return OPS_R_EARLY_EOF;
 
-	    arg->decrypted_count=arg->decrypt->decrypt(arg->decrypt,
-						       arg->decrypted,
-						       buffer,n);
+	    if(!rinfo->pinfo->reading_v3_secret
+	       || !rinfo->pinfo->reading_mpi_length)
+		arg->decrypted_count=arg->decrypt->decrypt(arg->decrypt,
+							   arg->decrypted,
+							   buffer,n);
+	    else
+		{
+		memcpy(arg->decrypted,buffer,n);
+		arg->decrypted_count=n;
+		}
+
 	    assert(arg->decrypted_count > 0);
 
 	    arg->decrypted_offset=0;

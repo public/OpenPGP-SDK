@@ -337,8 +337,10 @@ static void print_secret_key(ops_content_tag_t tag,const ops_secret_key_t *sk)
     printf("S2K Specifier: %d\n",sk->s2k_specifier);
     printf("Symmetric algorithm: %d\n",sk->algorithm);
     printf("Hash algorithm: %d\n",sk->hash_algorithm);
-    print_hexdump("Salt",sk->salt,sizeof sk->salt);
-    printf("Octet count: %d\n",sk->octet_count);
+    if(sk->s2k_specifier != OPS_S2KS_SIMPLE)
+	print_hexdump("Salt",sk->salt,sizeof sk->salt);
+    if(sk->s2k_specifier == OPS_S2KS_ITERATED_AND_SALTED)
+	printf("Octet count: %d\n",sk->octet_count);
     print_hexdump("IV",sk->iv,ops_block_size(sk->algorithm));
 
     /* no more set if encrypted */

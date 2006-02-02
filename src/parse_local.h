@@ -13,6 +13,7 @@ struct ops_reader_info
     unsigned position; /*!< the offset from the beginning (with this reader) */
 
     ops_reader_info_t *next;
+    ops_parse_info_t *pinfo; /*!< A pointer back to the parent parse_info structure */
     };
 
 struct ops_parse_cb_info
@@ -57,4 +58,6 @@ struct ops_parse_info
     ops_parse_cb_info_t cbinfo;
     ops_error_t *errors;
     ops_decrypt_t *decrypt;
+    ops_boolean_t reading_v3_secret:1;
+    ops_boolean_t reading_mpi_length:1;
     };
