@@ -151,6 +151,8 @@ static void echo_off()
     int r;
 
     r=tcgetattr(0,&term);
+    if(r < 0 && errno == ENOTTY)
+	return;
     assert(r >= 0);
 
     term.c_lflag &= ~ECHO;
@@ -165,6 +167,8 @@ static void echo_on()
     int r;
 
     r=tcgetattr(0,&term);
+    if(r < 0 && errno == ENOTTY)
+	return;
     assert(r >= 0);
 
     term.c_lflag |= ECHO;
