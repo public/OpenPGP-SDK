@@ -1804,6 +1804,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     memset(&content,'\0',sizeof content);
     if(!parse_public_key_data(&C.secret_key.public_key,region,parse_info))
 	return 0;
+
+    parse_info->reading_v3_secret=C.secret_key.public_key.version != OPS_V4;
+
     if(!limited_read(c,1,region,parse_info))
 	return 0;
     C.secret_key.s2k_usage=c[0];
@@ -1965,17 +1968,15 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     else
 	ops_reader_push_sum16(parse_info);
 
-    parse_info->reading_v3_secret=C.secret_key.public_key.version != OPS_V4;
+    /* XXX: this should be refactored into the IDEA init function */
     if(parse_info->reading_v3_secret)
 	{
 	// flagrantly disregard how CFB IV's work...
 	unsigned char iv[OPS_MAX_BLOCK_SIZE];
-	unsigned char iv2[OPS_MAX_BLOCK_SIZE];
 
-	memcpy(iv,C.secret_key.iv,blocksize);
-	memset(C.secret_key.iv,'\0',sizeof C.secret_key.iv);
-	decrypt.set_iv(&decrypt,C.secret_key.iv);
-	decrypt.decrypt(&decrypt,iv2,iv,blocksize);
+	memset(iv,'\0',sizeof iv);
+	decrypt.set_iv(&decrypt,iv);
+	decrypt.decrypt(&decrypt,iv,C.secret_key.iv,blocksize);
 	}
 
     switch(C.secret_key.public_key.algorithm)
@@ -1989,7 +1990,6 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.u,region,parse_info))
 	    ret=0;
 	break;
-
 
     case OPS_PKA_DSA:
 	if(!limited_read_mpi(&C.secret_key.key.dsa.x,region,parse_info))
