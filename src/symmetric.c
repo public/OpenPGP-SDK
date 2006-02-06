@@ -31,7 +31,7 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
     if(arg->prev_read_was_plain && !rinfo->pinfo->reading_mpi_length)
 	{
 	assert(rinfo->pinfo->reading_v3_secret);
-	arg->decrypt->init(arg->decrypt);
+	arg->decrypt->resync(arg->decrypt);
 	arg->prev_read_was_plain=ops_false;
 	}
     else if(rinfo->pinfo->reading_v3_secret
@@ -146,6 +146,14 @@ static void std_set_iv(ops_decrypt_t *decrypt,const unsigned char *iv)
 static void std_set_key(ops_decrypt_t *decrypt,const unsigned char *key)
     { memcpy(decrypt->key,key,decrypt->keysize); }
 
+/* Only IDEA has a resync operation */
+static void std_resync(ops_decrypt_t *decrypt)
+    {
+    OPS_USED(decrypt);
+
+    assert(0);
+    }
+
 static void std_finish(ops_decrypt_t *decrypt)
     {
     free(decrypt->data);
@@ -170,7 +178,7 @@ static size_t cast5_decrypt(ops_decrypt_t *decrypt,void *out,const void *in,
     return count;
     }
 
-#define TRAILER		"","","",0,NULL
+#define TRAILER		"","","","",0,NULL
 
 static ops_decrypt_t cast5=
     {
@@ -180,6 +188,7 @@ static ops_decrypt_t cast5=
     std_set_iv,
     std_set_key,
     cast5_init,
+    std_resync,
     cast5_decrypt,
     std_finish,
     TRAILER
@@ -187,27 +196,54 @@ static ops_decrypt_t cast5=
 
 static void idea_init(ops_decrypt_t *decrypt)
     {
-    IDEA_KEY_SCHEDULE ks;
-
     assert(decrypt->keysize == IDEA_KEY_LENGTH);
 
     free(decrypt->data);
     decrypt->data=malloc(sizeof(IDEA_KEY_SCHEDULE));
 
-    idea_set_encrypt_key(decrypt->key,&ks);
-    idea_set_decrypt_key(&ks,decrypt->data);
+    idea_set_encrypt_key(decrypt->key,decrypt->data);
+    // note that we don't invert the key for CFB mode
 
     memcpy(decrypt->civ,decrypt->iv,decrypt->blocksize);
+    memset(decrypt->siv,'\0',sizeof decrypt->siv);
+
     decrypt->num=0;
     }
 
-static size_t idea_decrypt(ops_decrypt_t *decrypt,void *out,const void *in,
-			    int count)
+static void idea_resync(ops_decrypt_t *decrypt)
     {
-    idea_cfb64_encrypt(in,out,count,decrypt->data,decrypt->civ,&decrypt->num,
-		       0);
+    if(decrypt->num == 8)
+	return;
 
-    return count;
+    memmove(decrypt->civ+8-decrypt->num,decrypt->civ,decrypt->num);
+    memcpy(decrypt->civ,decrypt->siv+decrypt->num,8-decrypt->num);
+    decrypt->num=0;
+    }
+
+static size_t idea_decrypt(ops_decrypt_t *decrypt,void *out_,const void *in_,
+			   int count)
+    {
+    unsigned char *out=out_;
+    const unsigned char *in=in_;
+    int saved=count;
+
+    /* in order to support v3's weird resyncing we have to implement CFB mode
+       ourselves */
+    while(count-- > 0)
+	{
+	unsigned char t;
+
+	if(decrypt->num == 8)
+	    {
+	    memcpy(decrypt->siv,decrypt->civ,sizeof decrypt->siv);
+	    idea_ecb_encrypt(decrypt->civ,decrypt->civ,decrypt->data);
+	    decrypt->num=0;
+	    }
+	t=decrypt->civ[decrypt->num];
+	*out++=t^(decrypt->civ[decrypt->num++]=*in++);
+	}
+
+    return saved;
     }
 
 static ops_decrypt_t idea=
@@ -218,6 +254,7 @@ static ops_decrypt_t idea=
     std_set_iv,
     std_set_key,
     idea_init,
+    idea_resync,
     idea_decrypt,
     std_finish,
     TRAILER

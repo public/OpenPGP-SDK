@@ -1798,6 +1798,8 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     ops_region_t *saved_region=NULL;
     size_t checksum_length=2;
     ops_hash_t checkhash;
+    int blocksize;
+    ops_boolean_t crypted;
 
     memset(&content,'\0',sizeof content);
     if(!parse_public_key_data(&C.secret_key.public_key,region,parse_info))
@@ -1848,8 +1850,10 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	C.secret_key.hash_algorithm=OPS_HASH_MD5;
 	}
 
-    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
-       || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
+    crypted=C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
+	|| C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED;
+
+    if(crypted)
 	{
 	int n;
 	ops_parser_content_t pc;
@@ -1860,10 +1864,10 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	int hashsize;
 	size_t l;
 
-	n=ops_block_size(C.secret_key.algorithm);
-	assert(n > 0 && n <= OPS_MAX_BLOCK_SIZE);
+	blocksize=ops_block_size(C.secret_key.algorithm);
+	assert(blocksize > 0 && blocksize <= OPS_MAX_BLOCK_SIZE);
 
-	if(!limited_read(C.secret_key.iv,n,region,parse_info))
+	if(!limited_read(C.secret_key.iv,blocksize,region,parse_info))
 	    return 0;
 
 	memset(&pc,'\0',sizeof pc);
@@ -1962,6 +1966,17 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	ops_reader_push_sum16(parse_info);
 
     parse_info->reading_v3_secret=C.secret_key.public_key.version != OPS_V4;
+    if(parse_info->reading_v3_secret)
+	{
+	// flagrantly disregard how CFB IV's work...
+	unsigned char iv[OPS_MAX_BLOCK_SIZE];
+	unsigned char iv2[OPS_MAX_BLOCK_SIZE];
+
+	memcpy(iv,C.secret_key.iv,blocksize);
+	memset(C.secret_key.iv,'\0',sizeof C.secret_key.iv);
+	decrypt.set_iv(&decrypt,C.secret_key.iv);
+	decrypt.decrypt(&decrypt,iv2,iv,blocksize);
+	}
 
     switch(C.secret_key.public_key.algorithm)
 	{
@@ -1997,6 +2012,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	ops_reader_pop_hash(parse_info);
 	checkhash.finish(&checkhash,hash);
 	    
+	if(crypted && C.secret_key.public_key.version != OPS_V4)
+	    ops_reader_pop_decrypt(parse_info);
+
 	if(ret)
 	    {
 	    if(!limited_read(C.secret_key.checkhash,20,region,parse_info))
@@ -2012,6 +2030,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 
 	sum=ops_reader_pop_sum16(parse_info);
 
+	if(crypted && C.secret_key.public_key.version != OPS_V4)
+	    ops_reader_pop_decrypt(parse_info);
+
 	if(ret)
 	    {
 	    if(!limited_read_scalar(&C.secret_key.checksum,2,region,
@@ -2019,16 +2040,14 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 		return 0;
 
 	    if(sum != C.secret_key.checksum)
-		ERRP(parse_info,"Checksum mistmatch in secret key");
+		ERRP(parse_info,"Checksum mismatch in secret key");
 	    }
 	}
 
-    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
-       || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
-	{
+    if(crypted && C.secret_key.public_key.version == OPS_V4)
 	ops_reader_pop_decrypt(parse_info);
-	assert(!ret || region->length_read == region->length);
-	}
+
+    assert(!ret || region->length_read == region->length);
 
     if(!ret)
 	return 0;

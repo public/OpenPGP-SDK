@@ -32,6 +32,7 @@ typedef void ops_decrypt_set_iv_t(ops_decrypt_t *decrypt,
 typedef void ops_decrypt_set_key_t(ops_decrypt_t *decrypt,
 				   const unsigned char *key);
 typedef void ops_decrypt_init_t(ops_decrypt_t *decrypt);
+typedef void ops_decrypt_resync_t(ops_decrypt_t *decrypt);
 typedef size_t ops_decrypt_decrypt_t(ops_decrypt_t *decrypt,void *out,
 				     const void *in,int count);
 typedef void ops_decrypt_finish_t(ops_decrypt_t *decrypt);
@@ -44,10 +45,12 @@ struct _ops_decrypt_t
     ops_decrypt_set_iv_t *set_iv; /* Call this before init! */
     ops_decrypt_set_iv_t *set_key; /* Call this before init! */
     ops_decrypt_init_t *init;
+    ops_decrypt_resync_t *resync;
     ops_decrypt_decrypt_t *decrypt;
     ops_decrypt_finish_t *finish;
     unsigned char iv[OPS_MAX_BLOCK_SIZE];
     unsigned char civ[OPS_MAX_BLOCK_SIZE];
+    unsigned char siv[OPS_MAX_BLOCK_SIZE]; /* Needed for weird v3 resync */
     unsigned char key[OPS_MAX_KEY_SIZE];
     int num;
     void *data;
