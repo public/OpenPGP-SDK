@@ -1956,6 +1956,8 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	*/
 	ops_init_subregion(&encregion,NULL);
 	encregion.length=region->length-region->length_read;
+	if(C.secret_key.public_key.version != OPS_V4)
+	    encregion.length-=2;
 	saved_region=region;
 	region=&encregion;
 	}
@@ -2013,7 +2015,10 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	checkhash.finish(&checkhash,hash);
 	    
 	if(crypted && C.secret_key.public_key.version != OPS_V4)
+	    {
 	    ops_reader_pop_decrypt(parse_info);
+	    region=saved_region;
+	    }
 
 	if(ret)
 	    {
@@ -2031,7 +2036,10 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
 	sum=ops_reader_pop_sum16(parse_info);
 
 	if(crypted && C.secret_key.public_key.version != OPS_V4)
+	    {
 	    ops_reader_pop_decrypt(parse_info);
+	    region=saved_region;
+	    }
 
 	if(ret)
 	    {
