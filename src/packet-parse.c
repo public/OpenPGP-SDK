@@ -1970,17 +1970,6 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *parse_info)
     else
 	ops_reader_push_sum16(parse_info);
 
-    /* XXX: this should be refactored into the IDEA init function */
-    if(parse_info->reading_v3_secret)
-	{
-	// flagrantly disregard how CFB IV's work...
-	unsigned char iv[OPS_MAX_BLOCK_SIZE];
-
-	memset(iv,'\0',sizeof iv);
-	decrypt.set_iv(&decrypt,iv);
-	decrypt.decrypt(&decrypt,iv,C.secret_key.iv,blocksize);
-	}
-
     switch(C.secret_key.public_key.algorithm)
 	{
     case OPS_PKA_RSA:

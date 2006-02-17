@@ -201,11 +201,11 @@ static void idea_init(ops_decrypt_t *decrypt)
     free(decrypt->data);
     decrypt->data=malloc(sizeof(IDEA_KEY_SCHEDULE));
 
-    idea_set_encrypt_key(decrypt->key,decrypt->data);
     // note that we don't invert the key for CFB mode
+    idea_set_encrypt_key(decrypt->key,decrypt->data);
 
     memcpy(decrypt->civ,decrypt->iv,decrypt->blocksize);
-    memset(decrypt->siv,'\0',sizeof decrypt->siv);
+    idea_ecb_encrypt(decrypt->civ,decrypt->siv,decrypt->data);
 
     decrypt->num=0;
     }
