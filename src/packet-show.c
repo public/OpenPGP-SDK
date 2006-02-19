@@ -250,7 +250,7 @@ static unsigned int list_resize(ops_list_t *list)
 	}
     }
 
-static unsigned int add_str(ops_list_t *list, char *str)
+static unsigned int add_str(ops_list_t *list,char *str)
     {
     if (list->size==list->used) 
 	if (!list_resize(list))
@@ -310,7 +310,8 @@ void ops_text_free(ops_text_t *text)
     }
 
 /*! generic function which adds text derived from single octet map to text */
-static unsigned int add_str_from_octet_map(ops_text_t *text, char *str, unsigned char octet)
+static unsigned int add_str_from_octet_map(ops_text_t *text,char *str,
+					   unsigned char octet)
     {
     if (str && !add_str(&text->known,str)) 
 	{
@@ -366,11 +367,11 @@ static unsigned int add_str_from_bit_map(ops_text_t *text, char *str, unsigned c
  */ 
 
 static ops_text_t *text_from_bytemapped_octets(ops_data_t *data, 
-				char *(*text_fn)(unsigned char octet))
+				const char *(*text_fn)(unsigned char octet))
     {
 
     ops_text_t *text=NULL;
-    char *str;
+    const char *str;
     unsigned i;
 
     /*! allocate and initialise ops_text_t structure to store derived strings */
@@ -387,7 +388,7 @@ static ops_text_t *text_from_bytemapped_octets(ops_data_t *data,
 	str=(*text_fn)(data->contents[i]);
 
 	/*! and add to text */
-	if (!add_str_from_octet_map(text,str,data->contents[i]))
+	if (!add_str_from_octet_map(text,strdup(str),data->contents[i]))
 	    {
 	    ops_text_free(text);
 	    return NULL;
@@ -455,7 +456,7 @@ static ops_text_t *showall_octets_bits(ops_data_t *data,ops_bit_map_t **map,
  * \param packet_tag
  * \return string or "Unknown"
 */
-char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
+const char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
     {
     return show_packet_tag(packet_tag,packet_tag_map);
     }
@@ -467,7 +468,7 @@ char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
  * \param ss_type Signature Sub-Packet type
  * \return string or "Unknown"
  */
-char *ops_show_ss_type(ops_ss_type_t ss_type)
+const char *ops_show_ss_type(ops_ss_type_t ss_type)
     {
     return show_ss_type(ss_type,ss_type_map);
     }
@@ -480,7 +481,7 @@ char *ops_show_ss_type(ops_ss_type_t ss_type)
  * \todo make typesafe
  * \return string or "Unknown"
  */
-char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
+const char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
     {
     return show_ss_rr_code(ss_rr_code,ss_rr_code_map);
     }
@@ -493,7 +494,7 @@ char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
  * \todo add reference
  * \return string or "Unknown"
  */
-char *ops_show_sig_type(ops_sig_type_t sig_type)
+const char *ops_show_sig_type(ops_sig_type_t sig_type)
     {
     return show_sig_type(sig_type, sig_type_map);
     }
@@ -506,7 +507,7 @@ char *ops_show_sig_type(ops_sig_type_t sig_type)
  * \todo add reference
  * \return string or "Unknown"
  */
-char *ops_show_pka(ops_public_key_algorithm_t pka)
+const char *ops_show_pka(ops_public_key_algorithm_t pka)
     {
     return show_pka(pka, public_key_algorithm_map);
     }
@@ -517,7 +518,7 @@ char *ops_show_pka(ops_public_key_algorithm_t pka)
  * \param octet
  * \return string or "Unknown"
 */
-char *ops_show_ss_preferred_compression(unsigned char octet)
+const char *ops_show_ss_preferred_compression(unsigned char octet)
     {
     return ops_str_from_map(octet,compression_algorithm_map);
     }
@@ -547,7 +548,7 @@ ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t 
  * \todo make typesafe
  * \return string or "Unknown"
  */
-char *ops_show_hash_algorithm(unsigned char hash)
+const char *ops_show_hash_algorithm(unsigned char hash)
     {
     return show_hash_algorithm(hash);
     }
@@ -567,7 +568,7 @@ ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_h
 				       &ops_show_hash_algorithm);
     }
 
-char *ops_show_symmetric_algorithm(unsigned char hash)
+const char *ops_show_symmetric_algorithm(unsigned char hash)
     {
     return show_symmetric_algorithm(hash);
     }
@@ -579,7 +580,7 @@ char *ops_show_symmetric_algorithm(unsigned char hash)
  * \todo add reference
  * \return string or "Unknown"
 */
-char *ops_show_ss_preferred_ska(unsigned char octet)
+const char *ops_show_ss_preferred_ska(unsigned char octet)
     {
     return ops_str_from_map(octet,symmetric_algorithm_map);
     }
@@ -665,7 +666,7 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
  * \return
  * \todo add reference
 */
-char *ops_show_ss_key_flag(unsigned char octet, ops_bit_map_t *map)
+const char *ops_show_ss_key_flag(unsigned char octet, ops_bit_map_t *map)
     {
     return str_from_bitfield(octet,map);
     }
@@ -683,11 +684,11 @@ char *ops_show_ss_key_flag(unsigned char octet, ops_bit_map_t *map)
 ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     {
     ops_text_t *text=NULL;
-    char *str;
+    const char *str;
     int i=0;
     unsigned char mask, bit;
 
-     text=malloc(sizeof(ops_text_t));
+    text=malloc(sizeof(ops_text_t));
     if (!text)
 	return NULL;
 
@@ -695,13 +696,13 @@ ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
 
     /* xxx - TBD: extend to handle multiple octets of bits - rachel */
 
-    for (i=0, mask=0x80; i<8; i++, mask = mask>>1 )
+    for (i=0,mask=0x80 ; i < 8 ; i++,mask=mask >> 1)
 	    {
-	    bit = ss_key_flags.data.contents[0] & mask;
-	    if (bit)
+	    bit=ss_key_flags.data.contents[0]&mask;
+	    if(bit)
 		{
-		str=ops_show_ss_key_flag ( bit, &ss_key_flags_map[0] );
-		if (!add_str_from_bit_map( text, str, bit))
+		str=ops_show_ss_key_flag(bit,&ss_key_flags_map[0]);
+		if(!add_str_from_bit_map(text,strdup(str),bit))
 		    {
 		    ops_text_free(text);
 		    return NULL;
@@ -723,7 +724,8 @@ ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
  * \todo add reference
  * \todo make typesafe
  */
-char *ops_show_ss_key_server_prefs(unsigned char prefs, ops_bit_map_t *map)
+const char *ops_show_ss_key_server_prefs(unsigned char prefs,
+					 ops_bit_map_t *map)
     {
     return str_from_bitfield(prefs,map);
     }
@@ -741,7 +743,7 @@ char *ops_show_ss_key_server_prefs(unsigned char prefs, ops_bit_map_t *map)
 ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
     {
     ops_text_t *text=NULL;
-    char *str;
+    const char *str;
     int i=0;
     unsigned char mask, bit;
 
@@ -753,13 +755,14 @@ ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_ser
 
     /* xxx - TBD: extend to handle multiple octets of bits - rachel */
 
-    for (i=0, mask=0x80; i<8; i++, mask = mask>>1 )
+    for (i=0,mask=0x80 ; i < 8 ; i++,mask=mask >> 1)
 	    {
-	    bit = ss_key_server_prefs.data.contents[0] & mask;
+	    bit=ss_key_server_prefs.data.contents[0]&mask;
 	    if (bit)
 		{
-		str=ops_show_ss_key_server_prefs ( bit, &ss_key_server_prefs_map[0] );
-		if (!add_str_from_bit_map( text, str, bit))
+		str=ops_show_ss_key_server_prefs(bit,
+						 &ss_key_server_prefs_map[0]);
+		if(!add_str_from_bit_map( text, strdup(str), bit))
 		    {
 		    ops_text_free(text);
 		    return NULL;

@@ -242,7 +242,8 @@ static void print_unsigned_int(char *name, unsigned int val)
     printf("%d\n", val);
     }
 
-static void print_string_and_value( char *name, char *str, unsigned char value)
+static void print_string_and_value(char *name,const char *str,
+				   unsigned char value)
     {
     print_name(name);
 
@@ -377,7 +378,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
     {
     const ops_parser_content_union_t *content=&content_->content;
     ops_text_t *text;
-    char *str;
+    const char *str;
     ops_key_data_t *decrypter;
     const ops_secret_key_t *secret;
     static ops_boolean_t unarmoured;
@@ -758,7 +759,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	print_hexdump("Revocation Reason",
 		      &content->ss_revocation_reason.code,
 		      1);
-	str = ops_show_ss_rr_code(content->ss_revocation_reason.code);
+	str=ops_show_ss_rr_code(content->ss_revocation_reason.code);
 	print_string(NULL,str);
 	/* xxx - todo : output text as UTF-8 string */
 	end_subpacket();
