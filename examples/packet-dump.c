@@ -335,16 +335,19 @@ static void print_secret_key(ops_content_tag_t tag,const ops_secret_key_t *sk)
 	print_tagname("ENCRYPTED_SECRET_KEY");
     print_public_key(&sk->public_key);
     printf("S2K Usage: %d\n",sk->s2k_usage);
-    printf("S2K Specifier: %d\n",sk->s2k_specifier);
-    printf("Symmetric algorithm: %d (%s)\n",sk->algorithm,
-	   ops_show_symmetric_algorithm(sk->algorithm));
-    printf("Hash algorithm: %d (%s)\n",sk->hash_algorithm,
-	   ops_show_hash_algorithm(sk->hash_algorithm));
-    if(sk->s2k_specifier != OPS_S2KS_SIMPLE)
-	print_hexdump("Salt",sk->salt,sizeof sk->salt);
-    if(sk->s2k_specifier == OPS_S2KS_ITERATED_AND_SALTED)
-	printf("Octet count: %d\n",sk->octet_count);
-    print_hexdump("IV",sk->iv,ops_block_size(sk->algorithm));
+    if(sk->s2k_usage != OPS_S2KU_NONE)
+	{
+	printf("S2K Specifier: %d\n",sk->s2k_specifier);
+	printf("Symmetric algorithm: %d (%s)\n",sk->algorithm,
+	       ops_show_symmetric_algorithm(sk->algorithm));
+	printf("Hash algorithm: %d (%s)\n",sk->hash_algorithm,
+	       ops_show_hash_algorithm(sk->hash_algorithm));
+	if(sk->s2k_specifier != OPS_S2KS_SIMPLE)
+	    print_hexdump("Salt",sk->salt,sizeof sk->salt);
+	if(sk->s2k_specifier == OPS_S2KS_ITERATED_AND_SALTED)
+	    printf("Octet count: %d\n",sk->octet_count);
+	print_hexdump("IV",sk->iv,ops_block_size(sk->algorithm));
+	}
 
     /* no more set if encrypted */
     if(tag == OPS_PTAG_CT_ENCRYPTED_SECRET_KEY)
