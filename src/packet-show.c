@@ -126,7 +126,7 @@ static ops_map_t public_key_algorithm_map[] =
     };
 typedef ops_map_t public_key_algorithm_map_t;
 
-static ops_map_t symmetric_key_algorithm_map[] =
+static ops_map_t symmetric_algorithm_map[] =
     {
     { OPS_SA_PLAINTEXT,		"Plaintext or unencrypted data" },
     { OPS_SA_IDEA,		"IDEA" },
@@ -567,6 +567,11 @@ ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_h
 				       &ops_show_hash_algorithm);
     }
 
+char *ops_show_symmetric_algorithm(unsigned char hash)
+    {
+    return show_symmetric_algorithm(hash);
+    }
+
 /**
  * \ingroup Show
  * returns description of the given Preferred Symmetric Key Algorithm
@@ -576,7 +581,7 @@ ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_h
 */
 char *ops_show_ss_preferred_ska(unsigned char octet)
     {
-    return ops_str_from_map(octet,symmetric_key_algorithm_map);
+    return ops_str_from_map(octet,symmetric_algorithm_map);
     }
 
 /**

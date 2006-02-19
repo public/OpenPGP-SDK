@@ -47,6 +47,7 @@ char *ops_show_ss_preferred_compression(unsigned char octet);
 
 ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_hash);
 char *ops_show_hash_algorithm(unsigned char octet);
+char *ops_show_symmetric_algorithm(unsigned char hash);
 
 ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska);
 char *ops_show_ss_preferred_ska(unsigned char octet);

@@ -335,8 +335,10 @@ static void print_secret_key(ops_content_tag_t tag,const ops_secret_key_t *sk)
     print_public_key(&sk->public_key);
     printf("S2K Usage: %d\n",sk->s2k_usage);
     printf("S2K Specifier: %d\n",sk->s2k_specifier);
-    printf("Symmetric algorithm: %d\n",sk->algorithm);
-    printf("Hash algorithm: %d\n",sk->hash_algorithm);
+    printf("Symmetric algorithm: %d (%s)\n",sk->algorithm,
+	   ops_show_symmetric_algorithm(sk->algorithm));
+    printf("Hash algorithm: %d (%s)\n",sk->hash_algorithm,
+	   ops_show_hash_algorithm(sk->hash_algorithm));
     if(sk->s2k_specifier != OPS_S2KS_SIMPLE)
 	print_hexdump("Salt",sk->salt,sizeof sk->salt);
     if(sk->s2k_specifier == OPS_S2KS_ITERATED_AND_SALTED)
@@ -616,7 +618,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 
     case OPS_PTAG_SS_PREFERRED_HASH:
 	start_subpacket(content_->tag);
-	print_data( "Preferred Hash Algorithms",
+	print_data("Preferred Hash Algorithms",
 		   &content->ss_preferred_hash.data);
 
 	text = ops_showall_ss_preferred_hash(content->ss_preferred_hash);
