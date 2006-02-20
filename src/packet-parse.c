@@ -2472,6 +2472,7 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
     ops_reader_info_t *rinfo=malloc(sizeof *rinfo);
 
     *rinfo=pinfo->rinfo;
+    memset(&pinfo->rinfo,'\0',sizeof pinfo->rinfo);
     pinfo->rinfo.next=rinfo;
     rinfo->pinfo=pinfo;
     ops_reader_set(pinfo,reader,arg);
