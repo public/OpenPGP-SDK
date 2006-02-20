@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#include <openpgpsdk/final.h>
+
 static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content,ops_parse_cb_info_t *cbinfo)
     {

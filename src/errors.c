@@ -3,13 +3,14 @@
  */
 
 #include <openpgpsdk/errors.h>
+#include <openpgpsdk/util.h>
 
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "openpgpsdk/util.h"
+#include <openpgpsdk/final.h>
 
 #define ERR(code)	{ code, #code }
 

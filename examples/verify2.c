@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#include <openpgpsdk/final.h>
+
 const char *pname;
 
 static void usage()

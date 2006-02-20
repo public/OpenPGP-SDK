@@ -9,6 +9,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <openpgpsdk/final.h>
+
 // XXX: rename to create-self-signed-key
 
 /*

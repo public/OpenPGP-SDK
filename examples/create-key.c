@@ -2,6 +2,8 @@
 #include <openpgpsdk/util.h>
 #include <stdio.h>
 
+#include <openpgpsdk/final.h>
+
 int main(int argc,char **argv)
     {
     ops_create_info_t *info;

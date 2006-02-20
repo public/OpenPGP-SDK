@@ -5,6 +5,8 @@
 #include <openssl/idea.h>
 #include "parse_local.h"
 
+#include <openpgpsdk/final.h>
+
 typedef struct
     {
     unsigned char decrypted[1024];

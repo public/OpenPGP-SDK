@@ -15,6 +15,8 @@
 #include <string.h>
 #include <fcntl.h>
 
+#include <openpgpsdk/final.h>
+
 static int indent=0;
 static const char *pname;
 static ops_keyring_t keyring;

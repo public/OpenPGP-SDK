@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <openpgpsdk/final.h>
+
 typedef struct
     {
     ops_keyring_t *keyring;

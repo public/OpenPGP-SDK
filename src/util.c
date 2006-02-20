@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <openpgpsdk/final.h>
+
 /**
  * Searches the given map for the given type.
  * Returns a human-readable descriptive string if found,

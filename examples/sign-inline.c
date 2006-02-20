@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <openpgpsdk/final.h>
+
 int main(int argc,char **argv)
     {
     const char *keyfile;

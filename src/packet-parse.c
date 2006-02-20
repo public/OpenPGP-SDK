@@ -16,6 +16,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <openpgpsdk/final.h>
+
 /**
  * limited_read_data reads the specified amount of the subregion's data 
  * into a data_t structure

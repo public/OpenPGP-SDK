@@ -12,6 +12,8 @@
 #include <openpgpsdk/packet-show.h>
 #include <openpgpsdk/util.h>
 
+#include <openpgpsdk/final.h>
+
 /*
  * Arrays of value->text maps
  */

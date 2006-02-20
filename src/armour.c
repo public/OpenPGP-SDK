@@ -9,6 +9,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include <openpgpsdk/final.h>
+
 #define CRC24_INIT 0xb704ceL
 #define CRC24_POLY 0x1864cfbL
 

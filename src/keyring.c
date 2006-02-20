@@ -14,6 +14,8 @@
 #include <assert.h>
 #include <termios.h>
 
+#include <openpgpsdk/final.h>
+
 ops_key_data_t *
 ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 			   const unsigned char keyid[OPS_KEY_ID_SIZE])

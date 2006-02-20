@@ -11,6 +11,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <openpgpsdk/final.h>
+
 static void md5_init(ops_hash_t *hash)
     {
     assert(!hash->data);

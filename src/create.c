@@ -7,6 +7,8 @@
 #include <assert.h>
 #include <unistd.h>
 
+#include <openpgpsdk/final.h>
+
 struct ops_writer_info
     {
     ops_writer_t *writer;

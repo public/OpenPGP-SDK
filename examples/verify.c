@@ -8,6 +8,8 @@
 #include <string.h>
 #include <fcntl.h>
 
+#include <openpgpsdk/final.h>
+
 int main(int argc,char **argv)
     {
     ops_parse_info_t *pinfo;

@@ -6,6 +6,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include <openpgpsdk/final.h>
+
 struct ops_memory
     {
     unsigned char *buf;

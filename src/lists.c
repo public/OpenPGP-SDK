@@ -8,6 +8,8 @@
 
 #include <stdlib.h>
 
+#include <openpgpsdk/final.h>
+
 /**
  * Initialises ulong list
  * \param *list	Pointer to existing list structure

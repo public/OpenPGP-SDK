@@ -7,6 +7,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <openpgpsdk/final.h>
+
 /** \ingroup Create
  * needed for signature creation
  */

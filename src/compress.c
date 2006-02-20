@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <openpgpsdk/final.h>
+
 #define DECOMPRESS_BUFFER	1024
 
 typedef struct

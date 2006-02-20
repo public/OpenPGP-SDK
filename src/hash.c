@@ -5,6 +5,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <openpgpsdk/final.h>
+
 void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length)
     {
     while(length--)

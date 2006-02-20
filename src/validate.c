@@ -7,6 +7,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <openpgpsdk/final.h>
+
 typedef struct
     {
     const ops_key_data_t *key;

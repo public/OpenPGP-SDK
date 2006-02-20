@@ -12,6 +12,8 @@
 # include <alloca.h>
 #endif
 
+#include <openpgpsdk/final.h>
+
 /**
  * \ingroup Utils
  *

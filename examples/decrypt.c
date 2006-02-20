@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#include <openpgpsdk/final.h>
+
 static char *pname;
 static ops_keyring_t keyring;
 
