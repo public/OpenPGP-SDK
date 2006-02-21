@@ -632,7 +632,9 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_CT_UNARMOURED_TEXT:
     case OPS_PTAG_CT_ARMOUR_TRAILER:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
-    case OPS_PTAG_CT_SE_DATA:
+    case OPS_PTAG_CT_SE_DATA_HEADER:
+    case OPS_PTAG_CT_SE_IP_DATA_HEADER:
+    case OPS_PTAG_CT_SE_IP_DATA_BODY:
 	break;
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
@@ -2105,16 +2107,69 @@ static int parse_pk_session_key(ops_region_t *region,
     return 1;
     }
 
+// XXX: make this static?
+int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
+		     ops_parse_info_t *pinfo)
+    {
+    int r=1;
+    ops_decrypt_t *decrypt=ops_parse_get_decrypt(pinfo);
+
+    if(decrypt)
+	{
+	ops_reader_push_decrypt(pinfo,decrypt,region);
+	r=ops_parse(pinfo);
+	ops_reader_pop_decrypt(pinfo);
+	}
+    else
+	{
+	ops_parser_content_t content;
+
+	while(region->length_read < region->length)
+	    {
+	    unsigned l=region->length-region->length_read;
+
+	    if(l > sizeof C.se_data_body.data)
+		l=sizeof C.se_data_body.data;
+
+	    if(!limited_read(C.se_data_body.data,l,region,pinfo))
+		return 0;
+
+	    C.se_data_body.length=l;
+
+	    CBP(pinfo,tag,&content);
+	    }
+	}
+
+    return r;
+    }
+
 static int parse_se_data(ops_region_t *region,ops_parse_info_t *parse_info)
     {
     ops_parser_content_t content;
 
     /* there's no info to go with this, so just announce it */
-    CBP(parse_info,OPS_PTAG_CT_SE_DATA,&content);
+    CBP(parse_info,OPS_PTAG_CT_SE_DATA_HEADER,&content);
 
     /* The content of an encrypted data packet is more OpenPGP packets
-       once decompressed, so recursively handle them */
-    return ops_decrypt_data(region,parse_info);
+       once decrypted, so recursively handle them */
+    return ops_decrypt_data(OPS_PTAG_CT_SE_DATA_BODY,region,parse_info);
+    }
+
+static int parse_se_ip_data(ops_region_t *region,ops_parse_info_t *parse_info)
+    {
+    unsigned char c[1];
+    ops_parser_content_t content;
+
+    if(!limited_read(c,1,region,parse_info))
+	return 0;
+    C.se_ip_data_header.version=c[0];
+    assert(C.se_ip_data_header.version == OPS_SE_IP_V1);
+
+    CBP(parse_info,OPS_PTAG_CT_SE_IP_DATA_HEADER,&content);
+
+    /* The content of an encrypted data packet is more OpenPGP packets
+       once decrypted, so recursively handle them */
+    return ops_decrypt_data(OPS_PTAG_CT_SE_IP_DATA_BODY,region,parse_info);
     }
 
 /** Parse one packet.
@@ -2240,6 +2295,10 @@ static int ops_parse_one_packet(ops_parse_info_t *parse_info,
 
     case OPS_PTAG_CT_SE_DATA:
 	r=parse_se_data(&region,parse_info);
+	break;
+
+    case OPS_PTAG_CT_SE_IP_DATA:
+	r=parse_se_ip_data(&region,parse_info);
 	break;
 
     default:

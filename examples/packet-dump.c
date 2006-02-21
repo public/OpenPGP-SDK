@@ -430,8 +430,23 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	*/
 	break;
 
-    case OPS_PTAG_CT_SE_DATA:
+    case OPS_PTAG_CT_SE_DATA_HEADER:
 	print_tagname("SYMMETRIC ENCRYPTED DATA");
+	break;
+
+    case OPS_PTAG_CT_SE_IP_DATA_HEADER:
+	print_tagname("SYMMETRIC ENCRYPTED INTEGRITY PROTECTED DATA HEADER");
+	printf("Version: %d\n",content->se_ip_data_header.version);
+	break;
+
+    case OPS_PTAG_CT_SE_IP_DATA_BODY:
+	print_tagname("SYMMETRIC ENCRYPTED INTEGRITY PROTECTED DATA BODY");
+	printf("  data body length=%d\n",
+	       content->se_data_body.length);
+	printf("    data=");
+	hexdump(content->se_data_body.data,
+		content->se_data_body.length);
+	printf("\n");
 	break;
 
     case OPS_PTAG_CT_PUBLIC_KEY:
@@ -920,7 +935,8 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	printf("Version: %d\n",content->pk_session_key.version);
 	print_hexdump("key ID",content->pk_session_key.key_id,
 		      sizeof content->pk_session_key.key_id);
-	printf("Algorithm: %d\n",content->pk_session_key.algorithm);
+	printf("Algorithm: %d (%s)\n",content->pk_session_key.algorithm,
+	       ops_show_symmetric_algorithm(content->pk_session_key.algorithm));
 	switch(content->pk_session_key.algorithm)
 	    {
 	case OPS_PKA_RSA:

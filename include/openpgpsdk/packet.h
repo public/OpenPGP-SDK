@@ -136,7 +136,7 @@ enum ops_content_tag_t
     OPS_PTAG_CT_RESERVED2		=15,	/*!< reserved */
     OPS_PTAG_CT_RESERVED3		=16,	/*!< reserved */
     OPS_PTAG_CT_USER_ATTRIBUTE		=17,	/*!< User Attribute Packet */
-    OPS_PTAG_CT_SK_IP_DATA		=18,	/*!< Sym. Encrypted and Integrity Protected Data Packet */
+    OPS_PTAG_CT_SE_IP_DATA		=18,	/*!< Sym. Encrypted and Integrity Protected Data Packet */
     OPS_PTAG_CT_MDC			=19,	/*!< Modification Detection Code Packet */
 
     OPS_PARSER_PTAG			=0x100,	/*!< Internal Use: The packet is the "Packet Tag" itself - used when
@@ -199,6 +199,8 @@ enum ops_content_tag_t
     OPS_PTAG_CT_ENCRYPTED_SECRET_KEY	=0x300+10, // In this case the algorithm specific fields will not be initialised
     OPS_PTAG_CT_SE_DATA_HEADER		=0x300+11,
     OPS_PTAG_CT_SE_DATA_BODY		=0x300+12,
+    OPS_PTAG_CT_SE_IP_DATA_HEADER	=0x300+13,
+    OPS_PTAG_CT_SE_IP_DATA_BODY		=0x300+14,
 
     /* commands to the callback */
     OPS_PARSER_CMD_GET_SK_PASSPHRASE	=0x400,
@@ -834,6 +836,22 @@ typedef struct
     char		       **passphrase; /* point somewhere that gets filled in to work around constness of content */
     } ops_secret_key_passphrase_t;
 
+typedef enum
+    {
+    OPS_SE_IP_V1=1
+    } ops_se_ip_version_t;
+
+typedef struct
+    {
+    ops_se_ip_version_t		version;
+    } ops_se_ip_data_header_t;
+
+typedef struct
+    {
+    unsigned			length;
+    unsigned char		data[8192];
+    } ops_se_data_body_t;
+
 /** ops_parser_union_content_t */
 typedef union
     {
@@ -880,6 +898,8 @@ typedef union
     ops_unarmoured_text_t	unarmoured_text;
     ops_pk_session_key_t	pk_session_key;
     ops_secret_key_passphrase_t	secret_key_passphrase;
+    ops_se_ip_data_header_t	se_ip_data_header;
+    ops_se_data_body_t		se_data_body;
     } ops_parser_content_union_t;
 
 /** ops_parser_content_t */

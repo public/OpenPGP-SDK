@@ -38,7 +38,7 @@ static ops_map_t packet_tag_map[] =
     { OPS_PTAG_CT_RESERVED2,		"reserved" },
     { OPS_PTAG_CT_RESERVED3,		"reserved" },
     { OPS_PTAG_CT_USER_ATTRIBUTE,	"User Attribute" },
-    { OPS_PTAG_CT_SK_IP_DATA,		"Sym. Encrypted and Integrity Protected Data" },
+    { OPS_PTAG_CT_SE_IP_DATA,		"Sym. Encrypted and Integrity Protected Data" },
     { OPS_PTAG_CT_MDC,			"Modification Detection Code" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };

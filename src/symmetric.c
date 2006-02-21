@@ -131,17 +131,6 @@ void ops_reader_pop_decrypt(ops_parse_info_t *pinfo)
     ops_reader_pop(pinfo);
     }
 
-int ops_decrypt_data(ops_region_t *region,ops_parse_info_t *pinfo)
-    {
-    int r;
-
-    ops_reader_push_decrypt(pinfo,ops_parse_get_decrypt(pinfo),region);
-    r=ops_parse(pinfo);
-    ops_reader_pop_decrypt(pinfo);
-
-    return r;
-    }
-
 static void std_set_iv(ops_decrypt_t *decrypt,const unsigned char *iv)
     { memcpy(decrypt->iv,iv,decrypt->blocksize); }
 

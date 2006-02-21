@@ -81,7 +81,8 @@ int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
 unsigned ops_block_size(ops_symmetric_algorithm_t alg);
 unsigned ops_key_size(ops_symmetric_algorithm_t alg);
 
-int ops_decrypt_data(ops_region_t *region,ops_parse_info_t *parse_info);
+int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
+		     ops_parse_info_t *parse_info);
 
 void ops_decrypt_any(ops_decrypt_t *decrypt,ops_symmetric_algorithm_t alg);
 
