@@ -201,9 +201,11 @@ enum ops_content_tag_t
     OPS_PTAG_CT_SE_DATA_BODY		=0x300+12,
     OPS_PTAG_CT_SE_IP_DATA_HEADER	=0x300+13,
     OPS_PTAG_CT_SE_IP_DATA_BODY		=0x300+14,
+    OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY=0x300+15,
 
     /* commands to the callback */
     OPS_PARSER_CMD_GET_SK_PASSPHRASE	=0x400,
+    OPS_PARSER_CMD_GET_SECRET_KEY	=0x400+1,
 
 
     /* Errors */
@@ -808,6 +810,7 @@ typedef enum
 typedef struct
     {
     BIGNUM			*encrypted_m;
+    BIGNUM			*m;
     } ops_pk_session_key_parameters_rsa_t;
 
 typedef struct
@@ -828,6 +831,9 @@ typedef struct
     unsigned char		key_id[OPS_KEY_ID_SIZE];
     ops_public_key_algorithm_t	algorithm;
     ops_pk_session_key_parameters_t parameters;
+    ops_symmetric_algorithm_t	symmetric_algorithm;
+    unsigned char		key[OPS_MAX_KEY_SIZE];
+    unsigned short		checksum;
     } ops_pk_session_key_t;
 
 typedef struct
@@ -851,6 +857,12 @@ typedef struct
     unsigned			length;
     unsigned char		data[8192];
     } ops_se_data_body_t;
+
+typedef struct
+    {
+    const ops_secret_key_t      **secret_key;
+    const ops_pk_session_key_t *pk_session_key;
+    } ops_get_secret_key_t;
 
 /** ops_parser_union_content_t */
 typedef union
@@ -900,6 +912,7 @@ typedef union
     ops_secret_key_passphrase_t	secret_key_passphrase;
     ops_se_ip_data_header_t	se_ip_data_header;
     ops_se_data_body_t		se_data_body;
+    ops_get_secret_key_t	get_secret_key;
     } ops_parser_content_union_t;
 
 /** ops_parser_content_t */

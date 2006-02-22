@@ -284,4 +284,3 @@ ops_secret_key_t *ops_decrypt_secret_key_from_data(ops_key_data_t *key,
 
     return arg.skey;
     }
-

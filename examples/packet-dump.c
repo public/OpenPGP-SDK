@@ -378,6 +378,34 @@ static void print_secret_key(ops_content_tag_t tag,const ops_secret_key_t *sk)
 	printf("Checksum: %04x\n",sk->checksum);
     }
 
+static void print_pk_session_key(ops_content_tag_t tag,
+				 const ops_pk_session_key_t *key)
+    {
+    if(tag == OPS_PTAG_CT_PK_SESSION_KEY)
+	print_tagname("PUBLIC KEY SESSION KEY");
+    else
+	print_tagname("ENCRYPTED PUBLIC KEY SESSION KEY");
+	
+    printf("Version: %d\n",key->version);
+    print_hexdump("key ID",key->key_id,sizeof key->key_id);
+    printf("Algorithm: %d (%s)\n",key->algorithm,
+	   ops_show_pka(key->algorithm));
+    switch(key->algorithm)
+	{
+    case OPS_PKA_RSA:
+	print_bn("encrypted_m",key->parameters.rsa.encrypted_m);
+	break;
+
+    case OPS_PKA_ELGAMAL:
+	print_bn("g_to_k",key->parameters.elgamal.g_to_k);
+	print_bn("encrypted_m",key->parameters.elgamal.encrypted_m);
+	break;
+
+    default:
+	assert(0);
+	}
+    }
+
 static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 				      ops_parse_cb_info_t *cbinfo)
     {
@@ -931,34 +959,15 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
-	print_tagname("PUBLIC KEY SESSION KEY");
-	printf("Version: %d\n",content->pk_session_key.version);
-	print_hexdump("key ID",content->pk_session_key.key_id,
-		      sizeof content->pk_session_key.key_id);
-	printf("Algorithm: %d (%s)\n",content->pk_session_key.algorithm,
-	       ops_show_symmetric_algorithm(content->pk_session_key.algorithm));
-	switch(content->pk_session_key.algorithm)
-	    {
-	case OPS_PKA_RSA:
-	    print_bn("encrypted_m",
-		     content->pk_session_key.parameters.rsa.encrypted_m);
-	    break;
+	print_pk_session_key(content_->tag,&content->pk_session_key);
+	break;
 
-	case OPS_PKA_ELGAMAL:
-	    print_bn("g_to_k",
-		     content->pk_session_key.parameters.elgamal.g_to_k);
-	    print_bn("encrypted_m",
-		     content->pk_session_key.parameters.elgamal.encrypted_m);
-	    break;
-
-	default:
-	    assert(0);
-	    }
-
-	/* Now get hold of session key for later on */
+    case OPS_PARSER_CMD_GET_SECRET_KEY:
+	print_pk_session_key(OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY,
+			     content->get_secret_key.pk_session_key);
 
 	decrypter=ops_keyring_find_key_by_id(&keyring,
-					     content->pk_session_key.key_id);
+					     content->get_secret_key.pk_session_key->key_id);
 	if(!decrypter || !ops_key_is_secret(decrypter))
 	    break;
 
@@ -972,6 +981,8 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	    secret=ops_decrypt_secret_key_from_data(decrypter,phrase);
 	    free(phrase);
 	    }
+
+	*content->get_secret_key.secret_key=secret;
 	
 	break;
 

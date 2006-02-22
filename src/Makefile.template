@@ -11,7 +11,7 @@ all: Makefile headers .depend libops.a
 LIBOBJS = packet-parse.o util.o openssl_crypto.o accumulate.o \
 	memory.o fingerprint.o hash.o keyring.o signature.o compress.o \
 	packet-show.o create.o validate.o lists.o armour.o errors.o \
-	symmetric.o
+	symmetric.o crypto.o
 
 headers:
 	cd ../include/openpgpsdk && make headers

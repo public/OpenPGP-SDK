@@ -123,6 +123,7 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
 #define WARNP(info,warn)	do { C.error.error=warn; CBP(info,OPS_PARSER_ERROR,&content); } while(0)
 /*! \todo descr ERR1 macro */
 #define ERR1P(info,fmt,x)	do { format_error(&content,(fmt),(x)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
+#define ERR2P(info,fmt,x,y)	do { format_error(&content,(fmt),(x),(y)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 
 /* XXX: replace ops_ptag_t with something more appropriate for limiting
    reads */
@@ -635,6 +636,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_CT_SE_DATA_HEADER:
     case OPS_PTAG_CT_SE_IP_DATA_HEADER:
     case OPS_PTAG_CT_SE_IP_DATA_BODY:
+    case OPS_PARSER_CMD_GET_SECRET_KEY:
 	break;
 
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
@@ -2063,6 +2065,12 @@ static int parse_pk_session_key(ops_region_t *region,
     {
     unsigned char c[1];
     ops_parser_content_t content;
+    ops_parser_content_t pc;
+    unsigned char buf[8192];
+    int n;
+    BIGNUM *enc_m;
+    unsigned k;
+    const ops_secret_key_t *secret;
 
     if(!limited_read(c,1,region,parse_info))
 	return 0;
@@ -2085,6 +2093,7 @@ static int parse_pk_session_key(ops_region_t *region,
 	if(!limited_read_mpi(&C.pk_session_key.parameters.rsa.encrypted_m,
 			     region,parse_info))
 	    return 0;
+	enc_m=C.pk_session_key.parameters.rsa.encrypted_m;
 	break;
 
     case OPS_PKA_ELGAMAL:
@@ -2093,6 +2102,7 @@ static int parse_pk_session_key(ops_region_t *region,
 	   || limited_read_mpi(&C.pk_session_key.parameters.elgamal.encrypted_m,
 			     region,parse_info))
 	    return 0;
+	enc_m=C.pk_session_key.parameters.elgamal.encrypted_m;
 	break;
 
     default:
@@ -2101,6 +2111,40 @@ static int parse_pk_session_key(ops_region_t *region,
 	      C.pk_session_key.algorithm);
 	return 0;
 	}
+
+    memset(&pc,'\0',sizeof pc);
+    secret=NULL;
+    pc.content.get_secret_key.secret_key=&secret;
+    pc.content.get_secret_key.pk_session_key=&C.pk_session_key;
+
+    CBP(parse_info,OPS_PARSER_CMD_GET_SECRET_KEY,&pc);
+
+    if(!secret)
+	{
+	CBP(parse_info,OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY,&content);
+
+	return 1;
+	}
+
+    n=ops_decrypt_mpi(buf,sizeof buf,enc_m,secret);
+
+    if(n < 1)
+	ERRP(parse_info,"decrypted message too short");
+
+    C.pk_session_key.symmetric_algorithm=buf[0];
+    k=ops_key_size(C.pk_session_key.symmetric_algorithm);
+
+    if((unsigned)n != k+3)
+	ERR2P(parse_info,"decrypted message wrong length (got %d expected %d)",
+	      n,k+3);
+    
+    assert(k <= sizeof C.pk_session_key.key);
+
+    memcpy(C.pk_session_key.key,buf+1,k);
+
+    C.pk_session_key.checksum=buf[k+1]+(buf[k+2] << 8);
+
+    // XXX: Check checksum!
 
     CBP(parse_info,OPS_PTAG_CT_PK_SESSION_KEY,&content);
 

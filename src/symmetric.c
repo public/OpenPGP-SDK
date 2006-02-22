@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <openssl/cast.h>
 #include <openssl/idea.h>
+#include <openssl/aes.h>
 #include "parse_local.h"
 
 #include <openpgpsdk/final.h>
@@ -90,9 +91,9 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
 
 	    if(!rinfo->pinfo->reading_v3_secret
 	       || !rinfo->pinfo->reading_mpi_length)
-		arg->decrypted_count=arg->decrypt->decrypt(arg->decrypt,
-							   arg->decrypted,
-							   buffer,n);
+		arg->decrypted_count=ops_decrypt_decrypt(arg->decrypt,
+							 arg->decrypted,
+							 buffer,n);
 	    else
 		{
 		memcpy(arg->decrypted,buffer,n);
@@ -116,7 +117,7 @@ void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_decrypt_t *decrypt,
     arg->decrypt=decrypt;
     arg->region=region;
 
-    arg->decrypt->init(arg->decrypt);
+    ops_decrypt_init(arg->decrypt);
 
     ops_reader_push(pinfo,encrypted_data_reader,arg);
     }
@@ -137,12 +138,16 @@ static void std_set_iv(ops_decrypt_t *decrypt,const unsigned char *iv)
 static void std_set_key(ops_decrypt_t *decrypt,const unsigned char *key)
     { memcpy(decrypt->key,key,decrypt->keysize); }
 
-/* Only IDEA has a resync operation */
 static void std_resync(ops_decrypt_t *decrypt)
     {
-    OPS_USED(decrypt);
+    if(decrypt->num == decrypt->blocksize)
+	return;
 
-    assert(0);
+    memmove(decrypt->civ+decrypt->blocksize-decrypt->num,decrypt->civ,
+	    decrypt->num);
+    memcpy(decrypt->civ,decrypt->siv+decrypt->num,
+	   decrypt->blocksize-decrypt->num);
+    decrypt->num=0;
     }
 
 static void std_finish(ops_decrypt_t *decrypt)
@@ -156,18 +161,10 @@ static void cast5_init(ops_decrypt_t *decrypt)
     free(decrypt->data);
     decrypt->data=malloc(sizeof(CAST_KEY));
     CAST_set_key(decrypt->data,decrypt->keysize,decrypt->key);
-    memcpy(decrypt->civ,decrypt->iv,decrypt->blocksize);
-    decrypt->num=0;
     }
 
-static size_t cast5_decrypt(ops_decrypt_t *decrypt,void *out,const void *in,
-			    int count)
-    {
-    CAST_cfb64_encrypt(in,out,count,decrypt->data,decrypt->civ,&decrypt->num,
-		       0);
-
-    return count;
-    }
+static void cast5_encrypt(ops_decrypt_t *decrypt,void *out,const void *in)
+    { CAST_ecb_encrypt(in,out,decrypt->data,1); }
 
 #define TRAILER		"","","","",0,NULL
 
@@ -180,7 +177,7 @@ static ops_decrypt_t cast5=
     std_set_key,
     cast5_init,
     std_resync,
-    cast5_decrypt,
+    cast5_encrypt,
     std_finish,
     TRAILER
     };
@@ -194,50 +191,12 @@ static void idea_init(ops_decrypt_t *decrypt)
 
     // note that we don't invert the key for CFB mode
     idea_set_encrypt_key(decrypt->key,decrypt->data);
-
-    memcpy(decrypt->civ,decrypt->iv,decrypt->blocksize);
-    idea_ecb_encrypt(decrypt->civ,decrypt->siv,decrypt->data);
-
-    decrypt->num=0;
     }
 
-static void idea_resync(ops_decrypt_t *decrypt)
-    {
-    if(decrypt->num == 8)
-	return;
+static void idea_block_encrypt(ops_decrypt_t *decrypt,void *out,const void *in)
+    { idea_ecb_encrypt(in,out,decrypt->data); }
 
-    memmove(decrypt->civ+8-decrypt->num,decrypt->civ,decrypt->num);
-    memcpy(decrypt->civ,decrypt->siv+decrypt->num,8-decrypt->num);
-    decrypt->num=0;
-    }
-
-static size_t idea_decrypt(ops_decrypt_t *decrypt,void *out_,const void *in_,
-			   int count)
-    {
-    unsigned char *out=out_;
-    const unsigned char *in=in_;
-    int saved=count;
-
-    /* in order to support v3's weird resyncing we have to implement CFB mode
-       ourselves */
-    while(count-- > 0)
-	{
-	unsigned char t;
-
-	if(decrypt->num == 8)
-	    {
-	    memcpy(decrypt->siv,decrypt->civ,sizeof decrypt->siv);
-	    idea_ecb_encrypt(decrypt->civ,decrypt->civ,decrypt->data);
-	    decrypt->num=0;
-	    }
-	t=decrypt->civ[decrypt->num];
-	*out++=t^(decrypt->civ[decrypt->num++]=*in++);
-	}
-
-    return saved;
-    }
-
-static ops_decrypt_t idea=
+static const ops_decrypt_t idea=
     {
     OPS_SA_IDEA,
     IDEA_BLOCK,
@@ -245,13 +204,37 @@ static ops_decrypt_t idea=
     std_set_iv,
     std_set_key,
     idea_init,
-    idea_resync,
-    idea_decrypt,
+    std_resync,
+    idea_block_encrypt,
     std_finish,
     TRAILER
     };
 
-static ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
+static void aes256_init(ops_decrypt_t *decrypt)
+    {
+    free(decrypt->data);
+    decrypt->data=malloc(sizeof(AES_KEY));
+    AES_set_encrypt_key(decrypt->key,256,decrypt->data);
+    }
+
+static void aes_block_encrypt(ops_decrypt_t *decrypt,void *out,const void *in)
+    { AES_encrypt(in,out,decrypt->data); }
+
+static const ops_decrypt_t aes256=
+    {
+    OPS_SA_AES_256,
+    AES_BLOCK_SIZE,
+    256/8,
+    std_set_iv,
+    std_set_key,
+    aes256_init,
+    std_resync,
+    aes_block_encrypt,
+    std_finish,
+    TRAILER
+    };
+
+static const ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
     {
     switch(alg)
 	{
@@ -261,7 +244,12 @@ static ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
     case OPS_SA_IDEA:
 	return &idea;
 
+    case OPS_SA_AES_256:
+	return &aes256;
+
     default:
+	// XXX: remove these
+	fprintf(stderr,"Unknown algorithm: %d\n",alg);
 	assert(0);
 	}
 
@@ -273,7 +261,7 @@ void ops_decrypt_any(ops_decrypt_t *decrypt,ops_symmetric_algorithm_t alg)
 
 unsigned ops_block_size(ops_symmetric_algorithm_t alg)
     {
-    ops_decrypt_t *p=get_proto(alg);
+    const ops_decrypt_t *p=get_proto(alg);
 
     if(!p)
 	return 0;
@@ -283,10 +271,45 @@ unsigned ops_block_size(ops_symmetric_algorithm_t alg)
 
 unsigned ops_key_size(ops_symmetric_algorithm_t alg)
     {
-    ops_decrypt_t *p=get_proto(alg);
+    const ops_decrypt_t *p=get_proto(alg);
 
     if(!p)
 	return 0;
 
     return p->keysize;
     }
+
+void ops_decrypt_init(ops_decrypt_t *decrypt)
+    {
+    decrypt->base_init(decrypt);
+    memcpy(decrypt->civ,decrypt->iv,decrypt->blocksize);
+    decrypt->block_encrypt(decrypt,decrypt->siv,decrypt->civ);
+    decrypt->num=0;
+    }
+
+size_t ops_decrypt_decrypt(ops_decrypt_t *decrypt,void *out_,const void *in_,
+			   size_t count)
+    {
+    unsigned char *out=out_;
+    const unsigned char *in=in_;
+    int saved=count;
+
+    /* in order to support v3's weird resyncing we have to implement CFB mode
+       ourselves */
+    while(count-- > 0)
+	{
+	unsigned char t;
+
+	if(decrypt->num == decrypt->blocksize)
+	    {
+	    memcpy(decrypt->siv,decrypt->civ,decrypt->blocksize);
+	    decrypt->block_encrypt(decrypt,decrypt->civ,decrypt->civ);
+	    decrypt->num=0;
+	    }
+	t=decrypt->civ[decrypt->num];
+	*out++=t^(decrypt->civ[decrypt->num++]=*in++);
+	}
+
+    return saved;
+    }
+
