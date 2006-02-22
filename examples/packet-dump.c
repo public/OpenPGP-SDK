@@ -387,7 +387,7 @@ static void print_pk_session_key(ops_content_tag_t tag,
 	print_tagname("ENCRYPTED PUBLIC KEY SESSION KEY");
 	
     printf("Version: %d\n",key->version);
-    print_hexdump("key ID",key->key_id,sizeof key->key_id);
+    print_hexdump("Key ID",key->key_id,sizeof key->key_id);
     printf("Algorithm: %d (%s)\n",key->algorithm,
 	   ops_show_pka(key->algorithm));
     switch(key->algorithm)
@@ -404,6 +404,14 @@ static void print_pk_session_key(ops_content_tag_t tag,
     default:
 	assert(0);
 	}
+
+    if(tag != OPS_PTAG_CT_PK_SESSION_KEY)
+	return;
+
+    printf("Symmetric algorithm: %d (%s)\n",key->symmetric_algorithm,
+	   ops_show_symmetric_algorithm(key->symmetric_algorithm));
+    print_hexdump("Key",key->key,ops_key_size(key->symmetric_algorithm));
+    printf("Checksum: %04x\n",key->checksum);
     }
 
 static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,

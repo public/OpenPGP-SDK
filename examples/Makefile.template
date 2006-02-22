@@ -11,7 +11,8 @@ EXES=packet-dump verify create-key create-signed-key verify2 sign-detached \
 
 all: Makefile .depend $(EXES)
 
-test: test-dump test-verify test-verify-armoured test-create-key
+test: test-dump test-verify test-verify-armoured test-create-key \
+      test-v3-secring
 
 ../src/libops.a::
 	cd ../src && make
@@ -67,12 +68,12 @@ $(SCRATCH):
 	mkdir $(SCRATCH)
 
 test-dump: packet-dump
-	./packet-dump < ../test/dsa-public-key-2118CF83.raw
-	./packet-dump < ../test/rsa-public-key-2719AF35.raw
-	./packet-dump < ../test/signtest.gpg
-	./packet-dump < ../test/subpacket-10.raw
-	./packet-dump < ../test/user-attribute-key.raw
-	./packet-dump < ../test/subpacket-28.raw
+	./packet-dump ../test/dsa-public-key-2118CF83.raw
+	./packet-dump ../test/rsa-public-key-2719AF35.raw
+	./packet-dump ../test/signtest.gpg
+	./packet-dump ../test/subpacket-10.raw
+	./packet-dump ../test/user-attribute-key.raw
+	./packet-dump ../test/subpacket-28.raw
 
 test-verify: verify
 	cat ../test/* | ./verify
@@ -94,5 +95,9 @@ test-sign-inline: $(SCRATCH)/key.sec sign-inline
 	echo "- test dash-escaping" >> $(SCRATCH)/to-be-signed-inline
 	echo "and test trailing whitespace   " >> $(SCRATCH)/to-be-signed-inline
 	./sign-inline $(SCRATCH)/key.sec "Why a user ID?" SHA1 $(SCRATCH)/to-be-signed-inline $(SCRATCH)/to-be-signed-inline.sig
+
+test-v3-secring: packet-dump
+	echo "passphrase is 'fred'"
+	./packet-dump -p ../test/v3-secring.pgp
 
 include .depend

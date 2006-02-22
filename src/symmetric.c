@@ -282,8 +282,8 @@ unsigned ops_key_size(ops_symmetric_algorithm_t alg)
 void ops_decrypt_init(ops_decrypt_t *decrypt)
     {
     decrypt->base_init(decrypt);
-    memcpy(decrypt->civ,decrypt->iv,decrypt->blocksize);
-    decrypt->block_encrypt(decrypt,decrypt->siv,decrypt->civ);
+    decrypt->block_encrypt(decrypt,decrypt->siv,decrypt->iv);
+    memcpy(decrypt->civ,decrypt->siv,decrypt->blocksize);
     decrypt->num=0;
     }
 

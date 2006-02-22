@@ -124,6 +124,7 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
 /*! \todo descr ERR1 macro */
 #define ERR1P(info,fmt,x)	do { format_error(&content,(fmt),(x)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 #define ERR2P(info,fmt,x,y)	do { format_error(&content,(fmt),(x),(y)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
+#define ERR4P(info,fmt,x,y,z,a)	do { format_error(&content,(fmt),(x),(y),(z),(a)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 
 /* XXX: replace ops_ptag_t with something more appropriate for limiting
    reads */
@@ -2148,6 +2149,9 @@ static int parse_pk_session_key(ops_region_t *region,
 
     CBP(parse_info,OPS_PTAG_CT_PK_SESSION_KEY,&content);
 
+    ops_decrypt_any(&parse_info->decrypt,C.pk_session_key.symmetric_algorithm);
+    parse_info->decrypt.set_key(&parse_info->decrypt,C.pk_session_key.key);
+
     return 1;
     }
 
@@ -2160,7 +2164,27 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 
     if(decrypt)
 	{
+	unsigned char buf[OPS_MAX_BLOCK_SIZE+2];
+	size_t b=decrypt->blocksize;
+	ops_parser_content_t content;
+	ops_region_t encregion;
+
+	
 	ops_reader_push_decrypt(pinfo,decrypt,region);
+
+	ops_init_subregion(&encregion,NULL);
+	encregion.length=b+2;
+
+	if(!limited_read(buf,b+2,&encregion,pinfo))
+	    return 0;
+
+	if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])
+	    {
+	    ops_reader_pop_decrypt(pinfo);
+	    ERR4P(pinfo,"Bad symmetric decrypt (%02x%02x vs %02x%02x)",
+		  buf[b-2],buf[b-1],buf[b],buf[b+1]);
+	    }
+
 	r=ops_parse(pinfo);
 	ops_reader_pop_decrypt(pinfo);
 	}
@@ -2577,7 +2601,7 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
     *rinfo=pinfo->rinfo;
     memset(&pinfo->rinfo,'\0',sizeof pinfo->rinfo);
     pinfo->rinfo.next=rinfo;
-    rinfo->pinfo=pinfo;
+    pinfo->rinfo.pinfo=pinfo;
     ops_reader_set(pinfo,reader,arg);
     }
 
@@ -2599,7 +2623,11 @@ ops_error_t *ops_parse_info_get_errors(ops_parse_info_t *pinfo)
     { return pinfo->errors; }
 
 ops_decrypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo)
-    { return pinfo->decrypt; }
+    {
+    if(pinfo->decrypt.algorithm)
+	return &pinfo->decrypt;
+    return NULL;
+    }
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

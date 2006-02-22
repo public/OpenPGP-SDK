@@ -135,9 +135,9 @@ static ops_map_t symmetric_algorithm_map[] =
     { OPS_SA_TRIPLEDES,		"TripleDES" },
     { OPS_SA_CAST5,		"CAST5" },
     { OPS_SA_BLOWFISH,		"Blowfish" },
-    { OPS_SA_AES_128,		"AES(128-bit key)" },
-    { OPS_SA_AES_192,		"AES(192-bit key)" },
-    { OPS_SA_AES_256, 		"AES(256-bit key)" },
+    { OPS_SA_AES_128,		"AES (128-bit key)" },
+    { OPS_SA_AES_192,		"AES (192-bit key)" },
+    { OPS_SA_AES_256, 		"AES (256-bit key)" },
     { OPS_SA_TWOFISH, 		"Twofish(256-bit key)" },
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
