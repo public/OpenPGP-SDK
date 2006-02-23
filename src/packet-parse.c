@@ -1779,6 +1779,9 @@ static int consume_packet(ops_region_t *region,ops_parse_info_t *pinfo,
     ops_data_t remainder;
     ops_parser_content_t content;
 
+    if(region->indeterminate)
+	ERRP(pinfo,"Can't consume indeterminate packets");
+
     if(read_data(&remainder,region,pinfo))
 	{
 	/* now throw it away */
@@ -2378,7 +2381,8 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
     /* Ensure that the entire packet has been consumed */
 
     if(region.length != region.length_read)
-	consume_packet(&region,pinfo,ops_true);
+	if(!consume_packet(&region,pinfo,ops_true))
+	    r=-1;
 
     /* set pktlen */
 
@@ -2396,6 +2400,9 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 	}
     pinfo->rinfo.alength=0;
 	
+    if(r < 0)
+	return -1;
+
     return r ? 1 : 0;
     }
 
@@ -2427,11 +2434,11 @@ int ops_parse(ops_parse_info_t *pinfo)
     {
     int r;
     unsigned long pktlen;
+
     do
 	{
 	r=ops_parse_one_packet(pinfo,&pktlen);
-	//	offset+=pktlen;
-	} while (r!=-1);
+	} while (r != -1);
 
     return pinfo->errors ? 0 : 1;
     }
