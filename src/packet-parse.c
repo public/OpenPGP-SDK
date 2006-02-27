@@ -811,6 +811,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
+    case OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY:
 	ops_pk_session_key_free(&c->content.pk_session_key);
 	break;
 

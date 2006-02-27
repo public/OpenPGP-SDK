@@ -967,6 +967,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
+    case OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY:
 	print_pk_session_key(content_->tag,&content->pk_session_key);
 	break;
 
