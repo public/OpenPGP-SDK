@@ -20,31 +20,27 @@ typedef struct
     int inflate_ret;
     } decompress_arg_t;
 
-#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,cbinfo); return OPS_R_EARLY_EOF; } while(0)
+#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,cbinfo); return -1; } while(0)
 
-static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
-					       unsigned *plength,
-					       ops_reader_flags_t flags,
-					       ops_error_t **errors,
-					       ops_reader_info_t *rinfo,
-					       ops_parse_cb_info_t *cbinfo)
+static int compressed_data_reader(void *dest,size_t length,
+				  ops_error_t **errors,
+				  ops_reader_info_t *rinfo,
+				  ops_parse_cb_info_t *cbinfo)
     {
     decompress_arg_t *arg=ops_reader_get_arg(rinfo);
     ops_parser_content_t content;
-    unsigned length=*plength;
-
-    OPS_USED(flags);
+    int saved=length;
 
     if(arg->region->indeterminate && arg->inflate_ret == Z_STREAM_END
        && arg->stream.next_out == &arg->out[arg->offset])
-	return OPS_R_EOF;
+	return 0;
 
     if(arg->region->length_read == arg->region->length)
 	{
 	if(arg->inflate_ret != Z_STREAM_END)
 	    ERR("Compressed data didn't end when region ended.");
 	else
-	    return OPS_R_EOF;
+	    return 0;
 	}
 
     while(length > 0)
@@ -73,7 +69,7 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 
 		if(!ops_stacked_limited_read(arg->in,n,arg->region,
 					     errors,rinfo,cbinfo))
-		    return OPS_R_EARLY_EOF;
+		    return -1;
 
 		arg->stream.next_in=arg->in;
 		arg->stream.avail_in=arg->region->indeterminate
@@ -90,7 +86,7 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 	    else if(ret != Z_OK)
 		{
 		fprintf(stderr,"ret=%d\n",ret);
-		ERR("Decompression error.");
+		ERR(arg->stream.msg);
 		}
 	    arg->inflate_ret=ret;
 	    }
@@ -103,7 +99,7 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
 	length-=len;
 	}
 
-    return OPS_R_OK;
+    return saved;
     }
 
 /**
@@ -113,7 +109,8 @@ static ops_reader_ret_t compressed_data_reader(unsigned char *dest,
  * \param *parse_info 	How to parse
 */
 
-int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info)
+int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info,
+		   ops_compression_type_t type)
     {
     decompress_arg_t arg;
     int ret;
@@ -129,7 +126,13 @@ int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info)
     arg.stream.zalloc=Z_NULL;
     arg.stream.zfree=Z_NULL;
 
-    ret=inflateInit2(&arg.stream,-15);
+    if(type == OPS_C_ZIP)
+	ret=inflateInit2(&arg.stream,-15);
+    else if(type == OPS_C_ZLIB)
+	ret=inflateInit(&arg.stream);
+    else
+	assert(0);
+
     if(ret != Z_OK)
 	{
 	fprintf(stderr,"ret=%d\n",ret);

@@ -56,7 +56,7 @@ typedef struct
 
 // FIXME: move these to a common header
 #define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if(ops_parse_cb((pc),(cbinfo)) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
-#define ERR(cbinfo,err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,(cbinfo)); return OPS_R_EARLY_EOF; } while(0)
+#define ERR(cbinfo,err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,(cbinfo)); return -1; } while(0)
 
 static void push_back(dearmour_arg_t *arg,const unsigned char *buf,
 		      unsigned length)
@@ -76,7 +76,6 @@ static int read_char(dearmour_arg_t *arg,ops_error_t **errors,
 		     ops_boolean_t skip)
     {
     unsigned char c[1];
-    unsigned length=1;
 
     do
 	{
@@ -90,7 +89,7 @@ static int read_char(dearmour_arg_t *arg,ops_error_t **errors,
 		}
 	    }
 	/* XXX: should ops_stacked_read exist? Shouldn't this be a limited_read? */
-	else if(ops_stacked_read(c,&length,0,errors,rinfo,cbinfo) != OPS_R_OK)
+	else if(ops_stacked_read(c,1,errors,rinfo,cbinfo) != 1)
 	    return -1;
 	}
     while(skip && c[0] == '\r');
@@ -190,10 +189,9 @@ void ops_dup_headers(ops_headers_t *dest,const ops_headers_t *src)
 
 /* Note that this skips CRs so implementations always see just
    straight LFs as line terminators */
-static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg,
-					     ops_error_t **errors,
-					     ops_reader_info_t *rinfo,
-					     ops_parse_cb_info_t *cbinfo)
+static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
+				ops_reader_info_t *rinfo,
+				ops_parse_cb_info_t *cbinfo)
     {
     ops_parser_content_t content;
     ops_parser_content_t content2;
@@ -202,6 +200,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg,
 	=&content2.content.signed_cleartext_trailer;
     const char *hashstr;
     ops_hash_t *hash;
+    int total;
 
     hash=malloc(sizeof *hash);
     hashstr=ops_find_header(&arg->headers,"Hash");
@@ -223,17 +222,18 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg,
     hash->init(hash);
 
     body->length=0;
+    total=0;
     for( ; ; )
 	{
 	int c;
 	unsigned count;
 
 	if((c=read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
-	    return OPS_R_EARLY_EOF;
+	    return -1;
 	if(arg->prev_nl && c == '-')
 	    {
 	    if((c=read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
-		return OPS_R_EARLY_EOF;
+		return -1;
 	    if(c != ' ')
 		{
 		/* then this had better be a trailer! */
@@ -242,7 +242,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg,
 		for(count=2 ; count < 5 ; ++count)
 		    {
 		    if((c=read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
-			return OPS_R_EARLY_EOF;
+			return -1;
 		    if(c != '-')
 			ERR(cbinfo,"Bad dash-escaping (2)");
 		    }
@@ -251,7 +251,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg,
 		}
 	    /* otherwise we read the next character */
 	    if((c=read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
-		return OPS_R_EARLY_EOF;
+		return -1;
 	    }
 	if(c == '\n' && body->length)
 	    {
@@ -264,6 +264,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg,
 	    }
 		
 	body->data[body->length++]=c;
+	++total;
 	if(body->length == sizeof body->data)
 	    {
 	    CB(cbinfo,OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY,&content);
@@ -278,7 +279,7 @@ static ops_reader_ret_t process_dash_escaped(dearmour_arg_t *arg,
     trailer->hash=hash;
     CB(cbinfo,OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER,&content2);
 
-    return OPS_R_OK;
+    return total;
     }
 
 static void add_header(dearmour_arg_t *arg,const char *key,const char
@@ -292,9 +293,8 @@ static void add_header(dearmour_arg_t *arg,const char *key,const char
     ++arg->headers.nheaders;
     }
 
-static ops_reader_ret_t parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
-				      ops_reader_info_t *rinfo,
-				      ops_parse_cb_info_t *cbinfo)
+static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
+			 ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
     char *buf;
     unsigned nbuf;
@@ -310,7 +310,7 @@ static ops_reader_ret_t parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 	int c;
 
 	if((c=read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
-	    return OPS_R_EARLY_EOF;
+	    return -1;
 
 	if(c == '\n')
 	    {
@@ -361,13 +361,12 @@ static ops_reader_ret_t parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 
     free(buf);
 
-    return OPS_R_OK;
+    return 1;
     }
 
-static ops_reader_ret_t read4(dearmour_arg_t *arg,ops_error_t **errors,
-			      ops_reader_info_t *rinfo,
-			      ops_parse_cb_info_t *cbinfo,int *pc,unsigned *pn,
-			      unsigned long *pl)
+static int read4(dearmour_arg_t *arg,ops_error_t **errors,
+		 ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo,
+		 int *pc,unsigned *pn,unsigned long *pl)
     {
     int n,c;
     unsigned long l=0;
@@ -378,7 +377,7 @@ static ops_reader_ret_t read4(dearmour_arg_t *arg,ops_error_t **errors,
 	if(c < 0)
 	    {
 	    arg->eof64=ops_true;
-	    return OPS_R_EARLY_EOF;
+	    return -1;
 	    }
 	if(c == '-')
 	    break;
@@ -406,7 +405,7 @@ static ops_reader_ret_t read4(dearmour_arg_t *arg,ops_error_t **errors,
     *pn=n;
     *pl=l;
 
-    return OPS_R_OK;
+    return 4;
     }
 
 static unsigned crc24(unsigned checksum,unsigned char c)
@@ -423,21 +422,20 @@ static unsigned crc24(unsigned checksum,unsigned char c)
     return checksum&0xffffffL;
     }
 
-static ops_reader_ret_t decode64(dearmour_arg_t *arg,ops_error_t **errors,
-				 ops_reader_info_t *rinfo,
-				 ops_parse_cb_info_t *cbinfo)
+static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
+		    ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
     unsigned n;
     int n2;
     unsigned long l;
     ops_parser_content_t content;
     int c;
-    ops_reader_ret_t ret;
+    int ret;
 
     assert(arg->buffered == 0);
 
     ret=read4(arg,errors,rinfo,cbinfo,&c,&n,&l);
-    if(ret != OPS_R_OK)
+    if(ret < 0)
 	ERR(cbinfo,"Badly formed base64");
 
     if(n == 3)
@@ -485,7 +483,7 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	{
 	// now we are at the checksum
 	ret=read4(arg,errors,rinfo,cbinfo,&c,&n,&arg->read_checksum);
-	if(ret != OPS_R_OK || n != 4)
+	if(ret < 0 || n != 4)
 	    ERR(cbinfo,"Error in checksum");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_true);
 	if(arg->allow_trailing_whitespace)
@@ -519,7 +517,7 @@ static ops_reader_ret_t decode64(dearmour_arg_t *arg,ops_error_t **errors,
     if(arg->eof64 && arg->read_checksum != arg->checksum)
 	ERR(cbinfo,"Checksum mismatch");
 
-    return OPS_R_OK;
+    return 1;
     }
 
 static void base64(dearmour_arg_t *arg)
@@ -534,20 +532,16 @@ static void base64(dearmour_arg_t *arg)
 // content - this is because plaintext is not encapsulated in PGP
 // packets... it also calls back for the text between the blocks.
 
-static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
-					     unsigned *plength,
-					     ops_reader_flags_t flags,
-					     ops_error_t **errors,
-					     ops_reader_info_t *rinfo,
-					     ops_parse_cb_info_t *cbinfo)
+static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
+				ops_reader_info_t *rinfo,
+				ops_parse_cb_info_t *cbinfo)
      {
      dearmour_arg_t *arg=ops_reader_get_arg(rinfo);
-     unsigned length=*plength;
      ops_parser_content_t content;
-     ops_reader_ret_t ret;
+     int ret;
      ops_boolean_t first;
-
-     OPS_USED(flags);
+     unsigned char *dest=dest_;
+     int saved=length;
 
      if(arg->eof64 && !arg->buffered)
 	 assert(arg->state == OUTSIDE_BLOCK || arg->state == AT_TRAILER_NAME);
@@ -568,7 +562,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		EOF (and not a BLOCK_END) */
 	     while(!arg->seen_nl)
 		 if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
-		     return OPS_R_EOF;
+		     return 0;
 
 	     /* flush at this point so we definitely have room for the
 		header, and so we can easily erase it from the buffer */
@@ -577,7 +571,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	     for(count=0 ; count < 5 ; ++count)
 		 {
 		 if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
-		     return OPS_R_EOF;
+		     return 0;
 		 if(c != '-')
 		     goto reloop;
 		 }
@@ -586,7 +580,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	     for(n=0 ; n < sizeof buf-1 ; )
 		 {
 		 if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
-		     return OPS_R_EOF;
+		     return 0;
 		 if(c == '-')
 		     goto got_minus;
 		 buf[n++]=c;
@@ -601,7 +595,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	     for(count=1 ; count < 5 ; ++count)
 		 {
 		 if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
-		     return OPS_R_EOF;
+		     return 0;
 		 if(c != '-')
 		     /* wasn't a header after all */
 		     goto reloop;
@@ -609,11 +603,11 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 
 	     /* Consume final NL */
 	     if((c=unarmoured_read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
-		 return OPS_R_EOF;
+		 return 0;
 	     if(arg->allow_trailing_whitespace)
 		 if((c=eat_whitespace(c,arg,errors,rinfo,cbinfo,
 				      ops_true)) < 0)
-		    return OPS_R_EOF;
+		    return 0;
 	     if(c != '\n')
 		 /* wasn't a header line after all */
 		 break;
@@ -623,18 +617,16 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 
 	     /* But now we've seen a header line, then errors are
 		EARLY_EOF */
-	     if((ret=parse_headers(arg,errors,rinfo,cbinfo)) != OPS_R_OK)
-		 return OPS_R_EARLY_EOF;
+	     if((ret=parse_headers(arg,errors,rinfo,cbinfo)) <= 0)
+		 return -1;
 
 	     if(!strcmp(buf,"BEGIN PGP SIGNED MESSAGE"))
 		 {
-		 ops_reader_ret_t ret;
-
 		 ops_dup_headers(&content.content.signed_cleartext_header.headers,&arg->headers);
 		 CB(cbinfo,OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER,&content);
 
 		 ret=process_dash_escaped(arg,errors,rinfo,cbinfo);
-		 if(ret != OPS_R_OK)
+		 if(ret <= 0)
 		     return ret;
 		 }
 	     else
@@ -656,7 +648,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 		     if(!arg->eof64)
 			 {
 			 ret=decode64(arg,errors,rinfo,cbinfo);
-			 if(ret != OPS_R_OK)
+			 if(ret <= 0)
 			     return ret;
 			 }
 		     if(!arg->buffered)
@@ -667,7 +659,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 			     arg->state=AT_TRAILER_NAME;
 			     goto reloop;
 			     }
-			 return OPS_R_EARLY_EOF;
+			 return -1;
 			 }
 		     }
 
@@ -685,7 +677,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	     for(n=0 ; n < sizeof buf-1 ; )
 		 {
 		 if((c=read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
-		     return OPS_R_EARLY_EOF;
+		     return -1;
 		 if(c == '-')
 		     goto got_minus2;
 		 buf[n++]=c;
@@ -701,7 +693,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	     for(count=1 ; count < 5 ; ++count)
 		 {
 		 if((c=read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
-		     return OPS_R_EARLY_EOF;
+		     return -1;
 		 if(c != '-')
 		     /* wasn't a trailer after all */
 		     ERR(cbinfo,"Bad ASCII armour trailer (2)");
@@ -709,18 +701,18 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 
 	     /* Consume final NL */
 	     if((c=read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
-		 return OPS_R_EARLY_EOF;
+		 return -1;
 	     if(arg->allow_trailing_whitespace)
 		 if((c=eat_whitespace(c,arg,errors,rinfo,cbinfo,
 				      ops_true)) < 0)
-		    return OPS_R_EOF;
+		    return 0;
 	     if(c != '\n')
 		 /* wasn't a trailer line after all */
 		 ERR(cbinfo,"Bad ASCII armour trailer (3)");
 
 	     if(!strncmp(buf,"BEGIN ",6))
 		 {
-		 if((ret=parse_headers(arg,errors,rinfo,cbinfo)) != OPS_R_OK)
+		 if((ret=parse_headers(arg,errors,rinfo,cbinfo)) <= 0)
 		     return ret;
 		 content.content.armour_header.type=buf;
 		 content.content.armour_header.headers=arg->headers;
@@ -740,7 +732,7 @@ static ops_reader_ret_t armoured_data_reader(unsigned char *dest,
 	continue;
 	}
 
-    return OPS_R_OK;
+    return saved;
     }
 
 void ops_reader_push_dearmour(ops_parse_info_t *parse_info,

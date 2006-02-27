@@ -73,20 +73,18 @@ unsigned ops_hash(unsigned char *out,ops_hash_algorithm_t alg,const void *in,
     return hash.finish(&hash,out);
     }
 
-static ops_reader_ret_t hash_reader(unsigned char *dest,
-				    unsigned *plength,
-				    ops_reader_flags_t flags,
-				    ops_error_t **errors,
-				    ops_reader_info_t *rinfo,
-				    ops_parse_cb_info_t *cbinfo)
+static int hash_reader(void *dest,size_t length,ops_error_t **errors,
+		       ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
     ops_hash_t *hash=ops_reader_get_arg(rinfo);
-    ops_reader_ret_t ret=ops_stacked_read(dest,plength,flags,errors,rinfo,
-					  cbinfo);
+    int r=ops_stacked_read(dest,length,errors,rinfo,cbinfo);
 
-    hash->add(hash,dest,*plength);
+    if(r <= 0)
+	return r;
+	
+    hash->add(hash,dest,r);
 
-    return ret;
+    return r;
     }
 
 void ops_reader_push_hash(ops_parse_info_t *pinfo,ops_hash_t *hash)

@@ -111,46 +111,25 @@ typedef struct
  *
  * \todo change arg_ to typesafe? 
  */
-static ops_reader_ret_t reader_fd(unsigned char *dest,unsigned *plength,
-				  ops_reader_flags_t flags,
-				  ops_error_t **errors,
-				  ops_reader_info_t *rinfo,
-				  ops_parse_cb_info_t *cbinfo)
+static int reader_fd(void *dest,size_t length,ops_error_t **errors,
+		     ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
     reader_fd_arg_t *arg=ops_reader_get_arg(rinfo);
-    int n=read(arg->fd,dest,*plength);
+    int n=read(arg->fd,dest,length);
 
     OPS_USED(cbinfo);
 
     if(n == 0)
-	return OPS_R_EOF;
+	return 0;
 
-    if(n == -1)
+    if(n < 0)
 	{
 	OPS_SYSTEM_ERROR_1(errors,OPS_E_R_READ_FAILED,"read",
 			   "file descriptor %d",arg->fd);
-	return OPS_R_ERROR;
+	return -1;
 	}
 
-    if((unsigned)n != *plength)
-	{
-	if(flags&OPS_RETURN_LENGTH)
-	    {
-	    *plength=n;
-	    return OPS_R_PARTIAL_READ;
-	    }
-	else
-	    {
-	    OPS_ERROR_1(errors,OPS_E_R_EARLY_EOF,"file descriptor %d",arg->fd);
-	    return OPS_R_EARLY_EOF;
-	    }
-	}
-#if 0
-    printf("[read 0x%x: ",length);
-    hexdump(dest,length);
-    putchar(']');
-#endif
-    return OPS_R_OK;
+    return n;
     }
 
 void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd)
@@ -168,43 +147,27 @@ typedef struct
     size_t offset;
     } reader_mem_arg_t;
 
-static ops_reader_ret_t reader_mem(unsigned char *dest,unsigned *plength,
-				   ops_reader_flags_t flags,
-				   ops_error_t **errors,
-				   ops_reader_info_t *rinfo,
-				   ops_parse_cb_info_t *cbinfo)
+static int reader_mem(void *dest,size_t length,ops_error_t **errors,
+		      ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
     reader_mem_arg_t *arg=ops_reader_get_arg(rinfo);
     unsigned n;
 
     OPS_USED(cbinfo);
+    OPS_USED(errors);
 
-    if(arg->offset+*plength > arg->length)
+    if(arg->offset+length > arg->length)
 	n=arg->length-arg->offset;
     else
-	n=*plength;
+	n=length;
 
     if(n == 0)
-	return OPS_R_EOF;
+	return 0;
 
     memcpy(dest,arg->buffer+arg->offset,n);
     arg->offset+=n;
 
-    if(n != *plength)
-	{
-	if(flags&OPS_RETURN_LENGTH)
-	    {
-	    *plength=n;
-	    return OPS_R_PARTIAL_READ;
-	    }
-	else
-	    {
-	    OPS_ERROR(errors,OPS_E_R_EARLY_EOF,"memory block");
-	    return OPS_R_EARLY_EOF;
-	    }
-	}
-
-    return OPS_R_OK;
+    return n;
     }
 
 // Note that its the caller's responsibility to ensure buffer continues to
@@ -233,22 +196,21 @@ typedef struct
     unsigned short sum;
     } sum16_arg_t;
 
-static ops_reader_ret_t sum16_reader(unsigned char *dest,
-				    unsigned *plength,
-				    ops_reader_flags_t flags,
-				    ops_error_t **errors,
-				    ops_reader_info_t *rinfo,
-				    ops_parse_cb_info_t *cbinfo)
+static int sum16_reader(void *dest_,size_t length,ops_error_t **errors,
+			ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
+    const unsigned char *dest=dest_;
     sum16_arg_t *arg=ops_reader_get_arg(rinfo);
-    ops_reader_ret_t ret=ops_stacked_read(dest,plength,flags,errors,rinfo,
-					  cbinfo);
-    unsigned n;
+    int r=ops_stacked_read(dest_,length,errors,rinfo,cbinfo);
+    int n;
 
-    for(n=0 ; n < *plength ; ++n)
+    if(r < 0)
+	return r;
+
+    for(n=0 ; n < r ; ++n)
 	arg->sum=(arg->sum+dest[n])&0xffff;
 
-    return ret;
+    return r;
     }
 
 void ops_reader_push_sum16(ops_parse_info_t *pinfo)

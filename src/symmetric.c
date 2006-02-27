@@ -18,17 +18,12 @@ typedef struct
     ops_boolean_t prev_read_was_plain:1;
     } encrypted_arg_t;
 
-static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
-					      unsigned *plength,
-					      ops_reader_flags_t flags,
-					      ops_error_t **errors,
-					      ops_reader_info_t *rinfo,
-					      ops_parse_cb_info_t *cbinfo)
+static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
+				 ops_reader_info_t *rinfo,
+				 ops_parse_cb_info_t *cbinfo)
     {
     encrypted_arg_t *arg=ops_reader_get_arg(rinfo);
-    unsigned length=*plength;
-
-    OPS_USED(flags);
+    int saved=length;
 
     // V3 MPIs have the count plain and the cipher is reset after each count
     if(arg->prev_read_was_plain && !rinfo->pinfo->reading_mpi_length)
@@ -69,11 +64,13 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
 	    unsigned char buffer[1024];
 
 	    if(!n)
-		return OPS_R_EARLY_EOF;
+		return -1;
 
 	    if(!arg->region->indeterminate)
 		{
 		n-=arg->region->length_read;
+		if(n == 0)
+		    return saved-length;
 		if(n > sizeof buffer)
 		    n=sizeof buffer;
 		}
@@ -87,7 +84,7 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
 
 	    if(!ops_stacked_limited_read(buffer,n,arg->region,errors,rinfo,
 					 cbinfo))
-		return OPS_R_EARLY_EOF;
+		return -1;
 
 	    if(!rinfo->pinfo->reading_v3_secret
 	       || !rinfo->pinfo->reading_mpi_length)
@@ -106,7 +103,7 @@ static ops_reader_ret_t encrypted_data_reader(unsigned char *dest,
 	    }
 	}
 
-    return OPS_R_OK;
+    return saved;
     }
 
 void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_decrypt_t *decrypt,

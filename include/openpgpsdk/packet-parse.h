@@ -21,6 +21,7 @@ typedef struct ops_region
 
 void ops_init_subregion(ops_region_t *subregion,ops_region_t *region);
 
+#if 0
 /** Return values for reader functions e.g. ops_packet_reader_t() */
 enum ops_reader_ret_t
     {
@@ -32,9 +33,11 @@ enum ops_reader_ret_t
                                   least 1 byte was read, or there was
 				  an abnormal end to the file (or
 				  armoured block) */
-    OPS_R_PARTIAL_READ	=3,	/*!< if OPS_RETURN_LENGTH is set and the buffer was not filled */
+    OPS_R_PARTIAL_READ	=3,	/*!< if OPS_RETURN_LENGTH is set and
+				  the buffer was not filled */
     OPS_R_ERROR		=4,	/*!< if there was an error reading */
     };
+#endif
 
 /** ops_parse_callback_return_t */
 typedef enum
@@ -53,12 +56,38 @@ ops_parse_cb_t(const ops_parser_content_t *content,
 typedef struct ops_parse_info ops_parse_info_t;
 typedef struct ops_reader_info ops_reader_info_t;
 
+/*
 typedef ops_reader_ret_t ops_reader_t(unsigned char *dest,
 				      unsigned *plength,
 				      ops_reader_flags_t flags,
 				      ops_error_t **errors,
 				      ops_reader_info_t *rinfo,
 				      ops_parse_cb_info_t *cbinfo);
+*/
+
+/*
+   A reader MUST read at least one byte if it can, and should read up
+   to the number asked for. Whether it reads more for efficiency is
+   its own decision, but if it is a stacked reader it should never
+   read more than the length of the region it operates in (which it
+   would have to be given when it is stacked).
+
+   If a read is short because of EOF, then it should return the short
+   read (obviously this will be zero on the second attempt, if not the
+   first). Because a reader is not obliged to do a full read, only a
+   zero return can be taken as an indication of EOF.
+
+   If there is an error, then the callback should be notified, the
+   error stacked, and -1 should be returned.
+
+   Note that although length is a size_t, a reader will never be asked
+   to read more than INT_MAX in one go.
+
+ */
+
+typedef int ops_reader_t(void *dest,size_t length,ops_error_t **errors,
+			 ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo);
+
 typedef void ops_reader_destroyer_t(ops_reader_info_t *rinfo);
 
 ops_parse_info_t *ops_parse_info_new(void);
@@ -109,11 +138,8 @@ ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
 				       ops_error_t **errors,
 				       ops_reader_info_t *rinfo,
 				       ops_parse_cb_info_t *cbinfo);
-ops_reader_ret_t ops_stacked_read(unsigned char *dest,unsigned *length,
-			       ops_reader_flags_t flags,
-			       ops_error_t **errors,
-			       ops_reader_info_t *rinfo,
-			       ops_parse_cb_info_t *cbinfo);
+
+ops_reader_t ops_stacked_read;
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */

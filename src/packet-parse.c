@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/limits.h>
 
 #include <openpgpsdk/final.h>
 
@@ -153,6 +154,11 @@ static void format_error(ops_parser_content_t *content,
  * the application wants access to the raw data as well as the
  * parsed data.
  *
+ * This function will also try to read the entire amount asked for, but not
+ * if it is over INT_MAX. Obviously many callers will know that they
+ * never ask for that much and so can avoid the extra complexity of
+ * dealing with return codes and filled-in lengths.
+ *
  * \param *dest
  * \param *plength
  * \param flags
@@ -163,87 +169,130 @@ static void format_error(ops_parser_content_t *content,
  * \return OPS_R_EOF
  * \return OPS_R_EARLY_EOF
  * 
- * \sa #ops_reader_ret_t, ops_reader_fd() for details of return codes
+ * \sa #ops_reader_ret_t for details of return codes
  */
 
-static ops_reader_ret_t sub_base_read(unsigned char *dest,unsigned *plength,
-				      ops_reader_flags_t flags,
-				      ops_error_t **errors,
-				      ops_reader_info_t *rinfo,
-				      ops_parse_cb_info_t *cbinfo)
+static int sub_base_read(void *dest,size_t length,ops_error_t **errors,
+			 ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
-    ops_reader_ret_t ret=rinfo->reader(dest,plength,flags,errors,rinfo,cbinfo);
+    size_t n;
 
-    if(ret != OPS_R_OK && ret != OPS_R_PARTIAL_READ)
-	return ret;
+    /* reading more than this would look like an error */
+    if(length > INT_MAX)
+	length=INT_MAX;
+
+    for(n=0 ; n < length ; )
+	{
+	int r=rinfo->reader(dest+n,length-n,errors,rinfo,cbinfo);
+
+	assert(r <= (int)(length-n));
+
+	// XXX: should we save the error and return what was read so far?
+	if(r < 0)
+	    return r;
+
+	if(r == 0)
+	    break;
+
+	n+=r;
+	}
+
+    if(n == 0)
+	return 0;
 
     if(rinfo->accumulate)
 	{
 	assert(rinfo->asize >= rinfo->alength);
-	if(rinfo->alength+*plength > rinfo->asize)
+	if(rinfo->alength+n > rinfo->asize)
 	    {
-	    rinfo->asize=rinfo->asize*2+*plength;
+	    rinfo->asize=rinfo->asize*2+n;
 	    rinfo->accumulated=realloc(rinfo->accumulated,rinfo->asize);
 	    }
-	assert(rinfo->asize >= rinfo->alength+*plength);
-	memcpy(rinfo->accumulated+rinfo->alength,dest,*plength);
+	assert(rinfo->asize >= rinfo->alength+n);
+	memcpy(rinfo->accumulated+rinfo->alength,dest,n);
 	}
     // we track length anyway, because it is used for packet offsets
-    rinfo->alength+=*plength;
+    rinfo->alength+=n;
     // and also the position
-    rinfo->position+=*plength;
+    rinfo->position+=n;
 
-    return ret;
+    return n;
     }
 
-ops_reader_ret_t ops_stacked_read(unsigned char *dest,unsigned *length,
-				  ops_reader_flags_t flags,
-				  ops_error_t **errors,
-				  ops_reader_info_t *rinfo,
-				  ops_parse_cb_info_t *cbinfo)
-    { return sub_base_read(dest,length,flags,errors,rinfo->next,cbinfo); }
+int ops_stacked_read(void *dest,size_t length,ops_error_t **errors,
+		     ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
+    { return sub_base_read(dest,length,errors,rinfo->next,cbinfo); }
 
-static ops_reader_ret_t base_read(unsigned char *dest,unsigned *plength,
-				  ops_reader_flags_t flags,
-				  ops_parse_info_t *pinfo)
+/* This will do a full read so long as length < MAX_INT */
+static int base_read(unsigned char *dest,size_t length,
+		     ops_parse_info_t *pinfo)
     {
-    return sub_base_read(dest,plength,flags,&pinfo->errors,&pinfo->rinfo,
+    return sub_base_read(dest,length,&pinfo->errors,&pinfo->rinfo,
 			 &pinfo->cbinfo);
     }
+
+/* Read a full size_t's worth. If the return is < than length, then
+ * *last_read tells you why - < 0 for an error, == 0 for EOF */
+
+static size_t full_read(unsigned char *dest,size_t length,int *last_read,
+			ops_error_t **errors,ops_reader_info_t *rinfo,
+			ops_parse_cb_info_t *cbinfo)
+    {
+    size_t t;
+    int r=0; /* preset in case some loon calls with length == 0 */
+
+    for(t=0 ; t < length ; )
+	{
+	r=sub_base_read(dest+t,length-t,errors,rinfo,cbinfo);
+
+	if(r <= 0)
+	    {
+	    *last_read=r;
+	    return t;
+	    }
+
+	t+=r;
+	}
+
+    *last_read=r;
+
+    return t;
+    }
+	
+	
 
 /** Read a scalar value of selected length from reader.
  *
  * Read an unsigned scalar value from reader in Big Endian representation.
  *
- * This function does not know or care about packet boundaries.
+ * This function does not know or care about packet boundaries. It
+ * also assumes that an EOF is an error.
  *
  * \param *result	The scalar value is stored here
  * \param *reader	Our reader
  * \param length	How many bytes to read
- * \return		OPS_R_OK on success, reader's return value otherwise
- *
- * \sa #ops_reader_ret_t for possible return codes
+ * \return		ops_true on success, ops_false on failure
  */
-static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
+static ops_boolean_t _read_scalar(unsigned *result,unsigned length,
 				    ops_parse_info_t *pinfo)
     {
     unsigned t=0;
-    ops_reader_ret_t ret;
 
     assert (length <= sizeof(*result));
 
     while(length--)
 	{
 	unsigned char c[1];
-	unsigned one=1;
+	int r;
 
-	ret=base_read(c,&one,0,pinfo);
-	if(ret != OPS_R_OK)
-	    return ret;
+	r=base_read(c,1,pinfo);
+	if(r != 1)
+	    return ops_false;
 	t=(t << 8)+c[0];
 	}
+
     *result=t;
-    return OPS_R_OK;
+    return ops_true;
     }
 
 /** Read bytes from a region within the packet.
@@ -253,7 +302,12 @@ static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
  * ops_ptag_t::length_read.
  *
  * If length would make us read over the packet boundary, or if
- * reading fails, we call the callback with an OPS_PARSER_ERROR.
+ * reading fails, we call the callback with an error.
+ *
+ * Note that if the region is indeterminate, this can return a short
+ * read - check region->last_read for the length. EOF is indicated by
+ * a success return and region->last_read == 0 in this case (for a
+ * region of known length, EOF is an error).
  *
  * This function makes sure to respect packet boundaries.
  *
@@ -261,15 +315,16 @@ static ops_reader_ret_t read_scalar(unsigned *result,unsigned length,
  * \param length	How many bytes to read
  * \param *region	Pointer to packet region
  * \param *pinfo	How to parse, including callback function
- * \return		1 on success, 0 on error
+ * \return		ops_true on success, ops_false on error
  */
-ops_boolean_t ops_limited_read(unsigned char *dest,unsigned length,
+ops_boolean_t ops_limited_read(unsigned char *dest,size_t length,
 			       ops_region_t *region,ops_error_t **errors,
 			       ops_reader_info_t *rinfo,
 			       ops_parse_cb_info_t *cbinfo)
     {
     ops_parser_content_t content;
-    ops_reader_ret_t ret;
+    size_t r;
+    int lr;
 
     if(!region->indeterminate && region->length_read+length > region->length)
 	{
@@ -277,25 +332,29 @@ ops_boolean_t ops_limited_read(unsigned char *dest,unsigned length,
 	return 0;
 	}
 
-    ret=sub_base_read(dest,&length,
-		      region->indeterminate ? OPS_RETURN_LENGTH : 0,errors,
-		      rinfo,cbinfo);
+    r=full_read(dest,length,&lr,errors,rinfo,cbinfo);
 
-    if(ret != OPS_R_OK && ret != OPS_R_PARTIAL_READ)
+    if(lr < 0)
 	{
 	ERRCODE(cbinfo,OPS_E_R_READ_FAILED);
-	return 0;
+	return ops_false;
 	}
 
-    region->last_read=length;
+    if(!region->indeterminate && r != length)
+	{
+	ERRCODE(cbinfo,OPS_E_R_READ_FAILED);
+	return ops_false;
+	}
+
+    region->last_read=r;
     do
 	{
-	region->length_read+=length;
+	region->length_read+=r;
 	assert(!region->parent || region->length <= region->parent->length);
 	}
     while((region=region->parent));
 
-    return 1;
+    return ops_true;
     }
 
 ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
@@ -497,32 +556,31 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
  *
  * \param *length	Where the decoded length will be put
  * \param *pinfo	How to parse
- * \return		1 if OK, else 0
+ * \return		ops_true if OK, else ops_false
  *
  */
 
-static int read_new_length(unsigned *length,ops_parse_info_t *pinfo)
+static ops_boolean_t read_new_length(unsigned *length,ops_parse_info_t *pinfo)
     {
     unsigned char c[1];
-    unsigned one=1;
 
-    if(base_read(c,&one,0,pinfo) != OPS_R_OK)
-	return 0;
+    if(base_read(c,1,pinfo) != 1)
+	return ops_false;
     if(c[0] < 192)
 	{
 	*length=c[0];
-	return 1;
+	return ops_true;
 	}
     if(c[0] < 255)
 	{
 	unsigned t=(c[0]-192) << 8;
 
-	if(base_read(c,&one,0,pinfo) != OPS_R_OK)
-	    return 0;
+	if(base_read(c,1,pinfo) != 1)
+	    return ops_false;
 	*length=t+c[0]+192;
-	return 1;
+	return ops_true;
 	}
-    return (read_scalar(length,4,pinfo) == OPS_R_OK ? 1 : 0);
+    return _read_scalar(length,4,pinfo);
     }
 
 /** Read the length information for a new format Packet Tag.
@@ -1617,7 +1675,7 @@ static int parse_compressed(ops_region_t *region,ops_parse_info_t *pinfo)
     /* The content of a compressed data packet is more OpenPGP packets
        once decompressed, so recursively handle them */
 
-    return ops_decompress(region,pinfo);
+    return ops_decompress(region,pinfo,C.compressed.type);
     }
 
 static int parse_one_pass(ops_region_t *region,ops_parse_info_t *pinfo)
@@ -2255,22 +2313,21 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 				unsigned long *pktlen)
     {
     unsigned char ptag[1];
-    ops_reader_ret_t ret;
     ops_parser_content_t content;
     int r;
     ops_region_t region;
-    unsigned one=1;
     ops_boolean_t indeterminate=ops_false;
 
     C.ptag.position=pinfo->rinfo.position;
 
-    ret=base_read(ptag,&one,0,pinfo);
-    if(ret == OPS_R_EOF || ret == OPS_R_EARLY_EOF)
+    r=base_read(ptag,1,pinfo);
+
+    // errors in the base read are effectively EOF.
+    if(r <= 0)
 	return -1;
 
     *pktlen=0;
 
-    assert(ret == OPS_R_OK);
     if(!(*ptag&OPS_PTAG_ALWAYS_SET))
 	{
 	C.error.error="Format error (ptag bit not set)";
@@ -2288,31 +2345,33 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 	}
     else
 	{
+	ops_boolean_t rb;
+
 	C.ptag.content_tag=(*ptag&OPS_PTAG_OF_CONTENT_TAG_MASK)
 	    >> OPS_PTAG_OF_CONTENT_TAG_SHIFT;
 	C.ptag.length_type=*ptag&OPS_PTAG_OF_LENGTH_TYPE_MASK;
 	switch(C.ptag.length_type)
 	    {
 	case OPS_PTAG_OF_LT_ONE_BYTE:
-	    ret=read_scalar(&C.ptag.length,1,pinfo);
+	    rb=_read_scalar(&C.ptag.length,1,pinfo);
 	    break;
 
 	case OPS_PTAG_OF_LT_TWO_BYTE:
-	    ret=read_scalar(&C.ptag.length,2,pinfo);
+	    rb=_read_scalar(&C.ptag.length,2,pinfo);
 	    break;
 
 	case OPS_PTAG_OF_LT_FOUR_BYTE:
-	    ret=read_scalar(&C.ptag.length,4,pinfo);
+	    rb=_read_scalar(&C.ptag.length,4,pinfo);
 	    break;
 
 	case OPS_PTAG_OF_LT_INDETERMINATE:
 	    C.ptag.length=0;
 	    indeterminate=ops_true;
-	    ret=OPS_R_OK;
+	    rb=ops_true;
 	    break;
 	    }
-	if(ret == OPS_R_EOF || ret == OPS_R_EARLY_EOF)
-	    return -1;
+	if(!rb)
+	    return 0;
 	}
 
     CBP(pinfo,OPS_PARSER_PTAG,&content);
