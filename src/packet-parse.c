@@ -2439,7 +2439,7 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 
     /* Ensure that the entire packet has been consumed */
 
-    if(region.length != region.length_read)
+    if(region.length != region.length_read && !region.indeterminate)
 	if(!consume_packet(&region,pinfo,ops_true))
 	    r=-1;
 
