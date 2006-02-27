@@ -255,6 +255,11 @@ static ops_parse_cb_return_t decrypt_cb(const ops_parser_content_t *content_,
 	assert(0);
 	break;
 
+    case OPS_PTAG_CT_SECRET_KEY:
+	arg->skey=malloc(sizeof *arg->skey);
+	*arg->skey=content->secret_key;
+	return OPS_KEEP_MEMORY;
+
     default:
 	fprintf(stderr,"Unexpected tag %d (0x%x)\n",content_->tag,
 		content_->tag);
