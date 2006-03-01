@@ -60,4 +60,5 @@ struct ops_parse_info
     ops_decrypt_t decrypt;
     ops_boolean_t reading_v3_secret:1;
     ops_boolean_t reading_mpi_length:1;
+    ops_boolean_t exact_read:1;
     };

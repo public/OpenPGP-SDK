@@ -371,6 +371,19 @@ static ops_boolean_t limited_read(unsigned char *dest,unsigned length,
 			    &info->rinfo,&info->cbinfo);
     }
 
+static ops_boolean_t exact_limited_read(unsigned char *dest,unsigned length,
+					ops_region_t *region,
+					ops_parse_info_t *pinfo)
+    {
+    ops_boolean_t ret;
+
+    pinfo->exact_read=ops_true;
+    ret=limited_read(dest,length,region,pinfo);
+    pinfo->exact_read=ops_false;
+
+    return ret;
+    }
+
 /** Skip over length bytes of this packet.
  *
  * Calls limited_read() to skip over some data.
@@ -2236,7 +2249,7 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 	ops_init_subregion(&encregion,NULL);
 	encregion.length=b+2;
 
-	if(!limited_read(buf,b+2,&encregion,pinfo))
+	if(!exact_limited_read(buf,b+2,&encregion,pinfo))
 	    return 0;
 
 	if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])
@@ -2244,6 +2257,12 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 	    ops_reader_pop_decrypt(pinfo);
 	    ERR4P(pinfo,"Bad symmetric decrypt (%02x%02x vs %02x%02x)",
 		  buf[b-2],buf[b-1],buf[b],buf[b+1]);
+	    }
+
+	if(tag == OPS_PTAG_CT_SE_DATA_BODY)
+	    {
+	    decrypt->resync(decrypt);
+	    decrypt->block_encrypt(decrypt,decrypt->civ,decrypt->civ);
 	    }
 
 	r=ops_parse(pinfo);

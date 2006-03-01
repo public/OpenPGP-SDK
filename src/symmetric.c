@@ -4,6 +4,7 @@
 #include <openssl/cast.h>
 #include <openssl/idea.h>
 #include <openssl/aes.h>
+#include <openssl/des.h>
 #include "parse_local.h"
 
 #include <openpgpsdk/final.h>
@@ -45,7 +46,8 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 	    // if we are reading v3 we should never read more than
 	    // we're asked for
 	    assert(length >= arg->decrypted_count
-		   || !rinfo->pinfo->reading_v3_secret);
+		   || (!rinfo->pinfo->reading_v3_secret
+		       && !rinfo->pinfo->exact_read));
 
 	    if(length > arg->decrypted_count)
 		n=arg->decrypted_count;
@@ -79,7 +81,8 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 
 	    // we can only read as much as we're asked for in v3 keys
 	    // because they're partially unencrypted!
-	    if(rinfo->pinfo->reading_v3_secret && n > length)
+	    if((rinfo->pinfo->reading_v3_secret || rinfo->pinfo->exact_read)
+	       && n > length)
 		n=length;
 
 	    if(!ops_stacked_limited_read(buffer,n,arg->region,errors,rinfo,
@@ -231,6 +234,40 @@ static const ops_decrypt_t aes256=
     TRAILER
     };
 
+static void tripledes_init(ops_decrypt_t *decrypt)
+    {
+    DES_key_schedule *keys;
+    int n;
+
+    free(decrypt->data);
+    keys=decrypt->data=malloc(3*sizeof(DES_key_schedule));
+
+    for(n=0 ; n < 3 ; ++n)
+	DES_set_key((DES_cblock *)(decrypt->key+n*8),&keys[n]);
+    }
+
+static void tripledes_block_encrypt(ops_decrypt_t *decrypt,void *out,
+				    const void *in)
+    {
+    DES_key_schedule *keys=decrypt->data;
+
+    DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],1);
+    }
+
+static const ops_decrypt_t tripledes=
+    {
+    OPS_SA_TRIPLEDES,
+    8,
+    24,
+    std_set_iv,
+    std_set_key,
+    tripledes_init,
+    std_resync,
+    tripledes_block_encrypt,
+    std_finish,
+    TRAILER
+    };
+
 static const ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
     {
     switch(alg)
@@ -243,6 +280,9 @@ static const ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
 
     case OPS_SA_AES_256:
 	return &aes256;
+
+    case OPS_SA_TRIPLEDES:
+	return &tripledes;
 
     default:
 	// XXX: remove these
@@ -309,4 +349,3 @@ size_t ops_decrypt_decrypt(ops_decrypt_t *decrypt,void *out_,const void *in_,
 
     return saved;
     }
-
