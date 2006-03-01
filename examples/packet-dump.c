@@ -836,8 +836,8 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	printf("  literal data body length=%d\n",
 	       content->literal_data_body.length);
 	printf("    data=");
-	hexdump(content->literal_data_body.data,
-		content->literal_data_body.length);
+	print_escaped(content->literal_data_body.data,
+		      content->literal_data_body.length);
 	printf("\n");
 	break;
 
