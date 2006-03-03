@@ -17,6 +17,7 @@
 typedef struct
     {
     ops_keyring_t *keyring;
+    ops_boolean_t accumulating:1;
     } accumulate_arg_t;
 
 /**
@@ -33,10 +34,15 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     switch(content_->tag)
 	{
+    case OPS_PARSER_PTAG:
+	arg->accumulating=ops_false;
+	break;
+
     case OPS_PTAG_CT_PUBLIC_KEY:
     case OPS_PTAG_CT_SECRET_KEY:
     case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY:
 	//	printf("New key\n");
+	arg->accumulating=ops_true;
 	++keyring->nkeys;
 	EXPAND_ARRAY(keyring,keys);
 
@@ -61,11 +67,15 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     case OPS_PTAG_CT_USER_ID:
 	//	printf("User ID: %s\n",content->user_id.user_id);
+	assert(arg->accumulating);
 	EXPAND_ARRAY(cur,uids);
 	cur->uids[cur->nuids++]=content->user_id;
 	return OPS_KEEP_MEMORY;
 
     case OPS_PARSER_PACKET_END:
+	if(!arg->accumulating)
+	    return OPS_RELEASE_MEMORY;
+
 	EXPAND_ARRAY(cur,packets);
 	cur->packets[cur->npackets++]=content->packet;
 	return OPS_KEEP_MEMORY;
