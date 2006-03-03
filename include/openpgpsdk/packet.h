@@ -428,6 +428,9 @@ typedef enum
 // Hash size for secret key check
 #define OPS_CHECKHASH_SIZE	20
 
+// Max hash size
+#define OPS_MAX_HASH_SIZE	64
+
 /** ops_secret_key_t
  */
 typedef struct
@@ -552,6 +555,7 @@ typedef struct
     ops_signature_union_t	signature;	/*!< signature parameters */
     size_t			v4_hashed_data_start; /* only valid if accumulate is set */
     size_t			v4_hashed_data_length;
+    ops_hash_t			*hash;		/*!< if set, the hash filled in for the data so far */
     ops_boolean_t		creation_time_set:1;
     ops_boolean_t		signer_id_set:1;
     } ops_signature_t;

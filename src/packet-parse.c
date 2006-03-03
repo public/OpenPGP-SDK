@@ -1214,6 +1214,9 @@ static int parse_v3_signature(ops_region_t *region,
     if(region->length_read != region->length)
 	ERR1P(pinfo,"Unconsumed data (%d)",region->length-region->length_read);
 
+    if(C.signature.signer_id_set)
+	C.signature.hash=ops_parse_hash_find(pinfo,C.signature.signer_id);
+
     CBP(pinfo,OPS_PTAG_CT_SIGNATURE,&content);
 
     return 1;
@@ -1725,6 +1728,10 @@ static int parse_one_pass(ops_region_t *region,ops_parse_info_t *pinfo)
 
     CBP(pinfo,OPS_PTAG_CT_ONE_PASS_SIGNATURE,&content);
 
+    // XXX: we should, perhaps, let the app choose whether to hash or not
+    ops_parse_hash_init(pinfo,C.one_pass_signature.hash_algorithm,
+			C.one_pass_signature.keyid);
+
     return 1;
     }
 
@@ -1804,6 +1811,8 @@ static int parse_literal_data(ops_region_t *region,ops_parse_info_t *pinfo)
 	    return 0;
 
 	C.literal_data_body.length=l;
+
+	ops_parse_hash_data(pinfo,C.literal_data_body.data,l);
 
 	CBP(pinfo,OPS_PTAG_CT_LITERAL_DATA_BODY,&content);
 	}
@@ -2711,6 +2720,40 @@ ops_decrypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo)
     {
     if(pinfo->decrypt.algorithm)
 	return &pinfo->decrypt;
+    return NULL;
+    }
+
+void ops_parse_hash_init(ops_parse_info_t *pinfo,ops_hash_algorithm_t type,
+			 const unsigned char *keyid)
+    {
+    ops_parse_hash_info_t *hash;
+
+    pinfo->hashes=realloc(pinfo->hashes,
+			  (pinfo->nhashes+1)*sizeof *pinfo->hashes);
+    hash=&pinfo->hashes[pinfo->nhashes++];
+
+    ops_hash_any(&hash->hash,type);
+    hash->hash.init(&hash->hash);
+    memcpy(hash->keyid,keyid,sizeof hash->keyid);
+    }
+
+void ops_parse_hash_data(ops_parse_info_t *pinfo,const void *data,
+			 size_t length)
+    {
+    size_t n;
+
+    for(n=0 ; n < pinfo->nhashes ; ++n)
+	pinfo->hashes[n].hash.add(&pinfo->hashes[n].hash,data,length);
+    }
+
+ops_hash_t *ops_parse_hash_find(ops_parse_info_t *pinfo,
+				const unsigned char keyid[OPS_KEY_ID_SIZE])
+    {
+    size_t n;
+
+    for(n=0 ; n < pinfo->nhashes ; ++n)
+	if(!memcmp(pinfo->hashes[n].keyid,keyid,OPS_KEY_ID_SIZE))
+	    return &pinfo->hashes[n].hash;
     return NULL;
     }
 

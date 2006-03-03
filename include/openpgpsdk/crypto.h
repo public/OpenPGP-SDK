@@ -8,7 +8,6 @@
 #include "packet.h"
 #include "packet-parse.h"
 
-#define OPS_MAX_HASH_SIZE	64
 #define OPS_MIN_HASH_SIZE	16
 
 typedef void ops_hash_init_t(ops_hash_t *hash);
@@ -20,6 +19,7 @@ typedef unsigned ops_hash_finish_t(ops_hash_t *hash,unsigned char *out);
 struct _ops_hash_t
     {
     ops_hash_algorithm_t algorithm;
+    size_t size;
     const char *name;
     ops_hash_init_t *init;
     ops_hash_add_t *add;

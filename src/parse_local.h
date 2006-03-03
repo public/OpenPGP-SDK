@@ -24,6 +24,12 @@ struct ops_parse_cb_info
     ops_parse_cb_info_t *next;
     };
 
+typedef struct
+    {
+    ops_hash_t hash; /*!< hashes we should hash data with */
+    unsigned char keyid[OPS_KEY_ID_SIZE];
+    } ops_parse_hash_info_t;
+
 #define NTAGS	0x100
 /** \brief Structure to hold information about a packet parse.
  *
@@ -58,6 +64,8 @@ struct ops_parse_info
     ops_parse_cb_info_t cbinfo;
     ops_error_t *errors;
     ops_decrypt_t decrypt;
+    size_t nhashes;
+    ops_parse_hash_info_t *hashes;
     ops_boolean_t reading_v3_secret:1;
     ops_boolean_t reading_mpi_length:1;
     ops_boolean_t exact_read:1;

@@ -68,6 +68,15 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	    exit(2);
 	    }
 
+	if(content->signature.hash)
+	    signed_hash=content->signature.hash;
+
+	if(!signed_hash)
+	    {
+	    fprintf(stderr,"No signature to check!!!\n");
+	    exit(3);
+	    }
+
 	if(ops_check_hash_signature(signed_hash,&content->signature,
 				    ops_get_public_key_from_data(signer)))
 	    {
@@ -115,7 +124,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     default:
 	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
 		content_->tag);
-	exit(1);
+	break;
 	}
 
     return OPS_RELEASE_MEMORY;

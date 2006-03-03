@@ -126,7 +126,7 @@ enum ops_parse_type_t
     OPS_PARSE_IGNORE, 	/*!< Don't callback */
     };
 
-void ops_parse_options(ops_parse_info_t *parse_info,ops_content_tag_t tag,
+void ops_parse_options(ops_parse_info_t *pinfo,ops_content_tag_t tag,
 		       ops_parse_type_t type);
 
 ops_boolean_t ops_limited_read(unsigned char *dest,unsigned length,
@@ -138,6 +138,13 @@ ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
 				       ops_error_t **errors,
 				       ops_reader_info_t *rinfo,
 				       ops_parse_cb_info_t *cbinfo);
+void ops_parse_hash_init(ops_parse_info_t *pinfo,ops_hash_algorithm_t type,
+			 const unsigned char *keyid);
+void ops_parse_hash_data(ops_parse_info_t *pinfo,const void *data,
+			 size_t length);
+void ops_parse_hash_finish(ops_parse_info_t *pinfo);
+ops_hash_t *ops_parse_hash_find(ops_parse_info_t *pinfo,
+				const unsigned char keyid[OPS_KEY_ID_SIZE]);
 
 ops_reader_t ops_stacked_read;
 
