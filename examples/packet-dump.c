@@ -572,9 +572,9 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	print_string_and_value("Public Key Algorithm",
 			       ops_show_pka(content->one_pass_signature.key_algorithm),
 			       content->one_pass_signature.key_algorithm);
- 	print_hexdump("Signer ID",
-		      content->one_pass_signature.keyid,
-		      sizeof content->one_pass_signature.keyid);
+ 	print_hexdump_data("Signer ID",
+			   content->one_pass_signature.keyid,
+			   sizeof content->one_pass_signature.keyid);
 
 	print_unsigned_int("Nested",
 			   content->one_pass_signature.nested);
