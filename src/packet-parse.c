@@ -2723,6 +2723,8 @@ ops_decrypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo)
     return NULL;
     }
 
+// XXX: this could be improved by sharing all hashes that are the
+// same, then duping them just before checking the signature.
 void ops_parse_hash_init(ops_parse_info_t *pinfo,ops_hash_algorithm_t type,
 			 const unsigned char *keyid)
     {
