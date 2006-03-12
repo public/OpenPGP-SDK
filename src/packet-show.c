@@ -311,6 +311,7 @@ void ops_text_free(ops_text_t *text)
     free(text);
     }
 
+// XXX: should this (and many others) be ops_boolean_t?
 /*! generic function which adds text derived from single octet map to text */
 static unsigned int add_str_from_octet_map(ops_text_t *text,char *str,
 					   unsigned char octet)
@@ -324,7 +325,6 @@ static unsigned int add_str_from_octet_map(ops_text_t *text,char *str,
     else if (!str)
 	{
 	/* value not recognised and there was a problem adding it to the unknown list */
-
 	str=malloc(2+2+1); /* 2 for "0x", 2 for single octet in hex format, 1 for NULL */
 	sprintf(str,"0x%x",octet);
 	if (!add_str(&text->unknown,str))
@@ -347,7 +347,6 @@ static unsigned int add_str_from_bit_map(ops_text_t *text, char *str, unsigned c
     else if (!str)
 	{
 	/* value not recognised and there was a problem adding it to the unknown list */
-
 	/* 2 chars of the string are the format definition, 
 	   this will be replaced in the output by 2 chars of hex,
 	   so the length will be correct */
