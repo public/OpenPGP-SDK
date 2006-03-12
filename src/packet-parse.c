@@ -15,7 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/limits.h>
+#include <limits.h>
 
 #include <openpgpsdk/final.h>
 
