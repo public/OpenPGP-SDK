@@ -135,7 +135,7 @@ fileSubst('util/Makefile.oink','#','');
 fileSubst('include/openpgpsdk/configure.h','/*','*/');
 
 print "make clean\n";
-system 'make clean' || exit;
+system('make clean') == 0 || exit;
 print "make force_depend\n";
 if(system('make force_depend') != 0) {
     print STDERR "Configuration failed\n";
