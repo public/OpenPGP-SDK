@@ -3,7 +3,7 @@
 use strict;
 
 use Carp;
-use File::Temp 0.16;
+use File::Temp 0.14;
 use File::Spec;
 use POSIX qw(:errno_h);
 use IO::File;
