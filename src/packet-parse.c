@@ -1992,7 +1992,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	    hashes[n].init(&hashes[n]);
 	    // preload hashes with zeroes...
 	    for(i=0 ; i < n ; ++i)
-		hashes[n].add(&hashes[n],"",1);
+		hashes[n].add(&hashes[n],(unsigned char *)"",1);
 	    }
 
 	l=strlen(passphrase);
@@ -2007,7 +2007,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 		hashes[n].add(&hashes[n],C.secret_key.salt,OPS_SALT_SIZE);
 		// flow through...
 	    case OPS_S2KS_SIMPLE:
-		hashes[n].add(&hashes[n],passphrase,l);
+		hashes[n].add(&hashes[n],(unsigned char*)passphrase,l);
 		break;
 
 	    case OPS_S2KS_ITERATED_AND_SALTED:
@@ -2021,7 +2021,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 		    hashes[n].add(&hashes[n],C.secret_key.salt,
 				  j > OPS_SALT_SIZE ? OPS_SALT_SIZE : j);
 		    if(j > OPS_SALT_SIZE)
-			hashes[n].add(&hashes[n],passphrase,j-OPS_SALT_SIZE);
+			hashes[n].add(&hashes[n],(unsigned char *)passphrase,j-OPS_SALT_SIZE);
 		    }
 			
 		}

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <assert.h>
 #include <openssl/cast.h>
-#ifdef OPENSSL_IDEA
+#ifndef OPENSSL_NO_IDEA
 #include <openssl/idea.h>
 #endif
 #include <openssl/aes.h>
@@ -184,6 +184,7 @@ static ops_decrypt_t cast5=
     TRAILER
     };
 
+#ifndef OPENSSL_NO_IDEA
 static void idea_init(ops_decrypt_t *decrypt)
     {
     assert(decrypt->keysize == IDEA_KEY_LENGTH);
@@ -211,6 +212,7 @@ static const ops_decrypt_t idea=
     std_finish,
     TRAILER
     };
+#endif /* OPENSSL_NO_IDEA */
 
 static void aes256_init(ops_decrypt_t *decrypt)
     {
@@ -277,8 +279,10 @@ static const ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
     case OPS_SA_CAST5:
 	return &cast5;
 
+#ifndef OPENSSL_NO_IDEA
     case OPS_SA_IDEA:
 	return &idea;
+#endif /* OPENSSL_NO_IDEA */
 
     case OPS_SA_AES_256:
 	return &aes256;

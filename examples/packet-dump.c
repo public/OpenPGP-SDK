@@ -187,7 +187,7 @@ static void print_escaped(const unsigned char *data,size_t length)
 static void print_string(const char *name,const char *str)
     {
     print_name(name);
-    print_escaped(str,strlen(str));
+    print_escaped((unsigned char *)str,strlen(str));
     putchar('\n');
     }
 
