@@ -1,3 +1,7 @@
+/** \file
+ * \brief Code for dealing with ASCII-armoured packets
+ */
+
 #include <openpgpsdk/configure.h>
 #include <openpgpsdk/armour.h>
 #include <openpgpsdk/util.h>
@@ -14,6 +18,9 @@
 #define CRC24_INIT 0xb704ceL
 #define CRC24_POLY 0x1864cfbL
 
+/**
+ * \struct
+ */
 typedef struct
     {
     enum
@@ -163,6 +170,12 @@ static int unarmoured_read_char(dearmour_arg_t *arg,ops_error_t **errors,
     return c;
     }
 
+/**
+ * \param ops_headers_t
+ * \param key
+ *
+ * \return header value if found, otherwise NULL
+ */
 const char *ops_find_header(ops_headers_t *headers,const char *key)
     {
     unsigned n;
@@ -173,6 +186,10 @@ const char *ops_find_header(ops_headers_t *headers,const char *key)
     return NULL;
     }
 
+/**
+ * \param dest
+ * \param src
+ */
 void ops_dup_headers(ops_headers_t *dest,const ops_headers_t *src)
     {
     unsigned n;
@@ -735,6 +752,12 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
     return saved;
     }
 
+/**
+ * \param parse_info
+ * \param without_gap
+ * \param no_gap
+ * \param trailing_whitespace
+ */
 void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
 			      ops_boolean_t without_gap,
 			      ops_boolean_t no_gap,
@@ -751,6 +774,9 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
     ops_reader_push(parse_info,armoured_data_reader,arg);
     }
 
+/**
+ * \param parse_info
+ */
 void ops_reader_pop_dearmour(ops_parse_info_t *parse_info)
     {
     dearmour_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(parse_info));
@@ -758,6 +784,9 @@ void ops_reader_pop_dearmour(ops_parse_info_t *parse_info)
     free(arg);
     }
 
+/**
+ * \struct
+ */
 typedef struct
     {
     ops_boolean_t seen_nl:1;
@@ -820,6 +849,9 @@ static ops_boolean_t dash_escaped_writer(const unsigned char *src,
     return ops_true;
     }
 
+/**
+ * \param winfo
+ */
 void dash_escaped_destroyer(ops_writer_info_t *winfo)
     {
     dash_escaped_arg_t *arg=ops_writer_get_arg(winfo);
@@ -829,6 +861,11 @@ void dash_escaped_destroyer(ops_writer_info_t *winfo)
     }
 
 // XXX: should return errors.
+/**
+ * \param info
+ * \param sig
+ * \todo should return errors
+ */
 void ops_writer_push_dash_escaped(ops_create_info_t *info,
 				  ops_create_signature_t *sig)
     {
@@ -845,6 +882,9 @@ void ops_writer_push_dash_escaped(ops_create_info_t *info,
     ops_writer_push(info,dash_escaped_writer,NULL,dash_escaped_destroyer,arg);
     }
 
+/**
+ * \struct
+ */
 typedef struct
     {
     unsigned pos;
@@ -935,6 +975,10 @@ static ops_boolean_t signature_finaliser(ops_error_t **errors,
 
     return ops_stacked_write(trailer,sizeof trailer-1,errors,winfo);
     }
+
+/**
+ * \struct
+ */
 typedef struct
     {
     unsigned pos;
@@ -969,6 +1013,9 @@ static ops_boolean_t linebreak_writer(const unsigned char *src,
     }
 
 // XXX: should return errors.
+/**
+ * \param info
+ */
 void ops_writer_switch_to_signature(ops_create_info_t *info)
     {
     static char header[]="\r\n-----BEGIN PGP SIGNATURE-----\r\nVersion: "
