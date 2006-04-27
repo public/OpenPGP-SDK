@@ -2682,12 +2682,24 @@ ops_parse_cb_return_t ops_parse_stacked_cb(const ops_parser_content_t *content,
 					   ops_parse_cb_info_t *cbinfo)
     { return ops_parse_cb(content,cbinfo->next); }
 
+/**
+ * \brief
+ * \param pinfo
+ * \param reader
+ * \param arg
+ */
 void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
     {
     pinfo->rinfo.reader=reader;
     pinfo->rinfo.arg=arg;
     }
 
+/**
+ * \brief 
+ * \param pinfo
+ * \param reader
+ * \param arg
+ */
 void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
     {
     ops_reader_info_t *rinfo=malloc(sizeof *rinfo);
@@ -2696,9 +2708,13 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
     memset(&pinfo->rinfo,'\0',sizeof pinfo->rinfo);
     pinfo->rinfo.next=rinfo;
     pinfo->rinfo.pinfo=pinfo;
+
     ops_reader_set(pinfo,reader,arg);
     }
 
+/**
+ * \param pinfo
+ */
 void ops_reader_pop(ops_parse_info_t *pinfo)
     { 
     ops_reader_info_t *next=pinfo->rinfo.next;

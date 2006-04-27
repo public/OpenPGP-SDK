@@ -753,10 +753,10 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
     }
 
 /**
- * \param parse_info
- * \param without_gap
- * \param no_gap
- * \param trailing_whitespace
+ * \param parse_info Usual structure containing information about to how to do the parse
+ * \param without_gap Allow headers in armoured data that are not separated from the data by a blank line
+ * \param no_gap Allow no blank line at the start of armoured data
+ * \param trailing_whitespace Allow armoured data to have trailing whitespace where we strictly would not expect it
  */
 void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
 			      ops_boolean_t without_gap,
