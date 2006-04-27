@@ -2,7 +2,9 @@
 #include <string.h>
 #include <assert.h>
 #include <openssl/cast.h>
+#ifdef OPENSSL_IDEA
 #include <openssl/idea.h>
+#endif
 #include <openssl/aes.h>
 #include <openssl/des.h>
 #include "parse_local.h"
