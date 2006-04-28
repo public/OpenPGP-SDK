@@ -39,6 +39,7 @@ typedef void ops_decrypt_block_encrypt_t(ops_decrypt_t *decrypt,void *out,
 					 const void *in);
 typedef void ops_decrypt_finish_t(ops_decrypt_t *decrypt);
 
+/** _ops_decrypt_t */
 struct _ops_decrypt_t
     {
     ops_symmetric_algorithm_t algorithm;

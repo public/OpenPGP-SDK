@@ -346,13 +346,13 @@ typedef struct
     BIGNUM *u;
     } ops_rsa_secret_key_t;
 
+/** ops_dsa_secret_key_t */
 typedef struct
     {
     BIGNUM *x;
     } ops_dsa_secret_key_t;
 
-/** ops_secret_key_union_t
- */ 
+/** ops_secret_key_union_t */ 
 typedef struct
     {
     ops_rsa_secret_key_t rsa;
@@ -811,24 +811,28 @@ typedef enum
     OPS_PKSK_V3=3
     } ops_pk_session_key_version_t;
 
+/** ops_pk_session_key_parameters_rsa_t */
 typedef struct
     {
     BIGNUM			*encrypted_m;
     BIGNUM			*m;
     } ops_pk_session_key_parameters_rsa_t;
 
+/** ops_pk_session_key_parameters_elgamal_t */
 typedef struct
     {
     BIGNUM			*g_to_k;
     BIGNUM		        *encrypted_m;
     } ops_pk_session_key_parameters_elgamal_t;
 
+/** ops_pk_session_key_parameters_t */
 typedef union
     {
     ops_pk_session_key_parameters_rsa_t		rsa;
     ops_pk_session_key_parameters_elgamal_t	elgamal;
     } ops_pk_session_key_parameters_t;
 
+/** ops_pk_session_key_t */
 typedef struct
     {
     ops_pk_session_key_version_t version;
@@ -840,6 +844,7 @@ typedef struct
     unsigned short		checksum;
     } ops_pk_session_key_t;
 
+/** ops_secret_key_passphrase_t */
 typedef struct
     {
     const ops_secret_key_t     *secret_key;
@@ -851,17 +856,20 @@ typedef enum
     OPS_SE_IP_V1=1
     } ops_se_ip_version_t;
 
+/** ops_se_ip_data_header_t */
 typedef struct
     {
     ops_se_ip_version_t		version;
     } ops_se_ip_data_header_t;
 
+/** ops_se_data_body_t */
 typedef struct
     {
     unsigned			length;
     unsigned char		data[8192];
     } ops_se_data_body_t;
 
+/** ops_get_secret_key_t */
 typedef struct
     {
     const ops_secret_key_t      **secret_key;

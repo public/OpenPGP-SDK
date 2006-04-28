@@ -40,7 +40,7 @@ int main(int argc,char **argv)
 	exit(1);
 	}
 
-    user_id=argv[1];
+    user_id=(unsigned char *)argv[1];
     secfile=argv[2];
     pubfile=argv[3];
 

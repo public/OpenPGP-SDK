@@ -19,7 +19,7 @@
 #define CRC24_POLY 0x1864cfbL
 
 /**
- * \struct
+ * \struct dearmour_arg_t
  */
 typedef struct
     {
@@ -171,7 +171,7 @@ static int unarmoured_read_char(dearmour_arg_t *arg,ops_error_t **errors,
     }
 
 /**
- * \param ops_headers_t
+ * \param headers
  * \param key
  *
  * \return header value if found, otherwise NULL
@@ -753,6 +753,7 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
     }
 
 /**
+ * \brief 
  * \param parse_info Usual structure containing information about to how to do the parse
  * \param without_gap Allow headers in armoured data that are not separated from the data by a blank line
  * \param no_gap Allow no blank line at the start of armoured data
@@ -785,7 +786,7 @@ void ops_reader_pop_dearmour(ops_parse_info_t *parse_info)
     }
 
 /**
- * \struct
+ * \struct dash_escaped_arg_t
  */
 typedef struct
     {
@@ -883,7 +884,7 @@ void ops_writer_push_dash_escaped(ops_create_info_t *info,
     }
 
 /**
- * \struct
+ * \struct base64_arg_t
  */
 typedef struct
     {
@@ -977,7 +978,7 @@ static ops_boolean_t signature_finaliser(ops_error_t **errors,
     }
 
 /**
- * \struct
+ * \struct linebreak_arg_t
  */
 typedef struct
     {

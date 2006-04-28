@@ -1,3 +1,6 @@
+/** \file */
+
+/** ops_reader_info */
 struct ops_reader_info
     {
     ops_reader_t *reader; /*!< the reader function to use to get the
@@ -16,6 +19,7 @@ struct ops_reader_info
     ops_parse_info_t *pinfo; /*!< A pointer back to the parent parse_info structure */
     };
 
+/** ops_parse_cb_info */
 struct ops_parse_cb_info
     {
     ops_parse_cb_t *cb; /*!< the callback function to use when parsing */
@@ -24,6 +28,7 @@ struct ops_parse_cb_info
     ops_parse_cb_info_t *next;
     };
 
+/** ops_parse_hash_info_t */
 typedef struct
     {
     ops_hash_t hash; /*!< hashes we should hash data with */

@@ -8,6 +8,8 @@
 				str->arr=realloc(str->arr,str->n##arr##_allocated*sizeof *str->arr); \
 				} while(0)
 
+/** ops_key_data_key_t
+ */
 typedef union
     {
     ops_public_key_t pkey;
@@ -16,6 +18,9 @@ typedef union
     
 
 // XXX: gonna have to expand this to hold onto subkeys, too...
+/** \struct ops_key_data
+ * \todo expand to hold onto subkeys
+ */
 struct ops_key_data
     {
     DECLARE_ARRAY(ops_user_id_t,uids);
