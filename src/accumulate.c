@@ -101,9 +101,11 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
  * \param opt Options to use when parsing
 */
 
-void ops_parse_and_accumulate(ops_keyring_t *keyring,
+int ops_parse_and_accumulate(ops_keyring_t *keyring,
 			      ops_parse_info_t *parse_info)
     {
+    int rtn;
+
     accumulate_arg_t arg;
 
     assert(!parse_info->rinfo.accumulate);
@@ -118,8 +120,10 @@ void ops_parse_and_accumulate(ops_keyring_t *keyring,
 
     parse_info->rinfo.accumulate=ops_true;
 
-    ops_parse(parse_info);
+    rtn=ops_parse(parse_info);
     ++keyring->nkeys;
+
+    return rtn;
     }
 
 static void dump_one_key_data(const ops_key_data_t *key)
