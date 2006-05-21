@@ -22,6 +22,9 @@ typedef struct
 ops_key_data_t *
 ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 			   const unsigned char keyid[OPS_KEY_ID_SIZE]);
+unsigned char *
+ops_keyring_find_keyid_by_userid(const ops_keyring_t *keyring,
+			     const char* userid);
 void ops_key_data_free(ops_key_data_t *key);
 void ops_keyring_free(ops_keyring_t *keyring);
 void ops_dump_keyring(const ops_keyring_t *keyring);

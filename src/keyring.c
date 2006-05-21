@@ -29,6 +29,27 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
     return NULL;
     }
 
+unsigned char *
+ops_keyring_find_keyid_by_userid(const ops_keyring_t *keyring,
+			     const char *userid)
+    {
+    int n;
+    unsigned int i;
+
+    for(n=0 ; n < keyring->nkeys ; ++n)
+	for(i=0; i<keyring->keys[n].nuids; n++)
+	    {
+	    printf("[%d][%d] userid %s\n",
+		   n,i,
+		   keyring->keys[n].uids[i].user_id);
+	    if(!strcmp((char *)keyring->keys[n].uids[i].user_id,userid))
+	       return &keyring->keys[n].keyid[0];
+	    }
+
+    printf("end: n=%d,i=%d\n",n,i);
+    return NULL;
+    }
+
 void ops_key_data_free(ops_key_data_t *key)
     {
     unsigned n;
