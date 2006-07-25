@@ -2,7 +2,7 @@ DM_FLAGS=%DM_FLAGS%
 DM_LIB=%DM_LIB%
 CC=%CC%
 
-CFLAGS=$(DM_FLAGS) -I../include %INCLUDES% %CFLAGS%
+CFLAGS=$(DM_FLAGS) -I../include %INCLUDES% %CFLAGS% -fPIC
 LDFLAGS=-g
 LIBS=libops.a -lcrypto -lz $(DM_LIB)
 
