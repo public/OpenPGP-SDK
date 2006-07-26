@@ -18,6 +18,7 @@ typedef enum
     OPS_E_R=0x1000,	/* general reader error */
     OPS_E_R_READ_FAILED	=OPS_E_R+1,
     OPS_E_R_EARLY_EOF	=OPS_E_R+2,
+    OPS_E_R_BAD_FORMAT	=OPS_E_R+3, // For example, malformed armour
 
     /* writer errors */
     OPS_E_W=0x2000,	/* general writer error */

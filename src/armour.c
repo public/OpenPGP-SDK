@@ -63,7 +63,7 @@ typedef struct
 
 // FIXME: move these to a common header
 #define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if(ops_parse_cb((pc),(cbinfo)) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
-#define ERR(cbinfo,err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,(cbinfo)); return -1; } while(0)
+#define ERR(cbinfo,err,code)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,(cbinfo)); OPS_ERROR(errors,code,err); return -1; } while(0)
 
 static void push_back(dearmour_arg_t *arg,const unsigned char *buf,
 		      unsigned length)
@@ -229,7 +229,7 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 	if(alg == OPS_HASH_UNKNOWN)
 	    {
 	    free(hash);
-	    ERR(cbinfo,"Unknown hash algorithm");
+	    ERR(cbinfo,"Unknown hash algorithm",OPS_E_R_BAD_FORMAT);
 	    }
 	ops_hash_any(hash,alg);
 	}
@@ -255,13 +255,13 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 		{
 		/* then this had better be a trailer! */
 		if(c != '-')
-		    ERR(cbinfo,"Bad dash-escaping");
+		    ERR(cbinfo,"Bad dash-escaping",OPS_E_R_BAD_FORMAT);
 		for(count=2 ; count < 5 ; ++count)
 		    {
 		    if((c=read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
 			return -1;
 		    if(c != '-')
-			ERR(cbinfo,"Bad dash-escaping (2)");
+			ERR(cbinfo,"Bad dash-escaping (2)",OPS_E_R_BAD_FORMAT);
 		    }
 		arg->state=AT_TRAILER_NAME;
 		break;
@@ -343,12 +343,13 @@ static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 	    if(!s)
 		if(!first && !arg->allow_headers_without_gap)
 		    // then we have seriously malformed armour
-		    ERR(cbinfo,"No colon in armour header");
+		    ERR(cbinfo,"No colon in armour header",OPS_E_R_BAD_FORMAT);
 		else
 		    {
 		    if(first &&
 		       !(arg->allow_headers_without_gap || arg->allow_no_gap))
-			ERR(cbinfo,"No colon in armour header (2)");
+			ERR(cbinfo,"No colon in armour header (2)",
+			    OPS_E_R_BAD_FORMAT);
 		    // then we have a nasty armoured block with no
 		    // headers, not even a blank line.
 		    buf[nbuf]='\n';
@@ -359,7 +360,7 @@ static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 		{
 		*s='\0';
 		if(s[1] != ' ')
-		    ERR(cbinfo,"No space in armour header");
+		    ERR(cbinfo,"No space in armour header",OPS_E_R_BAD_FORMAT);
 		add_header(arg,buf,s+2);
 		nbuf=0;
 		}
@@ -453,7 +454,7 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 
     ret=read4(arg,errors,rinfo,cbinfo,&c,&n,&l);
     if(ret < 0)
-	ERR(cbinfo,"Badly formed base64");
+	ERR(cbinfo,"Badly formed base64",OPS_E_R_BAD_FORMAT);
 
     if(n == 3)
 	{
@@ -470,7 +471,7 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	l >>= 4;
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '=')
-	    ERR(cbinfo,"Badly terminated base64");
+	    ERR(cbinfo,"Badly terminated base64",OPS_E_R_BAD_FORMAT);
 	}
     else if(n == 0)
 	{
@@ -490,10 +491,10 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	assert(c == '=');
 	c=read_and_eat_whitespace(arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
-	    ERR(cbinfo,"No newline at base64 end");
+	    ERR(cbinfo,"No newline at base64 end",OPS_E_R_BAD_FORMAT);
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '=')
-	    ERR(cbinfo,"No checksum at base64 end");
+	    ERR(cbinfo,"No checksum at base64 end",OPS_E_R_BAD_FORMAT);
 	}
 
     if(c == '=')
@@ -501,22 +502,22 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	// now we are at the checksum
 	ret=read4(arg,errors,rinfo,cbinfo,&c,&n,&arg->read_checksum);
 	if(ret < 0 || n != 4)
-	    ERR(cbinfo,"Error in checksum");
+	    ERR(cbinfo,"Error in checksum",OPS_E_R_BAD_FORMAT);
 	c=read_char(arg,errors,rinfo,cbinfo,ops_true);
 	if(arg->allow_trailing_whitespace)
 	    c=eat_whitespace(c,arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
-	    ERR(cbinfo,"Badly terminated checksum");
+	    ERR(cbinfo,"Badly terminated checksum",OPS_E_R_BAD_FORMAT);
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '-')
-	    ERR(cbinfo,"Bad base64 trailer (2)");
+	    ERR(cbinfo,"Bad base64 trailer (2)",OPS_E_R_BAD_FORMAT);
 	}
 
     if(c == '-')
 	{
 	for(n=0 ; n < 4 ; ++n)
 	    if(read_char(arg,errors,rinfo,cbinfo,ops_false) != '-')
-		ERR(cbinfo,"Bad base64 trailer");
+		ERR(cbinfo,"Bad base64 trailer",OPS_E_R_BAD_FORMAT);
 	arg->eof64=ops_true;
 	}
     else
@@ -532,7 +533,7 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	arg->checksum=crc24(arg->checksum,arg->buffer[n2]);
 
     if(arg->eof64 && arg->read_checksum != arg->checksum)
-	ERR(cbinfo,"Checksum mismatch");
+	ERR(cbinfo,"Checksum mismatch",OPS_E_R_BAD_FORMAT);
 
     return 1;
     }
@@ -700,7 +701,7 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 		 buf[n++]=c;
 		 }
 	     /* then I guess this wasn't a proper trailer */
-	     ERR(cbinfo,"Bad ASCII armour trailer");
+	     ERR(cbinfo,"Bad ASCII armour trailer",OPS_E_R_BAD_FORMAT);
 	     break;
 
 	 got_minus2:
@@ -713,7 +714,8 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 		     return -1;
 		 if(c != '-')
 		     /* wasn't a trailer after all */
-		     ERR(cbinfo,"Bad ASCII armour trailer (2)");
+		     ERR(cbinfo,"Bad ASCII armour trailer (2)",
+			 OPS_E_R_BAD_FORMAT);
 		 }
 
 	     /* Consume final NL */
@@ -725,7 +727,7 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 		    return 0;
 	     if(c != '\n')
 		 /* wasn't a trailer line after all */
-		 ERR(cbinfo,"Bad ASCII armour trailer (3)");
+		 ERR(cbinfo,"Bad ASCII armour trailer (3)",OPS_E_R_BAD_FORMAT);
 
 	     if(!strncmp(buf,"BEGIN ",6))
 		 {
