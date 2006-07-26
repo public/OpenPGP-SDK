@@ -458,14 +458,16 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 
     if(n == 3)
 	{
-	assert(c == '=');
+	if(c != '=')
+	    ERR(cbinfo,"Badly terminated base64 (2)",OPS_E_R_BAD_FORMAT);
 	arg->buffered=2;
 	arg->eof64=ops_true;
 	l >>= 2;
 	}
     else if(n == 2)
 	{
-	assert(c == '=');
+	if(c != '=')
+	    ERR(cbinfo,"Badly terminated base64 (3)",OPS_E_R_BAD_FORMAT);
 	arg->buffered=1;
 	arg->eof64=ops_true;
 	l >>= 4;
@@ -475,7 +477,8 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	}
     else if(n == 0)
 	{
-	assert(arg->prev_nl && c == '=');
+	if(!arg->prev_nl || c != '=')
+	    ERR(cbinfo,"Badly terminated base64 (4)",OPS_E_R_BAD_FORMAT);
 	arg->buffered=0;
 	}
     else
