@@ -31,6 +31,7 @@ typedef enum
     OPS_E_P_UNKNOWN_TAG		=OPS_E_P+2,
     OPS_E_P_PACKET_CONSUMED	=OPS_E_P+3,
     OPS_E_P_MPI_FORMAT_ERROR	=OPS_E_P+4,
+    OPS_E_P_PACKET_NOT_CONSUMED	=OPS_E_P+5,
 
     /* creator errors */
     OPS_E_C=0x4000,	/* general creator error */

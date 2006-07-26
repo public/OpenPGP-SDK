@@ -1873,7 +1873,10 @@ static int consume_packet(ops_region_t *region,ops_parse_info_t *pinfo,
     else if(warn)
 	WARNP(pinfo,"Problem consuming remainder of error packet.");
     else
+	{
+	ERRCODEP(pinfo,OPS_E_P_PACKET_NOT_CONSUMED);
 	return 0;
+	}
 
     return 1;
     }
@@ -2469,16 +2472,16 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
     /* Ensure that the entire packet has been consumed */
 
     if(region.length != region.length_read && !region.indeterminate)
-	if(!consume_packet(&region,pinfo,ops_true))
+	if(!consume_packet(&region,pinfo,ops_false))
 	    r=-1;
 
     /* set pktlen */
 
     *pktlen=pinfo->rinfo.alength;
 
-    /* do callback on entire packet, if desired */
+    /* do callback on entire packet, if desired and there was no error */
 
-    if(pinfo->rinfo.accumulate)
+    if(r > 0 && pinfo->rinfo.accumulate)
 	{
 	C.packet.length=pinfo->rinfo.alength;
 	C.packet.raw=pinfo->rinfo.accumulated;
