@@ -179,6 +179,7 @@ void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
 
     arg->buffer=buffer;
     arg->length=length;
+    arg->offset=0;
     ops_reader_set(pinfo,reader_mem,arg);
     }
 
