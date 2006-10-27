@@ -107,8 +107,10 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
     if(n != keysize) // obviously, this includes error returns
 	return ops_false;
 
+    /*
     printf(" decrypt=%d ",n);
     hexdump(hashbuf,n);
+    */
 
     // XXX: why is there a leading 0? The first byte should be 1...
     // XXX: because the decrypt should use keysize and not sigsize?
@@ -192,9 +194,11 @@ static ops_boolean_t check_signature(const unsigned char *hash,unsigned length,
     {
     ops_boolean_t ret;
 
+    /*
     printf(" hash=");
     //    hashout[0]=0;
     hexdump(hash,length);
+    */
 
     switch(sig->key_algorithm)
 	{
