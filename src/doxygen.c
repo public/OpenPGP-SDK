@@ -1,3 +1,51 @@
+/*! \mainpage Documentation
+ *
+ * The OpenPGP::SDK library has 2 APIs, which can be used interchangeably by a developer.
+
+\section section_std_api The Standard API
+
+The Standard API provides easy access to common crypto tasks: Examples are:
+
+- "find the key in the keyring corresponding to this id"
+- "sign this text with that key".
+
+It is built on functions offered by the Advanced API.
+
+Developers should initially consider using the Standard API, unless they need the additional control available in the Advanced API.
+
+- \ref StandardAPI : follow this link for more details
+
+\section section_adv_api The Advanced API
+
+The Advanced API offers detailed control over all aspects of the SDK.
+
+- \ref AdvancedAPI : follow this link for more details
+
+\section section_examples Examples
+
+The <code>examples</code> directory included in the distribution provides
+various standalone applications which demonstrate usage of the library.
+
+- \subpage page_examples : follow this link for more details
+
+\section section_installation Installation
+
+- \subpage page_installation : follow this link for installation instructions
+
+\page page_examples Examples
+
+TBD
+
+\page page_installation Installation
+
+TBD
+
+/** @defgroup StandardAPI Standard API
+This API provides basic high-level functionality, which should be
+suitable for most users.
+
+If you want more fine-grained control, consider using the Advanced API.
+*/
 
 /** @defgroup PublicAPI Public API
  * These functions are public and available for external use.

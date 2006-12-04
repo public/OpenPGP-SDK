@@ -16,40 +16,6 @@
 
 #include <openpgpsdk/final.h>
 
-ops_key_data_t *
-ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
-			   const unsigned char keyid[OPS_KEY_ID_SIZE])
-    {
-    int n;
-
-    for(n=0 ; n < keyring->nkeys ; ++n)
-	if(!memcmp(keyring->keys[n].keyid,keyid,OPS_KEY_ID_SIZE))
-	    return &keyring->keys[n];
-
-    return NULL;
-    }
-
-unsigned char *
-ops_keyring_find_keyid_by_userid(const ops_keyring_t *keyring,
-			     const char *userid)
-    {
-    int n;
-    unsigned int i;
-
-    for(n=0 ; n < keyring->nkeys ; ++n)
-	for(i=0; i<keyring->keys[n].nuids; n++)
-	    {
-	    printf("[%d][%d] userid %s\n",
-		   n,i,
-		   keyring->keys[n].uids[i].user_id);
-	    if(!strcmp((char *)keyring->keys[n].uids[i].user_id,userid))
-	       return &keyring->keys[n].keyid[0];
-	    }
-
-    printf("end: n=%d,i=%d\n",n,i);
-    return NULL;
-    }
-
 void ops_key_data_free(ops_key_data_t *key)
     {
     unsigned n;
@@ -70,22 +36,6 @@ void ops_key_data_free(ops_key_data_t *key)
 	ops_secret_key_free(&key->key.skey);
     }
 
-/**
- * \ingroup Memory
- *
- * ops_keyring_free() frees the memory used in one ops_keyring_t structure
- * \param keyring Keyring to be freed.
- */
-void ops_keyring_free(ops_keyring_t *keyring)
-    {
-    int n;
-
-    for(n=0 ; n < keyring->nkeys ; ++n)
-	ops_key_data_free(&keyring->keys[n]);
-    free(keyring->keys);
-    keyring->keys=NULL;
-    }
-
 const ops_public_key_t *
 ops_get_public_key_from_data(const ops_key_data_t *data)
     {
@@ -103,69 +53,6 @@ ops_get_secret_key_from_data(const ops_key_data_t *data)
     if(data->type != OPS_PTAG_CT_SECRET_KEY)
 	return NULL;
     return &data->key.skey;
-    }
-
-static ops_parse_cb_return_t
-cb_keyring_read(const ops_parser_content_t *content_,
-		ops_parse_cb_info_t *cbinfo)
-    {
-    //    const ops_parser_content_union_t *content=&content_->content;
-    //    char buffer[1024];
-    //    size_t n;
-
-    OPS_USED(cbinfo);
-
-    switch(content_->tag)
-	{
-    case OPS_PARSER_PTAG:
-    case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY: // we get these because we didn't prompt
-    case OPS_PTAG_CT_SIGNATURE_HEADER:
-    case OPS_PTAG_CT_SIGNATURE_FOOTER:
-    case OPS_PTAG_CT_SIGNATURE:
-    case OPS_PTAG_CT_TRUST:
-    case OPS_PARSER_ERRCODE:
-	break;
-
-    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-	// we don't want to prompt when reading the keyring
-	break;
-
-    default:
-	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
-		content_->tag);
-	assert(0);
-	exit(1);
-	}
-
-    return OPS_RELEASE_MEMORY;
-    }
-
-/* Read a keyring from a file (either public or secret) */
-void ops_keyring_read(ops_keyring_t *keyring,const char *file)
-    {
-    ops_parse_info_t *pinfo;
-    int fd;
-
-    memset(keyring,'\0',sizeof *keyring);
-
-    pinfo=ops_parse_info_new();
-
-    fd=open(file,O_RDONLY);
-    if(fd < 0)
-	{
-	perror(file);
-	exit(1);
-	}
-
-    ops_reader_set_fd(pinfo,fd);
-
-    ops_parse_cb_set(pinfo,cb_keyring_read,NULL);
-
-    ops_parse_and_accumulate(keyring,pinfo);
-
-    close(fd);
-
-    ops_parse_info_delete(pinfo);
     }
 
 static void echo_off()

@@ -126,10 +126,13 @@ my $path=`pwd`;
 chomp $path;
 
 
-create('src/.depend');
+create('src/advanced/.depend');
+create('src/standard/.depend');
 create('examples/.depend');
 
 fileSubst('src/Makefile','#','');
+fileSubst('src/advanced/Makefile','#','');
+fileSubst('src/standard/Makefile','#','');
 fileSubst('examples/Makefile','#','');
 fileSubst('util/Makefile.oink','#','');
 fileSubst('include/openpgpsdk/configure.h','/*','*/');
