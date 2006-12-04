@@ -21,24 +21,7 @@ The Advanced API offers detailed control over all aspects of the SDK.
 
 - \ref AdvancedAPI : follow this link for more details
 
-\section section_examples Examples
-
-The <code>examples</code> directory included in the distribution provides
-various standalone applications which demonstrate usage of the library.
-
-- \subpage page_examples : follow this link for more details
-
-\section section_installation Installation
-
-- \subpage page_installation : follow this link for installation instructions
-
-\page page_examples Examples
-
-TBD
-
-\page page_installation Installation
-
-TBD
+*/
 
 /** @defgroup StandardAPI Standard API
 This API provides basic high-level functionality, which should be
@@ -47,12 +30,15 @@ suitable for most users.
 If you want more fine-grained control, consider using the Advanced API.
 */
 
-/** @defgroup PublicAPI Public API
- * These functions are public and available for external use.
- * @{
- */
+/** @defgroup AdvancedAPI Advanced API
+This API provides detailed control over all aspects of the SDK.
+
+You may find that the easier-to-use Standard API meets your needs.
+*/
+
 /**
  * @defgroup Parse Parse
+ * \ingroup AdvancedAPI
  * These functions allow an OpenPGP object (for example, an OpenPGP message or keyring) to be parsed.
  *
  * \par Usage 1 : To Parse an input stream (discarding parsed data)
@@ -75,10 +61,10 @@ If you want more fine-grained control, consider using the Advanced API.
  * - ops_reader_fd() is one reader function provided by this library to read from an open file. 
  * - Users may define their own readers.
  *
- * @ingroup PublicAPI
  */
 /**
  * @defgroup Create Create
+ * \ingroup AdvancedAPI
  * These functions allow an OpenPGP object to be created. 
  *
  * The low-level functions are provided to enable flexible usage.
@@ -97,56 +83,31 @@ If you want more fine-grained control, consider using the Advanced API.
  * - ops_writer_fd() is one writer function provided by this library to write to an open file. 
  * - Users may define their own writers.
  *
- * @ingroup PublicAPI
  */
 /**
  * @defgroup Memory Memory
+ * \ingroup AdvancedAPI
  * These functions relate to memory usage.
- * @ingroup PublicAPI
  */
 /**
  * @defgroup Show Show
+ * \ingroup AdvancedAPI
  * These functions allow the contents to be displayed in human-readable form.
- * @ingroup PublicAPI
  */
 /**
  * @defgroup Utils Utils
+ * \ingroup AdvancedAPI
  * These functions are of general utility.
- * @ingroup PublicAPI
  */
 /**
  * @defgroup Verify Verify
+ * \ingroup AdvancedAPI
  * These functions are for verifying signatures.
- * @ingroup PublicAPI
- */
-/**
- * @}
  */
 
-/** @defgroup PublicInternal Public-Internal API
- * These functions are public but should not normally be called.
- * @{
- */
-/**
- * @defgroup IntCreate Create
- * Used in Create functions
- *
- * @ingroup PublicInternal
- */
-/**
- * @}
- */
-
-/** @defgroup Internal Internal API
- * These functions are static.
- * @{
- */
 /**
  * @defgroup Callbacks Callbacks
+ * \ingroup AdvancedAPI
  * These callback functions are used when parsing or creating.
- * @ingroup Internal
- */
-/**
- * @}
  */
 
