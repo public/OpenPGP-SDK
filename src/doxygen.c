@@ -4,7 +4,9 @@
 
 \section section_std_api The Standard API
 
-The Standard API provides easy access to common crypto tasks: Examples are:
+The Standard API provides easy access to common crypto tasks. 
+
+Examples are:
 
 - "find the key in the keyring corresponding to this id"
 - "sign this text with that key".
