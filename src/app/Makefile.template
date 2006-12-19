@@ -2,35 +2,38 @@ DM_FLAGS=%DM_FLAGS%
 DM_LIB=%DM_LIB%
 CC=%CC%
 
-CFLAGS=$(DM_FLAGS) -I../../include %INCLUDES% %CFLAGS% -fPIC
+CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../../include %INCLUDES% %CFLAGS% -fPIC
 # pickup _local.h headers from advanced directory
 CFLAGS+=-I../advanced
 
 LDFLAGS=-g
-#LIBS=libops.a -lcrypto -lz $(DM_LIB)
+LIBDEPS=../libops.a
+LIBS=$(LIBDEPS) -lcrypto -lz $(DM_LIB)
+EXES=openpgp
 
-all: Makefile headers .depend ../libops.a
-
-LIBOBJS = std_keyring.o std_print.o
+all: Makefile headers .depend ../libops.a $(EXES)
 
 headers:
 	cd ../../include/openpgpsdk && make headers
 
-../libops.a: $(LIBOBJS)
-	ar rc ../libops.a $(LIBOBJS)
+../libops.a: 
+	cd ../ && make libops.a
+
+openpgp: openpgp.o $(LIBDEPS)
+	$(CC) $(LDFLAGS) -o openpgp openpgp.o $(LIBS)
 
 tags:
 	rm -f TAGS
 	find . -name '*.[ch]' | xargs etags -a
 
 clean:
-	rm -f packet-dump verify *.o *.i
+	rm -f openpgp *.o *.i
 	rm -f ../libops.a TAGS
 
 .depend: *.[ch] ../../include/openpgpsdk/*.h
 	$(CC) $(CFLAGS) -E -M *.c > .depend
 
-force_depend: headers
+force_depend:
 	$(CC) $(CFLAGS) -E -M *.c > .depend
 
 Makefile: Makefile.template ../../configure

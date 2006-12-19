@@ -1,4 +1,5 @@
-SUBDIRS=advanced standard
+LIBSUBDIRS=advanced standard 
+SUBDIRS=$(LIBSUBDIR) app
 
 default:
 	@set -e; for d in $(SUBDIRS); do \
@@ -22,3 +23,7 @@ Makefiles:
 	(cd $$d; echo "+++ make Makefile in $$d"; make Makefile; echo "--- $$d"); \
 	done
 
+libops.a:
+	@set -e; for d in $(LIBSUBDIRS); do \
+	(cd $$d; echo "+++ make in $$d"; make ; echo "--- $$d"); \
+	done

@@ -72,6 +72,7 @@
 #include "openpgpsdk/accumulate.h"
 #include "openpgpsdk/keyring.h"
 #include "openpgpsdk/util.h"
+#include "openpgpsdk/std_print.h"
 
 static ops_parse_cb_return_t
 cb_keyring_read(const ops_parser_content_t *content_,
@@ -102,6 +103,12 @@ void ops_keyring_read(ops_keyring_t *keyring,const char *file)
     memset(keyring,'\0',sizeof *keyring);
 
     pinfo=ops_parse_info_new();
+
+    // add this for the moment,
+    // \todo need to fix the problems with reading signature subpackets later
+
+    //    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 
     fd=open(file,O_RDONLY);
     if(fd < 0)
@@ -185,7 +192,7 @@ ops_keyring_find_keyid_by_userid(const ops_keyring_t *keyring,
     unsigned int i;
 
     for(n=0 ; n < keyring->nkeys ; ++n)
-	for(i=0; i<keyring->keys[n].nuids; n++)
+	for(i=0; i<keyring->keys[n].nuids; i++)
 	    {
 	    printf("[%d][%d] userid %s\n",
 		   n,i,
@@ -197,6 +204,45 @@ ops_keyring_find_keyid_by_userid(const ops_keyring_t *keyring,
     printf("end: n=%d,i=%d\n",n,i);
     return NULL;
     }
+
+/**
+   \ingroup StdKeyringList
+
+   List keys in keyring
+
+   \param keyring Keyring to use
+   \param match optional string to match
+
+*/
+
+void
+ops_keyring_list(const ops_keyring_t* keyring,
+		 const char* match)
+    {
+    int n;
+    unsigned int i;
+    ops_key_data_t* key;
+
+    printf ("%d keys\n", keyring->nkeys);
+    for(n=0,key=&keyring->keys[n] ; n < keyring->nkeys ; ++n,++key)
+	{
+	for(i=0; i<key->nuids; i++)
+	    {
+	    if (match)
+		printf ("*** match %s\n", match);
+	    // if match, compare
+	    //	    if(!strcmp((char *)keyring->keys[n].uids[i].user_id,userid))
+	    //	       return &keyring->keys[n].keyid[0];
+	    if (ops_key_is_secret(key))
+		ops_print_secret_key(key);
+	    else
+		ops_print_public_key(key);
+	    }
+
+	}
+    }
+
+/* Static functions */
 
 static ops_parse_cb_return_t
 cb_keyring_read(const ops_parser_content_t *content_,
@@ -210,6 +256,10 @@ cb_keyring_read(const ops_parser_content_t *content_,
 
     switch(content_->tag)
 	{
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+	// we don't want to prompt when reading the keyring
+	break;
+
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY: // we get these because we didn't prompt
     case OPS_PTAG_CT_SIGNATURE_HEADER:
@@ -219,15 +269,15 @@ cb_keyring_read(const ops_parser_content_t *content_,
     case OPS_PARSER_ERRCODE:
 	break;
 
-    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-	// we don't want to prompt when reading the keyring
-	break;
-
+	/*
     default:
 	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
 		content_->tag);
 	assert(0);
 	exit(1);
+	*/
+    default:
+	;
 	}
 
     return OPS_RELEASE_MEMORY;

@@ -40,4 +40,5 @@ void ops_keyring_read(ops_keyring_t *keyring,const char *file);
 
 char *ops_get_passphrase(void);
 
+void ops_keyring_list(const ops_keyring_t* keyring, const char* match);
 #endif
