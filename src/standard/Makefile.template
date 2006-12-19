@@ -7,17 +7,16 @@ CFLAGS=$(DM_FLAGS) -I../../include %INCLUDES% %CFLAGS% -fPIC
 CFLAGS+=-I../advanced
 
 LDFLAGS=-g
-#LIBS=libops.a -lcrypto -lz $(DM_LIB)
 
-all: Makefile headers .depend ../libops.a
+all: Makefile headers .depend libops.a
 
 LIBOBJS = std_keyring.o std_print.o
 
 headers:
 	cd ../../include/openpgpsdk && make headers
 
-../libops.a: $(LIBOBJS)
-	ar rc ../libops.a $(LIBOBJS)
+libops.a: $(LIBOBJS)
+	ar rc libops_std.a $(LIBOBJS)
 
 tags:
 	rm -f TAGS
@@ -25,7 +24,7 @@ tags:
 
 clean:
 	rm -f packet-dump verify *.o *.i
-	rm -f ../libops.a TAGS
+	rm -f libops_std.a TAGS
 
 .depend: *.[ch] ../../include/openpgpsdk/*.h
 	$(CC) $(CFLAGS) -E -M *.c > .depend
