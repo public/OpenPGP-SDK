@@ -8,7 +8,7 @@ CFLAGS+=-I../advanced
 
 LDFLAGS=-g
 LIBDEPS=../standard/libops_std.a ../advanced/libops_adv.a 
-LIBS=$(LIBDEPS) -lcrypto -lz $(DM_LIB)
+LIBS=$(LIBDEPS) %CRYPTO_LIBS% -lz $(DM_LIB)
 EXES=openpgp
 
 all: Makefile headers .depend $(LIBDEPS) $(EXES)
