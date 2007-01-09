@@ -167,16 +167,51 @@ sub chooseBinary {
     return 'false';
 }
 
+our $indent;
+
+sub indent {
+    for my $n (2..$indent) {
+	print "  ";
+    }
+}
+
+sub showThing {
+    my $rthing=shift;
+
+    if(ref $rthing eq 'SCALAR') {
+	return $$rthing;
+    } elsif(ref $rthing eq 'REF') {
+	return showThing($$rthing);
+    } elsif(ref $rthing eq 'ARRAY') {
+	return join(' ',@$rthing);
+    } elsif(ref $rthing eq 'HASH') {
+	my $str;
+	foreach my $k (keys %$rthing) {
+	    $str .= ' ' if $str;
+	    $str .= "$k -> $rthing->{$k}";
+	}
+	return $str;
+    }
+
+    print "ref=", ref($rthing), "\n";
+    return '?Can\'t display?';
+}
+
 sub getKnowledge {
     my $thing=shift;
 
     croak "Asked for nonexistent knowledge $thing"
       if !exists $Knowledge{$thing};
 
+    ++$indent;
     if(ref $Knowledge{$thing} eq 'CODE') {
+	indent();
 	print "Finding $thing\n";
 	$Knowledge{$thing}=&{$Knowledge{$thing}}();
+	indent();
+	print "Found $thing: ", showThing(\$Knowledge{$thing}), "\n";
     }
+    --$indent;
     return $Knowledge{$thing};
 }
 
