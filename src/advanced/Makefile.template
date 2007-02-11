@@ -6,7 +6,7 @@ CFLAGS=$(DM_FLAGS) -I../../include %INCLUDES% %CFLAGS% -fPIC
 LDFLAGS=-g
 LIBS=libops_adv.a -lcrypto -lz $(DM_LIB)
 
-all: Makefile headers .depend libops.a
+all: Makefile headers .depend libops_adv.a
 
 LIBOBJS = adv_packet-parse.o adv_util.o adv_openssl_crypto.o adv_accumulate.o \
 	adv_memory.o adv_fingerprint.o adv_hash.o adv_keyring.o \
@@ -17,7 +17,7 @@ LIBOBJS = adv_packet-parse.o adv_util.o adv_openssl_crypto.o adv_accumulate.o \
 headers:
 	cd ../../include/openpgpsdk && make headers
 
-libops.a: $(LIBOBJS)
+libops_adv.a: $(LIBOBJS)
 	ar rc libops_adv.a $(LIBOBJS)
 
 tags:

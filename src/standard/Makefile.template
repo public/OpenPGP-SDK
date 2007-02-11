@@ -8,14 +8,14 @@ CFLAGS+=-I../advanced
 
 LDFLAGS=-g
 
-all: Makefile headers .depend libops.a
+all: Makefile headers .depend libops_std.a
 
 LIBOBJS = std_keyring.o std_print.o
 
 headers:
 	cd ../../include/openpgpsdk && make headers
 
-libops.a: $(LIBOBJS)
+libops_std.a: $(LIBOBJS)
 	ar rc libops_std.a $(LIBOBJS)
 
 tags:
