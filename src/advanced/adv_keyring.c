@@ -112,7 +112,7 @@ char *ops_get_passphrase(void)
 
 typedef struct
     {
-    ops_key_data_t *key;
+    const ops_key_data_t *key;
     char *pphrase;
     ops_secret_key_t *skey;
     } decrypt_arg_t;
@@ -178,7 +178,7 @@ static ops_parse_cb_return_t decrypt_cb(const ops_parser_content_t *content_,
     return OPS_RELEASE_MEMORY;
     }
 
-ops_secret_key_t *ops_decrypt_secret_key_from_data(ops_key_data_t *key,
+ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
 						   const char *pphrase)
     {
     ops_parse_info_t *pinfo;

@@ -156,10 +156,8 @@ void ops_keyring_free(ops_keyring_t *keyring)
    \param keyid ID of required key
 
    \return Ptr to key, if found; NULL, if not found
-
-   \note This ptr references the key inside the keyring, so take care if changing it.
 */
-ops_key_data_t *
+const ops_key_data_t *
 ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 			   const unsigned char keyid[OPS_KEY_ID_SIZE])
     {
@@ -175,17 +173,15 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 /**
    \ingroup StdKeyringFind
 
-   Finds key's Key ID from its User ID
+   Finds key from its User ID
 
    \param keyring Keyring to be searched
    \param userid User ID of required key
 
-   \return Ptr to Key ID, if found; NULL, if not found
-
-   \note This ptr references the key inside the keyring, so take care if changing it.
+   \return Ptr to Key, if found; NULL, if not found
 */
-unsigned char *
-ops_keyring_find_keyid_by_userid(const ops_keyring_t *keyring,
+const ops_key_data_t *
+ops_keyring_find_key_by_userid(const ops_keyring_t *keyring,
 				 const char *userid)
     {
     int n;
@@ -198,7 +194,7 @@ ops_keyring_find_keyid_by_userid(const ops_keyring_t *keyring,
 		   n,i,
 		   keyring->keys[n].uids[i].user_id);
 	    if(!strcmp((char *)keyring->keys[n].uids[i].user_id,userid))
-	       return &keyring->keys[n].keyid[0];
+	       return &keyring->keys[n];
 	    }
 
     printf("end: n=%d,i=%d\n",n,i);

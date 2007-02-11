@@ -1,5 +1,5 @@
 LIBSUBDIRS=advanced standard 
-SUBDIRS=$(LIBSUBDIR) app
+SUBDIRS=$(LIBSUBDIRS) app
 
 default:
 	@set -e; for d in $(SUBDIRS); do \

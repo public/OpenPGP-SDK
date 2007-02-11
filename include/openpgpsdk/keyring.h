@@ -19,12 +19,12 @@ typedef struct
     ops_key_data_t *keys;
     } ops_keyring_t;    
 
-ops_key_data_t *
+const ops_key_data_t *
 ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 			   const unsigned char keyid[OPS_KEY_ID_SIZE]);
-unsigned char *
-ops_keyring_find_keyid_by_userid(const ops_keyring_t *keyring,
-			     const char* userid);
+const ops_key_data_t *
+ops_keyring_find_key_by_userid(const ops_keyring_t *keyring,
+			       const char* userid);
 void ops_key_data_free(ops_key_data_t *key);
 void ops_keyring_free(ops_keyring_t *keyring);
 void ops_dump_keyring(const ops_keyring_t *keyring);
@@ -33,7 +33,7 @@ ops_get_public_key_from_data(const ops_key_data_t *data);
 ops_boolean_t ops_key_is_secret(const ops_key_data_t *data);
 const ops_secret_key_t *
 ops_get_secret_key_from_data(const ops_key_data_t *data);
-ops_secret_key_t *ops_decrypt_secret_key_from_data(ops_key_data_t *key,
+ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
 						   const char *pphrase);
 
 void ops_keyring_read(ops_keyring_t *keyring,const char *file);
