@@ -25,7 +25,7 @@ struct ops_key_data
     {
     DECLARE_ARRAY(ops_user_id_t,uids);
     DECLARE_ARRAY(ops_packet_t,packets);
-    unsigned char keyid[8];
+    unsigned char key_id[8];
     ops_fingerprint_t fingerprint;
     ops_content_tag_t type;
     ops_key_data_key_t key;

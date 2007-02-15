@@ -51,7 +51,7 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	memset(&keyring->keys[keyring->nkeys],'\0',
 	       sizeof keyring->keys[keyring->nkeys]);
 
-	ops_keyid(keyring->keys[keyring->nkeys].keyid,pkey);
+	ops_keyid(keyring->keys[keyring->nkeys].key_id,pkey);
 	ops_fingerprint(&keyring->keys[keyring->nkeys].fingerprint,pkey);
 
 	keyring->keys[keyring->nkeys].type=content_->tag;
@@ -131,7 +131,7 @@ static void dump_one_key_data(const ops_key_data_t *key)
     unsigned n;
 
     printf("Key ID: ");
-    hexdump(key->keyid,8);
+    hexdump(key->key_id,8);
 
     printf("\nFingerpint: ");
     hexdump(key->fingerprint.fingerprint,key->fingerprint.length);

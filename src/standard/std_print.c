@@ -53,7 +53,7 @@ ops_print_public_key(const ops_key_data_t *key)
     ops_show_pka(key->key.pkey.algorithm);
     printf(" ");
 
-    hexdump(key->keyid, OPS_KEY_ID_SIZE);
+    hexdump(key->key_id, OPS_KEY_ID_SIZE);
     printf(" ");
 
     print_time_short(key->key.pkey.creation_time);

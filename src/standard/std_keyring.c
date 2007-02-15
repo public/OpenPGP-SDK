@@ -164,7 +164,7 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
     int n;
 
     for(n=0 ; n < keyring->nkeys ; ++n)
-	if(!memcmp(keyring->keys[n].keyid,keyid,OPS_KEY_ID_SIZE))
+	if(!memcmp(keyring->keys[n].key_id,keyid,OPS_KEY_ID_SIZE))
 	    return &keyring->keys[n];
 
     return NULL;

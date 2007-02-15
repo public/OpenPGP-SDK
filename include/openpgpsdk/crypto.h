@@ -107,4 +107,9 @@ void ops_reader_pop_hash(ops_parse_info_t *pinfo);
 int ops_decrypt_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
 		    const ops_secret_key_t *skey);
 
+// Encrypt everything that's written
+struct ops_key_data;
+void ops_writer_push_encrypt(ops_create_info_t *info,
+			     const struct ops_key_data *key);
+
 #endif

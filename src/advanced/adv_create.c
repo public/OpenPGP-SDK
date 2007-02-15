@@ -2,6 +2,9 @@
  */
 
 #include <openpgpsdk/create.h>
+#include <openpgpsdk/keyring.h>
+#include "keyring_local.h"
+#include <openpgpsdk/packet.h>
 #include <openpgpsdk/util.h>
 #include <string.h>
 #include <assert.h>
@@ -743,3 +746,103 @@ ops_boolean_t ops_writer_passthrough(const unsigned char *src,
 				     ops_error_t **errors,
 				     ops_writer_info_t *winfo)
     { return ops_stacked_write(src,length,errors,winfo); }
+
+
+ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
+    {
+    ops_pk_session_key_t *session_key=ops_mallocz(sizeof *session_key);
+
+    session_key->version=OPS_PKSK_V3;
+    memcpy(session_key->key_id, key->key_id, sizeof session_key->key_id);
+    // XXX: finish filling in the structure
+    return session_key;
+    }
+
+// XXX: should these be common and just be called ops_crypt_*?
+typedef struct _ops_encrypt_t ops_encrypt_t;
+typedef void ops_encrypt_set_iv_t(ops_encrypt_t *encrypt,
+				  const unsigned char *iv);
+typedef void ops_encrypt_init_t(ops_encrypt_t *encrypt);
+typedef void ops_encrypt_resync_t(ops_encrypt_t *encrypt);
+typedef void ops_encrypt_block_encrypt_t(ops_encrypt_t *encrypt,void *out,
+					 const void *in);
+typedef void ops_encrypt_finish_t(ops_encrypt_t *encrypt);
+
+/** _ops_encrypt_t */
+struct _ops_encrypt_t
+    {
+    ops_symmetric_algorithm_t algorithm;
+    size_t blocksize;
+    size_t keysize;
+    //    ops_encrypt_set_iv_t *set_iv; /* Call this before init! */
+    ops_encrypt_set_iv_t *set_key; /* Call this before init! */
+    ops_encrypt_init_t *base_init; /* Once the key is set, call this */
+    ops_encrypt_resync_t *resync;
+    //    ops_decrypt_decrypt_t *decrypt;
+    ops_encrypt_block_encrypt_t *block_encrypt;
+    ops_encrypt_finish_t *finish;
+    unsigned char iv[OPS_MAX_BLOCK_SIZE];
+    unsigned char civ[OPS_MAX_BLOCK_SIZE];
+    unsigned char siv[OPS_MAX_BLOCK_SIZE]; /* Needed for weird v3 resync */
+    unsigned char key[OPS_MAX_KEY_SIZE];
+    size_t num;
+    void *data;
+    };
+
+typedef struct
+    {
+    ops_encrypt_t *encrypter;
+    } encrypted_arg_t;
+
+
+/* dummy function */
+
+#ifndef ATTRIBUTE_UNUSED
+#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
+#endif /* ATTRIBUTE_UNUSED */
+
+void ops_write_pk_session_key(ops_create_info_t *info ATTRIBUTE_UNUSED, ops_pk_session_key_t *session_key ATTRIBUTE_UNUSED)
+    {
+    /* \todo write ops_write_pk_session_key() */
+    assert(0);
+    }
+
+static ops_boolean_t encrypted_writer(const unsigned char *src ATTRIBUTE_UNUSED,
+			      unsigned length ATTRIBUTE_UNUSED,
+			      ops_error_t **errors ATTRIBUTE_UNUSED,
+			      ops_writer_info_t *winfo ATTRIBUTE_UNUSED
+			      )
+    {
+     /* \todo */
+    assert(0);
+    }
+
+static ops_boolean_t encrypted_finaliser(ops_error_t **errors ATTRIBUTE_UNUSED,
+					   ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
+    {
+    /* \todo */
+    assert(0);
+    }
+
+void encrypted_destroyer (ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
+     
+    {
+    /* \todo */
+    assert(0);
+    }
+
+/* end of dummy code */
+
+void ops_writer_push_encrypt(ops_create_info_t *info,
+			     const ops_key_data_t *key)
+    {
+    ops_pk_session_key_t *session_key;
+    encrypted_arg_t *arg=ops_mallocz(sizeof *arg);
+
+    session_key=ops_create_pk_session_key(key);
+    ops_write_pk_session_key(info,session_key);
+
+    ops_write_ptag(OPS_PTAG_CT_SE_DATA,info);
+    ops_writer_push(info,encrypted_writer,encrypted_finaliser,
+		    encrypted_destroyer,arg);
+    }

@@ -7,7 +7,7 @@ LDFLAGS=-g %CFLAGS%
 LIBDEPS=common.o ../src/standard/libops_std.a ../src/advanced/libops_adv.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
 EXES=packet-dump verify create-key verify2 sign-detached \
-     sign-inline decrypt build-keyring
+     sign-inline decrypt build-keyring encrypt
 # create-signed-key 
 
 all: Makefile .depend $(EXES)
@@ -45,6 +45,8 @@ sign-inline: sign-inline.o $(LIBDEPS)
 decrypt: decrypt.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o decrypt decrypt.o $(LIBS)
 
+encrypt: encrypt.o $(LIBDEPS)
+	$(CC) $(LDFLAGS) -o encrypt encrypt.o $(LIBS)
 
 tags:
 	rm -f TAGS
