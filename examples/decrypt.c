@@ -32,6 +32,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     switch(content_->tag)
 	{
     case OPS_PTAG_CT_UNARMOURED_TEXT:
+	printf("OPS_PTAG_CT_UNARMOURED_TEXT\n");
 	if(!skipping)
 	    {
 	    puts("Skipping...");
@@ -43,16 +44,20 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     case OPS_PTAG_CT_ARMOUR_HEADER:
     case OPS_PARSER_PTAG:
+	printf ("OPS_PTAG_CT_ARMOUR_HEADER or OPS_PARSER_PTAG\n");
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
+	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
 	if(decrypter)
 	    break;
 
+	printf("looking for key\n");
 	decrypter=ops_keyring_find_key_by_id(&keyring,
 					     content->pk_session_key.key_id);
 	if(!decrypter)
 	    break;
+	printf("found key\n");
 	break;
 	
     default:
@@ -66,7 +71,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
 static void usage()
     {
-    fprintf(stderr,"%s [-a] <keyring> <file to decrypt>\n",pname);
+    fprintf(stderr,"%s [-a] -k <keyring> -e <file to decrypt>\n",pname);
     exit(1);
     }
 
@@ -74,27 +79,44 @@ int main(int argc,char **argv)
     {
     ops_parse_info_t *pinfo;
     int fd;
-    const char *keyfile;
-    const char *encfile;
+    const char *keyfile=(const char *)NULL;
+    const char *encfile=(const char *)NULL;
     ops_boolean_t armour=ops_false;
     int ch;
 
     pname=argv[0];
 
-    while((ch=getopt(argc,argv,"a")) != -1)
+    while((ch=getopt(argc,argv,"ak:e:")) != -1)
 	switch(ch)
 	    {
 	case 'a':
 	    armour=ops_true;
 	    break;
 
+	case 'k':
+		keyfile=optarg;
+		break;
+		
+	case 'e':
+		encfile=optarg;
+		break;
+		
 	default:
 	    usage();
 	    }
 
+	argc-=optind;
+	argv+=optind;
+	
+	if (argc!=0)
+	{
+		usage();
+		exit(1);
+	}
+/*	
     keyfile=argv[optind++];
     encfile=argv[optind++];
-
+*/
     ops_init();
 
     ops_keyring_read(&keyring,keyfile);
