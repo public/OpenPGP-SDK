@@ -77,7 +77,6 @@ static void usage()
 
 int main(int argc,char **argv)
     {
-	    printf("argc: %d\n", argc);
     ops_parse_info_t *pinfo;
     int fd;
     const char *keyfile=(const char *)NULL;
@@ -86,11 +85,6 @@ int main(int argc,char **argv)
     int ch;
 
     pname=argv[0];
-	if (argc!=0)
-	{
-		usage();
-		exit(1);
-	}
 
     while((ch=getopt(argc,argv,"ak:e:")) != -1)
 	switch(ch)
@@ -115,6 +109,12 @@ int main(int argc,char **argv)
 	argv+=optind;
 	
 	if (argc!=0)
+	{
+		usage();
+		exit(1);
+	}
+
+	if (!keyfile || !encfile)
 	{
 		usage();
 		exit(1);
