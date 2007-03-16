@@ -678,7 +678,9 @@ void ops_signed_cleartext_trailer_free(ops_signed_cleartext_trailer_t *trailer)
 
 void ops_cmd_get_passphrase_free(ops_secret_key_passphrase_t *skp)
     {
-    free(skp->passphrase);
+    // \todo check whether skp->passphrase should be static/dynamic
+    if (skp->passphrase && *skp->passphrase)
+	free(skp->passphrase);
     skp->passphrase=NULL;
     }
 
