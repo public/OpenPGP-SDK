@@ -26,7 +26,11 @@ int main(int argc,char **argv)
     ops_keyring_read(&keyring, keyfile);
 
     key = ops_keyring_find_key_by_userid(&keyring, user_id);
-    assert(key);
+    if (!key)
+	{
+	printf("No key found for user %s in keyring %s\n", user_id, keyfile);
+	exit(1);
+	}
 
     info = ops_create_info_new();
     ops_writer_set_fd(info, 1);  // stdout for now
