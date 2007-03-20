@@ -2465,9 +2465,7 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 	break;
 
     default:
-	format_error(&content,"Format error (unknown content tag %d)",
-		     C.ptag.content_tag);
-	ERRCODEP(pinfo,OPS_E_P_UNKNOWN_TAG);
+	ERR1P(pinfo,"Unknown content tag 0x%x", C.ptag.content_tag);
 	r=0;
 	}
 
