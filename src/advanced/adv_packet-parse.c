@@ -2188,7 +2188,7 @@ static int parse_pk_session_key(ops_region_t *region,
     case OPS_PKA_ELGAMAL:
 	if(!limited_read_mpi(&C.pk_session_key.parameters.elgamal.g_to_k,
 			     region,pinfo)
-	   || limited_read_mpi(&C.pk_session_key.parameters.elgamal.encrypted_m,
+	   || !limited_read_mpi(&C.pk_session_key.parameters.elgamal.encrypted_m,
 			     region,pinfo))
 	    return 0;
 	enc_m=C.pk_session_key.parameters.elgamal.encrypted_m;
