@@ -268,7 +268,7 @@ static void end_subpacket()
     indent--;
     }
 
-static void print_packet(const ops_packet_t *packet)
+static void print_packet_hex(const ops_packet_t *packet)
     {
     unsigned char *cur;
     int i;
@@ -444,7 +444,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	break;
 
     case OPS_PARSER_PACKET_END:
-	print_packet(&content->packet);
+	print_packet_hex(&content->packet);
 	break;
 
     case OPS_PARSER_PTAG:

@@ -3,6 +3,7 @@
 #include <openpgpsdk/keyring.h>
 #include <openpgpsdk/accumulate.h>
 #include <openpgpsdk/armour.h>
+#include <openpgpsdk/std_print.h>
 
 #include <unistd.h>
 #include <string.h>
@@ -17,11 +18,13 @@ static ops_keyring_t keyring;
 static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
-    const ops_parser_content_union_t *content=&content_->content;
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     static ops_boolean_t skipping;
     static const ops_key_data_t *decrypter;
 
     OPS_USED(cbinfo);
+
+    ops_print_packet(content_);
 
     if(content_->tag != OPS_PTAG_CT_UNARMOURED_TEXT && skipping)
 	{
@@ -43,8 +46,11 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	break;
 
     case OPS_PTAG_CT_ARMOUR_HEADER:
+	printf ("OPS_PTAG_CT_ARMOUR_HEADER\n");
+	break;
+
     case OPS_PARSER_PTAG:
-	printf ("OPS_PTAG_CT_ARMOUR_HEADER or OPS_PARSER_PTAG\n");
+	printf ("OPS_PARSER_PTAG\n");
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
@@ -59,7 +65,30 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	    break;
 	printf("found key\n");
 	break;
-	
+
+    case OPS_PTAG_CT_SE_IP_DATA_HEADER:
+	printf("TBD: OPS_PTAG_CT_SE_IP_DATA_HEADER\n");
+	break;
+
+    case OPS_PTAG_CT_SE_IP_DATA_BODY:
+	printf("TBD: OPS_PTAG_CT_SE_IP_DATA_BODY\n");
+	/* decrypt it here */
+	break;
+
+    case OPS_PARSER_CMD_GET_SECRET_KEY:
+	printf("TBD: OPS_PARSER_CMD_GET_SECRET_KEY\n");
+	const ops_key_data_t* key=ops_keyring_find_key_by_id(&keyring,content->get_secret_key.pk_session_key->key_id);
+	if (!key || !ops_key_is_secret(key))
+	    return 0;
+
+	ops_set_secret_key(content,key);
+
+	break;
+
+    case OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY:
+	printf("TBD: OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY\n");
+	break;
+
     default:
 	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
 		content_->tag);

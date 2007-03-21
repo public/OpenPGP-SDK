@@ -2452,6 +2452,10 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 	r=parse_secret_key(&region,pinfo);
 	break;
 
+    case OPS_PTAG_CT_SECRET_SUBKEY:
+	r=parse_secret_key(&region,pinfo);
+	break;
+
     case OPS_PTAG_CT_PK_SESSION_KEY:
 	r=parse_pk_session_key(&region,pinfo);
 	break;

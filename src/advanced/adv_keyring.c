@@ -197,3 +197,9 @@ ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
 
     return arg.skey;
     }
+
+void ops_set_secret_key(ops_parser_content_union_t* content,const ops_key_data_t *key)
+    {
+    *content->get_secret_key.secret_key=&key->key.skey;
+    }
+
