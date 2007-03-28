@@ -89,6 +89,14 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	printf("TBD: OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY\n");
 	break;
 
+    case OPS_PTAG_CT_COMPRESSED:
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+	// Ignore these packets 
+	// They're handled in ops_parse_one_packet()
+	// and nothing else needs to be done
+	break;
+
     default:
 	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
 		content_->tag);
@@ -154,6 +162,8 @@ int main(int argc,char **argv)
 */
     ops_init();
 
+    // Read in keyring
+
     ops_keyring_read(&keyring,keyfile);
 
     pinfo=ops_parse_info_new();
@@ -164,6 +174,8 @@ int main(int argc,char **argv)
 	perror(encfile);
 	exit(2);
 	}
+
+    // Now do file
 
     ops_reader_set_fd(pinfo,fd);
 
