@@ -1,0 +1,30 @@
+DM_FLAGS=%DM_FLAGS%
+DM_LIB=%DM_LIB%
+CC=%CC%
+
+CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include %INCLUDES% %CFLAGS%
+LDFLAGS=-g %CFLAGS%
+LIBDEPS=../src/standard/libops_std.a ../src/advanced/libops_adv.a
+LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) /usr/local/lib/libcunit.a
+EXES=runtests
+
+all: Makefile .depend $(EXES)
+
+runtests: tests.o $(LIBDEPS)
+	$(CC) $(LDFLAGS) -o runtests tests.o $(LIBS)
+
+clean:
+	rm -f $(EXES) *.o *.i
+	rm -rf testdir.*
+	rm -f TAGS
+
+.depend: *.[ch] ../include/openpgpsdk/*.h
+	$(CC) $(CFLAGS) -E -M *.c > .depend
+
+force_depend:
+	$(CC) $(CFLAGS) -E -M *.c > .depend
+
+Makefile: Makefile.template ../configure
+	echo Makefile is older than templates, rerun configure
+	exit 1
+
