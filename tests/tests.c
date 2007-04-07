@@ -29,7 +29,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     static ops_boolean_t skipping;
     static const ops_key_data_t *decrypter;
-	const ops_key_data_t* key=NULL;
+    const ops_key_data_t *key=NULL;
 
     OPS_USED(cbinfo);
 
@@ -169,9 +169,9 @@ int init_suite_decrypt(void)
     // Now encrypt the test file with GPG
     snprintf(cmd,MAXBUF,"gpg --encrypt --homedir=%s --recipient Alpha %s > /dev/null", dir, file);
     if (system(cmd))
-		{
-		return 1;
-		}
+	{
+	return 1;
+	}
 
     // Return success
     return 0;
@@ -179,9 +179,9 @@ int init_suite_decrypt(void)
 
 int clean_suite_decrypt(void)
     {
-	char cmd[MAXBUF+1];
+    char cmd[MAXBUF+1];
 	
-	snprintf(cmd,MAXBUF,"rm -rf %s", dir);
+    snprintf(cmd,MAXBUF,"rm -rf %s", dir);
     if (system(cmd))
 	{
 	perror("Can't delete test directory ");
@@ -195,7 +195,7 @@ void test1(void)
     {
     char secring[MAXBUF+1];
     char encfile[MAXBUF+1];
-	int fd=0;
+    int fd=0;
     ops_parse_info_t *pinfo;
 
     snprintf(secring,MAXBUF,"%s/secring.gpg", dir);
@@ -205,9 +205,7 @@ void test1(void)
     ops_init();
     ops_keyring_read(&keyring,secring);
 
-
     // read encrypted file
-
     fd=open(encfile,O_RDONLY);
     if(fd < 0)
 	{
@@ -216,7 +214,6 @@ void test1(void)
 	}
 
     // Now do file
-
     pinfo=ops_parse_info_new();
     ops_reader_set_fd(pinfo,fd);
     ops_parse_cb_set(pinfo,callback,NULL);
