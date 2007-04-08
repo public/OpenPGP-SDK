@@ -54,6 +54,8 @@ int main(int argc,char **argv)
 
     ops_keyring_free(&keyring);
 
+    ops_parse_info_delete(pinfo);
+
     ops_finish();
 
     printf("valid signatures   = %d\n",result.valid_count);
