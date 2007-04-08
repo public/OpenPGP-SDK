@@ -139,7 +139,7 @@ int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info,
 	return 0;
 	}
 
-    ops_reader_push(parse_info,compressed_data_reader,&arg);
+    ops_reader_push(parse_info,compressed_data_reader,NULL,&arg);
 
     ret=ops_parse(parse_info);
 

@@ -90,7 +90,7 @@ static int hash_reader(void *dest,size_t length,ops_error_t **errors,
 void ops_reader_push_hash(ops_parse_info_t *pinfo,ops_hash_t *hash)
     {
     hash->init(hash);
-    ops_reader_push(pinfo,hash_reader,hash);
+    ops_reader_push(pinfo,hash_reader,NULL,hash);
     }
 
 void ops_reader_pop_hash(ops_parse_info_t *pinfo)

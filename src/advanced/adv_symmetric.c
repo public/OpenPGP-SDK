@@ -111,6 +111,9 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
     return saved;
     }
 
+static void encrypted_data_destroyer(ops_reader_info_t *rinfo)
+    { free(ops_reader_get_arg(rinfo)); }
+
 void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_decrypt_t *decrypt,
 			     ops_region_t *region)
     {
@@ -121,7 +124,7 @@ void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_decrypt_t *decrypt,
 
     ops_decrypt_init(arg->decrypt);
 
-    ops_reader_push(pinfo,encrypted_data_reader,arg);
+    ops_reader_push(pinfo,encrypted_data_reader,encrypted_data_destroyer,arg);
     }
 
 void ops_reader_pop_decrypt(ops_parse_info_t *pinfo)

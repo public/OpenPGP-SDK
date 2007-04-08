@@ -2653,7 +2653,11 @@ ops_parse_info_t *ops_parse_info_new(void)
     { return ops_mallocz(sizeof(ops_parse_info_t)); }
 
 void ops_parse_info_delete(ops_parse_info_t *pinfo)
-    { free(pinfo); }
+    {
+    if(pinfo->rinfo.destroyer)
+	pinfo->rinfo.destroyer(&pinfo->rinfo);
+    free(pinfo);
+    }
 
 ops_reader_info_t *ops_parse_get_rinfo(ops_parse_info_t *pinfo)
     { return &pinfo->rinfo; }
@@ -2695,9 +2699,10 @@ ops_parse_cb_return_t ops_parse_stacked_cb(const ops_parser_content_t *content,
  * \param reader
  * \param arg
  */
-void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
+void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg)
     {
     pinfo->rinfo.reader=reader;
+    pinfo->rinfo.destroyer=destroyer;
     pinfo->rinfo.arg=arg;
     }
 
@@ -2707,7 +2712,7 @@ void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
  * \param reader
  * \param arg
  */
-void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
+void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg)
     {
     ops_reader_info_t *rinfo=malloc(sizeof *rinfo);
 
@@ -2716,7 +2721,7 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,void *arg)
     pinfo->rinfo.next=rinfo;
     pinfo->rinfo.pinfo=pinfo;
 
-    ops_reader_set(pinfo,reader,arg);
+    ops_reader_set(pinfo,reader,destroyer,arg);
     }
 
 /**

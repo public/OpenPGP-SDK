@@ -149,6 +149,9 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     return OPS_RELEASE_MEMORY;
     }
 
+static void key_data_destroyer(ops_reader_info_t *rinfo)
+    { free(ops_reader_get_arg(rinfo)); }
+
 void ops_key_data_reader_set(ops_parse_info_t *pinfo,const ops_key_data_t *key)
     {
     validate_reader_arg_t *arg=malloc(sizeof *arg);
@@ -159,7 +162,7 @@ void ops_key_data_reader_set(ops_parse_info_t *pinfo,const ops_key_data_t *key)
     arg->packet=0;
     arg->offset=0;
 
-    ops_reader_set(pinfo,key_data_reader,arg);
+    ops_reader_set(pinfo,key_data_reader,key_data_destroyer,arg);
     }
 
 static void validate_key_signatures(ops_validate_result_t *result,const ops_key_data_t *key,

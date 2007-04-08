@@ -111,7 +111,7 @@ typedef struct
  *
  * \todo change arg_ to typesafe? 
  */
-static int reader_fd(void *dest,size_t length,ops_error_t **errors,
+static int fd_reader(void *dest,size_t length,ops_error_t **errors,
 		     ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
     reader_fd_arg_t *arg=ops_reader_get_arg(rinfo);
@@ -132,12 +132,15 @@ static int reader_fd(void *dest,size_t length,ops_error_t **errors,
     return n;
     }
 
+static void fd_destroyer(ops_reader_info_t *rinfo)
+    { free(ops_reader_get_arg(rinfo)); }
+
 void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd)
     {
     reader_fd_arg_t *arg=malloc(sizeof *arg);
 
     arg->fd=fd;
-    ops_reader_set(pinfo,reader_fd,arg);
+    ops_reader_set(pinfo,fd_reader,fd_destroyer,arg);
     }
 
 typedef struct
@@ -147,7 +150,7 @@ typedef struct
     size_t offset;
     } reader_mem_arg_t;
 
-static int reader_mem(void *dest,size_t length,ops_error_t **errors,
+static int mem_reader(void *dest,size_t length,ops_error_t **errors,
 		      ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
     reader_mem_arg_t *arg=ops_reader_get_arg(rinfo);
@@ -170,6 +173,9 @@ static int reader_mem(void *dest,size_t length,ops_error_t **errors,
     return n;
     }
 
+static void mem_destroyer(ops_reader_info_t *rinfo)
+    { free(ops_reader_get_arg(rinfo)); }
+
 // Note that its the caller's responsibility to ensure buffer continues to
 // exist
 void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
@@ -180,7 +186,7 @@ void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
     arg->buffer=buffer;
     arg->length=length;
     arg->offset=0;
-    ops_reader_set(pinfo,reader_mem,arg);
+    ops_reader_set(pinfo,mem_reader,mem_destroyer,arg);
     }
 
 void *ops_mallocz(size_t n)
@@ -214,11 +220,14 @@ static int sum16_reader(void *dest_,size_t length,ops_error_t **errors,
     return r;
     }
 
+static void sum16_destroyer(ops_reader_info_t *rinfo)
+    { free(ops_reader_get_arg(rinfo)); }
+
 void ops_reader_push_sum16(ops_parse_info_t *pinfo)
     {
     sum16_arg_t *arg=ops_mallocz(sizeof *arg);
 
-    ops_reader_push(pinfo,sum16_reader,arg);
+    ops_reader_push(pinfo,sum16_reader,sum16_destroyer,arg);
     }
 
 unsigned short ops_reader_pop_sum16(ops_parse_info_t *pinfo)

@@ -757,6 +757,9 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
     return saved;
     }
 
+static void armoured_data_destroyer(ops_reader_info_t *rinfo)
+    { free(ops_reader_get_arg(rinfo)); }
+
 /**
  * \brief 
  * \param parse_info Usual structure containing information about to how to do the parse
@@ -777,7 +780,7 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
     arg->allow_no_gap=no_gap;
     arg->allow_trailing_whitespace=trailing_whitespace;
 
-    ops_reader_push(parse_info,armoured_data_reader,arg);
+    ops_reader_push(parse_info,armoured_data_reader,armoured_data_destroyer,arg);
     }
 
 /**
