@@ -131,38 +131,33 @@ int main(int argc,char **argv)
 	    break;
 
 	case 'k':
-		keyfile=optarg;
-		break;
+	    keyfile=optarg;
+	    break;
 		
 	case 'e':
-		encfile=optarg;
-		break;
+	    encfile=optarg;
+	    break;
 		
 	default:
 	    usage();
 	    }
 
-	argc-=optind;
-	argv+=optind;
+    argc-=optind;
+    argv+=optind;
 	
-	if (argc!=0)
+    if (argc!=0)
 	{
-		usage();
-		exit(1);
+	usage();
+	exit(1);
 	}
 
-	if (!keyfile || !encfile)
+    if (!keyfile || !encfile)
 	{
-		usage();
-		exit(1);
+	usage();
+	exit(1);
 	}
-/*	
-    keyfile=argv[optind++];
-    encfile=argv[optind++];
-*/
+
     ops_init();
-
-    // Read in keyring
 
     ops_keyring_read(&keyring,keyfile);
 
@@ -176,7 +171,6 @@ int main(int argc,char **argv)
 	}
 
     // Now do file
-
     ops_reader_set_fd(pinfo,fd);
 
     ops_parse_cb_set(pinfo,callback,NULL);
