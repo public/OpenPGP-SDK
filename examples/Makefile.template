@@ -13,9 +13,9 @@ EXES=packet-dump verify create-key verify2 sign-detached \
 all: Makefile .depend $(EXES)
 
 test: test-dump test-verify test-verify-armoured test-create-key \
-      test-v3-secring
+      test-v3-secring Makefile
 
-../src/libops.a::
+../src/standard/libops_std.a::
 	cd ../src && make
 
 packet-dump: packet-dump.o $(LIBDEPS)
@@ -82,7 +82,12 @@ test-dump: packet-dump
 	./packet-dump ../test/subpacket-28.raw
 
 test-verify: verify
-	cat ../test/* | ./verify
+	./verify ../test/dsa-public-key-2118CF83.raw
+	./verify ../test/rsa-public-key-2719AF35.raw
+	./verify ../test/signtest.gpg
+	./verify ../test/subpacket-10.raw
+	./verify ../test/user-attribute-key.raw
+	./verify ../test/subpacket-28.raw
 
 test-verify-amoured: verify2
 	./verify2 -a ../test/rsa-public-key-2719AF35.raw ../test/clearsign.txt

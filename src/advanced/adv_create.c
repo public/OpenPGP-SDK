@@ -747,7 +747,6 @@ ops_boolean_t ops_writer_passthrough(const unsigned char *src,
 				     ops_writer_info_t *winfo)
     { return ops_stacked_write(src,length,errors,winfo); }
 
-
 ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     {
     ops_pk_session_key_t *session_key=ops_mallocz(sizeof *session_key);
@@ -815,6 +814,8 @@ static ops_boolean_t encrypted_writer(const unsigned char *src ATTRIBUTE_UNUSED,
     {
      /* \todo */
     assert(0);
+
+    return ops_false;
     }
 
 static ops_boolean_t encrypted_finaliser(ops_error_t **errors ATTRIBUTE_UNUSED,
@@ -822,6 +823,8 @@ static ops_boolean_t encrypted_finaliser(ops_error_t **errors ATTRIBUTE_UNUSED,
     {
     /* \todo */
     assert(0);
+
+    return ops_false;
     }
 
 void encrypted_destroyer (ops_writer_info_t *winfo ATTRIBUTE_UNUSED)

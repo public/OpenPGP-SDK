@@ -31,12 +31,18 @@ int main(int argc,char **argv)
 
     pinfo=ops_parse_info_new();
 
-    fd=open(target,O_RDONLY);
-    if(fd < 0)
+    if(!strcmp(target,"-"))
+	fd=0;
+    else
 	{
-	perror(target);
-	exit(2);
+	fd=open(target,O_RDONLY);
+	if(fd < 0)
+	    {
+	    perror(target);
+	    exit(2);
+	    }
 	}
+
     ops_reader_set_fd(pinfo,fd);
 
     ops_parse_and_accumulate(&keyring,pinfo);

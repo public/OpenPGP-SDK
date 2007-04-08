@@ -48,8 +48,8 @@ static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
     memcpy(dest,&arg->key->packets[arg->packet].raw[arg->offset],length);
     arg->offset+=length;
 
-     return length;
-     }
+    return length;
+    }
 
 /**
  * \ingroup Callbacks
@@ -112,6 +112,12 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	    // XXX: we should also check that the signer is the key we are validating, I think.
 	    valid=ops_check_subkey_signature(&arg->pkey,&arg->subkey,
 	     	    &content->signature,
+		    ops_get_public_key_from_data(signer),
+		    arg->rarg->key->packets[arg->rarg->packet].raw);
+	    break;
+
+	case OPS_SIG_DIRECT:
+	    valid=ops_check_direct_signature(&arg->pkey,&content->signature,
 		    ops_get_public_key_from_data(signer),
 		    arg->rarg->key->packets[arg->rarg->packet].raw);
 	    break;
