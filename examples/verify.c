@@ -16,6 +16,7 @@ int main(int argc,char **argv)
     ops_keyring_t keyring;
     const char *target;
     int fd;
+    ops_validate_result_t result;
 
     if(argc != 2)
 	{
@@ -49,11 +50,18 @@ int main(int argc,char **argv)
 
     ops_dump_keyring(&keyring);
 
-    ops_validate_all_signatures(&keyring);
+    ops_validate_all_signatures(&result,&keyring);
 
     ops_keyring_free(&keyring);
 
     ops_finish();
+
+    printf("valid signatures   = %d\n",result.valid_count);
+    printf("invalid signatures = %d\n",result.invalid_count);
+    printf("unknown signer     = %d\n",result.unknown_signer_count);
+
+    if(result.invalid_count)
+	return 1;
 
     return 0;
     }

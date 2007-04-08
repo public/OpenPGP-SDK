@@ -23,6 +23,7 @@ typedef struct
     ops_user_id_t user_id;
     const ops_keyring_t *keyring;
     validate_reader_arg_t *rarg;
+    ops_validate_result_t *result;
     } validate_cb_arg_t;
 
 static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
@@ -93,6 +94,7 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	if(!signer)
 	    {
 	    printf(" UNKNOWN SIGNER\n");
+	    ++arg->result->unknown_signer_count;
 	    break;
 	    }
 
@@ -128,9 +130,15 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	    exit(1);
 	    }
 	if(valid)
+	    {
 	    printf(" validated\n");
+	    ++arg->result->valid_count;
+	    }
 	else
+	    {
 	    printf(" BAD SIGNATURE\n");
+	    ++arg->result->invalid_count;
+	    }
 	break;
 
     default:
@@ -154,13 +162,14 @@ void ops_key_data_reader_set(ops_parse_info_t *pinfo,const ops_key_data_t *key)
     ops_reader_set(pinfo,key_data_reader,arg);
     }
 
-static void validate_key_signatures(const ops_key_data_t *key,
+static void validate_key_signatures(ops_validate_result_t *result,const ops_key_data_t *key,
 				    const ops_keyring_t *keyring)
     {
     ops_parse_info_t *pinfo;
     validate_cb_arg_t carg;
 
     memset(&carg,'\0',sizeof carg);
+    carg.result=result;
 
     pinfo=ops_parse_info_new();
     //    ops_parse_options(&opt,OPS_PTAG_CT_SIGNATURE,OPS_PARSE_PARSED);
@@ -180,10 +189,12 @@ static void validate_key_signatures(const ops_key_data_t *key,
     ops_user_id_free(&carg.user_id);
     }
 
-void ops_validate_all_signatures(const ops_keyring_t *ring)
+void ops_validate_all_signatures(ops_validate_result_t *result,
+				 const ops_keyring_t *ring)
     {
     int n;
 
+    memset(result,'\0',sizeof *result);
     for(n=0 ; n < ring->nkeys ; ++n)
-	validate_key_signatures(&ring->keys[n],ring);
+	validate_key_signatures(result,&ring->keys[n],ring);
     }
