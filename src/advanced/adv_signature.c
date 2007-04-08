@@ -319,8 +319,6 @@ ops_check_direct_signature(const ops_public_key_t *key,
     ops_hash_t hash;
 
     init_signature(&hash,sig,key);
-    hash_add_key(&hash,key);
-
     return finalise_signature(&hash,sig,signer,raw_packet);
     }
 
