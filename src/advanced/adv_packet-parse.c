@@ -2654,6 +2654,13 @@ ops_parse_info_t *ops_parse_info_new(void)
 
 void ops_parse_info_delete(ops_parse_info_t *pinfo)
     {
+    ops_parse_cb_info_t *cbinfo,*next;
+
+    for(cbinfo=pinfo->cbinfo.next ; cbinfo ; cbinfo=next)
+	{
+	next=cbinfo->next;
+	free(cbinfo);
+	}
     if(pinfo->rinfo.destroyer)
 	pinfo->rinfo.destroyer(&pinfo->rinfo);
     free(pinfo);

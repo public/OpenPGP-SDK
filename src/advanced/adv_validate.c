@@ -190,6 +190,8 @@ static void validate_key_signatures(ops_validate_result_t *result,const ops_key_
     if(carg.subkey.version)
 	ops_public_key_free(&carg.subkey);
     ops_user_id_free(&carg.user_id);
+
+    ops_parse_info_delete(pinfo);
     }
 
 void ops_validate_all_signatures(ops_validate_result_t *result,
