@@ -303,6 +303,30 @@ ops_check_subkey_signature(const ops_public_key_t *key,
 /**
  * \ingroup Verify
  *
+ * Verify a direct signature.
+ *
+ * \param key The public key which was signed.
+ * \param sig The signature.
+ * \param signer The public key of the signer.
+ * \param raw_packet The raw signature packet.
+ */
+ops_boolean_t
+ops_check_direct_signature(const ops_public_key_t *key,
+			   const ops_signature_t *sig,
+			   const ops_public_key_t *signer,
+			   const unsigned char *raw_packet)
+    {
+    ops_hash_t hash;
+
+    init_signature(&hash,sig,key);
+    hash_add_key(&hash,key);
+
+    return finalise_signature(&hash,sig,signer,raw_packet);
+    }
+
+/**
+ * \ingroup Verify
+ *
  * Verify a signature on a hash (the hash will have already been fed
  * the material that was being signed, for example signed cleartext).
  *
