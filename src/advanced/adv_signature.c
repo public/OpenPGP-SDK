@@ -245,17 +245,17 @@ static ops_boolean_t finalise_signature(ops_hash_t *hash,
  * Verify a certification signature.
  *
  * \param key The public key that was signed.
- * \param id The user ID that was signed.
+ * \param id The user ID that was signed
  * \param sig The signature.
  * \param signer The public key of the signer.
  * \param raw_packet The raw signature packet.
  */
 ops_boolean_t
-ops_check_certification_signature(const ops_public_key_t *key,
-				  const ops_user_id_t *id,
-				  const ops_signature_t *sig,
-				  const ops_public_key_t *signer,
-				  const unsigned char *raw_packet)
+ops_check_user_id_certification_signature(const ops_public_key_t *key,
+					  const ops_user_id_t *id,
+					  const ops_signature_t *sig,
+					  const ops_public_key_t *signer,
+					  const unsigned char *raw_packet)
     {
     ops_hash_t hash;
     size_t user_id_len=strlen((char *)id->user_id);
@@ -266,10 +266,40 @@ ops_check_certification_signature(const ops_public_key_t *key,
 	{
 	ops_hash_add_int(&hash,0xb4,1);
 	ops_hash_add_int(&hash,user_id_len,4);
-	hash.add(&hash,id->user_id,user_id_len);
 	}
-    else
-	hash.add(&hash,id->user_id,user_id_len);
+    hash.add(&hash,id->user_id,user_id_len);
+
+    return finalise_signature(&hash,sig,signer,raw_packet);
+    }
+
+/**
+ * \ingroup Verify
+ *
+ * Verify a certification signature.
+ *
+ * \param key The public key that was signed.
+ * \param attribute The user attribute that was signed
+ * \param sig The signature.
+ * \param signer The public key of the signer.
+ * \param raw_packet The raw signature packet.
+ */
+ops_boolean_t
+ops_check_user_attribute_certification_signature(const ops_public_key_t *key,
+						 const ops_user_attribute_t *attribute,
+						 const ops_signature_t *sig,
+						 const ops_public_key_t *signer,
+						 const unsigned char *raw_packet)
+    {
+    ops_hash_t hash;
+
+    init_signature(&hash,sig,key);
+
+    if(sig->version == OPS_V4)
+	{
+	ops_hash_add_int(&hash,0xd1,1);
+	ops_hash_add_int(&hash,attribute->data.len,4);
+	}
+    hash.add(&hash,attribute->data.contents,attribute->data.len);
 
     return finalise_signature(&hash,sig,signer,raw_packet);
     }

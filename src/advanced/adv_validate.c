@@ -20,7 +20,13 @@ typedef struct
     {
     ops_public_key_t pkey;
     ops_public_key_t subkey;
+    enum
+	{
+	ATTRIBUTE,
+	ID
+	} last_seen;
     ops_user_id_t user_id;
+    ops_user_attribute_t user_attribute;
     const ops_keyring_t *keyring;
     validate_reader_arg_t *rarg;
     ops_validate_result_t *result;
@@ -82,6 +88,16 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	if(arg->user_id.user_id)
 	    ops_user_id_free(&arg->user_id);
 	arg->user_id=content->user_id;
+	arg->last_seen=ID;
+	return OPS_KEEP_MEMORY;
+
+    case OPS_PTAG_CT_USER_ATTRIBUTE:
+	assert(content->user_attribute.data.len);
+	printf("user attribute, length=%d\n",content->user_attribute.data.len);
+	if(arg->user_attribute.data.len)
+	    ops_user_attribute_free(&arg->user_attribute);
+	arg->user_attribute=content->user_attribute;
+	arg->last_seen=ATTRIBUTE;
 	return OPS_KEEP_MEMORY;
 
     case OPS_PTAG_CT_SIGNATURE_FOOTER:
@@ -105,9 +121,19 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	case OPS_CERT_CASUAL:
 	case OPS_CERT_POSITIVE:
 	case OPS_SIG_REV_CERT:
-	    valid=ops_check_certification_signature(&arg->pkey,&arg->user_id,
-		    &content->signature,ops_get_public_key_from_data(signer),
-		    arg->rarg->key->packets[arg->rarg->packet].raw);
+	    if(arg->last_seen == ID)
+		valid=ops_check_user_id_certification_signature(&arg->pkey,
+								&arg->user_id,
+								&content->signature,
+								ops_get_public_key_from_data(signer),
+								arg->rarg->key->packets[arg->rarg->packet].raw);
+	    else
+		valid=ops_check_user_attribute_certification_signature(&arg->pkey,
+								       &arg->user_attribute,
+								       &content->signature,
+								       ops_get_public_key_from_data(signer),
+								       arg->rarg->key->packets[arg->rarg->packet].raw);
+		
 	    break;
 
 	case OPS_SIG_SUBKEY:
@@ -141,9 +167,15 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	    }
 	break;
 
+	// ignore these
+    case OPS_PARSER_PTAG:
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
+    case OPS_PTAG_CT_SIGNATURE:
+	break;
+
     default:
-	// XXX: reinstate when we can make packets optional
-	//	fprintf(stderr,"unexpected tag=%d\n",content_->tag);
+	fprintf(stderr,"unexpected tag=0x%x\n",content_->tag);
+	assert(0);
 	break;
 	}
     return OPS_RELEASE_MEMORY;
@@ -190,6 +222,7 @@ static void validate_key_signatures(ops_validate_result_t *result,const ops_key_
     if(carg.subkey.version)
 	ops_public_key_free(&carg.subkey);
     ops_user_id_free(&carg.user_id);
+    ops_user_attribute_free(&carg.user_attribute);
 
     ops_parse_info_delete(pinfo);
     }

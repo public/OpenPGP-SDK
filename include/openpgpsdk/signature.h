@@ -14,11 +14,17 @@ ops_create_signature_t *ops_create_signature_new(void);
 void ops_create_signature_delete(ops_create_signature_t *sig);
 
 ops_boolean_t
-ops_check_certification_signature(const ops_public_key_t *key,
-				  const ops_user_id_t *id,
-				  const ops_signature_t *sig,
-				  const ops_public_key_t *signer,
-				  const unsigned char *raw_packet);
+ops_check_user_id_certification_signature(const ops_public_key_t *key,
+					  const ops_user_id_t *id,
+					  const ops_signature_t *sig,
+					  const ops_public_key_t *signer,
+					  const unsigned char *raw_packet);
+ops_boolean_t
+ops_check_user_attribute_certification_signature(const ops_public_key_t *key,
+						 const ops_user_attribute_t *attribute,
+						 const ops_signature_t *sig,
+						 const ops_public_key_t *signer,
+						 const unsigned char *raw_packet);
 ops_boolean_t
 ops_check_subkey_signature(const ops_public_key_t *key,
 			   const ops_public_key_t *subkey,
