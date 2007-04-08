@@ -89,7 +89,7 @@ test-verify: verify
 	./verify ../test/user-attribute-key.raw
 	./verify ../test/subpacket-28.raw
 
-test-verify-amoured: verify2
+test-verify-armoured: verify2
 	./verify2 -a ../test/rsa-public-key-2719AF35.raw ../test/clearsign.txt
 
 test-create-key: $(SCRATCH)/key.sec $(SCRATCH)/key.pub
