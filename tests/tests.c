@@ -55,7 +55,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
-	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
+		//	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
 	if(decrypter)
 	    break;
 
@@ -117,7 +117,7 @@ static int mktmpdir (void)
 	    }
 	else
 	    {
-	    printf ("Couldn't open dir: errno=%d\n", errno);
+	    fprintf (stderr,"Couldn't open dir: errno=%d\n", errno);
 	    perror(NULL);
 	    }
 	}
@@ -138,7 +138,7 @@ int init_suite_decrypt(void)
     if (!mktmpdir())
 	return 1;
 
-    printf("creating new file\n");
+	//    printf("creating new file\n");
     // Create a new unencrypted test file
     snprintf(file,MAXBUF,"%s/%s",dir,textfile);
 
@@ -153,7 +153,7 @@ int init_suite_decrypt(void)
     snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails");
     if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
 	{
-	printf("Can't create key details\n");
+	fprintf(stderr,"Can't create key details\n");
 	return 1;
 	}
 
@@ -162,12 +162,12 @@ int init_suite_decrypt(void)
     close(fd);
 
     char cmd[MAXBUF+1];
-    snprintf(cmd,MAXBUF,"gpg --gen-key --expert --homedir=%s --batch %s > /dev/null",dir,keydetails);
+    snprintf(cmd,MAXBUF,"gpg --gen-key --expert --homedir=%s --batch %s 2>&1 > /dev/null",dir,keydetails);
     //printf("cmd: %s\n", cmd);
     system(cmd);
 
     // Now encrypt the test file with GPG
-    snprintf(cmd,MAXBUF,"gpg --encrypt --homedir=%s --recipient Alpha %s > /dev/null", dir, file);
+    snprintf(cmd,MAXBUF,"gpg --encrypt --homedir=%s --recipient Alpha %s 2>&1 > /dev/null", dir, file);
     if (system(cmd))
 	{
 	return 1;
@@ -191,7 +191,7 @@ int clean_suite_decrypt(void)
     return 0;
     }
 
-void test1(void)
+void test_rsa_decryption(void)
     {
     char secring[MAXBUF+1];
     char encfile[MAXBUF+1];
@@ -243,7 +243,7 @@ int main()
 
     // add tests to suite
 
-    if (NULL == CU_add_test(pSuite, "test 1", test1))
+    if (NULL == CU_add_test(pSuite, "RSA decryption", test_rsa_decryption))
 	{
 	CU_cleanup_registry();
 	return CU_get_error();
