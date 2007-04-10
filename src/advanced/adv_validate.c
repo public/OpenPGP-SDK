@@ -93,7 +93,7 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     case OPS_PTAG_CT_USER_ATTRIBUTE:
 	assert(content->user_attribute.data.len);
-	printf("user attribute, length=%d\n",content->user_attribute.data.len);
+	printf("user attribute, length=%d\n",(int)content->user_attribute.data.len);
 	if(arg->user_attribute.data.len)
 	    ops_user_attribute_free(&arg->user_attribute);
 	arg->user_attribute=content->user_attribute;
