@@ -9,6 +9,7 @@
 
 #include "CUnit/Basic.h"
 
+#include <openpgpsdk/armour.h>
 #include "openpgpsdk/keyring.h"
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/packet-parse.h"
@@ -16,6 +17,7 @@
 #include "openpgpsdk/std_print.h"
 
 #define MAXBUF 128
+static char secring[MAXBUF+1];
 static char dir[MAXBUF+1];
 static char file[MAXBUF+1];
 static char keydetails[MAXBUF+1];
@@ -81,6 +83,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_ARMOUR_HEADER:
+    case OPS_PTAG_CT_ARMOUR_TRAILER:
     case OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY:
     case OPS_PTAG_CT_COMPRESSED:
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
@@ -129,7 +132,7 @@ static int mktmpdir (void)
  * Create temporary test files.
  */
 
-int init_suite_decrypt(void)
+int init_suite_rsa_decrypt(void)
     {
     char *textfile="testfile.txt";
     int fd=0;
@@ -173,14 +176,33 @@ int init_suite_decrypt(void)
 	return 1;
 	}
 
+    // Now encrypt and ascii-armour the test file with GPG
+    snprintf(cmd,MAXBUF,"gpg --encrypt --armor --homedir=%s --recipient Alpha %s 2>&1 > /dev/null", dir, file);
+    if (system(cmd))
+	{
+	return 1;
+	}
+
+    snprintf(secring,MAXBUF,"%s/secring.gpg", dir);
+
+    // Initialise OPS and read keyring
+    ops_init();
+    ops_keyring_read(&keyring,secring);
+
     // Return success
     return 0;
     }
 
-int clean_suite_decrypt(void)
+int clean_suite_rsa_decrypt(void)
     {
     char cmd[MAXBUF+1];
 	
+	/* Close OPS */
+
+    ops_keyring_free(&keyring);
+    ops_finish();
+
+	/* Remove test dir and files */
     snprintf(cmd,MAXBUF,"rm -rf %s", dir);
     if (system(cmd))
 	{
@@ -191,21 +213,18 @@ int clean_suite_decrypt(void)
     return 0;
     }
 
-void test_rsa_decryption(void)
+void test_rsa_decryption_unarmoured_nopassphrase(void)
     {
-    char secring[MAXBUF+1];
+	/*
+	 * TEST: RSA encrypted file, unarmoured, no passphrase
+	 */
+
     char encfile[MAXBUF+1];
     int fd=0;
     ops_parse_info_t *pinfo;
 
-    snprintf(secring,MAXBUF,"%s/secring.gpg", dir);
-    snprintf(encfile,MAXBUF,"%s.gpg", file);
-
-    // read keyring
-    ops_init();
-    ops_keyring_read(&keyring,secring);
-
     // read encrypted file
+    snprintf(encfile,MAXBUF,"%s.gpg", file);
     fd=open(encfile,O_RDONLY);
     if(fd < 0)
 	{
@@ -220,11 +239,46 @@ void test_rsa_decryption(void)
 
     ops_parse(pinfo);
 
-    ops_keyring_free(&keyring);
-    ops_finish();
+	close(fd);
 
     // File contents should match
     CU_ASSERT(strcmp(text,testtxt)==0);
+
+    }
+
+void test_rsa_decryption_armoured_nopassphrase(void)
+    {
+	/*
+	 * TEST: RSA encrypted file, armoured, no passphrase
+	 */
+
+    char encfile[MAXBUF+1];
+    int fd=0;
+    ops_parse_info_t *pinfo;
+
+    // read encrypted file
+    snprintf(encfile,MAXBUF,"%s.asc", file);
+    fd=open(encfile,O_RDONLY);
+    if(fd < 0)
+	{
+	perror(encfile);
+	exit(2);
+	}
+
+    // Now do file
+    pinfo=ops_parse_info_new();
+    ops_reader_set_fd(pinfo,fd);
+    ops_parse_cb_set(pinfo,callback,NULL);
+
+	ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+    ops_parse(pinfo);
+	ops_reader_pop_dearmour(pinfo);
+
+	close(fd);
+
+    // File contents should match
+    CU_ASSERT(strcmp(text,testtxt)==0);
+
     }
 
 int main()
@@ -234,7 +288,7 @@ int main()
     if (CUE_SUCCESS != CU_initialize_registry())
 	return CU_get_error();
 
-    pSuite = CU_add_suite("Decrypt Suite", init_suite_decrypt, clean_suite_decrypt);
+    pSuite = CU_add_suite("RSA Decryption Suite", init_suite_rsa_decrypt, clean_suite_rsa_decrypt);
     if (NULL == pSuite) 
 	{
 	CU_cleanup_registry();
@@ -243,7 +297,13 @@ int main()
 
     // add tests to suite
 
-    if (NULL == CU_add_test(pSuite, "RSA decryption", test_rsa_decryption))
+    if (NULL == CU_add_test(pSuite, "Unarmoured, no passphrase", test_rsa_decryption_unarmoured_nopassphrase))
+	{
+	CU_cleanup_registry();
+	return CU_get_error();
+	}
+
+    if (NULL == CU_add_test(pSuite, "Armoured, no passphrase", test_rsa_decryption_armoured_nopassphrase))
 	{
 	CU_cleanup_registry();
 	return CU_get_error();
