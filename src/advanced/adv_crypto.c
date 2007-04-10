@@ -27,9 +27,11 @@ int ops_decrypt_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
     if(n <= 0)
 	return -1;
 
+	/*
     printf(" decrypt=%d ",n);
     hexdump(mpibuf,n);
     printf("\n");
+	*/
 
     // Decode EME-PKCS1_V1_5 (RFC 2437).
 
