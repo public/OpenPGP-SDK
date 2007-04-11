@@ -680,8 +680,8 @@ void ops_cmd_get_passphrase_free(ops_secret_key_passphrase_t *skp)
     {
     // \todo check whether skp->passphrase should be static/dynamic
     if (skp->passphrase && *skp->passphrase)
-	free(skp->passphrase);
-    skp->passphrase=NULL;
+        free(*(skp->passphrase));
+    *(skp->passphrase)=NULL;
     }
 
 /*! Free any memory allocated when parsing the packet content */
