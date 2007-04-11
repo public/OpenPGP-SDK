@@ -38,6 +38,7 @@ ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
 
 void ops_keyring_read(ops_keyring_t *keyring,const char *file);
 
+char *ops_malloc_passphrase(char *passphrase);
 char *ops_get_passphrase(void);
 
 void ops_keyring_list(const ops_keyring_t* keyring, const char* match);

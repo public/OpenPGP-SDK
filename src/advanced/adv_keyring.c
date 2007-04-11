@@ -87,14 +87,25 @@ static void echo_on()
     assert(r >= 0);
     }
 
-char *ops_get_passphrase(void)
+char *ops_malloc_passphrase(char *pp)
     {
-    char buffer[1024];
     char *passphrase;
     size_t n;
 
-    printf("Passphrase: ");
+    n=strlen(pp);
+    passphrase=malloc(n+1);
+    strcpy(passphrase,pp);
 
+    return passphrase;
+    }
+
+char *ops_get_passphrase(void)
+    {
+    char buffer[1024];
+    size_t n;
+
+    printf("Passphrase: ");
+    
     echo_off();
     fgets(buffer,sizeof buffer,stdin);
     echo_on();
@@ -104,10 +115,7 @@ char *ops_get_passphrase(void)
     n=strlen(buffer);
     if(n && buffer[n-1] == '\n')
 	buffer[--n]='\0';
-    passphrase=malloc(n+1);
-    strcpy(passphrase,buffer);
-
-    return passphrase;
+    return ops_malloc_passphrase(buffer);
     }
 
 typedef struct
@@ -130,6 +138,8 @@ static ops_parse_cb_return_t decrypt_cb(const ops_parser_content_t *content_,
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_USER_ID:
     case OPS_PTAG_CT_SIGNATURE:
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
+    case OPS_PTAG_CT_SIGNATURE_FOOTER:
     case OPS_PTAG_CT_TRUST:
 	break;
 
