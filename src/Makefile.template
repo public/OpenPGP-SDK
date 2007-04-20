@@ -1,7 +1,7 @@
 LIBSUBDIRS=advanced standard 
 SUBDIRS=$(LIBSUBDIRS) app
 
-default:
+default: Makefile
 	@set -e; for d in $(SUBDIRS); do \
 	(cd $$d; echo "+++ make in $$d"; make; echo "--- $$d"); \
 	done
@@ -12,7 +12,6 @@ force_depend:
 	done
 
 clean:
-	-rm libops.a
 	@set -e; for d in $(SUBDIRS); do \
 	(cd $$d; echo "+++ make clean in $$d"; make clean; echo "--- $$d"); \
 	done
@@ -24,7 +23,6 @@ Makefiles:
 	(cd $$d; echo "+++ make Makefile in $$d"; make Makefile; echo "--- $$d"); \
 	done
 
-libops.a:
-	@set -e; for d in $(LIBSUBDIRS); do \
-	(cd $$d; echo "+++ make in $$d"; make ; echo "--- $$d"); \
-	done
+Makefile: Makefile.template ../configure
+	echo Makefile is older than templates, rerun configure.
+	exit 1
