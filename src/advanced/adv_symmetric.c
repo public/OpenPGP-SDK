@@ -16,7 +16,7 @@ typedef struct
     unsigned char decrypted[1024];
     size_t decrypted_count;
     size_t decrypted_offset;
-    ops_decrypt_t *decrypt;
+    ops_crypt_t *decrypt;
     ops_region_t *region;
     ops_boolean_t prev_read_was_plain:1;
     } encrypted_arg_t;
@@ -32,7 +32,7 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
     if(arg->prev_read_was_plain && !rinfo->pinfo->reading_mpi_length)
 	{
 	assert(rinfo->pinfo->reading_v3_secret);
-	arg->decrypt->resync(arg->decrypt);
+	arg->decrypt->decrypt_resync(arg->decrypt);
 	arg->prev_read_was_plain=ops_false;
 	}
     else if(rinfo->pinfo->reading_v3_secret
@@ -93,9 +93,9 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 
 	    if(!rinfo->pinfo->reading_v3_secret
 	       || !rinfo->pinfo->reading_mpi_length)
-		arg->decrypted_count=ops_decrypt_decrypt(arg->decrypt,
-							 arg->decrypted,
-							 buffer,n);
+		arg->decrypted_count=ops_decrypt(arg->decrypt,
+						 arg->decrypted,
+						 buffer,n);
 	    else
 		{
 		memcpy(arg->decrypted,buffer,n);
@@ -114,7 +114,7 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 static void encrypted_data_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
-void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_decrypt_t *decrypt,
+void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_crypt_t *decrypt,
 			     ops_region_t *region)
     {
     encrypted_arg_t *arg=ops_mallocz(sizeof *arg);
@@ -131,19 +131,19 @@ void ops_reader_pop_decrypt(ops_parse_info_t *pinfo)
     {
     encrypted_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(pinfo));
 
-    arg->decrypt->finish(arg->decrypt);
+    arg->decrypt->decrypt_finish(arg->decrypt);
     free(arg);
     
     ops_reader_pop(pinfo);
     }
 
-static void std_set_iv(ops_decrypt_t *decrypt,const unsigned char *iv)
-    { memcpy(decrypt->iv,iv,decrypt->blocksize); }
+static void std_set_iv(ops_crypt_t *crypt,const unsigned char *iv)
+    { memcpy(crypt->iv,iv,crypt->blocksize); }
 
-static void std_set_key(ops_decrypt_t *decrypt,const unsigned char *key)
-    { memcpy(decrypt->key,key,decrypt->keysize); }
+static void std_set_key(ops_crypt_t *crypt,const unsigned char *key)
+    { memcpy(crypt->key,key,crypt->keysize); }
 
-static void std_resync(ops_decrypt_t *decrypt)
+static void std_resync(ops_crypt_t *decrypt)
     {
     if(decrypt->num == decrypt->blocksize)
 	return;
@@ -155,25 +155,25 @@ static void std_resync(ops_decrypt_t *decrypt)
     decrypt->num=0;
     }
 
-static void std_finish(ops_decrypt_t *decrypt)
+static void std_finish(ops_crypt_t *crypt)
     {
-    free(decrypt->data);
-    decrypt->data=NULL;
+    free(crypt->data);
+    crypt->data=NULL;
     }
 
-static void cast5_init(ops_decrypt_t *decrypt)
+static void cast5_init(ops_crypt_t *crypt)
     {
-    free(decrypt->data);
-    decrypt->data=malloc(sizeof(CAST_KEY));
-    CAST_set_key(decrypt->data,decrypt->keysize,decrypt->key);
+    free(crypt->data);
+    crypt->data=malloc(sizeof(CAST_KEY));
+    CAST_set_key(crypt->data,crypt->keysize,crypt->key);
     }
 
-static void cast5_encrypt(ops_decrypt_t *decrypt,void *out,const void *in)
-    { CAST_ecb_encrypt(in,out,decrypt->data,1); }
+static void cast5_encrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { CAST_ecb_encrypt(in,out,crypt->data,1); }
 
 #define TRAILER		"","","","",0,NULL
 
-static ops_decrypt_t cast5=
+static ops_crypt_t cast5=
     {
     OPS_SA_CAST5,
     CAST_BLOCK,
@@ -188,21 +188,21 @@ static ops_decrypt_t cast5=
     };
 
 #ifndef OPENSSL_NO_IDEA
-static void idea_init(ops_decrypt_t *decrypt)
+static void idea_init(ops_crypt_t *crypt)
     {
-    assert(decrypt->keysize == IDEA_KEY_LENGTH);
+    assert(crypt->keysize == IDEA_KEY_LENGTH);
 
-    free(decrypt->data);
-    decrypt->data=malloc(sizeof(IDEA_KEY_SCHEDULE));
+    free(crypt->data);
+    crypt->data=malloc(sizeof(IDEA_KEY_SCHEDULE));
 
-    // note that we don't invert the key for CFB mode
-    idea_set_encrypt_key(decrypt->key,decrypt->data);
+    // note that we don't invert the key when decrypting for CFB mode
+    idea_set_encrypt_key(crypt->key,crypt->data);
     }
 
-static void idea_block_encrypt(ops_decrypt_t *decrypt,void *out,const void *in)
-    { idea_ecb_encrypt(in,out,decrypt->data); }
+static void idea_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { idea_ecb_encrypt(in,out,crypt->data); }
 
-static const ops_decrypt_t idea=
+static const ops_crypt_t idea=
     {
     OPS_SA_IDEA,
     IDEA_BLOCK,
@@ -217,17 +217,17 @@ static const ops_decrypt_t idea=
     };
 #endif /* OPENSSL_NO_IDEA */
 
-static void aes256_init(ops_decrypt_t *decrypt)
+static void aes256_init(ops_crypt_t *crypt)
     {
-    free(decrypt->data);
-    decrypt->data=malloc(sizeof(AES_KEY));
-    AES_set_encrypt_key(decrypt->key,256,decrypt->data);
+    free(crypt->data);
+    crypt->data=malloc(sizeof(AES_KEY));
+    AES_set_encrypt_key(crypt->key,256,crypt->data);
     }
 
-static void aes_block_encrypt(ops_decrypt_t *decrypt,void *out,const void *in)
-    { AES_encrypt(in,out,decrypt->data); }
+static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { AES_encrypt(in,out,crypt->data); }
 
-static const ops_decrypt_t aes256=
+static const ops_crypt_t aes256=
     {
     OPS_SA_AES_256,
     AES_BLOCK_SIZE,
@@ -241,27 +241,27 @@ static const ops_decrypt_t aes256=
     TRAILER
     };
 
-static void tripledes_init(ops_decrypt_t *decrypt)
+static void tripledes_init(ops_crypt_t *crypt)
     {
     DES_key_schedule *keys;
     int n;
 
-    free(decrypt->data);
-    keys=decrypt->data=malloc(3*sizeof(DES_key_schedule));
+    free(crypt->data);
+    keys=crypt->data=malloc(3*sizeof(DES_key_schedule));
 
     for(n=0 ; n < 3 ; ++n)
-	DES_set_key((DES_cblock *)(decrypt->key+n*8),&keys[n]);
+	DES_set_key((DES_cblock *)(crypt->key+n*8),&keys[n]);
     }
 
-static void tripledes_block_encrypt(ops_decrypt_t *decrypt,void *out,
+static void tripledes_block_encrypt(ops_crypt_t *crypt,void *out,
 				    const void *in)
     {
-    DES_key_schedule *keys=decrypt->data;
+    DES_key_schedule *keys=crypt->data;
 
     DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],1);
     }
 
-static const ops_decrypt_t tripledes=
+static const ops_crypt_t tripledes=
     {
     OPS_SA_TRIPLEDES,
     8,
@@ -275,7 +275,7 @@ static const ops_decrypt_t tripledes=
     TRAILER
     };
 
-static const ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
+static const ops_crypt_t *get_proto(ops_symmetric_algorithm_t alg)
     {
     switch(alg)
 	{
@@ -302,12 +302,12 @@ static const ops_decrypt_t *get_proto(ops_symmetric_algorithm_t alg)
     return NULL;
     }
 
-void ops_decrypt_any(ops_decrypt_t *decrypt,ops_symmetric_algorithm_t alg)
-    { *decrypt=*get_proto(alg); }
+void ops_crypt_any(ops_crypt_t *crypt,ops_symmetric_algorithm_t alg)
+    { *crypt=*get_proto(alg); }
 
 unsigned ops_block_size(ops_symmetric_algorithm_t alg)
     {
-    const ops_decrypt_t *p=get_proto(alg);
+    const ops_crypt_t *p=get_proto(alg);
 
     if(!p)
 	return 0;
@@ -317,7 +317,7 @@ unsigned ops_block_size(ops_symmetric_algorithm_t alg)
 
 unsigned ops_key_size(ops_symmetric_algorithm_t alg)
     {
-    const ops_decrypt_t *p=get_proto(alg);
+    const ops_crypt_t *p=get_proto(alg);
 
     if(!p)
 	return 0;
@@ -325,7 +325,7 @@ unsigned ops_key_size(ops_symmetric_algorithm_t alg)
     return p->keysize;
     }
 
-void ops_decrypt_init(ops_decrypt_t *decrypt)
+void ops_decrypt_init(ops_crypt_t *decrypt)
     {
     decrypt->base_init(decrypt);
     decrypt->block_encrypt(decrypt,decrypt->siv,decrypt->iv);
@@ -333,8 +333,8 @@ void ops_decrypt_init(ops_decrypt_t *decrypt)
     decrypt->num=0;
     }
 
-size_t ops_decrypt_decrypt(ops_decrypt_t *decrypt,void *out_,const void *in_,
-			   size_t count)
+size_t ops_decrypt(ops_crypt_t *decrypt,void *out_,const void *in_,
+		   size_t count)
     {
     unsigned char *out=out_;
     const unsigned char *in=in_;
@@ -354,6 +354,30 @@ size_t ops_decrypt_decrypt(ops_decrypt_t *decrypt,void *out_,const void *in_,
 	    }
 	t=decrypt->civ[decrypt->num];
 	*out++=t^(decrypt->civ[decrypt->num++]=*in++);
+	}
+
+    return saved;
+    }
+
+size_t ops_encrypt(ops_crypt_t *decrypt,void *out_,const void *in_,
+		   size_t count)
+    {
+    unsigned char *out=out_;
+    const unsigned char *in=in_;
+    int saved=count;
+
+    /* in order to support v3's weird resyncing we have to implement CFB mode
+       ourselves */
+    while(count-- > 0)
+	{
+	if(decrypt->num == decrypt->blocksize)
+	    {
+	    memcpy(decrypt->siv,decrypt->civ,decrypt->blocksize);
+	    decrypt->block_encrypt(decrypt,decrypt->civ,decrypt->civ);
+	    decrypt->num=0;
+	    }
+	decrypt->civ[decrypt->num]=*out++=decrypt->civ[decrypt->num]^*in++;
+	++decrypt->num;
 	}
 
     return saved;

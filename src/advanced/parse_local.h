@@ -68,7 +68,7 @@ struct ops_parse_info
     ops_reader_info_t rinfo;
     ops_parse_cb_info_t cbinfo;
     ops_error_t *errors;
-    ops_decrypt_t decrypt;
+    ops_crypt_t decrypt;
     size_t nhashes;
     ops_parse_hash_info_t *hashes;
     ops_boolean_t reading_v3_secret:1;

@@ -13,7 +13,7 @@ EXES=packet-dump verify create-key verify2 sign-detached \
 all: Makefile .depend $(EXES)
 
 test: test-dump test-verify test-verify-armoured test-create-key \
-      test-v3-secring Makefile
+      test-v3-secring Makefile test-encrypt
 
 ../src/standard/libops_std.a::
 	cd ../src && make
@@ -110,5 +110,12 @@ test-sign-inline: $(SCRATCH)/key.sec sign-inline
 test-v3-secring: packet-dump
 	echo "passphrase is 'fred'"
 	./packet-dump -p ../test/v3-secring.pgp
+
+$(SCRATCH)/t1.sec $(SCRATCH)/t1.pub:
+	./create-gpg-key.sh
+
+test-encrypt: encrypt $(SCRATCH)/t1.pub
+	echo 'Test encryption' | ./encrypt $(SCRATCH)/t1.pub "OPS Test (This is a test) <ops@links.org>" > $(SCRATCH)/encrypted
+	gpg --no-default-keyring --secret-keyring $(SCRATCH)/t1.sec $(SCRATCH)/encrypted
 
 include .depend

@@ -1887,7 +1887,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     ops_parser_content_t content;
     unsigned char c[1];
-    ops_decrypt_t decrypt;
+    ops_crypt_t decrypt;
     int ret=1;
     ops_region_t encregion;
     ops_region_t *saved_region=NULL;
@@ -2040,7 +2040,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 
 	free(passphrase);
 
-	ops_decrypt_any(&decrypt,C.secret_key.algorithm);
+	ops_crypt_any(&decrypt,C.secret_key.algorithm);
 	decrypt.set_iv(&decrypt,C.secret_key.iv);
 	decrypt.set_key(&decrypt,key);
 
@@ -2237,7 +2237,7 @@ static int parse_pk_session_key(ops_region_t *region,
 
     CBP(pinfo,OPS_PTAG_CT_PK_SESSION_KEY,&content);
 
-    ops_decrypt_any(&pinfo->decrypt,C.pk_session_key.symmetric_algorithm);
+    ops_crypt_any(&pinfo->decrypt,C.pk_session_key.symmetric_algorithm);
     pinfo->decrypt.set_key(&pinfo->decrypt,C.pk_session_key.key);
 
     return 1;
@@ -2248,7 +2248,7 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 		     ops_parse_info_t *pinfo)
     {
     int r=1;
-    ops_decrypt_t *decrypt=ops_parse_get_decrypt(pinfo);
+    ops_crypt_t *decrypt=ops_parse_get_decrypt(pinfo);
 
     if(decrypt)
 	{
@@ -2275,7 +2275,7 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 
 	if(tag == OPS_PTAG_CT_SE_DATA_BODY)
 	    {
-	    decrypt->resync(decrypt);
+	    decrypt->decrypt_resync(decrypt);
 	    decrypt->block_encrypt(decrypt,decrypt->civ,decrypt->civ);
 	    }
 
@@ -2751,7 +2751,7 @@ void *ops_reader_get_arg_from_pinfo(ops_parse_info_t *pinfo)
 ops_error_t *ops_parse_info_get_errors(ops_parse_info_t *pinfo)
     { return pinfo->errors; }
 
-ops_decrypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo)
+ops_crypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo)
     {
     if(pinfo->decrypt.algorithm)
 	return &pinfo->decrypt;

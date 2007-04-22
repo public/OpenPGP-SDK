@@ -25,7 +25,7 @@ runtests:
 
 $(CUNIT_LIB):
 	tar xvfz CUnit-2.1-0-src.tar.gz
-	(cd CUnit-2.1-0; ./configure --prefix $(PWD)/../; make; make install)
+	(cd CUnit-2.1-0 && ./configure --prefix $(PWD)/../ && make && make install)
 
 clean:
 	rm -f $(EXES) *.o *.i

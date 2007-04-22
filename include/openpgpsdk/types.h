@@ -24,7 +24,7 @@ typedef unsigned ops_boolean_t;
 /** ops_content_tag_t */
 typedef enum ops_content_tag_t ops_content_tag_t;
 
-typedef struct _ops_decrypt_t ops_decrypt_t;
+typedef struct _ops_crypt_t ops_crypt_t;
 
 /** ops_hash_t */
 typedef struct _ops_hash_t ops_hash_t;

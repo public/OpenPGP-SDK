@@ -3,6 +3,7 @@
 
 #include <openpgpsdk/create.h>
 #include <openpgpsdk/keyring.h>
+#include <openpgpsdk/random.h>
 #include "keyring_local.h"
 #include <openpgpsdk/packet.h>
 #include <openpgpsdk/util.h>
@@ -668,7 +669,7 @@ void ops_writer_pop(ops_create_info_t *info)
 
     // Make sure the finaliser has been called.
     assert(!info->winfo.finaliser);
-    // Makew sure this is a stacked writer
+    // Make sure this is a stacked writer
     assert(info->winfo.next);
     if(info->winfo.destroyer)
 	info->winfo.destroyer(&info->winfo);
@@ -751,75 +752,57 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     {
     ops_pk_session_key_t *session_key=ops_mallocz(sizeof *session_key);
 
+    assert(key->type == OPS_PTAG_CT_PUBLIC_KEY);
     session_key->version=OPS_PKSK_V3;
     memcpy(session_key->key_id, key->key_id, sizeof session_key->key_id);
-    // XXX: finish filling in the structure
+
+    assert(key->key.pkey.algorithm == OPS_PKA_RSA);
+    session_key->algorithm=key->key.pkey.algorithm;
+    session_key->symmetric_algorithm=OPS_SA_AES_256;
+    ops_random(session_key->key, 256/8);
+
+    if(!ops_encrypt_mpi(session_key->key, 256/8, &key->key.pkey, &session_key->parameters))
+	return NULL;
+
     return session_key;
     }
 
-// XXX: should these be common and just be called ops_crypt_*?
-typedef struct _ops_encrypt_t ops_encrypt_t;
-typedef void ops_encrypt_set_iv_t(ops_encrypt_t *encrypt,
-				  const unsigned char *iv);
-typedef void ops_encrypt_init_t(ops_encrypt_t *encrypt);
-typedef void ops_encrypt_resync_t(ops_encrypt_t *encrypt);
-typedef void ops_encrypt_block_encrypt_t(ops_encrypt_t *encrypt,void *out,
-					 const void *in);
-typedef void ops_encrypt_finish_t(ops_encrypt_t *encrypt);
-
-/** _ops_encrypt_t */
-struct _ops_encrypt_t
-    {
-    ops_symmetric_algorithm_t algorithm;
-    size_t blocksize;
-    size_t keysize;
-    //    ops_encrypt_set_iv_t *set_iv; /* Call this before init! */
-    ops_encrypt_set_iv_t *set_key; /* Call this before init! */
-    ops_encrypt_init_t *base_init; /* Once the key is set, call this */
-    ops_encrypt_resync_t *resync;
-    //    ops_decrypt_decrypt_t *decrypt;
-    ops_encrypt_block_encrypt_t *block_encrypt;
-    ops_encrypt_finish_t *finish;
-    unsigned char iv[OPS_MAX_BLOCK_SIZE];
-    unsigned char civ[OPS_MAX_BLOCK_SIZE];
-    unsigned char siv[OPS_MAX_BLOCK_SIZE]; /* Needed for weird v3 resync */
-    unsigned char key[OPS_MAX_KEY_SIZE];
-    size_t num;
-    void *data;
-    };
-
 typedef struct
     {
-    ops_encrypt_t *encrypter;
+    ops_crypt_t *encrypter;
     } encrypted_arg_t;
-
-
-/* dummy function */
 
 #ifndef ATTRIBUTE_UNUSED
 #define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
 #endif /* ATTRIBUTE_UNUSED */
 
-void ops_write_pk_session_key(ops_create_info_t *info ATTRIBUTE_UNUSED, ops_pk_session_key_t *session_key ATTRIBUTE_UNUSED)
+ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
+				       ops_pk_session_key_t *pksk)
     {
-    /* \todo write ops_write_pk_session_key() */
-    assert(0);
+    assert(pksk->algorithm == OPS_PKA_RSA);
+    return ops_write_ptag(OPS_PTAG_CT_PK_SESSION_KEY, info)
+	&& ops_write_length(1 + 8 + 1 + BN_num_bytes(pksk->parameters.rsa.encrypted_m) + 2, info)
+	&& ops_write_scalar(pksk->version, 1, info)
+	&& ops_write(pksk->key_id, 8, info)
+	&& ops_write_scalar(pksk->algorithm, 1, info)
+	&& ops_write_mpi(pksk->parameters.rsa.encrypted_m, info)
+	/* XXX: write the checksum! */
+	&& ops_write_scalar(0, 2, info);
     }
 
 static ops_boolean_t encrypted_writer(const unsigned char *src ATTRIBUTE_UNUSED,
-			      unsigned length ATTRIBUTE_UNUSED,
-			      ops_error_t **errors ATTRIBUTE_UNUSED,
-			      ops_writer_info_t *winfo ATTRIBUTE_UNUSED
-			      )
+				      unsigned length ATTRIBUTE_UNUSED,
+				      ops_error_t **errors ATTRIBUTE_UNUSED,
+				      ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
     {
-     /* \todo */
+    /* \todo */
     assert(0);
 
     return ops_false;
     }
 
 static ops_boolean_t encrypted_finaliser(ops_error_t **errors ATTRIBUTE_UNUSED,
-					   ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
+					 ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
     {
     /* \todo */
     assert(0);

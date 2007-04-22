@@ -93,7 +93,7 @@ typedef void ops_reader_destroyer_t(ops_reader_info_t *rinfo);
 ops_parse_info_t *ops_parse_info_new(void);
 void ops_parse_info_delete(ops_parse_info_t *pinfo);
 ops_error_t *ops_parse_info_get_errors(ops_parse_info_t *pinfo);
-ops_decrypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo);
+ops_crypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo);
 
 void ops_parse_cb_set(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);
 void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);

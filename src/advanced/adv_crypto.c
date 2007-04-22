@@ -1,4 +1,5 @@
 #include <openpgpsdk/crypto.h>
+#include <openpgpsdk/random.h>
 
 #include <assert.h>
 #include <string.h>
@@ -27,11 +28,11 @@ int ops_decrypt_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
     if(n <= 0)
 	return -1;
 
-	/*
+    /*
     printf(" decrypt=%d ",n);
     hexdump(mpibuf,n);
     printf("\n");
-	*/
+    */
 
     // Decode EME-PKCS1_V1_5 (RFC 2437).
 
@@ -52,4 +53,36 @@ int ops_decrypt_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
 	memcpy(buf,mpibuf+i,n-i);
 
     return n-i;
+    }
+
+ops_boolean_t ops_encrypt_mpi(const unsigned char *buf, size_t buflen,
+			      const ops_public_key_t *pkey,
+			      ops_pk_session_key_parameters_t *skp)
+    {
+    unsigned char encmpibuf[8192];
+    unsigned char padded[8192];
+    int n;
+    unsigned i;
+
+    assert(pkey->algorithm == OPS_PKA_RSA);
+
+    n=BN_num_bytes(pkey->key.rsa.n);
+    padded[0]=0;
+    padded[1]=2;
+    // add non-zero random bytes
+    for(i=2 ; i < n-buflen-1 ; ++i)
+	do
+	    ops_random(padded+i, 1);
+	while(padded[i] == 0);
+    padded[i++]=0;
+    memcpy(padded+i, buf, buflen);
+    
+    n=ops_rsa_public_encrypt(encmpibuf, padded, n, &pkey->key.rsa);
+
+    if(n <= 0)
+	return ops_false;
+
+    skp->rsa.encrypted_m=BN_bin2bn(encmpibuf, n, NULL);
+
+    return ops_true;
     }

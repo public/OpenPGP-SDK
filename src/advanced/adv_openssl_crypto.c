@@ -172,6 +172,24 @@ int ops_rsa_private_decrypt(unsigned char *out,const unsigned char *in,
     return n;
     }
 
+int ops_rsa_public_encrypt(unsigned char *out,const unsigned char *in,
+			   size_t length,const ops_rsa_public_key_t *rsa)
+    {
+    RSA *orsa;
+    int n;
+
+    orsa=RSA_new();
+    orsa->n=rsa->n;
+    orsa->e=rsa->e;
+
+    n=RSA_public_encrypt(length,in,out,orsa,RSA_NO_PADDING);
+
+    orsa->n=orsa->e=NULL;
+    RSA_free(orsa);
+
+    return n;
+    }
+
 void ops_crypto_init()
     {
 #ifdef DMALLOC
