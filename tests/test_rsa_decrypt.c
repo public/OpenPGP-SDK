@@ -1,16 +1,10 @@
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include "tests.h"
 
 #include "CUnit/Basic.h"
 
-#include <openpgpsdk/armour.h>
+#include <openpgpsdk/types.h>
 #include "openpgpsdk/keyring.h"
+#include <openpgpsdk/armour.h>
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/packet-parse.h"
 #include "openpgpsdk/util.h"
@@ -25,7 +19,7 @@ To be removed when callback gets added to main body of code
 
 #define MAXBUF 128
 static char secring[MAXBUF+1];
-static char dir[MAXBUF+1];
+//static char dir[MAXBUF+1];
 static char keydetails[MAXBUF+1];
 static ops_keyring_t keyring;
 static char *filename_rsa_noarmour_nopassphrase="rsa_noarmour_nopassphrase.txt";
@@ -173,30 +167,6 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	}
 
     return OPS_RELEASE_MEMORY;
-    }
-
-static int mktmpdir (void)
-    {
-    int limit=10; // don't try indefinitely
-    long int rnd=0;
-    while (limit--) 
-	{
-	rnd=random();
-	snprintf(dir,MAXBUF,"./testdir.%ld",rnd);
-
-	// Try to create directory
-	if (!mkdir(dir,0700))
-	    {
-	    // success
-	    return 1;
-	    }
-	else
-	    {
-	    fprintf (stderr,"Couldn't open dir: errno=%d\n", errno);
-	    perror(NULL);
-	    }
-	}
-    return 0;
     }
 
 /* Decryption suite initialization.

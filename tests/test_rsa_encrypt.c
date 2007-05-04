@@ -24,10 +24,10 @@ To be removed when callback gets added to main body of code
 */
 
 #define MAXBUF 128
-static char secring[MAXBUF+1];
+static char pub_keyring_name[MAXBUF+1];
 static char dir[MAXBUF+1];
 static char keydetails[MAXBUF+1];
-static ops_keyring_t keyring;
+static ops_keyring_t pub_keyring;
 static char *filename_rsa_noarmour_singlekey="rsa_noarmour_singlekey.txt";
 /*
 static char *filename_rsa_armour_nopassphrase="rsa_armour_nopassphrase.txt";
@@ -38,7 +38,7 @@ static char *passphrase="hello";
 static char *current_passphrase=NULL;
 */
 
-static char* text;
+//static char* text;
 
 static char *create_testtext(const char *filename)
     {
@@ -301,8 +301,8 @@ int init_suite_rsa_encrypt(void)
     ops_init();
 
     // read keyring
-    snprintf(secring,MAXBUF,"%s/secring.gpg", dir);
-    ops_keyring_read(&keyring,secring);
+    snprintf(pub_keyring_name,MAXBUF,"%s/pubring.gpg", dir);
+    ops_keyring_read(&pub_keyring,pub_keyring_name);
 
     // Return success
     return 0;
@@ -314,7 +314,7 @@ int clean_suite_rsa_encrypt(void)
 	
     /* Close OPS */
     
-    ops_keyring_free(&keyring);
+    ops_keyring_free(&pub_keyring);
     ops_finish();
 
     /* Remove test dir and files */
@@ -337,6 +337,7 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *key, co
     int fd_in=0;
     int fd_out=0;
     ops_create_info_t *cinfo;
+    //    ops_crypt_t encrypt;
     
     // open file to encrypt
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
@@ -360,6 +361,18 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *key, co
     cinfo=ops_create_info_new();
     ops_writer_set_fd(cinfo,fd_out); 
     // ops_parse_cb_set(pinfo,callback,NULL);
+
+    // key in this instance is the public key of the recipient
+
+    // setup encrypt struct
+    //	unsigned char key[OPS_MAX_KEY_SIZE];
+    /*
+    encrypt.set_iv(&encrypt,key.iv);
+    encrypt.set_key(&encrypt,??);
+*/
+    //    ops_crypt_any(&encrypt,key.algorithm);
+    //    ops_encrypt_init(&encrypt);
+
     ops_writer_push_encrypt(cinfo,key);
 
     // Set up armour/passphrase options
@@ -397,17 +410,28 @@ close(fd_out);
 
 //    close(fd);
     
-    // File contents should match
-    CU_ASSERT(strcmp(text,create_testtext(filename))==0);
+     // File contents should match
+/*
+ int n=0;
+ char 
+ fd_out=open(encfile,O_RDONLY);
+ if (fd_out < 0)
+     {
+     perror(encfile);
+     exit(2);
+     }
+*/
+ char *text;
+   CU_ASSERT(strcmp(text,create_testtext(filename))==0);
     }
 
 void test_rsa_encrypt_noarmour_singlekey(void)
     {
     int armour=0;
     char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
-    const ops_key_data_t *key=ops_keyring_find_key_by_userid(&keyring, user_id);
-    assert(key);
-    test_rsa_encrypt(armour,key,filename_rsa_noarmour_singlekey);
+    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
+    assert(pub_key);
+    test_rsa_encrypt(armour,pub_key,filename_rsa_noarmour_singlekey);
     }
 
 /*
