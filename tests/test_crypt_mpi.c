@@ -98,8 +98,7 @@ void test_crypt_mpi(void)
     rtn=ops_decrypt_mpi(out,BUFSZ, session_key->parameters.rsa.encrypted_m, &seckey->key.skey);
 
     // is it the same?
-    int n=strncmp((char *)buf,(char *)out,sizeof(buf));
-    printf ("n=%d\n",n);
+    CU_ASSERT(strncmp((char *)buf,(char *)out,sizeof(buf))==0);
     }
 
 CU_pSuite suite_crypt_mpi()
