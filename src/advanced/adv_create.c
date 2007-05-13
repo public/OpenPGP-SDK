@@ -784,18 +784,6 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     ops_random(session_key->key, 256/8);
 
     ops_create_m_buf(session_key, buf);
-    /*
-    // create buf to be encoded
-    buf[0]=session_key->symmetric_algorithm;
-    for (i=0; i<256/8; i++)
-        {
-        checksum+=session_key->key[i];
-        buf[1+i]=session_key->key[i];
-        }
-    checksum = checksum % 65536;
-    buf[i++]=checksum >> 8;
-    buf[i++]=checksum & 0xFF;
-    */
 
     // and encode it
     if(!ops_encrypt_mpi(buf, (256/8+1+2), &key->key.pkey, &session_key->parameters))

@@ -108,7 +108,7 @@ void test_crypt_mpi(void)
     // [last two] is the checksum
 
     // is it the same?
-    CU_ASSERT(strncmp((char *)in,(char *)out,sizeof(in))==0);
+    CU_ASSERT(memcmp((char *)in,(char *)out,sizeof(in))==0);
     }
 
 CU_pSuite suite_crypt_mpi()
