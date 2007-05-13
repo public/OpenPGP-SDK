@@ -748,8 +748,30 @@ ops_boolean_t ops_writer_passthrough(const unsigned char *src,
 				     ops_writer_info_t *winfo)
     { return ops_stacked_write(src,length,errors,winfo); }
 
+void ops_create_m_buf(ops_pk_session_key_t *session_key, unsigned char *buf)
+    {
+    int i=0;
+    unsigned int checksum=0;
+
+    // as defined in RFC Section 5.1 "Public-Key Encrypted Session Key Packet"
+
+    buf[0]=session_key->symmetric_algorithm;
+
+    // \todo parameterise key length
+    for (i=0; i<256/8; i++)
+        {
+        checksum+=session_key->key[i];
+        buf[1+i]=session_key->key[i];
+        }
+    checksum = checksum % 65536;
+
+    buf[i++]=checksum >> 8;
+    buf[i++]=checksum & 0xFF;
+    }
+
 ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     {
+    unsigned char buf[256/8+1+2];
     ops_pk_session_key_t *session_key=ops_mallocz(sizeof *session_key);
 
     assert(key->type == OPS_PTAG_CT_PUBLIC_KEY);
@@ -761,7 +783,22 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     session_key->symmetric_algorithm=OPS_SA_AES_256;
     ops_random(session_key->key, 256/8);
 
-    if(!ops_encrypt_mpi(session_key->key, 256/8, &key->key.pkey, &session_key->parameters))
+    ops_create_m_buf(session_key, buf);
+    /*
+    // create buf to be encoded
+    buf[0]=session_key->symmetric_algorithm;
+    for (i=0; i<256/8; i++)
+        {
+        checksum+=session_key->key[i];
+        buf[1+i]=session_key->key[i];
+        }
+    checksum = checksum % 65536;
+    buf[i++]=checksum >> 8;
+    buf[i++]=checksum & 0xFF;
+    */
+
+    // and encode it
+    if(!ops_encrypt_mpi(buf, (256/8+1+2), &key->key.pkey, &session_key->parameters))
 	return NULL;
 
     return session_key;
@@ -780,30 +817,48 @@ ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 				       ops_pk_session_key_t *pksk)
     {
     assert(pksk->algorithm == OPS_PKA_RSA);
+
     return ops_write_ptag(OPS_PTAG_CT_PK_SESSION_KEY, info)
 	&& ops_write_length(1 + 8 + 1 + BN_num_bytes(pksk->parameters.rsa.encrypted_m) + 2, info)
 	&& ops_write_scalar(pksk->version, 1, info)
 	&& ops_write(pksk->key_id, 8, info)
 	&& ops_write_scalar(pksk->algorithm, 1, info)
 	&& ops_write_mpi(pksk->parameters.rsa.encrypted_m, info)
-	/* XXX: write the checksum! */
 	&& ops_write_scalar(0, 2, info);
     }
 
 static ops_boolean_t encrypted_writer(const unsigned char *src ATTRIBUTE_UNUSED,
-				      unsigned length ATTRIBUTE_UNUSED,
+				      unsigned length,
 				      ops_error_t **errors ATTRIBUTE_UNUSED,
 				      ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
     {
-    /* \todo */
-    assert(0);
+    encrypted_arg_t *arg=ops_writer_get_arg(winfo);
 
-    return ops_false;
+#define BUFSZ 1024 // arbitrary number
+    unsigned char buf[BUFSZ];
+    unsigned char encbuf[BUFSZ];
+    unsigned remaining=length;
+    while (remaining)
+        {
+        unsigned len = remaining < BUFSZ ? remaining : BUFSZ;
+        memcpy(buf,src,len);
+        unsigned done = ops_encrypt(arg->encrypter,
+                                    encbuf,
+                                    buf,
+                                    len);
+        assert(done==len);
+        if (!ops_stacked_write(encbuf,len,errors,winfo))
+            return ops_false;
+        remaining-=done;
+        }
+
+    return ops_true;
     }
 
 static ops_boolean_t encrypted_finaliser(ops_error_t **errors ATTRIBUTE_UNUSED,
 					 ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
     {
+    
     /* \todo */
     assert(0);
 
@@ -819,16 +874,60 @@ void encrypted_destroyer (ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
 
 /* end of dummy code */
 
+ops_boolean_t ops_write_se_ip_data(ops_create_info_t *info,ops_crypt_t *crypt)
+    {
+    encrypted_arg_t *arg=ops_mallocz(sizeof *arg);
+
+#define SE_IP_DATA_VERSION 1 //\todo move this
+    if (!ops_write_ptag(OPS_PTAG_CT_SE_IP_DATA,info))
+        return 0;
+    if (!ops_write_scalar(SE_IP_DATA_VERSION,1,info))
+        return 0;
+
+    // need any equivalent of base_init?
+    //    encrypt.set_iv(&encrypt,session_key->symmetric_algorithm.iv);
+    //    encrypt.set_key(&encrypt,mykey); // should be sym_alg.key?
+    
+    arg->encrypter=crypt;
+
+    ops_writer_push(info,encrypted_writer,encrypted_finaliser,
+		    encrypted_destroyer,arg);
+
+    return 1;
+    }
+
 void ops_writer_push_encrypt(ops_create_info_t *info,
+                             //                             ops_crypt_t *encrypt,
 			     const ops_key_data_t *key)
     {
+
+    // has ops_key_data_t * key
+    // needs ops_crypt_t * crypt
     ops_pk_session_key_t *session_key;
-    encrypted_arg_t *arg=ops_mallocz(sizeof *arg);
+    ops_crypt_t crypt;
+    //	unsigned char mykey[OPS_MAX_KEY_SIZE+OPS_MAX_HASH_SIZE];
 
     session_key=ops_create_pk_session_key(key);
     ops_write_pk_session_key(info,session_key);
 
-    ops_write_ptag(OPS_PTAG_CT_SE_DATA,info);
-    ops_writer_push(info,encrypted_writer,encrypted_finaliser,
-		    encrypted_destroyer,arg);
+    ops_crypt_any(&crypt, session_key->symmetric_algorithm);
+    ops_encrypt_init(&crypt);
+    ops_write_se_ip_data(info,&crypt);
+
+    }
+
+ops_boolean_t ops_write_literal_data(const unsigned char *data, 
+                                     const int maxlen, 
+                                     const ops_literal_data_type_t type,
+                                     ops_create_info_t *info)
+    {
+    // \todo add filename 
+    // \todo add date
+    // \todo do we need to check text data for <cr><lf> line endings ?
+    return ops_write_ptag(OPS_PTAG_CT_LITERAL_DATA, info)
+        && ops_write_length(1+1+4+maxlen,info)
+        && ops_write_scalar(type, 1, info)
+        && ops_write_scalar(0, 1, info)
+        && ops_write_scalar(0, 4, info)
+        && ops_write(data, maxlen, info);
     }

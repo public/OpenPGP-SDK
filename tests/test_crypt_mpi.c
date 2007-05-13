@@ -84,21 +84,31 @@ int clean_suite_crypt_mpi(void)
 
 void test_crypt_mpi(void)
     {
-#define BUFSZ 1024
-    unsigned char buf[]="hello world";
-    unsigned char out[BUFSZ];
+#define BSZ (256/8+1+2)
+
+    unsigned char in[BSZ];
+    unsigned char out[BSZ];
 
     ops_boolean_t rtn;
     
     ops_pk_session_key_t *session_key=ops_create_pk_session_key(pubkey);
+
+    // recreate what was encrypted
+    ops_create_m_buf(session_key, in);
+
+    //    CU_ASSERT(session_key);
+
     // the encrypted_mpi is now in session_key->parameters.rsa.encrypted_m
 
     // decrypt it
-    //    BIGNUM *enc_m;
-    rtn=ops_decrypt_mpi(out,BUFSZ, session_key->parameters.rsa.encrypted_m, &seckey->key.skey);
+    rtn=ops_decrypt_mpi(out,BSZ, session_key->parameters.rsa.encrypted_m, &seckey->key.skey);
+
+    // [0] is the symmetric algorithm
+    // [body] is the session key
+    // [last two] is the checksum
 
     // is it the same?
-    CU_ASSERT(strncmp((char *)buf,(char *)out,sizeof(buf))==0);
+    CU_ASSERT(strncmp((char *)in,(char *)out,sizeof(in))==0);
     }
 
 CU_pSuite suite_crypt_mpi()

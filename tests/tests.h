@@ -12,6 +12,7 @@
 
 int mktmpdir();
 extern char dir[];
+void create_testtext(const char *text, char *buf, const int maxlen);
 #define MAXBUF 128
 
 #endif

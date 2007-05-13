@@ -9,6 +9,7 @@
 #include "crypto.h"
 #include "memory.h"
 #include "errors.h"
+#include "keyring.h"
 
 typedef struct ops_writer_info ops_writer_info_t;
 /**
@@ -87,4 +88,12 @@ void ops_fast_create_rsa_secret_key(ops_secret_key_t *key,time_t time,
 ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
 					  ops_create_info_t *info);
 
+ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key);
+
+void ops_create_m_buf(ops_pk_session_key_t *session_key, unsigned char *buf);
+
+ops_boolean_t ops_write_literal_data(const unsigned char *data, 
+                                     const int maxlen, 
+                                     const ops_literal_data_type_t type,
+                                     ops_create_info_t *info);
 #endif

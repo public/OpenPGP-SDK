@@ -37,7 +37,7 @@ typedef void ops_crypt_block_encrypt_t(ops_crypt_t *crypt,void *out,
 				       const void *in);
 typedef void ops_crypt_finish_t(ops_crypt_t *crypt);
 
-/** _ops_decrypt_t */
+/** _ops_crypt_t */
 struct _ops_crypt_t
     {
     ops_symmetric_algorithm_t algorithm;
@@ -53,7 +53,7 @@ struct _ops_crypt_t
     unsigned char civ[OPS_MAX_BLOCK_SIZE];
     unsigned char siv[OPS_MAX_BLOCK_SIZE]; /* Needed for weird v3 resync */
     unsigned char key[OPS_MAX_KEY_SIZE];
-    size_t num;
+    size_t num; /* Count of characters encrypted so far */
     void *data;
     };
 
@@ -92,6 +92,7 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 
 void ops_crypt_any(ops_crypt_t *decrypt,ops_symmetric_algorithm_t alg);
 void ops_decrypt_init(ops_crypt_t *decrypt);
+void ops_encrypt_init(ops_crypt_t *encrypt);
 size_t ops_decrypt(ops_crypt_t *decrypt,void *out,const void *in,
 		   size_t count);
 size_t ops_encrypt(ops_crypt_t *encrypt,void *out,const void *in,
@@ -115,6 +116,7 @@ ops_boolean_t ops_encrypt_mpi(const unsigned char *buf, size_t buflen,
 // Encrypt everything that's written
 struct ops_key_data;
 void ops_writer_push_encrypt(ops_create_info_t *info,
+                             //            ops_crypt_t *encrypt,
 			     const struct ops_key_data *key);
 
 #endif

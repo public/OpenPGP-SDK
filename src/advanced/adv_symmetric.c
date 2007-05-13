@@ -11,6 +11,10 @@
 
 #include <openpgpsdk/final.h>
 
+// \todo there's also a encrypted_arg_t in adv_create.c 
+// which is used for *encrypting* whereas this is used
+// for *decrypting*
+
 typedef struct
     {
     unsigned char decrypted[1024];
@@ -325,6 +329,15 @@ unsigned ops_key_size(ops_symmetric_algorithm_t alg)
     return p->keysize;
     }
 
+void ops_encrypt_init(ops_crypt_t * encrypt)
+    {
+    // \todo does there need to be both a ops_encrypt_init and a ops_decrypt_init?
+    encrypt->base_init(encrypt);
+    // needed?    decrypt->block_encrypt(decrypt,decrypt->siv,decrypt->iv);
+    // needed?    memcpy(decrypt->civ,decrypt->siv,decrypt->blocksize);
+    encrypt->num=0;
+    }
+
 void ops_decrypt_init(ops_crypt_t *decrypt)
     {
     decrypt->base_init(decrypt);
@@ -359,7 +372,7 @@ size_t ops_decrypt(ops_crypt_t *decrypt,void *out_,const void *in_,
     return saved;
     }
 
-size_t ops_encrypt(ops_crypt_t *decrypt,void *out_,const void *in_,
+size_t ops_encrypt(ops_crypt_t *encrypt,void *out_,const void *in_,
 		   size_t count)
     {
     unsigned char *out=out_;
@@ -370,14 +383,14 @@ size_t ops_encrypt(ops_crypt_t *decrypt,void *out_,const void *in_,
        ourselves */
     while(count-- > 0)
 	{
-	if(decrypt->num == decrypt->blocksize)
+	if(encrypt->num == encrypt->blocksize)
 	    {
-	    memcpy(decrypt->siv,decrypt->civ,decrypt->blocksize);
-	    decrypt->block_encrypt(decrypt,decrypt->civ,decrypt->civ);
-	    decrypt->num=0;
+	    memcpy(encrypt->siv,encrypt->civ,encrypt->blocksize);
+	    encrypt->block_encrypt(encrypt,encrypt->civ,encrypt->civ);
+	    encrypt->num=0;
 	    }
-	decrypt->civ[decrypt->num]=*out++=decrypt->civ[decrypt->num]^*in++;
-	++decrypt->num;
+	encrypt->civ[encrypt->num]=*out++=encrypt->civ[encrypt->num]^*in++;
+	++encrypt->num;
 	}
 
     return saved;

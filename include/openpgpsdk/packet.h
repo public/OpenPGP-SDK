@@ -736,12 +736,12 @@ typedef enum
     OPS_LDT_UTF8='u',
     OPS_LDT_LOCAL='l',
     OPS_LDT_LOCAL2='1'
-    } literal_data_type_t;
+    } ops_literal_data_type_t;
 
 /** ops_literal_data_header_t */
 typedef struct
     {
-    literal_data_type_t		format;
+    ops_literal_data_type_t		format;
     char			filename[256];
     time_t			modification_time;
     } ops_literal_data_header_t;

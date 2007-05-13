@@ -8,6 +8,7 @@
 #include "CUnit/Basic.h"
 #include "tests.h"
 
+extern CU_pSuite suite_packet_types();
 extern CU_pSuite suite_crypt_mpi();
 extern CU_pSuite suite_rsa_decrypt();
 extern CU_pSuite suite_rsa_encrypt();
@@ -19,6 +20,12 @@ int main()
 
     if (CUE_SUCCESS != CU_initialize_registry())
 	return CU_get_error();
+
+    if (NULL == suite_packet_types())
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
 
     if (NULL == suite_crypt_mpi())
         {
@@ -37,7 +44,7 @@ int main()
 	CU_cleanup_registry();
 	return CU_get_error();
 	}
-    
+
     // Run tests
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
@@ -68,4 +75,11 @@ int mktmpdir (void)
 	}
     return 0;
     }
+
+void create_testtext(const char *text, char *buf, const int maxlen)
+    {
+    buf[maxlen]='\0';
+    snprintf(buf,maxlen,"%s : Test Text\n", text);
+    }
+
 

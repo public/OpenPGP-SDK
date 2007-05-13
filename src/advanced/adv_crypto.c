@@ -64,17 +64,25 @@ ops_boolean_t ops_encrypt_mpi(const unsigned char *buf, size_t buflen,
     int n;
     unsigned i;
 
+    // implementation of EME-PKCS1-v1_5-ENCODE, as defined in OpenPGP RFC
+    
     assert(pkey->algorithm == OPS_PKA_RSA);
 
     n=BN_num_bytes(pkey->key.rsa.n);
+
+    // these two bytes defined by RFC
     padded[0]=0;
     padded[1]=2;
-    // add non-zero random bytes
+    // add non-zero random bytes of length k - mLen -3
     for(i=2 ; i < n-buflen-1 ; ++i)
 	do
 	    ops_random(padded+i, 1);
 	while(padded[i] == 0);
+
+    assert (i >= 8+2);
+
     padded[i++]=0;
+
     memcpy(padded+i, buf, buflen);
     
     n=ops_rsa_public_encrypt(encmpibuf, padded, n, &pkey->key.rsa);

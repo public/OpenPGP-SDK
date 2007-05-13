@@ -10,35 +10,11 @@
 
 #include "tests.h"
 
-/* 
-These include files are needed by callback.
-To be removed when callback gets added to main body of code
-#include "../src/advanced/parse_local.h"
-#include "../src/advanced/keyring_local.h"
-*/
-
 #define MAXBUF 128
 static char pub_keyring_name[MAXBUF+1];
 static char keydetails[MAXBUF+1];
 static ops_keyring_t pub_keyring;
 static char *filename_rsa_noarmour_singlekey="rsa_noarmour_singlekey.txt";
-/*
-static char *filename_rsa_armour_nopassphrase="rsa_armour_nopassphrase.txt";
-static char *filename_rsa_noarmour_passphrase="rsa_noarmour_passphrase.txt";
-static char *filename_rsa_armour_passphrase="rsa_armour_passphrase.txt";
-static char *nopassphrase="";
-static char *passphrase="hello";
-static char *current_passphrase=NULL;
-*/
-
-//static char* text;
-
-static char *create_testtext(const char *filename)
-    {
-    static char buffer[MAXBUF+1];
-    snprintf(buffer,MAXBUF,"Hello world : %s/%s\n", dir, filename);
-    return &buffer[0];
-    }
 
 static int create_testfile(const char *name)
     {
@@ -50,7 +26,7 @@ static int create_testfile(const char *name)
     if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL, 0600))<0)
 	return 0;
 
-    snprintf(buffer,MAXBUF,create_testtext(name));
+    create_testtext(name,&buffer[0],MAXBUF);
     write(fd,buffer,strlen(buffer));
     close(fd);
     return 1;
@@ -366,32 +342,16 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *key, co
 	    ops_write(buf,n,cinfo);
     }
     
-//    ops_parse(pinfo);
-
     // Tidy up
-     /*
-    if (has_armour)
-	ops_writer_pop_armour(cinfo);
-	*/
 
-close(fd_in);
-close(fd_out);
+    close(fd_in);
+    close(fd_out);
 
-//    close(fd);
-    
      // File contents should match
-/*
- int n=0;
- char 
- fd_out=open(encfile,O_RDONLY);
- if (fd_out < 0)
-     {
-     perror(encfile);
-     exit(2);
-     }
-*/
- char *text;
-   CU_ASSERT(strcmp(text,create_testtext(filename))==0);
+    char *text;
+    char buffer[MAXBUF+1];
+    create_testtext(filename,&buffer[0],MAXBUF);
+    CU_ASSERT(strcmp(text,buffer)==0);
     }
 
 void test_rsa_encrypt_noarmour_singlekey(void)
@@ -403,7 +363,7 @@ void test_rsa_encrypt_noarmour_singlekey(void)
     test_rsa_encrypt(armour,pub_key,filename_rsa_noarmour_singlekey);
     }
 
-/*
+#ifdef TBD
 void test_rsa_encrypt_armour(void)
     {
     int armour=1;
@@ -423,7 +383,7 @@ void test_rsa_encrypt_armour_passphrase(void)
     int passphrase=1;
     test_rsa_encrypt(armour,passphrase,filename_rsa_armour_passphrase);
     }
-*/
+#endif /*TBD*/
 
 CU_pSuite suite_rsa_encrypt()
 {
@@ -433,12 +393,12 @@ CU_pSuite suite_rsa_encrypt()
     if (!suite)
 	    return NULL;
 
+#ifdef TBD
     // add tests to suite
     
     if (NULL == CU_add_test(suite, "Unarmoured, single key", test_rsa_encrypt_noarmour_singlekey))
 	    return NULL;
     
-    /*
     if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_encrypt_armour_nopassphrase))
 	    return NULL;
     
@@ -447,7 +407,7 @@ CU_pSuite suite_rsa_encrypt()
     
     if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_encrypt_armour_passphrase))
 	    return NULL;
-	    */
+#endif /*TBD*/
     
     return suite;
 }
