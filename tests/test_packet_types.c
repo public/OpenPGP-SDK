@@ -9,6 +9,8 @@
 
 #include "tests.h"
 
+static unsigned char* data;
+
 #define MAXBUF 128
 
 /* 
@@ -36,13 +38,31 @@ int clean_suite_packet_types(void)
 static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
 
     OPS_USED(cbinfo);
 
-    // just print it for now
-    // \todo read literal data packet into buffer
+    //    ops_print_packet(content_);
 
-    ops_print_packet(content_);
+    // Read data from packet into static buffer
+    switch(content_->tag)
+        {
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+	data=ops_mallocz(content->literal_data_body.length+1);
+	memcpy(data,content->literal_data_body.data,content->literal_data_body.length);
+        break;
+
+    case OPS_PARSER_PTAG:
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+        // ignore
+        break;
+
+    default:
+	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
+		content_->tag);
+	assert(0);
+        }
+
     return OPS_RELEASE_MEMORY;
     }
  
@@ -55,25 +75,50 @@ struct ops_memory
     size_t allocated;
     };
 
-static void test_literal_data_packet_text()
+static void init_for_memory_write(ops_create_info_t **cinfo, ops_memory_t **mem)
     {
-    char *in=ops_mallocz(MAXBUF);
-    ops_create_info_t *cinfo;
-    ops_parse_info_t *pinfo;
-    ops_memory_t *mem;
-    int rtn=0;
-
-    // create test string
-    create_testtext("literal data packet", &in[0], MAXBUF);
-
     /*
      * initialise needed structures for writing
      */
 
-    cinfo=ops_create_info_new();
-    mem=ops_memory_new();
-    ops_memory_init(mem,MAXBUF);
-    ops_writer_set_memory(cinfo,mem);
+    *cinfo=ops_create_info_new();
+    *mem=ops_memory_new();
+
+    ops_memory_init(*mem,MAXBUF);
+
+    ops_writer_set_memory(*cinfo,*mem);
+    }
+
+static void init_for_memory_read(ops_parse_info_t **pinfo, ops_memory_t *mem,
+                                 ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *))
+    {
+    /*
+     * initialise needed structures for reading
+     */
+
+    *pinfo=ops_parse_info_new();
+    ops_parse_cb_set(*pinfo,callback,NULL);
+    ops_reader_set_memory(*pinfo,mem->buf,mem->length);
+    }
+
+
+static void test_literal_data_packet_text()
+    {
+    ops_create_info_t *cinfo;
+    ops_parse_info_t *pinfo;
+    ops_memory_t *mem;
+
+    char *in=ops_mallocz(MAXBUF);
+    int rtn=0;
+
+    // create test string
+    create_testtext("literal data packet text", &in[0], MAXBUF);
+
+    /*
+     * initialise needed structures for writing into memory
+     */
+
+    init_for_memory_write(&cinfo,&mem);
 
     /*
      * create literal data packet
@@ -81,12 +126,10 @@ static void test_literal_data_packet_text()
     ops_write_literal_data((unsigned char *)in,strlen(in),OPS_LDT_TEXT,cinfo);
 
     /*
-     * initialise needed structures for writing
+     * initialise needed structures for reading from memory
      */
 
-    pinfo=ops_parse_info_new();
-    ops_parse_cb_set(pinfo,callback,NULL);
-    ops_reader_set_memory(pinfo,mem->buf,mem->length);
+    init_for_memory_read(&pinfo,mem,callback);
 
     // and parse it
 
@@ -97,7 +140,52 @@ static void test_literal_data_packet_text()
      * test it's the same
      */
 
-    // \todo write a callback to read the literal data into buffer
+    CU_ASSERT(strncmp((char *)data,in,MAXBUF)==0);
+
+    // cleanup
+    ops_memory_free(mem);
+    free (in);
+    }
+
+static void test_literal_data_packet_data()
+    {
+    ops_create_info_t *cinfo;
+    ops_parse_info_t *pinfo;
+    ops_memory_t *mem;
+
+    unsigned char *in=ops_mallocz(MAXBUF);
+    int rtn=0;
+
+    // create test data buffer
+    create_testdata("literal data packet data", &in[0], MAXBUF);
+
+    /*
+     * initialise needed structures for writing into memory
+     */
+
+    init_for_memory_write(&cinfo,&mem);
+
+    /*
+     * create literal data packet
+     */
+    ops_write_literal_data(in,MAXBUF,OPS_LDT_BINARY,cinfo);
+
+    /*
+     * initialise needed structures for reading from memory
+     */
+
+    init_for_memory_read(&pinfo,mem,callback);
+
+    // and parse it
+
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    rtn=ops_parse(pinfo);
+
+    /*
+     * test it's the same
+     */
+
+    CU_ASSERT(memcmp(data,in,MAXBUF)==0);
 
     // cleanup
     ops_memory_free(mem);
@@ -114,7 +202,10 @@ CU_pSuite suite_packet_types()
 
     // add tests to suite
     
-    if (NULL == CU_add_test(suite, "Literal Data Text packet", test_literal_data_packet_text))
+    if (NULL == CU_add_test(suite, "Literal Data (Text) packet (Tag 11)", test_literal_data_packet_text))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Literal Data (Data) packet (Tag 11)", test_literal_data_packet_data))
 	    return NULL;
     
     return suite;

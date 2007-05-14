@@ -82,4 +82,17 @@ void create_testtext(const char *text, char *buf, const int maxlen)
     snprintf(buf,maxlen,"%s : Test Text\n", text);
     }
 
+void create_testdata(const char *text, unsigned char *buf, const int maxlen)
+    {
+    char *preamble=" : Test Data :";
+    int i=0;
+
+    snprintf((char *)buf,maxlen,"%s%s", text, preamble);
+
+    for (i=strlen(text)+strlen(preamble); i<maxlen; i++)
+        {
+        buf[i]=(random() & 0xFF);
+        }
+    }
+
 
