@@ -919,3 +919,26 @@ ops_boolean_t ops_write_literal_data(const unsigned char *data,
         && ops_write_scalar(0, 4, info)
         && ops_write(data, maxlen, info);
     }
+
+ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data, 
+                                                     const int len, 
+                                                     ops_create_info_t *info)
+    {
+    ops_crypt_t crypt_info;
+    int encrypted_sz=0;// size of encrypted data
+    unsigned char *encrypted=(unsigned char *)NULL; // buffer to write encrypted data to
+    
+    // \todo assume AES256 for now
+    ops_crypt_any(&crypt_info, OPS_SA_AES_256);
+    ops_encrypt_init(&crypt_info);
+
+    encrypted_sz=len+crypt_info.blocksize+2;
+    encrypted=ops_mallocz(encrypted_sz);
+
+    int done=ops_encrypt(&crypt_info, encrypted, data, len);
+    printf("len=%d, done: %d\n", len, done);
+
+    return ops_write_ptag(OPS_PTAG_CT_SE_DATA, info)
+        && ops_write_length(1+encrypted_sz,info)
+        && ops_write(data, len, info);
+    }
