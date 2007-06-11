@@ -32,13 +32,6 @@ static char *current_passphrase=NULL;
 
 static char* text;
 
-static char *create_testtext(const char *filename)
-    {
-    static char buffer[MAXBUF+1];
-    snprintf(buffer,MAXBUF,"Hello world : %s/%s\n", dir, filename);
-    return &buffer[0];
-    }
-
 static int create_testfile(const char *name)
     {
     char filename[MAXBUF+1];
@@ -49,7 +42,7 @@ static int create_testfile(const char *name)
     if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL, 0600))<0)
 	return 0;
 
-    snprintf(buffer,MAXBUF,create_testtext(name));
+    create_testtext(name,&buffer[0],MAXBUF);
     write(fd,buffer,strlen(buffer));
     close(fd);
     return 1;
@@ -289,6 +282,7 @@ int clean_suite_rsa_decrypt(void)
 static void test_rsa_decrypt(const int has_armour, const int has_passphrase, const char *filename)
     {
     char encfile[MAXBUF+1];
+    char testtext[MAXBUF+1];
     char *suffix= has_armour ? "asc" : "gpg";
     int fd=0;
     ops_parse_info_t *pinfo;
@@ -325,7 +319,8 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     close(fd);
     
     // File contents should match
-    CU_ASSERT(strcmp(text,create_testtext(filename))==0);
+    create_testtext(filename,&testtext[0],MAXBUF);
+    CU_ASSERT(strcmp(text,testtext)==0);
     }
 
 void test_rsa_decrypt_noarmour_nopassphrase(void)
