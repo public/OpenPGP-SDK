@@ -96,4 +96,7 @@ ops_boolean_t ops_write_literal_data(const unsigned char *data,
                                      const int maxlen, 
                                      const ops_literal_data_type_t type,
                                      ops_create_info_t *info);
+ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data, 
+                                                     const int len, 
+                                                     ops_create_info_t *info);
 #endif
