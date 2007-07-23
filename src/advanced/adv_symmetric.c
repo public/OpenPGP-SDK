@@ -173,7 +173,10 @@ static void cast5_init(ops_crypt_t *crypt)
     }
 
 static void cast5_encrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { CAST_ecb_encrypt(in,out,crypt->data,1); }
+    { CAST_ecb_encrypt(in,out,crypt->data,CAST_ENCRYPT); }
+
+static void cast5_decrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { CAST_ecb_encrypt(in,out,crypt->data,CAST_DECRYPT); }
 
 #define TRAILER		"","","","",0,NULL
 
@@ -187,6 +190,7 @@ static ops_crypt_t cast5=
     cast5_init,
     std_resync,
     cast5_encrypt,
+    cast5_decrypt,
     std_finish,
     TRAILER
     };
@@ -206,6 +210,9 @@ static void idea_init(ops_crypt_t *crypt)
 static void idea_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
     { idea_ecb_encrypt(in,out,crypt->data); }
 
+static void idea_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { idea_block_encrypt(crypt,out,in); }
+
 static const ops_crypt_t idea=
     {
     OPS_SA_IDEA,
@@ -216,6 +223,7 @@ static const ops_crypt_t idea=
     idea_init,
     std_resync,
     idea_block_encrypt,
+    idea_block_decrypt,
     std_finish,
     TRAILER
     };
@@ -228,8 +236,16 @@ static void aes256_init(ops_crypt_t *crypt)
     AES_set_encrypt_key(crypt->key,256,crypt->data);
     }
 
+/*
 static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
     { AES_encrypt(in,out,crypt->data); }
+    */
+
+static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { AES_ecb_encrypt(in,out,crypt->data, AES_ENCRYPT); }
+
+static void aes_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { AES_ecb_encrypt(in,out,crypt->data, AES_DECRYPT); }
 
 static const ops_crypt_t aes256=
     {
@@ -241,6 +257,7 @@ static const ops_crypt_t aes256=
     aes256_init,
     std_resync,
     aes_block_encrypt,
+    aes_block_decrypt,
     std_finish,
     TRAILER
     };
@@ -262,7 +279,15 @@ static void tripledes_block_encrypt(ops_crypt_t *crypt,void *out,
     {
     DES_key_schedule *keys=crypt->data;
 
-    DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],1);
+    DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],DES_ENCRYPT);
+    }
+
+static void tripledes_block_decrypt(ops_crypt_t *crypt,void *out,
+				    const void *in)
+    {
+    DES_key_schedule *keys=crypt->data;
+
+    DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],DES_DECRYPT);
     }
 
 static const ops_crypt_t tripledes=
@@ -275,6 +300,7 @@ static const ops_crypt_t tripledes=
     tripledes_init,
     std_resync,
     tripledes_block_encrypt,
+    tripledes_block_decrypt,
     std_finish,
     TRAILER
     };
@@ -331,6 +357,7 @@ unsigned ops_key_size(ops_symmetric_algorithm_t alg)
 
 void ops_encrypt_init(ops_crypt_t * encrypt)
     {
+	return ops_decrypt_init(encrypt);
     // \todo does there need to be both a ops_encrypt_init and a ops_decrypt_init?
     encrypt->base_init(encrypt);
     // needed?    decrypt->block_encrypt(decrypt,decrypt->siv,decrypt->iv);
