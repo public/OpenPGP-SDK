@@ -944,7 +944,6 @@ ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
     }
 
 void ops_writer_push_encrypt(ops_create_info_t *info __attribute__((__unused__)),
-                                  ops_crypt_t *encrypt __attribute__((__unused__)),
                                   const ops_key_data_t *key __attribute__((__unused__)))
     {
     assert(0);

@@ -123,7 +123,6 @@ ops_boolean_t ops_encrypt_mpi(const unsigned char *buf, size_t buflen,
 // Encrypt everything that's written
 struct ops_key_data;
 void ops_writer_push_encrypt(ops_create_info_t *info,
-                             ops_crypt_t *encrypt,
                              const struct ops_key_data *key);
 
 #endif
