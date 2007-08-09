@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 
 #include "CUnit/Basic.h"
+#include "openpgpsdk/readerwriter.h"
+
 #include "tests.h"
 
 extern CU_pSuite suite_packet_types();
@@ -27,23 +29,19 @@ int main()
         return CU_get_error();
         }
 
-    if (NULL == suite_crypt_mpi())
+    /*
+    if (NULL == suite_rsa_decrypt()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
 
-    if (NULL == suite_rsa_decrypt()) 
-	{
-	CU_cleanup_registry();
-	return CU_get_error();
-	}
-
     if (NULL == suite_rsa_encrypt()) 
-	{
-	CU_cleanup_registry();
-	return CU_get_error();
-	}
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+    */
 
     // Run tests
     CU_basic_set_mode(CU_BRM_VERBOSE);
@@ -94,5 +92,6 @@ void create_testdata(const char *text, unsigned char *buf, const int maxlen)
         buf[i]=(random() & 0xFF);
         }
     }
+
 
 

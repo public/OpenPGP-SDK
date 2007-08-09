@@ -20,10 +20,6 @@ all: Makefile $(CUNIT_LIB) .depend tests
 
 tests: $(CUNIT_LIB) $(TESTOBJ) $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o tests $(TESTOBJ) $(LIBS)
-	make runtests
-
-runtests:
-	./tests
 
 $(CUNIT_LIB):
 	tar xvfz CUnit-2.1-0-src.tar.gz

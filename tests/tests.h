@@ -10,6 +10,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <openpgpsdk/memory.h>
+#include <openpgpsdk/create.h>
+
 int mktmpdir();
 extern char dir[];
 void create_testtext(const char *text, char *buf, const int maxlen);

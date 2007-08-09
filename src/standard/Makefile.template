@@ -10,7 +10,7 @@ LDFLAGS=-g
 
 all: Makefile headers .depend libops_std.a
 
-LIBOBJS = std_keyring.o std_print.o
+LIBOBJS = std_keyring.o std_print.o std_readerwriter.o
 
 headers:
 	cd ../../include/openpgpsdk && make headers

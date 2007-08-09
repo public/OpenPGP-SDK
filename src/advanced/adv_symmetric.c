@@ -97,9 +97,11 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 
 	    if(!rinfo->pinfo->reading_v3_secret
 	       || !rinfo->pinfo->reading_mpi_length)
-		arg->decrypted_count=ops_decrypt(arg->decrypt,
-						 arg->decrypted,
-						 buffer,n);
+                {
+                arg->decrypted_count=ops_decrypt_se_ip(arg->decrypt,
+                                  arg->decrypted,
+                                  buffer,n);
+                }
 	    else
 		{
 		memcpy(arg->decrypted,buffer,n);
@@ -142,7 +144,10 @@ void ops_reader_pop_decrypt(ops_parse_info_t *pinfo)
     }
 
 static void std_set_iv(ops_crypt_t *crypt,const unsigned char *iv)
-    { memcpy(crypt->iv,iv,crypt->blocksize); }
+    { 
+    memcpy(crypt->iv,iv,crypt->blocksize); 
+    crypt->num=0;
+    }
 
 static void std_set_key(ops_crypt_t *crypt,const unsigned char *key)
     { memcpy(crypt->key,key,crypt->keysize); }
@@ -357,12 +362,8 @@ unsigned ops_key_size(ops_symmetric_algorithm_t alg)
 
 void ops_encrypt_init(ops_crypt_t * encrypt)
     {
-	return ops_decrypt_init(encrypt);
-    // \todo does there need to be both a ops_encrypt_init and a ops_decrypt_init?
-    encrypt->base_init(encrypt);
-    // needed?    decrypt->block_encrypt(decrypt,decrypt->siv,decrypt->iv);
-    // needed?    memcpy(decrypt->civ,decrypt->siv,decrypt->blocksize);
-    encrypt->num=0;
+    // \todo should there be a separate ops_encrypt_init?
+    return ops_decrypt_init(encrypt);
     }
 
 void ops_decrypt_init(ops_crypt_t *decrypt)
@@ -373,7 +374,8 @@ void ops_decrypt_init(ops_crypt_t *decrypt)
     decrypt->num=0;
     }
 
-size_t ops_decrypt(ops_crypt_t *decrypt,void *out_,const void *in_,
+size_t ops_decrypt_se
+(ops_crypt_t *decrypt,void *out_,const void *in_,
 		   size_t count)
     {
     unsigned char *out=out_;
@@ -389,7 +391,7 @@ size_t ops_decrypt(ops_crypt_t *decrypt,void *out_,const void *in_,
 	if(decrypt->num == decrypt->blocksize)
 	    {
 	    memcpy(decrypt->siv,decrypt->civ,decrypt->blocksize);
-	    decrypt->block_encrypt(decrypt,decrypt->civ,decrypt->civ);
+	    decrypt->block_decrypt(decrypt,decrypt->civ,decrypt->civ);
 	    decrypt->num=0;
 	    }
 	t=decrypt->civ[decrypt->num];
@@ -399,7 +401,7 @@ size_t ops_decrypt(ops_crypt_t *decrypt,void *out_,const void *in_,
     return saved;
     }
 
-size_t ops_encrypt(ops_crypt_t *encrypt,void *out_,const void *in_,
+size_t ops_encrypt_se(ops_crypt_t *encrypt,void *out_,const void *in_,
 		   size_t count)
     {
     unsigned char *out=out_;
@@ -421,4 +423,22 @@ size_t ops_encrypt(ops_crypt_t *encrypt,void *out_,const void *in_,
 	}
 
     return saved;
+    }
+
+size_t ops_encrypt_se_ip(ops_crypt_t *crypt,void *out_,const void *in_,
+                       size_t count)
+    {
+    CAST_cfb64_encrypt(in_, out_, count,
+                       crypt->data, crypt->iv, (int *)&crypt->num, CAST_ENCRYPT);
+    return count;
+    }
+
+size_t ops_decrypt_se_ip(ops_crypt_t *crypt,void *out_,const void *in_,
+                       size_t count)
+    {
+    // \todo should not be hard-coded to CAST
+
+    CAST_cfb64_encrypt(in_, out_, count,
+                       crypt->data, crypt->iv, (int *)&crypt->num, CAST_DECRYPT);
+    return count;
     }

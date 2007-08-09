@@ -8,6 +8,7 @@
 #include <openpgpsdk/util.h>
 #include <openpgpsdk/compress.h>
 #include <openpgpsdk/errors.h>
+#include <openpgpsdk/readerwriter.h>
 #include "parse_local.h"
 
 #include <assert.h>
@@ -19,6 +20,18 @@
 #include <limits.h>
 
 #include <openpgpsdk/final.h>
+
+typedef struct
+    {
+    // boolean: false once we've done the preamble/MDC checks
+    // and are reading from the plaintext
+    int passed_checks; 
+    unsigned char *plaintext;
+    size_t plaintext_available;
+    size_t plaintext_offset;
+    ops_region_t *region;
+    ops_crypt_t *decrypt;
+    } decrypt_se_ip_arg_t;
 
 /**
  * limited_read_data reads the specified amount of the subregion's data 
@@ -710,6 +723,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_CT_SE_DATA_HEADER:
     case OPS_PTAG_CT_SE_IP_DATA_HEADER:
     case OPS_PTAG_CT_SE_IP_DATA_BODY:
+    case OPS_PTAG_CT_MDC:
     case OPS_PARSER_CMD_GET_SECRET_KEY:
 	break;
 
@@ -2244,6 +2258,130 @@ static int parse_pk_session_key(ops_region_t *region,
     return 1;
     }
 
+static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
+                             ops_reader_info_t *rinfo,
+                             ops_parse_cb_info_t *cbinfo)
+    {
+    /*
+      Gets entire SE_IP data packet.
+      Verifies leading preamble
+      Verifies trailing MDC packet
+      Then passes up plaintext as requested
+    */
+
+    ops_region_t decrypted_region;
+
+    decrypt_se_ip_arg_t *arg=ops_reader_get_arg(rinfo);
+
+    if (!arg->passed_checks)
+        {
+        unsigned char*buf=NULL;
+
+        ops_hash_t hash;
+        unsigned char hashed[SHA_DIGEST_LENGTH];
+
+        ops_hash_any(&hash,OPS_HASH_SHA1);
+        hash.init(&hash);
+
+        ops_init_subregion(&decrypted_region,NULL);
+        decrypted_region.length = arg->region->length - arg->region->length_read;
+        buf=ops_mallocz(decrypted_region.length);
+
+        // read entire SE IP packet
+        
+        if (!ops_stacked_limited_read(buf,decrypted_region.length, &decrypted_region,errors,rinfo,cbinfo))
+            return -1;
+
+        // verify leading preamble
+
+        size_t b=arg->decrypt->blocksize;
+        if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])
+            {
+            //            ERR4P(pinfo,"Bad symmetric decrypt (%02x%02x vs %02x%02x)",
+            //              buf[b-2],buf[b-1],buf[b],buf[b+1]);
+            return 0;
+            }
+
+        // Verify trailing MDC hash
+
+        size_t sz_preamble=arg->decrypt->blocksize+2;
+        size_t sz_mdc_hash=OPS_SHA1_HASH_SIZE;
+        size_t sz_mdc=1+1+sz_mdc_hash;
+        size_t sz_plaintext=decrypted_region.length-sz_preamble-sz_mdc;
+
+        //        unsigned char* preamble=buf;
+        unsigned char* plaintext=buf+sz_preamble;
+        unsigned char* mdc=plaintext+sz_plaintext;
+        unsigned char* mdc_hash=mdc+2;
+    
+        unsigned char c[0];
+
+        hash.add(&hash, plaintext, sz_plaintext);
+        c[0]=0xD3;
+        hash.add(&hash,&c[0],1);   // MDC packet tag
+        c[0]=0x14;
+        hash.add(&hash,&c[0],1);   // MDC packet len
+        
+        hash.finish(&hash,&hashed[0]);
+
+        if (memcmp(mdc_hash,hashed,OPS_SHA1_HASH_SIZE))
+            {
+            fprintf(stderr,"Hash is bad");
+            //            ERRP(pinfo,"Bad hash in MDC");
+            return 0;
+            }
+
+        // all done with the checks
+        // now can start reading from the plaintext
+        assert(!arg->plaintext);
+        arg->plaintext=ops_mallocz(sz_plaintext);
+        memcpy(arg->plaintext, plaintext, sz_plaintext);
+        arg->plaintext_available=sz_plaintext;
+
+        arg->passed_checks=1;
+
+        free(buf);
+        }
+
+    unsigned int n=len;
+    if (n > arg->plaintext_available)
+        n=arg->plaintext_available;
+
+    memcpy(dest_, arg->plaintext+arg->plaintext_offset, n);
+    arg->plaintext_available-=n;
+    arg->plaintext_offset+=n;
+    len-=n;
+
+    return n;
+    }
+
+static void se_ip_data_destroyer(ops_reader_info_t *rinfo)
+    {
+    decrypt_se_ip_arg_t* arg=ops_reader_get_arg(rinfo);
+    free (arg->plaintext);
+    free (arg);
+    //    free(ops_reader_get_arg(rinfo));
+    }
+
+//void ops_reader_push_se_ip_data(ops_parse_info_t *pinfo __attribute__((__unused__)), ops_crypt_t *decrypt __attribute__((__unused__)),
+//                                ops_region_t *region __attribute__((__unused__)))
+void ops_reader_push_se_ip_data(ops_parse_info_t *pinfo, ops_crypt_t *decrypt,
+                                ops_region_t *region)
+    {
+    decrypt_se_ip_arg_t *arg=ops_mallocz(sizeof *arg);
+    arg->region=region;
+    arg->decrypt=decrypt;
+
+    ops_reader_push(pinfo, se_ip_data_reader, se_ip_data_destroyer,arg);
+    }
+
+void ops_reader_pop_se_ip_data(ops_parse_info_t* pinfo)
+    {
+    //    decrypt_se_ip_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(pinfo));
+    //    free(arg);
+    ops_reader_pop(pinfo);
+    }
+
 // XXX: make this static?
 int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 		     ops_parse_info_t *pinfo)
@@ -2258,7 +2396,7 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 	ops_parser_content_t content;
 	ops_region_t encregion;
 
-	
+
 	ops_reader_push_decrypt(pinfo,decrypt,region);
 
 	ops_init_subregion(&encregion,NULL);
@@ -2280,9 +2418,11 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 	    decrypt->block_encrypt(decrypt,decrypt->civ,decrypt->civ);
 	    }
 
+
 	r=ops_parse(pinfo);
+
 	ops_reader_pop_decrypt(pinfo);
-	}
+    }
     else
 	{
 	ops_parser_content_t content;
@@ -2306,6 +2446,46 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
     return r;
     }
 
+int ops_decrypt_se_ip_data(ops_content_tag_t tag,ops_region_t *region,
+		     ops_parse_info_t *pinfo)
+    {
+    int r=1;
+    ops_crypt_t *decrypt=ops_parse_get_decrypt(pinfo);
+
+    if(decrypt)
+        {
+        ops_reader_push_decrypt(pinfo,decrypt,region);
+        ops_reader_push_se_ip_data(pinfo,decrypt,region);
+
+        r=ops_parse(pinfo);
+
+        //        assert(0);
+        ops_reader_pop_se_ip_data(pinfo);
+        ops_reader_pop_decrypt(pinfo);
+        }
+    else
+        {
+        ops_parser_content_t content;
+        
+        while(region->length_read < region->length)
+            {
+            unsigned l=region->length-region->length_read;
+            
+            if(l > sizeof C.se_data_body.data)
+                l=sizeof C.se_data_body.data;
+            
+            if(!limited_read(C.se_data_body.data,l,region,pinfo))
+                return 0;
+            
+            C.se_data_body.length=l;
+            
+            CBP(pinfo,tag,&content);
+            }
+        }
+
+    return r;
+    }
+
 static int parse_se_data(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     ops_parser_content_t content;
@@ -2324,16 +2504,26 @@ static int parse_se_ip_data(ops_region_t *region,ops_parse_info_t *pinfo)
     ops_parser_content_t content;
 
     if(!limited_read(c,1,region,pinfo))
-	return 0;
+        return 0;
     C.se_ip_data_header.version=c[0];
     assert(C.se_ip_data_header.version == OPS_SE_IP_V1);
 
-    CBP(pinfo,OPS_PTAG_CT_SE_IP_DATA_HEADER,&content);
-
     /* The content of an encrypted data packet is more OpenPGP packets
        once decrypted, so recursively handle them */
-    return ops_decrypt_data(OPS_PTAG_CT_SE_IP_DATA_BODY,region,pinfo);
+    return ops_decrypt_se_ip_data(OPS_PTAG_CT_SE_IP_DATA_BODY,region,pinfo);
     }
+
+static int parse_mdc(ops_region_t *region, ops_parse_info_t *pinfo)
+	{
+	ops_parser_content_t content;
+
+	if (!limited_read((unsigned char *)&C.mdc,OPS_SHA1_HASH_SIZE,region,pinfo))
+		return 0;
+
+	CBP(pinfo,OPS_PTAG_CT_MDC,&content);
+
+	return 1;
+	}
 
 /** Parse one packet.
  *
@@ -2469,6 +2659,10 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
     case OPS_PTAG_CT_SE_IP_DATA:
 	r=parse_se_ip_data(&region,pinfo);
 	break;
+
+    case OPS_PTAG_CT_MDC:
+	 r=parse_mdc(&region, pinfo);
+	 break;
 
     default:
 	ERR1P(pinfo,"Unknown content tag 0x%x", C.ptag.content_tag);

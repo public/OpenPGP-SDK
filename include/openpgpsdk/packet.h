@@ -9,6 +9,7 @@
 
 #include <time.h>
 #include <openssl/bn.h>
+#include <openssl/sha.h>
 #include "types.h"
 #include "errors.h"
 
@@ -428,6 +429,9 @@ typedef enum
 // Hash size for secret key check
 #define OPS_CHECKHASH_SIZE	20
 
+// SHA1 Hash Size \todo is this the same as OPS_CHECKHASH_SIZE??
+#define OPS_SHA1_HASH_SIZE SHA_DIGEST_LENGTH
+
 // Max hash size
 #define OPS_MAX_HASH_SIZE	64
 
@@ -753,6 +757,12 @@ typedef struct
     unsigned char		data[8192];
     } ops_literal_data_body_t;
 
+/** ops_mdc_t */
+typedef struct
+    {
+    unsigned char		data[20]; // size of SHA1 hash
+    } ops_mdc_t;
+
 /** ops_armoured_header_value_t */
 typedef struct
     {
@@ -862,11 +872,18 @@ typedef struct
     ops_se_ip_version_t		version;
     } ops_se_ip_data_header_t;
 
+/** ops_se_ip_data_body_t */
+typedef struct
+    {
+    unsigned			length;
+    unsigned char*		data; // \todo remember to free this
+    } ops_se_ip_data_body_t;
+
 /** ops_se_data_body_t */
 typedef struct
     {
     unsigned			length;
-    unsigned char		data[8192];
+    unsigned char		data[8192]; // \todo parameterise this!
     } ops_se_data_body_t;
 
 /** ops_get_secret_key_t */
@@ -910,6 +927,7 @@ typedef union
     ops_ss_unknown_t	 	ss_unknown;
     ops_literal_data_header_t	literal_data_header;
     ops_literal_data_body_t	literal_data_body;
+	ops_mdc_t				mdc;
     ops_ss_features_t		ss_features;
     ops_ss_revocation_reason_t	ss_revocation_reason;
     ops_secret_key_t		secret_key;
@@ -923,6 +941,7 @@ typedef union
     ops_pk_session_key_t	pk_session_key;
     ops_secret_key_passphrase_t	secret_key_passphrase;
     ops_se_ip_data_header_t	se_ip_data_header;
+    ops_se_ip_data_body_t	se_ip_data_body;
     ops_se_data_body_t		se_data_body;
     ops_get_secret_key_t	get_secret_key;
     } ops_parser_content_union_t;

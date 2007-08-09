@@ -184,8 +184,8 @@ const ops_key_data_t *
 ops_keyring_find_key_by_userid(const ops_keyring_t *keyring,
 				 const char *userid)
     {
-    int n;
-    unsigned int i;
+    int n=0;
+    unsigned int i=0;
 
     for(n=0 ; n < keyring->nkeys ; ++n)
 	for(i=0; i<keyring->keys[n].nuids; i++)

@@ -19,6 +19,11 @@ static int indent=0;
 
 static void print_bn( const char *name, 
 		      const BIGNUM *bn);
+#ifdef NOTYETUSED
+static void print_hash(const char *name,
+                       const unsigned char *data,
+                       unsigned int len);
+#endif
 static void print_hex(const unsigned char *src,
 		      size_t length);
 static void print_hexdump(const char *name,
@@ -237,6 +242,22 @@ static void print_tagname(const char *str)
     print_indent();
     printf("%s packet\n", str);
     }
+
+#ifdef NOTYETUSED
+static void print_hash(const char *name,
+			  const unsigned char *data,
+			  unsigned int len)
+    {
+	unsigned int i=0;
+    print_name(name);
+    printf("len=%d, data=0x", len);
+	for (i=0; i<len; i++)
+		{
+		printf("0x%2x ",data[i]);
+		}
+	printf("\n");
+    }
+#endif
 
 static void print_hexdump(const char *name,
 			  const unsigned char *data,

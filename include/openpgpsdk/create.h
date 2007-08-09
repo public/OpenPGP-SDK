@@ -99,4 +99,16 @@ ops_boolean_t ops_write_literal_data(const unsigned char *data,
 ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data, 
                                                      const int len, 
                                                      ops_create_info_t *info);
+
+ops_boolean_t ops_write_mdc(const unsigned char *date,
+							const unsigned int len,
+							ops_create_info_t *info);
+
+ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
+                                   const unsigned int len,
+                                   ops_crypt_t *crypt,
+                                   ops_create_info_t *info);
+ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
+				       ops_pk_session_key_t *pksk);
+
 #endif

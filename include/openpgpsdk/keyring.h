@@ -44,4 +44,7 @@ char *ops_get_passphrase(void);
 void ops_keyring_list(const ops_keyring_t* keyring, const char* match);
 
 void ops_set_secret_key(ops_parser_content_union_t* content,const ops_key_data_t *key);
+
+unsigned char* ops_get_key_id(ops_key_data_t *key);
+
 #endif

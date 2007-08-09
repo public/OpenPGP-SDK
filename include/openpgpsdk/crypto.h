@@ -56,7 +56,7 @@ struct _ops_crypt_t
     unsigned char civ[OPS_MAX_BLOCK_SIZE];
     unsigned char siv[OPS_MAX_BLOCK_SIZE]; /* Needed for weird v3 resync */
     unsigned char key[OPS_MAX_KEY_SIZE];
-    size_t num; /* Count of characters encrypted so far */
+    size_t num; /* Offset - see openssl _encrypt doco */
     void *data;
     };
 
@@ -96,9 +96,13 @@ int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 void ops_crypt_any(ops_crypt_t *decrypt,ops_symmetric_algorithm_t alg);
 void ops_decrypt_init(ops_crypt_t *decrypt);
 void ops_encrypt_init(ops_crypt_t *encrypt);
-size_t ops_decrypt(ops_crypt_t *decrypt,void *out,const void *in,
+size_t ops_decrypt_se(ops_crypt_t *decrypt,void *out,const void *in,
 		   size_t count);
-size_t ops_encrypt(ops_crypt_t *encrypt,void *out,const void *in,
+size_t ops_encrypt_se(ops_crypt_t *encrypt,void *out,const void *in,
+		   size_t count);
+size_t ops_decrypt_se_ip(ops_crypt_t *decrypt,void *out,const void *in,
+		   size_t count);
+size_t ops_encrypt_se_ip(ops_crypt_t *encrypt,void *out,const void *in,
 		   size_t count);
 
 void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_crypt_t *decrypt,
@@ -119,7 +123,7 @@ ops_boolean_t ops_encrypt_mpi(const unsigned char *buf, size_t buflen,
 // Encrypt everything that's written
 struct ops_key_data;
 void ops_writer_push_encrypt(ops_create_info_t *info,
-                             //            ops_crypt_t *encrypt,
-			     const struct ops_key_data *key);
+                             ops_crypt_t *encrypt,
+                             const struct ops_key_data *key);
 
 #endif
