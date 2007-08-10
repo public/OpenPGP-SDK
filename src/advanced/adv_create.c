@@ -814,7 +814,8 @@ ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 	&& ops_write(pksk->key_id, 8, info)
 	&& ops_write_scalar(pksk->algorithm, 1, info)
 	&& ops_write_mpi(pksk->parameters.rsa.encrypted_m, info)
-	&& ops_write_scalar(0, 2, info);
+        //??	&& ops_write_scalar(0, 2, info);
+        ;
     }
 
 static ops_boolean_t encrypted_writer(const unsigned char *src,

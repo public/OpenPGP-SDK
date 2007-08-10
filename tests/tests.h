@@ -19,5 +19,14 @@ void create_testtext(const char *text, char *buf, const int maxlen);
 void create_testdata(const char *text, unsigned char *buf, const int maxlen);
 #define MAXBUF 128
 
+ops_parse_cb_return_t
+callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+ops_parse_cb_return_t
+callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+ops_parse_cb_return_t
+callback_cmd_get_secret_key_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+
+ops_keyring_t pub_keyring;
+ops_keyring_t sec_keyring;
 #endif
 

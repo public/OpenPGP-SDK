@@ -19,11 +19,12 @@ static unsigned char* literal_data=NULL;
 static size_t sz_literal_data=0;
 static unsigned char* mdc_data=NULL;
 static size_t sz_mdc_data=0;
+static unsigned char* encrypted_pk_sk=NULL;
+static size_t sz_encrypted_pk_sk=0;
 
 #define MAXBUF 128
 
 static void cleanup();
-//static void print_hash(char* str, unsigned char* data);
 
 /* 
  * Packet Types initialisation.
@@ -31,8 +32,44 @@ static void cleanup();
 
 int init_suite_packet_types(void)
     {
+    char keydetails[MAXBUF+1];
+    char keyring_name[MAXBUF+1];
+    int fd=0;
+    char cmd[MAXBUF+1];
+
     // Initialise OPS 
     ops_init();
+
+    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
+    // Create temp directory
+    if (!mktmpdir())
+	return 1;
+
+    /*
+     * Create a RSA keypair with no passphrase
+     */
+
+    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
+
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
+	{
+	fprintf(stderr,"Can't create key details\n");
+	return 1;
+	}
+
+    write(fd,rsa_nopass,strlen(rsa_nopass));
+    close(fd);
+
+    snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
+    system(cmd);
+
+    // read keyrings
+    snprintf(keyring_name,MAXBUF,"%s/pubring.gpg", dir);
+    ops_keyring_read(&pub_keyring,keyring_name);
+
+    // read keyring
+    snprintf(keyring_name,MAXBUF,"%s/secring.gpg", dir);
+    ops_keyring_read(&sec_keyring,keyring_name);
 
     // Return success
     return 0;
@@ -61,30 +98,16 @@ callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *
         {
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
         sz_literal_data=content->literal_data_body.length;
-        //	literal_data=ops_mallocz(content->literal_data_body.length+1);
-        //        memcpy(literal_data,content->literal_data_body.data,content->literal_data_body.length);
         literal_data=ops_mallocz(sz_literal_data+1);
         memcpy(literal_data,content->literal_data_body.data,sz_literal_data);
         break;
 
-    case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
         // ignore
         break;
 
-    case OPS_PARSER_ERROR:
-	printf("parse error: %s\n",content->error.error);
-	break;
-
-    case OPS_PARSER_ERRCODE:
-	printf("parse error: %s\n",
-	       ops_errcode(content->errcode.errcode));
-	break;
-
     default:
-	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
-		content_->tag);
-	assert(0);
+        return callback_general(content_,cbinfo);
         }
 
     return OPS_RELEASE_MEMORY;
@@ -99,7 +122,6 @@ callback_mdc(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
 	//	ops_print_packet(content_);
 
-    // Read data from packet into static buffer
     switch(content_->tag)
         {
 	case OPS_PTAG_CT_MDC:
@@ -109,23 +131,41 @@ callback_mdc(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 		memcpy(mdc_data,content->mdc.data,sz_mdc_data);
 		break;
 
-    case OPS_PARSER_PTAG:
-        // ignore
+    default:
+        return callback_general(content_,cbinfo);
+        }
+
+    return OPS_RELEASE_MEMORY;
+    }
+ 
+static ops_parse_cb_return_t
+callback_encrypted_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+
+    OPS_USED(cbinfo);
+
+	//	ops_print_packet(content_);
+
+    switch(content_->tag)
+        {
+    case OPS_PTAG_CT_PK_SESSION_KEY:
         break;
 
-    case OPS_PARSER_ERROR:
-	printf("parse error: %s\n",content->error.error);
-	break;
+	case OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY:
+        sz_encrypted_pk_sk=sizeof(*encrypted_pk_sk);
+		encrypted_pk_sk=ops_mallocz(sz_encrypted_pk_sk);
+		memcpy(encrypted_pk_sk,&content->pk_session_key,sz_encrypted_pk_sk);
+		break;
 
-    case OPS_PARSER_ERRCODE:
-	printf("parse error: %s\n",
-	       ops_errcode(content->errcode.errcode));
-	break;
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+        return callback_cmd_get_secret_key_passphrase(content_,cbinfo);
+
+    case OPS_PARSER_CMD_GET_SECRET_KEY:
+        return callback_cmd_get_secret_key(content_,cbinfo);
 
     default:
-	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
-		content_->tag);
-	assert(0);
+        return callback_general(content_,cbinfo);
         }
 
     return OPS_RELEASE_MEMORY;
@@ -142,19 +182,13 @@ callback_se_ip_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
 
     switch(content_->tag)
         {
-    case OPS_PARSER_PTAG:
-        // ignore
-        break;
-
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
         return callback_literal_data(content_,cbinfo);
         break;
 
     default:
-	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
-		content_->tag);
-	assert(0);
+        return callback_general(content_,cbinfo);
         }
 
     return OPS_RELEASE_MEMORY;
@@ -437,6 +471,37 @@ static void test_ops_se_ip()
     ops_memory_free(mem_ldt);
     }
 
+static void test_ops_encrypted_pk_sk()
+    {
+    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
+    ops_pk_session_key_t *encrypted_pk_session_key;
+    ops_create_info_t *cinfo;
+    ops_parse_info_t *pinfo;
+    ops_memory_t *mem;
+    int rtn=0;
+
+    // setup for write
+    ops_setup_memory_write(&cinfo,&mem,MAXBUF);
+
+    // write
+    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
+    encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
+    ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
+
+    // setup for read
+    ops_setup_memory_read(&pinfo,mem,callback_encrypted_pk_session_key);
+
+    // read
+    rtn=ops_parse(pinfo);
+
+    // test
+    CU_ASSERT(memcmp(encrypted_pk_session_key, encrypted_pk_sk, sz_encrypted_pk_sk)==0);
+
+    // cleanup
+    cleanup();
+    ops_teardown_memory_read(pinfo,mem);
+    }
+
 CU_pSuite suite_packet_types()
 {
     CU_pSuite suite = NULL;
@@ -460,6 +525,9 @@ CU_pSuite suite_packet_types()
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "Tag 20: Sym. Encrypted Integrity Protected Data packet", test_ops_se_ip))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Tag 1: PK Encrypted Session Key packet", test_ops_encrypted_pk_sk))
 	    return NULL;
 
     return suite;

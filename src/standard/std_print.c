@@ -487,7 +487,7 @@ static void print_block(const char *name,const unsigned char *str,
     printf("<<<<< %s <<<<<\n",name);
     }
 
-static void print_pk_session_key(ops_content_tag_t tag,
+void ops_print_pk_session_key(ops_content_tag_t tag,
 				 const ops_pk_session_key_t *key)
     {
     if(tag == OPS_PTAG_CT_PK_SESSION_KEY)
@@ -1115,11 +1115,11 @@ int ops_print_packet(const ops_parser_content_t *content_)
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
     case OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY:
-	print_pk_session_key(content_->tag,&content->pk_session_key);
+	ops_print_pk_session_key(content_->tag,&content->pk_session_key);
 	break;
 
     case OPS_PARSER_CMD_GET_SECRET_KEY:
-	print_pk_session_key(OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY,
+	ops_print_pk_session_key(OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY,
 			     content->get_secret_key.pk_session_key);
 
 #ifdef XXX
