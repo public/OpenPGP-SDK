@@ -17,7 +17,7 @@
 
 static int indent=0;
 
-static void print_bn( const char *name, 
+void print_bn( const char *name, 
 		      const BIGNUM *bn);
 #ifdef NOTYETUSED
 static void print_hash(const char *name,
@@ -224,7 +224,7 @@ static void print_string_and_value(char *name,const char *str,
     printf("\n");
     }
 
-static void print_bn( const char *name, const BIGNUM *bn)
+void print_bn( const char *name, const BIGNUM *bn)
     {
     print_indent();
     printf("%s=",name);

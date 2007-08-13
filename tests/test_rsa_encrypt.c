@@ -7,15 +7,14 @@
 #include "openpgpsdk/packet-parse.h"
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/std_print.h"
+#include "openpgpsdk/readerwriter.h"
 
 #include "tests.h"
 
 #define MAXBUF 128
-static char pub_keyring_name[MAXBUF+1];
-static char keydetails[MAXBUF+1];
-static ops_keyring_t pub_keyring;
 static char *filename_rsa_noarmour_singlekey="rsa_noarmour_singlekey.txt";
 
+/*
 static int create_testfile(const char *name)
     {
     char filename[MAXBUF+1];
@@ -31,16 +30,16 @@ static int create_testfile(const char *name)
     close(fd);
     return 1;
     }
+*/
 
-#ifdef XXX
 static ops_parse_cb_return_t
-callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     static ops_boolean_t skipping;
-    static const ops_key_data_t *encrypter;
-    const ops_key_data_t *keydata=NULL;
-    const ops_secret_key_t *secret;
+    static const ops_key_data_t *decrypter;
+    //    const ops_key_data_t *keydata=NULL;
+    //    const ops_secret_key_t *secret;
 
     OPS_USED(cbinfo);
 
@@ -67,63 +66,26 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
 		//	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
-	if(encrypter)
+	if(decrypter)
 	    break;
 
-	encrypter=ops_keyring_find_key_by_id(&keyring,
+	decrypter=ops_keyring_find_key_by_id(&sec_keyring,
 					     content->pk_session_key.key_id);
-	if(!encrypter)
+	if(!decrypter)
 	    break;
 	break;
 
     case OPS_PARSER_CMD_GET_SECRET_KEY:
-	keydata=ops_keyring_find_key_by_id(&keyring,content->get_secret_key.pk_session_key->key_id);
-	if (!keydata || !ops_key_is_secret(keydata))
-	    return 0;
-
-	//	ops_set_secret_key(content,keydata);
-
-	// Do we need the passphrase and not have it? If so, get it
-	ops_parser_content_t pc;
-	char *passphrase;
-	memset(&pc,'\0',sizeof pc);
-	passphrase=NULL;
-	pc.content.secret_key_passphrase.passphrase=&passphrase;
-	pc.content.secret_key_passphrase.secret_key=&(keydata->key.skey);
-
-	/* Ugh. Need to duplicate this macro here to get the passphrase 
-	   Duplication to be removed when the callback gets moved to main code.
-	   Can we make this inline code rather than a macro?
-	*/
-#define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if((cbinfo)->cb(pc,(cbinfo)) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
-	CB(cbinfo,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
-	
-	/* now get the key from the data */
-	secret=ops_get_secret_key_from_data(keydata);
-	while(!secret)
-	    {
-	    /* then it must be encrypted */
-	    secret=ops_decrypt_secret_key_from_data(keydata,passphrase);
-	    free(passphrase);
-	    }
-
-	*content->get_secret_key.secret_key=secret;
-	
-	break;
+        return callback_cmd_get_secret_key(content_,cbinfo);
 
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-	/*
-	  Doing this so the test can be automated.
-	  Will move this into separate stacked callback later
-	*/
-	*(content->secret_key_passphrase.passphrase)=ops_malloc_passphrase(current_passphrase);
-	return OPS_KEEP_MEMORY;
-	break;
+        return callback_cmd_get_secret_key_passphrase(content_,cbinfo);
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
-	text=ops_mallocz(content->literal_data_body.length+1);
-	memcpy(text,content->literal_data_body.data,content->literal_data_body.length);
-		break;
+        return callback_literal_data(content_,cbinfo);
+        //	text=ops_mallocz(content->literal_data_body.length+1);
+        //	memcpy(text,content->literal_data_body.data,content->literal_data_body.length);
+        //		break;
 
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_ARMOUR_HEADER:
@@ -146,8 +108,6 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     return OPS_RELEASE_MEMORY;
     }
-#endif
-
 
 /* Decryption suite initialization.
  * Create temporary directory.
@@ -156,15 +116,6 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
 int init_suite_rsa_encrypt(void)
     {
-    int fd=0;
-    char cmd[MAXBUF+1];
-    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
-    char *rsa_pass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Bravo\nName-Comment: RSA, passphrase\nName-Email: bravo@test.com\nPassphrase: hello\nKey-Length: 1024\n";
-    
-    // Create temp directory
-    if (!mktmpdir())
-	return 1;
-
     // Create RSA test files
 
     create_testfile(filename_rsa_noarmour_singlekey);
@@ -173,6 +124,18 @@ int init_suite_rsa_encrypt(void)
     create_testfile(filename_rsa_noarmour_passphrase);
     create_testfile(filename_rsa_armour_passphrase);
     */
+
+#ifdef XXX
+    int fd=0;
+    char cmd[MAXBUF+1];
+    char keydetails[MAXBUF+1];
+    char keyring_name[MAXBUF+1];
+    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
+    char *rsa_pass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Bravo\nName-Comment: RSA, passphrase\nName-Email: bravo@test.com\nPassphrase: hello\nKey-Length: 1024\n";
+    
+    // Create temp directory
+    if (!mktmpdir())
+	return 1;
 
     /*
      * Create a RSA keypair with no passphrase
@@ -192,23 +155,6 @@ int init_suite_rsa_encrypt(void)
     snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
     system(cmd);
 
-#ifdef XXX    
-    // Now encrypt the test file with GPG
-    snprintf(cmd,MAXBUF,"gpg --quiet --encrypt --homedir=%s --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase);
-    if (system(cmd))
-	{
-	return 1;
-	}
-
-    // Now encrypt and ascii-armour the test file with GPG
-    snprintf(cmd,MAXBUF,"gpg --quiet --encrypt --armor --homedir=%s --recipient Alpha %s/%s", dir, dir, filename_rsa_armour_nopassphrase);
-    if (system(cmd))
-	{
-	return 1;
-	}
-    
-#endif
-    
     /*
      * Create a RSA keypair with passphrase
      */
@@ -226,28 +172,16 @@ int init_suite_rsa_encrypt(void)
     snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
     system(cmd);
 
-#ifdef XXX    
-    // Now encrypt the test file with GPG
-    snprintf(cmd,MAXBUF,"gpg --quiet --encrypt --homedir=%s --recipient Bravo %s/%s", dir, dir, filename_rsa_noarmour_passphrase);
-    if (system(cmd))
-	{
-	return 1;
-	}
-
-    // Now encrypt and ascii-armour the test file with GPG
-    snprintf(cmd,MAXBUF,"gpg --quiet --encrypt --armor --homedir=%s --recipient Bravo %s/%s", dir, dir, filename_rsa_armour_passphrase);
-    if (system(cmd))
-	{
-	return 1;
-	}
-#endif
-
     // Initialise OPS 
     ops_init();
 
-    // read keyring
-    snprintf(pub_keyring_name,MAXBUF,"%s/pubring.gpg", dir);
-    ops_keyring_read(&pub_keyring,pub_keyring_name);
+    // read keyrings
+    snprintf(keyring_name,MAXBUF,"%s/pubring.gpg", dir);
+    ops_keyring_read(&pub_keyring,keyring_name);
+
+    snprintf(keyring_name,MAXBUF,"%s/secring.gpg", dir);
+    ops_keyring_read(&sec_keyring,keyring_name);
+#endif
 
     // Return success
     return 0;
@@ -257,9 +191,12 @@ int clean_suite_rsa_encrypt(void)
     {
     // char cmd[MAXBUF+1];
 	
+#ifdef XXX
     /* Close OPS */
     
     ops_keyring_free(&pub_keyring);
+#endif
+
     ops_finish();
 
     /* Remove test dir and files */
@@ -271,18 +208,58 @@ int clean_suite_rsa_encrypt(void)
 	return 1;
 	}
    */ 
+
+    reset_vars();
+
     return 0;
+    }
+
+static void test_rsa_decrypt(const char *encfile, const char*testtext)
+    {
+    int fd=0;
+    ops_parse_info_t *pinfo;
+    int rtn=0;
+
+    // open encrypted file
+    fd=open(encfile,O_RDONLY);
+    if(fd < 0)
+	{
+	perror(encfile);
+	exit(2);
+	}
+    
+    // Set decryption reader and handling options
+
+    pinfo=ops_parse_info_new();
+    ops_reader_set_fd(pinfo,fd);
+    ops_parse_cb_set(pinfo,callback_ops_decrypt,NULL);
+
+    //    current_passphrase=nopassphrase;
+    
+    // Do the decryption
+
+    rtn=ops_parse(pinfo);
+    CU_ASSERT(rtn==1);
+
+    // Tidy up
+
+    close(fd);
+    
+    // File contents should match
+    CU_ASSERT(memcmp(literal_data,testtext,sz_literal_data)==0);
     }
 
 static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), const ops_key_data_t *key __attribute__((__unused__)), const char *filename __attribute__((__unused__)))
     {
-#ifdef NOTYETUSED
+    ops_memory_t *mem_ldt;
+    ops_create_info_t *cinfo_ldt;
+
+    //#ifdef NOTYETUSED
     char myfile[MAXBUF+1];
     char encfile[MAXBUF+1];
     char *suffix= has_armour ? "asc" : "gpg";
     int fd_in=0;
     int fd_out=0;
-    ops_create_info_t *cinfo;
     //    ops_crypt_t encrypt;
     
     // open file to encrypt
@@ -302,10 +279,6 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
 	exit(2);
 	}
     
-    // Set encryption writer and handling options
-
-    cinfo=ops_create_info_new();
-    ops_writer_set_fd(cinfo,fd_out); 
     // ops_parse_cb_set(pinfo,callback,NULL);
 
     // key in this instance is the public key of the recipient
@@ -319,7 +292,7 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
     //    ops_crypt_any(&encrypt,key.algorithm);
     //    ops_encrypt_init(&encrypt);
 
-    ops_writer_push_encrypt(cinfo,key);
+    //    ops_writer_push_encrypt(cinfo,key);
 
     // Set up armour/passphrase options
 
@@ -340,8 +313,57 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
 	    if (!n)
 		    break;
 	    assert(n>=0);
+#ifdef USING_PUSH
 	    ops_write(buf,n,cinfo);
+#else
+        // create a simple literal data packet as the encrypted payload
+        ops_setup_memory_write(&cinfo_ldt,&mem_ldt,n);
+        ops_write_literal_data((unsigned char *)buf, n,
+                           OPS_LDT_BINARY, cinfo_ldt);
+#endif
     }
+
+
+    // write to file
+
+    // Set encryption writer and handling options
+
+    ops_create_info_t *cinfo;
+    cinfo=ops_create_info_new();
+    ops_writer_set_fd(cinfo,fd_out); 
+
+    /*
+     * write out the encrypted packet
+     */
+    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
+    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
+    ops_print_public_key_verbose(pub_key);
+
+    ops_pk_session_key_t* encrypted_pk_session_key;
+    encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
+    ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
+
+    //int rtn=0;
+    //    ops_parse_info_t *pinfo;
+    //    ops_memory_t *mem;
+    //    ops_setup_memory_write(&cinfo,&mem,MAXBUF);
+
+    //    ops_crypt_any(&encrypt, OPS_SA_CAST5);
+    ops_crypt_t encrypt;
+    ops_crypt_any(&encrypt, encrypted_pk_session_key->symmetric_algorithm);
+    unsigned char *iv=NULL;
+    iv=ops_mallocz(encrypt.blocksize);
+    encrypt.set_iv(&encrypt, iv);
+    key=ops_mallocz(encrypt.keysize); // using blank key for now
+    //    snprintf((char *)key, encrypt.keysize, "CAST_KEY");
+    //    encrypt.set_key(&encrypt, key);
+    encrypt.set_key(&encrypt, &encrypted_pk_session_key->key[0]);
+    ops_encrypt_init(&encrypt);
+
+    ops_write_se_ip_data( ops_memory_get_data(mem_ldt),
+                          ops_memory_get_length(mem_ldt),
+                          &encrypt, cinfo);
+
     
     // Tidy up
 
@@ -349,11 +371,12 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
     close(fd_out);
 
      // File contents should match
-    char *text;
     char buffer[MAXBUF+1];
     create_testtext(filename,&buffer[0],MAXBUF);
-    CU_ASSERT(strcmp(text,buffer)==0);
-#endif
+    test_rsa_decrypt(encfile,buffer);
+    //    char *text;
+    //    CU_ASSERT(strcmp(text,buffer)==0);
+    //#endif
     }
 
 void test_rsa_encrypt_noarmour_singlekey(void)
@@ -395,12 +418,12 @@ CU_pSuite suite_rsa_encrypt()
     if (!suite)
 	    return NULL;
 
-#ifdef TBD
     // add tests to suite
     
     if (NULL == CU_add_test(suite, "Unarmoured, single key", test_rsa_encrypt_noarmour_singlekey))
 	    return NULL;
     
+#ifdef TBD
     if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_encrypt_armour_nopassphrase))
 	    return NULL;
     

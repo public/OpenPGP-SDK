@@ -2,6 +2,8 @@
  * \brief Parser for OpenPGP packets
  */
 
+#include <openssl/cast.h>
+
 #include <openpgpsdk/packet.h>
 #include <openpgpsdk/packet-parse.h>
 #include <openpgpsdk/keyring.h>
@@ -2165,16 +2167,23 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     }
 
 static int parse_pk_session_key(ops_region_t *region,
-				ops_parse_info_t *pinfo)
+                                ops_parse_info_t *pinfo)
     {
     unsigned char c[1];
     ops_parser_content_t content;
     ops_parser_content_t pc;
-    unsigned char buf[8192];
+    //    unsigned char buf[8192];
     int n;
     BIGNUM *enc_m;
     unsigned k;
     const ops_secret_key_t *secret;
+    
+    const size_t sz_unencoded_m_buf=CAST_KEY_LENGTH+1+2;
+    unsigned char unencoded_m_buf[sz_unencoded_m_buf];
+    
+    //    const size_t sz_encoded_m_buf=BN_num_bytes(pub_key->key.rsa.n);
+    //    const size_t sz_encoded_m_buf=128; //\todo FIXME RW
+    //unsigned char encoded_m_buf[sz_encoded_m_buf];
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -2187,6 +2196,15 @@ static int parse_pk_session_key(ops_region_t *region,
     if(!limited_read(C.pk_session_key.key_id,
 		     sizeof C.pk_session_key.key_id,region,pinfo))
 	return 0;
+
+    /*
+    int i;
+    int x=sizeof C.pk_session_key.key_id;
+    printf("session key id: x=%d\n",x);
+    for (i=0; i<x; i++)
+        printf("%2x ", C.pk_session_key.key_id[i]);
+    printf("\n");
+    */
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -2230,31 +2248,47 @@ static int parse_pk_session_key(ops_region_t *region,
 	return 1;
 	}
 
-    n=ops_decrypt_mpi(buf,sizeof buf,enc_m,secret);
+    //    n=ops_decrypt_mpi(buf,sizeof buf,enc_m,secret);
+    n=ops_decrypt_and_unencode_mpi(unencoded_m_buf,sizeof unencoded_m_buf,enc_m,secret);
 
     if(n < 1)
 	ERRP(pinfo,"decrypted message too short");
 
-    C.pk_session_key.symmetric_algorithm=buf[0];
+    // PKA
+    C.pk_session_key.symmetric_algorithm=unencoded_m_buf[0];
+    assert(unencoded_m_buf[0]==OPS_SA_CAST5);
     k=ops_key_size(C.pk_session_key.symmetric_algorithm);
 
     if((unsigned)n != k+3)
-	ERR2P(pinfo,"decrypted message wrong length (got %d expected %d)",
-	      n,k+3);
+        ERR2P(pinfo,"decrypted message wrong length (got %d expected %d)",
+              n,k+3);
     
     assert(k <= sizeof C.pk_session_key.key);
 
-    memcpy(C.pk_session_key.key,buf+1,k);
+    memcpy(C.pk_session_key.key,unencoded_m_buf+1,k);
 
-    C.pk_session_key.checksum=buf[k+1]+(buf[k+2] << 8);
+    /*
+    printf("session key recovered (len=%d):\n",k);
+    unsigned int j;
+    for(j=0; j<k; j++)
+        printf("%2x ", C.pk_session_key.key[j]);
+    printf("\n");
+    */
+
+    C.pk_session_key.checksum=unencoded_m_buf[k+1]+(unencoded_m_buf[k+2] << 8);
+    /*
+    printf("checksum: %2x %2x\n", unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
+    */
 
     // XXX: Check checksum!
 
     CBP(pinfo,OPS_PTAG_CT_PK_SESSION_KEY,&content);
 
     ops_crypt_any(&pinfo->decrypt,C.pk_session_key.symmetric_algorithm);
+    unsigned char *iv=ops_mallocz(pinfo->decrypt.blocksize);
+    pinfo->decrypt.set_iv(&pinfo->decrypt, iv);
     pinfo->decrypt.set_key(&pinfo->decrypt,C.pk_session_key.key);
-
+    ops_encrypt_init(&pinfo->decrypt);
     return 1;
     }
 
@@ -2297,8 +2331,10 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
         size_t b=arg->decrypt->blocksize;
         if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])
             {
+            fprintf(stderr,"Bad symmetric decrypt (%02x%02x vs %02x%02x)\n",
+                    buf[b-2],buf[b-1],buf[b],buf[b+1]);
             //            ERR4P(pinfo,"Bad symmetric decrypt (%02x%02x vs %02x%02x)",
-            //              buf[b-2],buf[b-1],buf[b],buf[b+1]);
+            //                  buf[b-2],buf[b-1],buf[b],buf[b+1]);
             return 0;
             }
 
@@ -2326,7 +2362,7 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
 
         if (memcmp(mdc_hash,hashed,OPS_SHA1_HASH_SIZE))
             {
-            fprintf(stderr,"Hash is bad");
+            fprintf(stderr,"Hash is bad\n");
             //            ERRP(pinfo,"Bad hash in MDC");
             return 0;
             }

@@ -3,6 +3,7 @@
 
 #include <openpgpsdk/configure.h>
 #include <openpgpsdk/crypto.h>
+#include <openpgpsdk/std_print.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/dsa.h>
@@ -166,6 +167,14 @@ int ops_rsa_private_decrypt(unsigned char *out,const unsigned char *in,
 
     n=RSA_private_decrypt(length,in,out,orsa,RSA_NO_PADDING);
 
+    char errbuf[1024];
+    errbuf[0]='\0';
+    if (n==-1)
+        {
+        unsigned long err=ERR_get_error();
+        ERR_error_string(err,&errbuf[0]);
+        fprintf(stderr,"openssl error : %s\n",errbuf);
+        }
     orsa->n=orsa->d=orsa->p=orsa->q=NULL;
     RSA_free(orsa);
 
@@ -178,11 +187,23 @@ int ops_rsa_public_encrypt(unsigned char *out,const unsigned char *in,
     RSA *orsa;
     int n;
 
+    //    printf("ops_rsa_public_encrypt: length=%ld\n", length);
+
     orsa=RSA_new();
     orsa->n=rsa->n;
     orsa->e=rsa->e;
 
+    //    printf("len: %ld\n", length);
+    //    ops_print_bn("n: ", orsa->n);
+    //    ops_print_bn("e: ", orsa->e);
     n=RSA_public_encrypt(length,in,out,orsa,RSA_NO_PADDING);
+
+    if (n==-1)
+        {
+        BIO *out;
+        out=BIO_new_fd(fileno(stderr), BIO_NOCLOSE);
+        ERR_print_errors(out);
+        }
 
     orsa->n=orsa->e=NULL;
     RSA_free(orsa);

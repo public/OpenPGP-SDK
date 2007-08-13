@@ -15,8 +15,6 @@
 
 #include "tests.h"
 
-static unsigned char* literal_data=NULL;
-static size_t sz_literal_data=0;
 static unsigned char* mdc_data=NULL;
 static size_t sz_mdc_data=0;
 static unsigned char* encrypted_pk_sk=NULL;
@@ -32,18 +30,19 @@ static void cleanup();
 
 int init_suite_packet_types(void)
     {
-    char keydetails[MAXBUF+1];
-    char keyring_name[MAXBUF+1];
-    int fd=0;
-    char cmd[MAXBUF+1];
+    //    char keydetails[MAXBUF+1];
+    //    char keyring_name[MAXBUF+1];
+    //    int fd=0;
+    //    char cmd[MAXBUF+1];
 
     // Initialise OPS 
     ops_init();
 
+#ifdef XXX
     char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
     // Create temp directory
     if (!mktmpdir())
-	return 1;
+        return 1;
 
     /*
      * Create a RSA keypair with no passphrase
@@ -64,12 +63,13 @@ int init_suite_packet_types(void)
     system(cmd);
 
     // read keyrings
+
     snprintf(keyring_name,MAXBUF,"%s/pubring.gpg", dir);
     ops_keyring_read(&pub_keyring,keyring_name);
 
-    // read keyring
     snprintf(keyring_name,MAXBUF,"%s/secring.gpg", dir);
     ops_keyring_read(&sec_keyring,keyring_name);
+#endif
 
     // Return success
     return 0;
@@ -81,38 +81,11 @@ int clean_suite_packet_types(void)
     
     ops_finish();
 
+    reset_vars();
+
     return 0;
     }
 
-static ops_parse_cb_return_t
-callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
-    {
-    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
-
-    OPS_USED(cbinfo);
-
-    //    ops_print_packet(content_);
-
-    // Read data from packet into static buffer
-    switch(content_->tag)
-        {
-    case OPS_PTAG_CT_LITERAL_DATA_BODY:
-        sz_literal_data=content->literal_data_body.length;
-        literal_data=ops_mallocz(sz_literal_data+1);
-        memcpy(literal_data,content->literal_data_body.data,sz_literal_data);
-        break;
-
-    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
-        // ignore
-        break;
-
-    default:
-        return callback_general(content_,cbinfo);
-        }
-
-    return OPS_RELEASE_MEMORY;
-    }
- 
 static ops_parse_cb_return_t
 callback_mdc(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
@@ -227,6 +200,7 @@ static void test_literal_data_packet_text()
 
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     rtn=ops_parse(pinfo);
+    CU_ASSERT(rtn==1);
 
     /*
      * test it's the same
@@ -273,6 +247,7 @@ static void test_literal_data_packet_data()
 
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     rtn=ops_parse(pinfo);
+    CU_ASSERT(rtn==1);
 
     /*
      * test it's the same
@@ -284,79 +259,6 @@ static void test_literal_data_packet_data()
     cleanup();
     ops_teardown_memory_read(pinfo,mem);
     free (in);
-    }
-
-static void test_cfb()
-    {
-    // Used for trying low-level OpenSSL tests
-
-    ops_crypt_t crypt_aes;
-    ops_crypt_any(&crypt_aes, OPS_SA_AES_256);
-
-    ops_crypt_t crypt_cast;
-    ops_crypt_any(&crypt_cast, OPS_SA_CAST5);
-
-    ops_crypt_t* crypt;
-
-    /* 
-       AES init
-       using empty IV and key for the moment 
-    */
-    unsigned char *iv=ops_mallocz(crypt_aes.blocksize);
-    unsigned char *key=ops_mallocz(crypt_aes.keysize);
-    snprintf((char *)key, crypt_aes.keysize, "AES_KEY");
-    crypt_aes.set_iv(&crypt_aes, iv);
-    crypt_aes.set_key(&crypt_aes, key);
-    ops_encrypt_init(&crypt_aes);
-
-    /*
-     * CAST
-     */
-    iv=ops_mallocz(crypt_cast.blocksize);
-    key=ops_mallocz(crypt_cast.keysize);
-    //    snprintf((char *)key, crypt_cast.keysize, "CAST_KEY");
-    crypt_cast.set_iv(&crypt_cast, iv);
-    crypt_cast.set_key(&crypt_cast, key);
-    ops_encrypt_init(&crypt_cast);
-
-    crypt=&crypt_cast;
-
-    // Why does aes encrypt/decrypt work??
-    //    crypt=&crypt_aes;
-
-    unsigned char *in=ops_mallocz(crypt->blocksize);
-    unsigned char *out=ops_mallocz(crypt->blocksize);
-    unsigned char *out2=ops_mallocz(crypt->blocksize);
-
-    snprintf((char *)in,crypt->blocksize,"hello");
-	/*
-    printf("\n");
-    printf("in:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
-    printf("in:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
-	*/
-
-    crypt->block_encrypt(crypt, out, in);
-    //    AES_ecb_encrypt(in,out,crypt.data,AES_ENCRYPT);
-	/*
-    printf("out:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
-    printf("out:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
-	*/
-
-    crypt->block_decrypt(crypt, out2, out);
-    //    AES_ecb_encrypt(out,out2,crypt.data,AES_DECRYPT);
-	/*
-    printf("out2:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
-    printf("out2:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
-	*/
-    CU_ASSERT(memcmp((char *)in, (char *)out2, strlen((char *)in))==0);
-
-    cleanup();
     }
 
 static void test_ops_mdc()
@@ -379,6 +281,7 @@ static void test_ops_mdc()
 	ops_setup_memory_read(&pinfo,mem,callback_mdc);
 	ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 	rtn=ops_parse(pinfo);
+    CU_ASSERT(rtn==1);
 
 	// This duplicates the hash done in ops_write_mdc so that we
 	// can verify it's been written correctly.
@@ -458,6 +361,7 @@ static void test_ops_se_ip()
     ops_encrypt_init(&pinfo->decrypt);
 
     rtn=ops_parse(pinfo);
+    CU_ASSERT(rtn==1);
 
     /*
      * Callback should now have literal_data parsed from packet
@@ -473,7 +377,6 @@ static void test_ops_se_ip()
 
 static void test_ops_encrypted_pk_sk()
     {
-    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
     ops_pk_session_key_t *encrypted_pk_session_key;
     ops_create_info_t *cinfo;
     ops_parse_info_t *pinfo;
@@ -484,7 +387,9 @@ static void test_ops_encrypted_pk_sk()
     ops_setup_memory_write(&cinfo,&mem,MAXBUF);
 
     // write
-    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
+    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
+    assert(pub_key);
+
     encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
     ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
 
@@ -493,6 +398,7 @@ static void test_ops_encrypted_pk_sk()
 
     // read
     rtn=ops_parse(pinfo);
+    CU_ASSERT(rtn==1);
 
     // test
     CU_ASSERT(memcmp(encrypted_pk_session_key, encrypted_pk_sk, sz_encrypted_pk_sk)==0);
@@ -512,9 +418,6 @@ CU_pSuite suite_packet_types()
 
     // add tests to suite
     
-    if (NULL == CU_add_test(suite, "Test CFB", test_cfb))
-	    return NULL;
-
     if (NULL == CU_add_test(suite, "Tag 11: Literal Data packet in Text mode", test_literal_data_packet_text))
 	    return NULL;
     

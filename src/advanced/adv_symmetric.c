@@ -101,6 +101,18 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
                 arg->decrypted_count=ops_decrypt_se_ip(arg->decrypt,
                                   arg->decrypted,
                                   buffer,n);
+
+                /*
+        fprintf(stderr,"READING:\nencrypted: ");
+        int i=0;
+        for (i=0; i<16; i++)
+            fprintf(stderr,"%2x ", buffer[i]);
+        fprintf(stderr,"\n");
+        fprintf(stderr,"decrypted:   ");
+        for (i=0; i<16; i++)
+            fprintf(stderr,"%2x ", arg->decrypted[i]);
+        fprintf(stderr,"\n");
+                */
                 }
 	    else
 		{

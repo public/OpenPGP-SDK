@@ -12,8 +12,9 @@
 
 #include "tests.h"
 
+extern CU_pSuite suite_crypto();
 extern CU_pSuite suite_packet_types();
-extern CU_pSuite suite_crypt_mpi();
+//extern CU_pSuite suite_crypt_mpi();
 extern CU_pSuite suite_rsa_decrypt();
 extern CU_pSuite suite_rsa_encrypt();
 
@@ -21,12 +22,86 @@ char dir[MAXBUF+1];
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
 static char* no_passphrase="";
+unsigned char* literal_data=NULL;
+size_t sz_literal_data=0;
+char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
+
+void setup_test_keys()
+    {
+    char keydetails[MAXBUF+1];
+    char keyring_name[MAXBUF+1];
+    int fd=0;
+    char cmd[MAXBUF+1];
+
+    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
+    // Create temp directory
+    if (!mktmpdir())
+        return;
+
+    /*
+     * Create a RSA keypair with no passphrase
+     */
+
+    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
+
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
+        {
+        fprintf(stderr,"Can't create key details\n");
+        return;
+        }
+
+    write(fd,rsa_nopass,strlen(rsa_nopass));
+    close(fd);
+
+    snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
+    system(cmd);
+    
+    // read keyrings
+
+    snprintf(keyring_name,MAXBUF,"%s/pubring.gpg", dir);
+    ops_keyring_read(&pub_keyring,keyring_name);
+
+    snprintf(keyring_name,MAXBUF,"%s/secring.gpg", dir);
+    ops_keyring_read(&sec_keyring,keyring_name);
+
+    }
+
+static void cleanup()
+    {
+    char cmd[MAXBUF];
+
+    return;
+
+    /* Remove test dir and files */
+    snprintf(cmd,MAXBUF,"rm -rf %s", dir);
+    if (system(cmd))
+        {
+        perror("Can't delete test directory ");
+        return;
+        }
+    }
 
 int main()
     {
 
+    setup_test_keys();
+
     if (CUE_SUCCESS != CU_initialize_registry())
-	return CU_get_error();
+        return CU_get_error();
+
+    if (NULL == suite_crypto())
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
+    /*
+    if (NULL == suite_crypt_mpi())
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+    */
 
     if (NULL == suite_packet_types())
         {
@@ -40,18 +115,21 @@ int main()
         CU_cleanup_registry();
         return CU_get_error();
         }
+    */
 
     if (NULL == suite_rsa_encrypt()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
-    */
 
     // Run tests
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
     CU_cleanup_registry();
+
+    cleanup();
+
     return CU_get_error();
     }
 
@@ -96,6 +174,21 @@ void create_testdata(const char *text, unsigned char *buf, const int maxlen)
         {
         buf[i]=(random() & 0xFF);
         }
+    }
+
+void create_testfile(const char *name)
+    {
+    char filename[MAXBUF+1];
+    char buffer[MAXBUF+1];
+
+    int fd=0;
+    snprintf(filename,MAXBUF,"%s/%s",dir,name);
+    if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL, 0600))<0)
+	return;
+
+    create_testtext(name,&buffer[0],MAXBUF);
+    write(fd,buffer,strlen(buffer));
+    close(fd);
     }
 
 ops_parse_cb_return_t
@@ -219,3 +312,41 @@ callback_cmd_get_secret_key_passphrase(const ops_parser_content_t *content_,ops_
     return OPS_RELEASE_MEMORY;
     }
 
+ops_parse_cb_return_t
+callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+
+    OPS_USED(cbinfo);
+
+    //    ops_print_packet(content_);
+
+    // Read data from packet into static buffer
+    switch(content_->tag)
+        {
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+        sz_literal_data=content->literal_data_body.length;
+        literal_data=ops_mallocz(sz_literal_data+1);
+        memcpy(literal_data,content->literal_data_body.data,sz_literal_data);
+        break;
+
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+        // ignore
+        break;
+
+    default:
+        return callback_general(content_,cbinfo);
+        }
+
+    return OPS_RELEASE_MEMORY;
+    }
+ 
+void reset_vars()
+    {
+    if (literal_data)
+        {
+        free (literal_data);
+        literal_data=NULL;
+        sz_literal_data=0;
+        }
+    }

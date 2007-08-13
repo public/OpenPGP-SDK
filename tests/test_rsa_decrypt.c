@@ -18,9 +18,9 @@ To be removed when callback gets added to main body of code
 #include "../src/advanced/keyring_local.h"
 
 #define MAXBUF 128
-static char secring[MAXBUF+1];
+//static char secring[MAXBUF+1];
 //static char dir[MAXBUF+1];
-static char keydetails[MAXBUF+1];
+//static char keydetails[MAXBUF+1];
 static ops_keyring_t keyring;
 static char *filename_rsa_noarmour_nopassphrase="rsa_noarmour_nopassphrase.txt";
 static char *filename_rsa_armour_nopassphrase="rsa_armour_nopassphrase.txt";
@@ -32,6 +32,7 @@ static char *current_passphrase=NULL;
 
 static char* text;
 
+/*
 static int create_testfile(const char *name)
     {
     char filename[MAXBUF+1];
@@ -47,6 +48,7 @@ static int create_testfile(const char *name)
     close(fd);
     return 1;
     }
+*/
 
 static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
@@ -169,6 +171,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
 int init_suite_rsa_decrypt(void)
     {
+#ifdef XXX
     int fd=0;
     char cmd[MAXBUF+1];
     char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
@@ -254,6 +257,7 @@ int init_suite_rsa_decrypt(void)
     // read keyring
     snprintf(secring,MAXBUF,"%s/secring.gpg", dir);
     ops_keyring_read(&keyring,secring);
+#endif
 
     // Return success
     return 0;
@@ -261,8 +265,9 @@ int init_suite_rsa_decrypt(void)
 
 int clean_suite_rsa_decrypt(void)
     {
-    char cmd[MAXBUF+1];
 	
+#ifdef XXX
+    char cmd[MAXBUF+1];
     /* Close OPS */
     
     ops_keyring_free(&keyring);
@@ -275,7 +280,10 @@ int clean_suite_rsa_decrypt(void)
 	perror("Can't delete test directory ");
 	return 1;
 	}
+#endif
     
+    reset_vars();
+
     return 0;
     }
 

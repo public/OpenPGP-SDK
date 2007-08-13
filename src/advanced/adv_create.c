@@ -1,6 +1,8 @@
 /** \file
  */
 
+#include <openssl/cast.h>
+
 #include <openpgpsdk/create.h>
 #include <openpgpsdk/keyring.h>
 #include <openpgpsdk/memory.h>
@@ -750,46 +752,140 @@ ops_boolean_t ops_writer_passthrough(const unsigned char *src,
 				     ops_writer_info_t *winfo)
     { return ops_stacked_write(src,length,errors,winfo); }
 
-void ops_create_m_buf(ops_pk_session_key_t *session_key, unsigned char *buf)
+static void create_unencoded_m_buf(ops_pk_session_key_t *session_key, unsigned char *m_buf)
     {
     int i=0;
-    unsigned int checksum=0;
+    unsigned long checksum=0;
 
+    // m_buf is the buffer which will be encoded in PKCS#1 block
+    // encoding to form the "m" value used in the 
+    // Public Key Encrypted Session Key Packet
     // as defined in RFC Section 5.1 "Public-Key Encrypted Session Key Packet"
 
-    buf[0]=session_key->symmetric_algorithm;
+    m_buf[0]=session_key->symmetric_algorithm;
+    assert(session_key->symmetric_algorithm==OPS_SA_CAST5);
 
-    // \todo parameterise key length
-    for (i=0; i<256/8; i++)
+    for (i=0; i<CAST_KEY_LENGTH; i++)
         {
         checksum+=session_key->key[i];
-        buf[1+i]=session_key->key[i];
+        m_buf[1+i]=session_key->key[i];
         }
     checksum = checksum % 65536;
 
-    buf[i++]=checksum >> 8;
-    buf[i++]=checksum & 0xFF;
+    m_buf[1+i++]=checksum >> 8;
+    m_buf[1+i++]=checksum & 0xFF;
+    }
+
+ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
+                           const ops_public_key_t *pkey,
+                           unsigned char* EM
+)
+    {
+    //unsigned char encmpibuf[8192];
+    //    unsigned char EM[8192];
+    unsigned int k;
+    unsigned i;
+
+    // implementation of EME-PKCS1-v1_5-ENCODE, as defined in OpenPGP RFC
+    
+    assert(pkey->algorithm == OPS_PKA_RSA);
+
+    k=BN_num_bytes(pkey->key.rsa.n);
+    assert(mLen <= k-11);
+    if (mLen > k-11)
+        {
+        fprintf(stderr,"message too long\n");
+        return ops_false;
+        }
+
+    // these two bytes defined by RFC
+    EM[0]=0x00;
+    EM[1]=0x02;
+
+    // add non-zero random bytes of length k - mLen -3
+    for(i=2 ; i < k-mLen-1 ; ++i)
+        do
+            ops_random(EM+i, 1);
+        while(EM[i] == 0);
+
+    assert (i >= 8+2);
+
+    EM[i++]=0;
+
+    memcpy(EM+i, M, mLen);
+    
+
+    /*
+    //    int i=0;
+    fprintf(stderr,"Encoded Message: \n");
+    for (i=0; i<mLen; i++)
+        fprintf(stderr,"%2x ", EM[i]);
+    fprintf(stderr,"\n");
+    */
+
+    return ops_true;
     }
 
 ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     {
-    unsigned char buf[256/8+1+2];
+    /*
+     * Creates a random session key and encrypts it for the given key
+     *
+     * Session Key is for use with a SK algo, 
+     * can be any, we're hardcoding CAST5 for now
+     *
+     * Encryption used is PK, 
+     * can be any, we're hardcoding RSA for now
+     */
+
+    const ops_public_key_t* pub_key=ops_get_public_key_from_data(key);
+    const size_t sz_unencoded_m_buf=CAST_KEY_LENGTH+1+2;
+    unsigned char unencoded_m_buf[sz_unencoded_m_buf];
+
+    const size_t sz_encoded_m_buf=BN_num_bytes(pub_key->key.rsa.n);
+    unsigned char encoded_m_buf[sz_encoded_m_buf];
+
     ops_pk_session_key_t *session_key=ops_mallocz(sizeof *session_key);
 
     assert(key->type == OPS_PTAG_CT_PUBLIC_KEY);
     session_key->version=OPS_PKSK_V3;
     memcpy(session_key->key_id, key->key_id, sizeof session_key->key_id);
+    /*
+    fprintf(stderr,"Encrypting for RSA key id : ");
+    unsigned int i=0;
+    for (i=0; i<sizeof session_key->key_id; i++)
+        fprintf(stderr,"%2x ", key->key_id[i]);
+    fprintf(stderr,"\n");
+    */
 
     assert(key->key.pkey.algorithm == OPS_PKA_RSA);
     session_key->algorithm=key->key.pkey.algorithm;
+    /*
     session_key->symmetric_algorithm=OPS_SA_AES_256;
     ops_random(session_key->key, 256/8);
+    */
+    session_key->symmetric_algorithm=OPS_SA_CAST5;
 
-    ops_create_m_buf(session_key, buf);
+    ops_random(session_key->key, CAST_KEY_LENGTH);
+    /*
+    fprintf(stderr,"CAST5 session key created (len=%d):\n ", CAST_KEY_LENGTH);
+    for (i=0; i<CAST_KEY_LENGTH; i++)
+        fprintf(stderr,"%2x ", session_key->key[i]);
+    fprintf(stderr,"\n");
+    */
 
-    // and encode it
-    if(!ops_encrypt_mpi(buf, (256/8+1+2), &key->key.pkey, &session_key->parameters))
-	return NULL;
+    create_unencoded_m_buf(session_key, &unencoded_m_buf[0]);
+    /*
+    printf("unencoded m buf:\n");
+    for (i=0; i<sz_unencoded_m_buf; i++)
+        printf("%2x ", unencoded_m_buf[i]);
+    printf("\n");
+    */
+    encode_m_buf(&unencoded_m_buf[0], sz_unencoded_m_buf, pub_key, &encoded_m_buf[0]);
+
+    // and encrypt it
+    if(!ops_encrypt_mpi(encoded_m_buf, sz_encoded_m_buf, pub_key, &session_key->parameters))
+        return NULL;
 
     return session_key;
     }
@@ -841,6 +937,19 @@ static ops_boolean_t encrypted_writer(const unsigned char *src,
 						  len);
 
         assert(done==len);
+
+        /*
+        fprintf(stderr,"WRITING:\nunencrypted: ");
+        int i=0;
+        for (i=0; i<16; i++)
+            fprintf(stderr,"%2x ", buf[i]);
+        fprintf(stderr,"\n");
+        fprintf(stderr,"encrypted:   ");
+        for (i=0; i<16; i++)
+            fprintf(stderr,"%2x ", encbuf[i]);
+        fprintf(stderr,"\n");
+        */
+
         if (!ops_stacked_write(encbuf,len,errors,winfo))
             return ops_false;
         remaining-=done;
@@ -930,6 +1039,10 @@ ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
     ops_writer_push(info,encrypted_writer,encrypted_finaliser,
 		    encrypted_destroyer,arg);
 
+    /*
+    fprintf(stderr,"writing %ld + %d + %ld\n", sz_preamble, len, ops_memory_get_length(mem_mdc));
+    */
+
     if (!ops_write(preamble, sz_preamble,info)
         || !ops_write(data, len, info)
         || ops_write(ops_memory_get_data(mem_mdc), ops_memory_get_length(mem_mdc), info))
@@ -996,7 +1109,8 @@ ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data,
     encrypted=ops_mallocz(encrypted_sz);
 
     int done=ops_encrypt_se(&crypt_info, encrypted, data, len);
-    printf("len=%d, done: %d\n", len, done);
+    assert(done==len);
+    //    printf("len=%d, done: %d\n", len, done);
 
     return ops_write_ptag(OPS_PTAG_CT_SE_DATA, info)
         && ops_write_length(1+encrypted_sz,info)

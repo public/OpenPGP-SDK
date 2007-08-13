@@ -113,7 +113,7 @@ void ops_reader_pop_decrypt(ops_parse_info_t *pinfo);
 void ops_reader_push_hash(ops_parse_info_t *pinfo,ops_hash_t *hash);
 void ops_reader_pop_hash(ops_parse_info_t *pinfo);
 
-int ops_decrypt_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
+int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
 		    const ops_secret_key_t *skey);
 ops_boolean_t ops_encrypt_mpi(const unsigned char *buf, size_t buflen,
 			      const ops_public_key_t *pkey,

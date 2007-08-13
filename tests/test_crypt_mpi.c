@@ -1,5 +1,7 @@
 #include "CUnit/Basic.h"
 
+#include <openssl/cast.h>
+
 #include "tests.h"
 #include "openpgpsdk/types.h"
 #include "openpgpsdk/keyring.h"
@@ -7,15 +9,14 @@
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/create.h"
 
-static char secring[MAXBUF+1];
-static char pubring[MAXBUF+1];
-static ops_keyring_t pub_keyring;
-static ops_keyring_t sec_keyring;
+//static char secring[MAXBUF+1];
+//static char pubring[MAXBUF+1];
 static const ops_key_data_t *pubkey;
 static const ops_key_data_t *seckey;
 
 int init_suite_crypt_mpi(void)
     {
+#ifdef XXX
     static char keydetails[MAXBUF+1];
     int fd=0;
     char cmd[MAXBUF+1];
@@ -54,8 +55,10 @@ int init_suite_crypt_mpi(void)
     ops_keyring_read(&sec_keyring,secring);
 
     char keyid[]="Alpha (RSA, no passphrase) <alpha@test.com>";
-    pubkey=ops_keyring_find_key_by_userid(&pub_keyring,keyid);
-    seckey=ops_keyring_find_key_by_userid(&sec_keyring,keyid);
+#endif
+    pubkey=ops_keyring_find_key_by_userid(&pub_keyring,alpha_user_id);
+    //    seckey=ops_keyring_find_key_by_userid(&sec_keyring,keyid);
+    seckey=ops_keyring_find_key_by_userid(&sec_keyring,alpha_user_id);
 
     // Return success
     return 0;
@@ -63,14 +66,18 @@ int init_suite_crypt_mpi(void)
 
 int clean_suite_crypt_mpi(void)
     {
-    char cmd[MAXBUF+1];
 	
+#ifdef XXX
+    char cmd[MAXBUF+1];
     /* Close OPS */
     
     ops_keyring_free(&pub_keyring);
     ops_keyring_free(&sec_keyring);
+#endif
+
     ops_finish();
 
+#ifdef XXX
     /* Remove test dir and files */
     snprintf(cmd,MAXBUF,"rm -rf %s", dir);
     if (system(cmd))
@@ -78,30 +85,36 @@ int clean_suite_crypt_mpi(void)
 	perror("Can't delete test directory ");
 	return 1;
 	}
+#endif
     
+    reset_vars();
+
     return 0;
     }
 
 void test_crypt_mpi(void)
     {
-#define BSZ (256/8+1+2)
+    // hardcoded using CAST
+#define BSZ (CAST_KEY_LENGTH+1+2)
 
     unsigned char in[BSZ];
     unsigned char out[BSZ];
 
     ops_boolean_t rtn;
     
-    ops_pk_session_key_t *session_key=ops_create_pk_session_key(pubkey);
+    ops_pk_session_key_t *encrypted_pk_session_key=NULL;
+
+    encrypted_pk_session_key=ops_create_pk_session_key(pubkey);
 
     // recreate what was encrypted
-    ops_create_m_buf(session_key, in);
+    //    ops_create_m_buf(session_key, in);
 
     //    CU_ASSERT(session_key);
 
     // the encrypted_mpi is now in session_key->parameters.rsa.encrypted_m
 
     // decrypt it
-    rtn=ops_decrypt_mpi(out,BSZ, session_key->parameters.rsa.encrypted_m, &seckey->key.skey);
+    rtn=ops_decrypt_and_unencode_mpi(out,BSZ, encrypted_pk_session_key->parameters.rsa.encrypted_m, &seckey->key.skey);
 
     // [0] is the symmetric algorithm
     // [body] is the session key
