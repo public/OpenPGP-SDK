@@ -190,9 +190,7 @@ ops_keyring_find_key_by_userid(const ops_keyring_t *keyring,
     for(n=0 ; n < keyring->nkeys ; ++n)
 	for(i=0; i<keyring->keys[n].nuids; i++)
 	    {
-	    printf("[%d][%d] userid %s\n",
-		   n,i,
-		   keyring->keys[n].uids[i].user_id);
+        //	    printf("[%d][%d] userid %s\n",n,i,keyring->keys[n].uids[i].user_id);
 	    if(!strcmp((char *)keyring->keys[n].uids[i].user_id,userid))
 	       return &keyring->keys[n];
 	    }

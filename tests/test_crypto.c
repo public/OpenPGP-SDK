@@ -262,7 +262,7 @@ static void test_rsa()
     */
     CU_ASSERT(memcmp(in,&decrypted[0],128)==0);
 
-    fprintf(stderr,"memcmp returns %d\n",memcmp(in,&decrypted[0],128));
+    //    fprintf(stderr,"memcmp returns %d\n",memcmp(in,&decrypted[0],128));
 
     free(encrypted);
     free(decrypted);

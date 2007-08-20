@@ -2684,7 +2684,6 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
-        printf("reading pk_session_key: length=%d\n",region.length);
 	r=parse_pk_session_key(&region,pinfo);
 	break;
 
