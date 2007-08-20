@@ -350,3 +350,51 @@ void reset_vars()
         sz_literal_data=0;
         }
     }
+
+int file_compare(char* file1, char* file2)
+    {
+    FILE *fp1=NULL;
+    FILE *fp2=NULL;
+    char ch1, ch2;
+    int err=0;
+
+    // open files
+    if ((fp1=fopen(file1,"rb"))==NULL)
+        {
+        fprintf(stderr,"file_compare: cannot open file %s\n",file1);
+        return -1;
+        }
+    if ((fp2=fopen(file2,"rb"))==NULL)
+        {
+        fprintf(stderr,"file_compare: cannot open file %s\n",file2);
+        fclose(fp1);
+        return -1;
+        }
+
+    while(!feof(fp1))
+        {
+        ch1 = fgetc(fp1);
+        if (ferror(fp1))
+            {
+            fprintf(stderr,"file_compare: error reading from file %s\n",file1);
+            err = -1;
+            break;
+            }
+        ch2 = fgetc(fp2);
+        if (ferror(fp2))
+            {
+            fprintf(stderr,"file_compare: error reading from file %s\n",file2);
+            err = -1;
+            break;
+            }
+        if (ch1 != ch2)
+            {
+            printf("Files %s and %s differ\n",file1,file2);
+            err = 1;
+            break;
+            }
+        }
+    fclose(fp1);
+    fclose(fp2);
+    return err;
+    }

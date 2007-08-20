@@ -11,26 +11,7 @@
 
 #include "tests.h"
 
-#define MAXBUF 128
 static char *filename_rsa_noarmour_singlekey="rsa_noarmour_singlekey.txt";
-
-/*
-static int create_testfile(const char *name)
-    {
-    char filename[MAXBUF+1];
-    char buffer[MAXBUF+1];
-
-    int fd=0;
-    snprintf(filename,MAXBUF,"%s/%s",dir,name);
-    if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL, 0600))<0)
-	return 0;
-
-    create_testtext(name,&buffer[0],MAXBUF);
-    write(fd,buffer,strlen(buffer));
-    close(fd);
-    return 1;
-    }
-*/
 
 static ops_parse_cb_return_t
 callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
@@ -199,16 +180,6 @@ int clean_suite_rsa_encrypt(void)
 
     ops_finish();
 
-    /* Remove test dir and files */
-    /*
-    snprintf(cmd,MAXBUF,"rm -rf %s", dir);
-    if (system(cmd))
-	{
-	perror("Can't delete test directory ");
-	return 1;
-	}
-   */ 
-
     reset_vars();
 
     return 0;
@@ -249,18 +220,19 @@ static void test_rsa_decrypt(const char *encfile, const char*testtext)
     CU_ASSERT(memcmp(literal_data,testtext,sz_literal_data)==0);
     }
 
-static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), const ops_key_data_t *key __attribute__((__unused__)), const char *filename __attribute__((__unused__)))
+static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *key, const char *filename)
     {
     ops_memory_t *mem_ldt;
     ops_create_info_t *cinfo_ldt;
 
-    //#ifdef NOTYETUSED
+    char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
-    char encfile[MAXBUF+1];
+    char encrypted_file[MAXBUF+1];
+    char decrypted_file[MAXBUF+1];
     char *suffix= has_armour ? "asc" : "gpg";
     int fd_in=0;
     int fd_out=0;
-    //    ops_crypt_t encrypt;
+    int rtn=0;
     
     // open file to encrypt
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
@@ -271,11 +243,11 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
 	exit(2);
 	}
     
-    snprintf(encfile,MAXBUF,"%s/%s.%s",dir,filename,suffix);
-    fd_out=open(encfile,O_WRONLY | O_CREAT | O_EXCL, 0600);
+    snprintf(encrypted_file,MAXBUF,"%s/%s.%s",dir,filename,suffix);
+    fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
     if(fd_out < 0)
 	{
-	perror(encfile);
+	perror(encrypted_file);
 	exit(2);
 	}
     
@@ -323,7 +295,6 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
 #endif
     }
 
-
     // write to file
 
     // Set encryption writer and handling options
@@ -332,9 +303,8 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
     cinfo=ops_create_info_new();
     ops_writer_set_fd(cinfo,fd_out); 
 
-    /*
-     * write out the encrypted packet
-     */
+    // Create and write encrypted PK session key
+
     char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
     const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
     ops_print_public_key_verbose(pub_key);
@@ -343,22 +313,18 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
     encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
     ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
 
-    //int rtn=0;
-    //    ops_parse_info_t *pinfo;
-    //    ops_memory_t *mem;
-    //    ops_setup_memory_write(&cinfo,&mem,MAXBUF);
-
-    //    ops_crypt_any(&encrypt, OPS_SA_CAST5);
     ops_crypt_t encrypt;
     ops_crypt_any(&encrypt, encrypted_pk_session_key->symmetric_algorithm);
     unsigned char *iv=NULL;
     iv=ops_mallocz(encrypt.blocksize);
     encrypt.set_iv(&encrypt, iv);
-    key=ops_mallocz(encrypt.keysize); // using blank key for now
-    //    snprintf((char *)key, encrypt.keysize, "CAST_KEY");
-    //    encrypt.set_key(&encrypt, key);
+    key=ops_mallocz(encrypt.keysize); 
     encrypt.set_key(&encrypt, &encrypted_pk_session_key->key[0]);
     ops_encrypt_init(&encrypt);
+
+    /*
+     * write out the encrypted packet
+     */
 
     ops_write_se_ip_data( ops_memory_get_data(mem_ldt),
                           ops_memory_get_length(mem_ldt),
@@ -370,13 +336,19 @@ static void test_rsa_encrypt(const int has_armour __attribute__((__unused__)), c
     close(fd_in);
     close(fd_out);
 
-     // File contents should match
+     // File contents should match - check with OPS
     char buffer[MAXBUF+1];
     create_testtext(filename,&buffer[0],MAXBUF);
-    test_rsa_decrypt(encfile,buffer);
-    //    char *text;
-    //    CU_ASSERT(strcmp(text,buffer)==0);
-    //#endif
+    test_rsa_decrypt(encrypted_file,buffer);
+
+    // File contents should match - check with GPG
+
+    snprintf(decrypted_file,MAXBUF,"%s/decrypted_%s",dir,filename);
+    snprintf(cmd,MAXBUF,"gpg --decrypt --output=%s --quiet --homedir %s %s",decrypted_file, dir, encrypted_file);
+    printf("cmd: %s\n", cmd);
+    rtn=system(cmd);
+    CU_ASSERT(rtn==0);
+    CU_ASSERT(file_compare(myfile,decrypted_file)==0);
     }
 
 void test_rsa_encrypt_noarmour_singlekey(void)

@@ -17,7 +17,6 @@ To be removed when callback gets added to main body of code
 #include "../src/advanced/parse_local.h"
 #include "../src/advanced/keyring_local.h"
 
-#define MAXBUF 128
 //static char secring[MAXBUF+1];
 //static char dir[MAXBUF+1];
 //static char keydetails[MAXBUF+1];

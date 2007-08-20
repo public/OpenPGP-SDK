@@ -18,7 +18,7 @@ extern char dir[];
 void create_testtext(const char *text, char *buf, const int maxlen);
 void create_testdata(const char *text, unsigned char *buf, const int maxlen);
 void create_testfile(const char *name);
-#define MAXBUF 128
+#define MAXBUF 1024
 
 ops_parse_cb_return_t
 callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
@@ -30,6 +30,7 @@ ops_parse_cb_return_t
 callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 void reset_vars();
+int file_compare(char* file1, char* file2);
 
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;

@@ -20,9 +20,7 @@ static size_t sz_mdc_data=0;
 static unsigned char* encrypted_pk_sk=NULL;
 static size_t sz_encrypted_pk_sk=0;
 
-#define MAXBUF 128
-
-static void cleanup();
+static void suite_cleanup();
 
 /* 
  * Packet Types initialisation.
@@ -209,7 +207,7 @@ static void test_literal_data_packet_text()
     CU_ASSERT(strncmp((char *)literal_data,in,MAXBUF)==0);
 
     // cleanup
-    cleanup();
+    suite_cleanup();
     ops_teardown_memory_read(pinfo,mem);
     free (in);
     }
@@ -256,7 +254,7 @@ static void test_literal_data_packet_data()
     CU_ASSERT(memcmp(literal_data,in,MAXBUF)==0);
 
     // cleanup
-    cleanup();
+    suite_cleanup();
     ops_teardown_memory_read(pinfo,mem);
     free (in);
     }
@@ -305,7 +303,7 @@ static void test_ops_mdc()
         CU_ASSERT(memcmp(mdc_data, hashed, OPS_SHA1_HASH_SIZE)==0);
 
 	// clean up
-    cleanup();
+    suite_cleanup();
     ops_teardown_memory_read(pinfo,mem);
 	}
 
@@ -337,7 +335,7 @@ static void test_ops_se_ip()
     ops_crypt_any(&encrypt, OPS_SA_CAST5);
     iv=ops_mallocz(encrypt.blocksize);
     encrypt.set_iv(&encrypt, iv);
-    key=ops_mallocz(encrypt.keysize); // using blank key for now
+    key=ops_mallocz(encrypt.keysize); // using made-up key
     snprintf((char *)key, encrypt.keysize, "CAST_KEY");
     encrypt.set_key(&encrypt, key);
     ops_encrypt_init(&encrypt);
@@ -370,7 +368,7 @@ static void test_ops_se_ip()
     CU_ASSERT(memcmp(literal_data,ldt_text, strlen(ldt_text))==0);
 
     // cleanup
-    cleanup();
+    suite_cleanup();
     ops_teardown_memory_read(pinfo,mem);
     ops_memory_free(mem_ldt);
     }
@@ -404,7 +402,7 @@ static void test_ops_encrypted_pk_sk()
     CU_ASSERT(memcmp(encrypted_pk_session_key, encrypted_pk_sk, sz_encrypted_pk_sk)==0);
 
     // cleanup
-    cleanup();
+    suite_cleanup();
     ops_teardown_memory_read(pinfo,mem);
     }
 
@@ -436,7 +434,7 @@ CU_pSuite suite_packet_types()
     return suite;
 }
 
-static void cleanup()
+static void suite_cleanup()
     {
     if (literal_data)
         {
