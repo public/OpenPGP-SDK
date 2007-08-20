@@ -11,6 +11,8 @@
 #include <openpgpsdk/compress.h>
 #include <openpgpsdk/errors.h>
 #include <openpgpsdk/readerwriter.h>
+#include "openpgpsdk/packet-show.h"
+
 #include "parse_local.h"
 
 #include <assert.h>
@@ -2178,7 +2180,9 @@ static int parse_pk_session_key(ops_region_t *region,
     unsigned k;
     const ops_secret_key_t *secret;
     
-    const size_t sz_unencoded_m_buf=CAST_KEY_LENGTH+1+2;
+    // Can't rely on it being CAST5
+    //    const size_t sz_unencoded_m_buf=CAST_KEY_LENGTH+1+2;
+    const size_t sz_unencoded_m_buf=1024;
     unsigned char unencoded_m_buf[sz_unencoded_m_buf];
     
     //    const size_t sz_encoded_m_buf=BN_num_bytes(pub_key->key.rsa.n);
@@ -2197,14 +2201,12 @@ static int parse_pk_session_key(ops_region_t *region,
 		     sizeof C.pk_session_key.key_id,region,pinfo))
 	return 0;
 
-    /*
     int i;
     int x=sizeof C.pk_session_key.key_id;
-    printf("session key id: x=%d\n",x);
+    printf("session key: public key id: x=%d\n",x);
     for (i=0; i<x; i++)
         printf("%2x ", C.pk_session_key.key_id[i]);
     printf("\n");
-    */
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -2252,36 +2254,56 @@ static int parse_pk_session_key(ops_region_t *region,
     n=ops_decrypt_and_unencode_mpi(unencoded_m_buf,sizeof unencoded_m_buf,enc_m,secret);
 
     if(n < 1)
-	ERRP(pinfo,"decrypted message too short");
+        {
+        ERRP(pinfo,"decrypted message too short");
+        return 0;
+        }
 
     // PKA
     C.pk_session_key.symmetric_algorithm=unencoded_m_buf[0];
+
+    if (C.pk_session_key.symmetric_algorithm!=OPS_SA_CAST5)
+        //        && C.pk_session_key.symmetric_algorithm!=OPS_SA_AES_256)
+        {
+        fprintf(stderr,"*** Warning: should implement support for %s\n",
+                ops_show_symmetric_algorithm(C.pk_session_key.symmetric_algorithm));
+        }
+    //    assert(unencoded_m_buf[0]==OPS_SA_CAST5 || OPS_SA_AES_256);
     assert(unencoded_m_buf[0]==OPS_SA_CAST5);
     k=ops_key_size(C.pk_session_key.symmetric_algorithm);
 
     if((unsigned)n != k+3)
+        {
         ERR2P(pinfo,"decrypted message wrong length (got %d expected %d)",
               n,k+3);
+        return 0;
+        }
     
     assert(k <= sizeof C.pk_session_key.key);
 
     memcpy(C.pk_session_key.key,unencoded_m_buf+1,k);
 
-    /*
     printf("session key recovered (len=%d):\n",k);
     unsigned int j;
     for(j=0; j<k; j++)
         printf("%2x ", C.pk_session_key.key[j]);
     printf("\n");
-    */
 
     C.pk_session_key.checksum=unencoded_m_buf[k+1]+(unencoded_m_buf[k+2] << 8);
-    /*
-    printf("checksum: %2x %2x\n", unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
-    */
+    printf("session key checksum: %2x %2x\n", unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
 
-    // XXX: Check checksum!
+    // Check checksum
 
+    unsigned char cs[2];
+    ops_calc_session_key_checksum(&C.pk_session_key, &cs[0]);
+    if (unencoded_m_buf[k+1]!=cs[0] || unencoded_m_buf[k+2]!=cs[1])
+        {
+        ERR4P(pinfo, "Session key checksum wrong: expected %2x %2x, got %2x %2x",
+              cs[0], cs[1], unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
+        return 0;
+        }
+
+    // all is well
     CBP(pinfo,OPS_PTAG_CT_PK_SESSION_KEY,&content);
 
     ops_crypt_any(&pinfo->decrypt,C.pk_session_key.symmetric_algorithm);
@@ -2345,11 +2367,13 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
         size_t sz_mdc=1+1+sz_mdc_hash;
         size_t sz_plaintext=decrypted_region.length-sz_preamble-sz_mdc;
 
-        //        unsigned char* preamble=buf;
+        unsigned char* preamble=buf;
         unsigned char* plaintext=buf+sz_preamble;
         unsigned char* mdc=plaintext+sz_plaintext;
         unsigned char* mdc_hash=mdc+2;
     
+        ops_calc_mdc_hash(preamble,sz_preamble,plaintext,sz_plaintext,&hashed[0]);
+        /*
         unsigned char c[0];
 
         hash.add(&hash, plaintext, sz_plaintext);
@@ -2359,6 +2383,7 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
         hash.add(&hash,&c[0],1);   // MDC packet len
         
         hash.finish(&hash,&hashed[0]);
+        */
 
         if (memcmp(mdc_hash,hashed,OPS_SHA1_HASH_SIZE))
             {
@@ -2419,7 +2444,7 @@ void ops_reader_pop_se_ip_data(ops_parse_info_t* pinfo)
     }
 
 // XXX: make this static?
-int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
+int ops_decrypt_se_data(ops_content_tag_t tag,ops_region_t *region,
 		     ops_parse_info_t *pinfo)
     {
     int r=1;
@@ -2531,7 +2556,7 @@ static int parse_se_data(ops_region_t *region,ops_parse_info_t *pinfo)
 
     /* The content of an encrypted data packet is more OpenPGP packets
        once decrypted, so recursively handle them */
-    return ops_decrypt_data(OPS_PTAG_CT_SE_DATA_BODY,region,pinfo);
+    return ops_decrypt_se_data(OPS_PTAG_CT_SE_DATA_BODY,region,pinfo);
     }
 
 static int parse_se_ip_data(ops_region_t *region,ops_parse_info_t *pinfo)

@@ -167,6 +167,8 @@ int ops_rsa_private_decrypt(unsigned char *out,const unsigned char *in,
 
     n=RSA_private_decrypt(length,in,out,orsa,RSA_NO_PADDING);
 
+    printf("ops_rsa_private_decrypt: n=%d\n",n);
+
     char errbuf[1024];
     errbuf[0]='\0';
     if (n==-1)

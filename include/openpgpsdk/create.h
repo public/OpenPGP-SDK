@@ -100,8 +100,7 @@ ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data,
                                                      const int len, 
                                                      ops_create_info_t *info);
 
-ops_boolean_t ops_write_mdc(const unsigned char *date,
-							const unsigned int len,
+ops_boolean_t ops_write_mdc(const unsigned char *hashed,
 							ops_create_info_t *info);
 
 ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
@@ -110,5 +109,7 @@ ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
                                    ops_create_info_t *info);
 ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 				       ops_pk_session_key_t *pksk);
+void ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char *cs);
+void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* data, const unsigned int len, unsigned char *hashed);
 
 #endif

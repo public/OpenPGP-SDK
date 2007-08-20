@@ -752,10 +752,30 @@ ops_boolean_t ops_writer_passthrough(const unsigned char *src,
 				     ops_writer_info_t *winfo)
     { return ops_stacked_write(src,length,errors,winfo); }
 
-static void create_unencoded_m_buf(ops_pk_session_key_t *session_key, unsigned char *m_buf)
+
+void ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char *cs)
     {
     int i=0;
     unsigned long checksum=0;
+
+    assert(session_key->symmetric_algorithm==OPS_SA_CAST5);
+    for (i=0; i<CAST_KEY_LENGTH; i++)
+        {
+        checksum+=session_key->key[i];
+        }
+    checksum = checksum % 65536;
+
+    fprintf(stderr,"\nm buf checksum: ");
+    cs[0]=checksum >> 8;
+    fprintf(stderr," %2x",cs[0]);
+    cs[1]=checksum & 0xFF;
+    fprintf(stderr," %2x\n",cs[1]);
+    }    
+
+static void create_unencoded_m_buf(ops_pk_session_key_t *session_key, unsigned char *m_buf)
+    {
+    int i=0;
+    //    unsigned long checksum=0;
 
     // m_buf is the buffer which will be encoded in PKCS#1 block
     // encoding to form the "m" value used in the 
@@ -763,17 +783,14 @@ static void create_unencoded_m_buf(ops_pk_session_key_t *session_key, unsigned c
     // as defined in RFC Section 5.1 "Public-Key Encrypted Session Key Packet"
 
     m_buf[0]=session_key->symmetric_algorithm;
-    assert(session_key->symmetric_algorithm==OPS_SA_CAST5);
 
+    assert(session_key->symmetric_algorithm==OPS_SA_CAST5);
     for (i=0; i<CAST_KEY_LENGTH; i++)
         {
-        checksum+=session_key->key[i];
         m_buf[1+i]=session_key->key[i];
         }
-    checksum = checksum % 65536;
 
-    m_buf[1+i++]=checksum >> 8;
-    m_buf[1+i++]=checksum & 0xFF;
+    ops_calc_session_key_checksum(session_key, m_buf+1+CAST_KEY_LENGTH);
     }
 
 ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
@@ -850,6 +867,7 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     assert(key->type == OPS_PTAG_CT_PUBLIC_KEY);
     session_key->version=OPS_PKSK_V3;
     memcpy(session_key->key_id, key->key_id, sizeof session_key->key_id);
+
     /*
     fprintf(stderr,"Encrypting for RSA key id : ");
     unsigned int i=0;
@@ -977,28 +995,38 @@ void encrypted_destroyer (ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
 
 /* end of dummy code */
 
-ops_boolean_t ops_write_mdc(const unsigned char* data,
-                            const unsigned int len,
+ops_boolean_t ops_write_mdc(const unsigned char *hashed,
                             ops_create_info_t* info)
     {
-    // calculate the hash
-    ops_hash_t hash;
-    unsigned char hashed[SHA_DIGEST_LENGTH];
-    unsigned char c[0];
-
-    ops_hash_any(&hash, OPS_HASH_SHA1);
-    hash.init(&hash);
-    hash.add(&hash,data,len); // preamble + plaintext
-    c[0]=0xD3;
-    hash.add(&hash,&c[0],1);   // MDC packet tag
-    c[0]=0x14;
-    hash.add(&hash,&c[0],1);   // MDC packet len
-    hash.finish(&hash,&hashed[0]);
-
-    // and write it out
+    // write it out
     return ops_write_ptag(OPS_PTAG_CT_MDC, info)
         && ops_write_length(OPS_SHA1_HASH_SIZE,info)
         && ops_write(hashed, OPS_SHA1_HASH_SIZE, info);
+    }
+
+void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* data, const unsigned int len, unsigned char *hashed)
+    {
+    ops_hash_t hash;
+    //    unsigned char hashed[SHA_DIGEST_LENGTH];
+    unsigned char c[0];
+
+    // init
+    ops_hash_any(&hash, OPS_HASH_SHA1);
+    hash.init(&hash);
+
+    // preamble
+    hash.add(&hash,preamble,sz_preamble);
+    // plaintext
+    hash.add(&hash,data,len); 
+    // MDC packet tag
+    c[0]=0xD3;
+    hash.add(&hash,&c[0],1);   
+    // MDC packet len
+    c[0]=0x14;
+    hash.add(&hash,&c[0],1);   
+
+    //finish
+    hash.finish(&hash,hashed);
     }
 
 ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
@@ -1006,6 +1034,7 @@ ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
                                    ops_crypt_t *crypt,
                                    ops_create_info_t *info)
     {
+    unsigned char hashed[SHA_DIGEST_LENGTH];
     const size_t sz_mdc=1+1+SHA_DIGEST_LENGTH;
     encrypted_arg_t *arg=ops_mallocz(sizeof *arg);
 
@@ -1031,7 +1060,10 @@ ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
     ops_create_info_t *cinfo_mdc;
 
     ops_setup_memory_write(&cinfo_mdc, &mem_mdc,sz_mdc);
-    ops_write_mdc(data, len, cinfo_mdc);
+
+    ops_calc_mdc_hash(preamble,sz_preamble,data,len,&hashed[0]);
+
+    ops_write_mdc(hashed, cinfo_mdc);
 
     // and write it out
 
