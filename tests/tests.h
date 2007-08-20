@@ -28,6 +28,8 @@ ops_parse_cb_return_t
 callback_cmd_get_secret_key_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
 callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+ops_parse_cb_return_t
+callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 void reset_vars();
 int file_compare(char* file1, char* file2);
@@ -37,5 +39,7 @@ ops_keyring_t sec_keyring;
 unsigned char* literal_data;
 size_t sz_literal_data;
 char* alpha_user_id;
+char* bravo_user_id;
+const ops_key_data_t *decrypter;
 #endif
 

@@ -11,11 +11,11 @@
 #include "openpgpsdk/crypto.h"
 #include "openpgpsdk/readerwriter.h"
 #include "../src/advanced/parse_local.h"
-#include <openssl/aes.h>
 #include <openssl/cast.h>
+#include <openssl/aes.h>
 #include <openssl/sha.h>
 */
-
+ 
 #include "tests.h"
 
 /*
@@ -94,7 +94,7 @@ int clean_suite_crypto(void)
     return 0;
     }
 
-static void test_cfb_aes()
+static void test_cfb_aes256()
     {
     // Used for trying low-level OpenSSL tests
 
@@ -112,39 +112,34 @@ static void test_cfb_aes()
     crypt.set_key(&crypt, key);
     ops_encrypt_init(&crypt);
 
-    // Why does aes encrypt/decrypt work??
-    //    crypt=&crypt_aes;
-
     unsigned char *in=ops_mallocz(crypt.blocksize);
     unsigned char *out=ops_mallocz(crypt.blocksize);
     unsigned char *out2=ops_mallocz(crypt.blocksize);
 
     snprintf((char *)in,crypt.blocksize,"hello");
-	/*
+
     printf("\n");
     printf("in:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
            in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
     printf("in:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
            in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
-	*/
 
     crypt.block_encrypt(&crypt, out, in);
-    //    AES_ecb_encrypt(in,out,crypt.data,AES_ENCRYPT);
-	/*
+    //        AES_ecb_encrypt(in,out,crypt.data,AES_ENCRYPT);
+
     printf("out:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
            out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
     printf("out:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
            out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
-	*/
+
 
     crypt.block_decrypt(&crypt, out2, out);
-    //    AES_ecb_encrypt(out,out2,crypt.data,AES_DECRYPT);
-	/*
+    //        AES_ecb_encrypt(out,out2,crypt.data,AES_DECRYPT);
     printf("out2:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
            out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
     printf("out2:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
            out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
-	*/
+
     CU_ASSERT(memcmp((char *)in, (char *)out2, strlen((char *)in))==0);
 
     }
@@ -278,7 +273,7 @@ CU_pSuite suite_crypto()
 
     // add tests to suite
     
-    if (NULL == CU_add_test(suite, "Test CFB AES", test_cfb_aes))
+    if (NULL == CU_add_test(suite, "Test CFB AES 256", test_cfb_aes256))
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "Test CFB CAST", test_cfb_cast))

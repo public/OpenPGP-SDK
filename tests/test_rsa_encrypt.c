@@ -11,15 +11,15 @@
 
 #include "tests.h"
 
-static char *filename_rsa_noarmour_singlekey="rsa_noarmour_singlekey.txt";
-static char *filename_rsa_armour_singlekey="rsa_armour_singlekey.txt";
+static char *filename_rsa_noarmour_singlekey="enc_rsa_noarmour_singlekey.txt";
+static char *filename_rsa_armour_singlekey="enc_rsa_armour_singlekey.txt";
 
 static ops_parse_cb_return_t
 callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     static ops_boolean_t skipping;
-    static const ops_key_data_t *decrypter;
+    //    static const ops_key_data_t *decrypter;
     //    const ops_key_data_t *keydata=NULL;
     //    const ops_secret_key_t *secret;
 
@@ -47,15 +47,7 @@ callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *c
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
-		//	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
-	if(decrypter)
-	    break;
-
-	decrypter=ops_keyring_find_key_by_id(&sec_keyring,
-					     content->pk_session_key.key_id);
-	if(!decrypter)
-	    break;
-	break;
+        return callback_pk_session_key(content_,cbinfo);
 
     case OPS_PARSER_CMD_GET_SECRET_KEY:
         return callback_cmd_get_secret_key(content_,cbinfo);

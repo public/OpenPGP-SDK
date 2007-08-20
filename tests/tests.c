@@ -25,6 +25,9 @@ static char* no_passphrase="";
 unsigned char* literal_data=NULL;
 size_t sz_literal_data=0;
 char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
+char *bravo_user_id="Bravo (RSA, passphrase) <bravo@test.com>";
+
+const ops_key_data_t *decrypter=NULL;
 
 void setup_test_keys()
     {
@@ -34,6 +37,8 @@ void setup_test_keys()
     char cmd[MAXBUF+1];
 
     char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
+    char *rsa_pass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Bravo\nName-Comment: RSA, passphrase\nName-Email: bravo@test.com\nPassphrase: hello\nKey-Length: 1024\n";
+
     // Create temp directory
     if (!mktmpdir())
         return;
@@ -46,17 +51,37 @@ void setup_test_keys()
 
     if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
         {
-        fprintf(stderr,"Can't create key details\n");
+        fprintf(stderr,"Can't create Alpha key details\n");
         return;
         }
 
     write(fd,rsa_nopass,strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
+    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
+    system(cmd);
+
+    /*
+     * Create a RSA keypair with passphrase
+     */
+
+    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.bravo");
+
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
+        {
+        fprintf(stderr,"Can't create Bravo key details\n");
+        return;
+        }
+
+    write(fd,rsa_pass,strlen(rsa_pass));
+    close(fd);
+
+    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
     system(cmd);
     
-    // read keyrings
+    /*
+     * read keyrings
+     */
 
     snprintf(keyring_name,MAXBUF,"%s/pubring.gpg", dir);
     ops_keyring_read(&pub_keyring,keyring_name);
@@ -109,15 +134,13 @@ int main()
         return CU_get_error();
         }
 
-    /*
-    if (NULL == suite_rsa_decrypt()) 
+    if (NULL == suite_rsa_encrypt()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
-    */
 
-    if (NULL == suite_rsa_encrypt()) 
+    if (NULL == suite_rsa_decrypt()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
@@ -230,9 +253,6 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     const ops_key_data_t *keydata=NULL;
     const ops_secret_key_t *secret;
-    /*
-    static const ops_key_data_t *decrypt_key;
-    */
 
     OPS_USED(cbinfo);
 
@@ -251,7 +271,6 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
         memset(&pc,'\0',sizeof pc);
         passphrase=NULL;
         pc.content.secret_key_passphrase.passphrase=&passphrase;
-        //        pc.content.secret_key_passphrase.secret_key=&(keydata->key.skey);
         pc.content.secret_key_passphrase.secret_key=ops_get_secret_key_from_data(keydata);
 
         /* Ugh. Need to duplicate this macro here to get the passphrase 
@@ -299,7 +318,6 @@ callback_cmd_get_secret_key_passphrase(const ops_parser_content_t *content_,ops_
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
         /*
           Doing this so the test can be automated.
-          Will move this into separate stacked callback later
         */
         *(content->secret_key_passphrase.passphrase)=ops_malloc_passphrase(no_passphrase);
         return OPS_KEEP_MEMORY;
@@ -341,6 +359,36 @@ callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *
     return OPS_RELEASE_MEMORY;
     }
  
+ops_parse_cb_return_t
+callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+    
+    OPS_USED(cbinfo);
+
+    //    ops_print_packet(content_);
+    
+    // Read data from packet into static buffer
+    switch(content_->tag)
+        {
+    case OPS_PTAG_CT_PK_SESSION_KEY:
+		//	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
+        if(decrypter)
+            break;
+
+        decrypter=ops_keyring_find_key_by_id(&sec_keyring,
+                                             content->pk_session_key.key_id);
+        if(!decrypter)
+            break;
+        break;
+
+    default:
+        return callback_general(content_,cbinfo);
+        }
+
+    return OPS_RELEASE_MEMORY;
+    }
+
 void reset_vars()
     {
     if (literal_data)
@@ -348,6 +396,11 @@ void reset_vars()
         free (literal_data);
         literal_data=NULL;
         sz_literal_data=0;
+        }
+    if (decrypter)
+        {
+        //        free (decrypter);
+        decrypter=NULL;
         }
     }
 
