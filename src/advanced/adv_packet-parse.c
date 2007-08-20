@@ -2201,12 +2201,14 @@ static int parse_pk_session_key(ops_region_t *region,
 		     sizeof C.pk_session_key.key_id,region,pinfo))
 	return 0;
 
+    /*
     int i;
     int x=sizeof C.pk_session_key.key_id;
     printf("session key: public key id: x=%d\n",x);
     for (i=0; i<x; i++)
         printf("%2x ", C.pk_session_key.key_id[i]);
     printf("\n");
+    */
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -2283,14 +2285,16 @@ static int parse_pk_session_key(ops_region_t *region,
 
     memcpy(C.pk_session_key.key,unencoded_m_buf+1,k);
 
+    /*
     printf("session key recovered (len=%d):\n",k);
     unsigned int j;
     for(j=0; j<k; j++)
         printf("%2x ", C.pk_session_key.key[j]);
     printf("\n");
+    */
 
     C.pk_session_key.checksum=unencoded_m_buf[k+1]+(unencoded_m_buf[k+2] << 8);
-    printf("session key checksum: %2x %2x\n", unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
+    //    printf("session key checksum: %2x %2x\n", unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
 
     // Check checksum
 

@@ -765,11 +765,12 @@ void ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned c
         }
     checksum = checksum % 65536;
 
-    fprintf(stderr,"\nm buf checksum: ");
     cs[0]=checksum >> 8;
-    fprintf(stderr," %2x",cs[0]);
     cs[1]=checksum & 0xFF;
-    fprintf(stderr," %2x\n",cs[1]);
+
+    //    fprintf(stderr,"\nm buf checksum: ");
+    //    fprintf(stderr," %2x",cs[0]);
+    //    fprintf(stderr," %2x\n",cs[1]);
     }    
 
 static void create_unencoded_m_buf(ops_pk_session_key_t *session_key, unsigned char *m_buf)

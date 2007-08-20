@@ -22,27 +22,33 @@ int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM
 
     assert(skey->public_key.algorithm == OPS_PKA_RSA);
 
+    /*
     fprintf(stderr,"\nDECRYPTING\n");
     fprintf(stderr,"encrypted data     : ");
     for (i=0; i<16; i++)
         fprintf(stderr,"%2x ", encmpibuf[i]);
     fprintf(stderr,"\n");
+    */
 
     n=ops_rsa_private_decrypt(mpibuf,encmpibuf,(BN_num_bits(encmpi)+7)/8,
 			      &skey->key.rsa,&skey->public_key.key.rsa);
     assert(n!=-1);
 
+    /*
     fprintf(stderr,"decrypted encoded m buf     : ");
     for (i=0; i<16; i++)
         fprintf(stderr,"%2x ", mpibuf[i]);
     fprintf(stderr,"\n");
+    */
 
     if(n <= 0)
 	return -1;
 
+    /*
     printf(" decrypted=%d ",n);
     hexdump(mpibuf,n);
     printf("\n");
+    */
 
     // Decode EME-PKCS1_V1_5 (RFC 2437).
 
@@ -63,11 +69,13 @@ int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM
     if((unsigned)(n-i) <= buflen)
         memcpy(buf,mpibuf+i,n-i);
 
+    /*
     printf("decoded m buf:\n");
     int j;
     for (j=0; j<n-i; j++)
         printf("%2x ",buf[j]);
     printf("\n");
+    */
 
     return n-i;
     }
