@@ -18,183 +18,106 @@
  
 #include "tests.h"
 
-/*
-static unsigned char* literal_data=NULL;
-static size_t sz_literal_data=0;
-static unsigned char* mdc_data=NULL;
-static size_t sz_mdc_data=0;
-static unsigned char* encrypted_pk_sk=NULL;
-static size_t sz_encrypted_pk_sk=0;
-
-#define MAXBUF 128
-
-static void cleanup();
-*/
-
 /* 
  * initialisation
  */
 
 int init_suite_crypto(void)
     {
-#ifdef XXX
-    char keydetails[MAXBUF+1];
-    char keyring_name[MAXBUF+1];
-    int fd=0;
-    char cmd[MAXBUF+1];
-
-    // Initialise OPS 
-    ops_init();
-
-    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
-    // Create temp directory
-    if (!mktmpdir())
-	return 1;
-
-    /*
-     * Create a RSA keypair with no passphrase
-     */
-
-    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
-
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-	{
-	fprintf(stderr,"Can't create key details\n");
-	return 1;
-	}
-
-    write(fd,rsa_nopass,strlen(rsa_nopass));
-    close(fd);
-
-    snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
-    system(cmd);
-
-    // read keyrings
-    snprintf(keyring_name,MAXBUF,"%s/pubring.gpg", dir);
-    ops_keyring_read(&pub_keyring,keyring_name);
-
-    // read keyring
-    snprintf(keyring_name,MAXBUF,"%s/secring.gpg", dir);
-    ops_keyring_read(&sec_keyring,keyring_name);
-#endif
-
     // Return success
     return 0;
     }
 
 int clean_suite_crypto(void)
     {
-#ifdef XXX
-    /* Close OPS */
-    
-    ops_finish();
-#endif
     reset_vars();
 
     return 0;
     }
 
-static void test_cfb_aes256()
+static void test_cfb(ops_symmetric_algorithm_t alg)
     {
     // Used for trying low-level OpenSSL tests
 
-    ops_crypt_t crypt;
-    ops_crypt_any(&crypt, OPS_SA_AES_256);
+    int verbose=0;
 
-    /* 
-       AES init
-       using empty IV and key for the moment 
-    */
-    unsigned char *iv=ops_mallocz(crypt.blocksize);
-    unsigned char *key=ops_mallocz(crypt.keysize);
-    snprintf((char *)key, crypt.keysize, "AES_KEY");
+    ops_crypt_t crypt;
+    unsigned char *iv=NULL;
+    unsigned char *key=NULL;
+    unsigned char *in=NULL;
+    unsigned char *out=NULL;
+    unsigned char *out2=NULL;
+
+    /*
+     * Initialise Crypt structure
+     * Empty IV, made-up key
+     */
+
+    ops_crypt_any(&crypt, alg);
+    iv=ops_mallocz(crypt.blocksize);
+    key=ops_mallocz(crypt.keysize);
+    snprintf((char *)key, crypt.keysize, "MY KEY");
     crypt.set_iv(&crypt, iv);
     crypt.set_key(&crypt, key);
     ops_encrypt_init(&crypt);
 
-    unsigned char *in=ops_mallocz(crypt.blocksize);
-    unsigned char *out=ops_mallocz(crypt.blocksize);
-    unsigned char *out2=ops_mallocz(crypt.blocksize);
+    /*
+     * Create test buffers
+     */
+    in=ops_mallocz(crypt.blocksize);
+    out=ops_mallocz(crypt.blocksize);
+    out2=ops_mallocz(crypt.blocksize);
 
     snprintf((char *)in,crypt.blocksize,"hello");
 
-    printf("\n");
-    printf("in:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
-    printf("in:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
-
     crypt.block_encrypt(&crypt, out, in);
-    //        AES_ecb_encrypt(in,out,crypt.data,AES_ENCRYPT);
-
-    printf("out:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
-    printf("out:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
-
 
     crypt.block_decrypt(&crypt, out2, out);
-    //        AES_ecb_encrypt(out,out2,crypt.data,AES_DECRYPT);
-    printf("out2:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
-    printf("out2:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
-
     CU_ASSERT(memcmp((char *)in, (char *)out2, strlen((char *)in))==0);
 
+    if (verbose)
+        {
+        // plaintext
+        printf("\n");
+        printf("plaintext: 0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
+               in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
+        printf("plaintext: %c    %c    %c    %c      %c    %c    %c    %c\n", 
+               in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
+
+        // encrypted
+        printf("encrypted: 0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
+               out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
+        printf("encrypted: %c    %c    %c    %c      %c    %c    %c    %c\n", 
+               out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
+
+        // decrypted
+        printf("decrypted: 0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
+               out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
+        printf("decrypted: %c    %c    %c    %c      %c    %c    %c    %c\n", 
+               out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
+        }
+    }
+
+#ifndef OPENSSL_NO_IDEA
+static void test_cfb_idea()
+    {
+    test_cfb(OPS_SA_IDEA);
+    }
+#endif
+
+static void test_cfb_3des()
+    {
+    test_cfb(OPS_SA_TRIPLEDES);
     }
 
 static void test_cfb_cast()
     {
-    // Used for trying low-level OpenSSL tests
+    test_cfb(OPS_SA_CAST5);
+    }
 
-    ops_crypt_t crypt;
-    ops_crypt_any(&crypt, OPS_SA_CAST5);
-
-    /*
-     * CAST
-     */
-    unsigned char *iv=NULL;
-    unsigned char *key=NULL;
-    iv=ops_mallocz(crypt.blocksize);
-    key=ops_mallocz(crypt.keysize);
-    //    snprintf((char *)key, crypt_cast.keysize, "CAST_KEY");
-    crypt.set_iv(&crypt, iv);
-    crypt.set_key(&crypt, key);
-    ops_encrypt_init(&crypt);
-
-    unsigned char *in=ops_mallocz(crypt.blocksize);
-    unsigned char *out=ops_mallocz(crypt.blocksize);
-    unsigned char *out2=ops_mallocz(crypt.blocksize);
-
-    snprintf((char *)in,crypt.blocksize,"hello");
-	/*
-    printf("\n");
-    printf("in:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
-    printf("in:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7]);
-	*/
-
-    crypt.block_encrypt(&crypt, out, in);
-    //    AES_ecb_encrypt(in,out,crypt.data,AES_ENCRYPT);
-	/*
-    printf("out:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
-    printf("out:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
-	*/
-
-    crypt.block_decrypt(&crypt, out2, out);
-    //    AES_ecb_encrypt(out,out2,crypt.data,AES_DECRYPT);
-	/*
-    printf("out2:\t0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-           out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
-    printf("out2:\t%c    %c    %c    %c      %c    %c    %c    %c\n", 
-           out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
-	*/
-    CU_ASSERT(memcmp((char *)in, (char *)out2, strlen((char *)in))==0);
-
+static void test_cfb_aes256()
+    {
+    test_cfb(OPS_SA_AES_256);
     }
 
 static void test_rsa()
@@ -273,12 +196,28 @@ CU_pSuite suite_crypto()
 
     // add tests to suite
     
+#ifndef OPENSSL_NO_IDEA
+    if (NULL == CU_add_test(suite, "Test CFB (IDEA)", test_cfb_idea))
+	    return NULL;
+#endif
+
+    if (NULL == CU_add_test(suite, "Test CFB (TripleDES)", test_cfb_3des))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Test CFB (CAST)", test_cfb_cast))
+	    return NULL;
+
+    //    test_one_cfb(OPS_SA_BLOWFISH);
+    //    test_one_cfb(OPS_SA_AES_128);
+    //    test_one_cfb(OPS_SA_AES_192);
+
     if (NULL == CU_add_test(suite, "Test CFB AES 256", test_cfb_aes256))
 	    return NULL;
 
-    if (NULL == CU_add_test(suite, "Test CFB CAST", test_cfb_cast))
-	    return NULL;
+    //    test_one_cfb(OPS_SA_TWOFISH);
 
+    /*
+     */
     if (NULL == CU_add_test(suite, "Test RSA", test_rsa))
 	    return NULL;
 
