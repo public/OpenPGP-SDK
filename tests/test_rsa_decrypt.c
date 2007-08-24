@@ -17,34 +17,14 @@ To be removed when callback gets added to main body of code
 #include "../src/advanced/parse_local.h"
 #include "../src/advanced/keyring_local.h"
 
-//static ops_keyring_t keyring;
 static char *filename_rsa_noarmour_nopassphrase="dec_rsa_noarmour_nopassphrase.txt";
+
 static char *filename_rsa_armour_nopassphrase="dec_rsa_armour_nopassphrase.txt";
 static char *filename_rsa_noarmour_passphrase="dec_rsa_noarmour_passphrase.txt";
 static char *filename_rsa_armour_passphrase="dec_rsa_armour_passphrase.txt";
 static char *nopassphrase="";
 static char *passphrase="hello";
 static char *current_passphrase=NULL;
-
-//static char* text;
-
-/*
-static int create_testfile(const char *name)
-    {
-    char filename[MAXBUF+1];
-    char buffer[MAXBUF+1];
-
-    int fd=0;
-    snprintf(filename,MAXBUF,"%s/%s",dir,name);
-    if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL, 0600))<0)
-	return 0;
-
-    create_testtext(name,&buffer[0],MAXBUF);
-    write(fd,buffer,strlen(buffer));
-    close(fd);
-    return 1;
-    }
-*/
 
 static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
@@ -139,20 +119,52 @@ int init_suite_rsa_decrypt(void)
     create_testfile(filename_rsa_noarmour_passphrase);
     create_testfile(filename_rsa_armour_passphrase);
 
-    // Restrict list of algorithms used
-   
-    //    snprintf(cmd,MAXBUF,"gpg --homedir=%s --default-preference-list \"CAST5\"", dir);
-    //    if (system(cmd))
-    //        return -1;
+    /*
+     * Now encrypt the test files with GPG
+     * Note:: To make it do SE_IP packets, do NOT use --openpgp and DO use --force-mdc
+     */
 
-    // Now encrypt the test files with GPG
-    // Note:: To make it do SE_IP packets, do NOT use --openpgp and DO use --force-mdc
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"CAST5\" --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase);
+    // default symmetric algorithm
+    snprintf(cmd,MAXBUF,"gpg --homedir=%s --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
 
+#ifndef OPENSSL_NO_IDEA
+    /*
+    // IDEA
+    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"IDEA\" --output=%s/IDEA_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    if (system(cmd))
+        {
+        return 1;
+        }
+    */
+#endif
+
+    // TripleDES 
+    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"3DES\" --output=%s/3DES_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    if (system(cmd))
+        {
+        return 1;
+        }
+
+    // Cast5
+    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"CAST5\" --output=%s/CAST5_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    if (system(cmd))
+        {
+        return 1;
+        }
+
+    // AES256
+    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"AES256\" --output=%s/AES256_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    if (system(cmd))
+        {
+        return 1;
+        }
+
+
+#ifdef TODO
     snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --encrypt --personal-cipher-preferences='CAST5' --armor --homedir=%s --recipient Alpha %s/%s", dir, dir, filename_rsa_armour_nopassphrase);
     if (system(cmd))
         {
@@ -170,58 +182,6 @@ int init_suite_rsa_decrypt(void)
         {
         return 1;
         }
-
-#ifdef XXX
-    int fd=0;
-    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
-    char *rsa_pass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Bravo\nName-Comment: RSA, passphrase\nName-Email: bravo@test.com\nPassphrase: hello\nKey-Length: 1024\n";
-    
-    // Create temp directory
-    if (!mktmpdir())
-	return 1;
-
-    /*
-     * Create a RSA keypair with no passphrase
-     */
-
-    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
-
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-	{
-	fprintf(stderr,"Can't create key details\n");
-	return 1;
-	}
-
-    write(fd,rsa_nopass,strlen(rsa_nopass));
-    close(fd);
-
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
-    system(cmd);
-
-    /*
-     * Create a RSA keypair with passphrase
-     */
-
-    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.bravo");
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-	{
-	fprintf(stderr,"Can't create key details\n");
-	return 1;
-	}
-
-    write(fd,rsa_pass,strlen(rsa_pass));
-    close(fd);
-
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
-    system(cmd);
-
-
-    // Initialise OPS 
-    ops_init();
-
-    // read keyring
-    snprintf(secring,MAXBUF,"%s/secring.gpg", dir);
-    ops_keyring_read(&keyring,secring);
 #endif
 
     // Return success
@@ -231,28 +191,12 @@ int init_suite_rsa_decrypt(void)
 int clean_suite_rsa_decrypt(void)
     {
 	
-#ifdef XXX
-    char cmd[MAXBUF+1];
-    /* Close OPS */
-    
-    ops_keyring_free(&keyring);
-    ops_finish();
-
-    /* Remove test dir and files */
-    snprintf(cmd,MAXBUF,"rm -rf %s", dir);
-    if (system(cmd))
-	{
-	perror("Can't delete test directory ");
-	return 1;
-	}
-#endif
-    
     reset_vars();
 
     return 0;
     }
 
-static void test_rsa_decrypt(const int has_armour, const int has_passphrase, const char *filename)
+static void test_rsa_decrypt(const int has_armour, const int has_passphrase, const char *filename, const char* protocol)
     {
     char encfile[MAXBUF+1];
     char testtext[MAXBUF+1];
@@ -261,7 +205,10 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     ops_parse_info_t *pinfo;
     
     // open encrypted file
-    snprintf(encfile,MAXBUF,"%s/%s.%s",dir,filename,suffix);
+    snprintf(encfile,MAXBUF,"%s/%s%s%s.%s",dir,
+             protocol==NULL ? "" : protocol,
+             protocol==NULL ? "" : "_",
+             filename,suffix);
     fd=open(encfile,O_RDONLY);
     if(fd < 0)
         {
@@ -300,28 +247,60 @@ void test_rsa_decrypt_noarmour_nopassphrase(void)
     {
     int armour=0;
     int passphrase=0;
-    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase);
+    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,NULL);
     }
+
+#ifndef OPENSSL_NO_IDEA
+void test_rsa_decrypt_noarmour_nopassphrase_idea(void)
+    {
+    int armour=0;
+    int passphrase=0;
+    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,"IDEA");
+    }
+#endif
+
+void test_rsa_decrypt_noarmour_nopassphrase_3des(void)
+    {
+    int armour=0;
+    int passphrase=0;
+    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,"3DES");
+    }
+
+void test_rsa_decrypt_noarmour_nopassphrase_cast5(void)
+    {
+    int armour=0;
+    int passphrase=0;
+    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,"CAST5");
+    }
+
+void test_rsa_decrypt_noarmour_nopassphrase_aes256(void)
+    {
+    int armour=0;
+    int passphrase=0;
+    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,"AES256");
+    }
+
+//
 
 void test_rsa_decrypt_armour_nopassphrase(void)
     {
     int armour=1;
     int passphrase=0;
-    test_rsa_decrypt(armour,passphrase,filename_rsa_armour_nopassphrase);
+    test_rsa_decrypt(armour,passphrase,filename_rsa_armour_nopassphrase,NULL);
     }
 
 void test_rsa_decrypt_noarmour_passphrase(void)
     {
     int armour=0;
     int passphrase=1;
-    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_passphrase);
+    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_passphrase,NULL);
     }
 
 void test_rsa_decrypt_armour_passphrase(void)
     {
     int armour=1;
     int passphrase=1;
-    test_rsa_decrypt(armour,passphrase,filename_rsa_armour_passphrase);
+    test_rsa_decrypt(armour,passphrase,filename_rsa_armour_passphrase,NULL);
     }
 
 /*
@@ -344,7 +323,23 @@ CU_pSuite suite_rsa_decrypt()
 
     // add tests to suite
     
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase", test_rsa_decrypt_noarmour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (CAST5)", test_rsa_decrypt_noarmour_nopassphrase_cast5))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (Default)", test_rsa_decrypt_noarmour_nopassphrase))
+	    return NULL;
+    
+#ifndef OPENSSL_NO_IDEA
+    /*
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (IDEA)", test_rsa_decrypt_noarmour_nopassphrase_idea))
+	    return NULL;
+    */
+#endif
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (3DES)", test_rsa_decrypt_noarmour_nopassphrase_3des))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES256)", test_rsa_decrypt_noarmour_nopassphrase_aes256))
 	    return NULL;
     
 #ifdef TODO
