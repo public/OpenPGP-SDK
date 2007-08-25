@@ -34,6 +34,9 @@ static ops_errcode_name_map_t errcode_name_map[] =
     { OPS_E_P_PACKET_CONSUMED,"OPS_E_P_PACKET_CONSUMED" },
     ERR(OPS_E_P_MPI_FORMAT_ERROR),
 
+    { OPS_E_PROTO, "OPS_E_PROTO" },
+    { OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT, "OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT" },
+
     { OPS_E_C,	"OPS_E_C" },
 
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */

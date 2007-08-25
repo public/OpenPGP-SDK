@@ -758,7 +758,8 @@ void ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned c
     int i=0;
     unsigned long checksum=0;
 
-    assert(session_key->symmetric_algorithm==OPS_SA_CAST5);
+    assert(session_key->symmetric_algorithm==OPS_SA_CAST5
+           || session_key->symmetric_algorithm==OPS_SA_AES_128);
     for (i=0; i<CAST_KEY_LENGTH; i++)
         {
         checksum+=session_key->key[i];

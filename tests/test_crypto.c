@@ -115,6 +115,11 @@ static void test_cfb_cast()
     test_cfb(OPS_SA_CAST5);
     }
 
+static void test_cfb_aes128()
+    {
+    test_cfb(OPS_SA_AES_128);
+    }
+
 static void test_cfb_aes256()
     {
     test_cfb(OPS_SA_AES_256);
@@ -208,7 +213,10 @@ CU_pSuite suite_crypto()
 	    return NULL;
 
     //    test_one_cfb(OPS_SA_BLOWFISH);
-    //    test_one_cfb(OPS_SA_AES_128);
+
+    if (NULL == CU_add_test(suite, "Test CFB AES 128", test_cfb_aes128))
+	    return NULL;
+
     //    test_one_cfb(OPS_SA_AES_192);
 
     if (NULL == CU_add_test(suite, "Test CFB AES 256", test_cfb_aes256))

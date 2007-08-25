@@ -156,6 +156,13 @@ int init_suite_rsa_decrypt(void)
         return 1;
         }
 
+    // AES128
+    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"AES\" --output=%s/AES128_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    if (system(cmd))
+        {
+        return 1;
+        }
+
     // AES256
     snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"AES256\" --output=%s/AES256_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
@@ -203,6 +210,7 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     char *suffix= has_armour ? "asc" : "gpg";
     int fd=0;
     ops_parse_info_t *pinfo;
+    int rtn=0;
     
     // open encrypted file
     snprintf(encfile,MAXBUF,"%s/%s%s%s.%s",dir,
@@ -230,7 +238,8 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     
     // Do the decryption
 
-    ops_parse(pinfo);
+    rtn=ops_parse(pinfo);
+    CU_ASSERT(rtn==1);
 
     // Tidy up
     if (has_armour)
@@ -271,6 +280,13 @@ void test_rsa_decrypt_noarmour_nopassphrase_cast5(void)
     int armour=0;
     int passphrase=0;
     test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,"CAST5");
+    }
+
+void test_rsa_decrypt_noarmour_nopassphrase_aes128(void)
+    {
+    int armour=0;
+    int passphrase=0;
+    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,"AES128");
     }
 
 void test_rsa_decrypt_noarmour_nopassphrase_aes256(void)
@@ -324,6 +340,9 @@ CU_pSuite suite_rsa_decrypt()
     // add tests to suite
     
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (CAST5)", test_rsa_decrypt_noarmour_nopassphrase_cast5))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES128)", test_rsa_decrypt_noarmour_nopassphrase_aes128))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (Default)", test_rsa_decrypt_noarmour_nopassphrase))

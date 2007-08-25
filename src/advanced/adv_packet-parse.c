@@ -2264,14 +2264,16 @@ static int parse_pk_session_key(ops_region_t *region,
     // PKA
     C.pk_session_key.symmetric_algorithm=unencoded_m_buf[0];
 
-    if (C.pk_session_key.symmetric_algorithm!=OPS_SA_CAST5)
+    if (C.pk_session_key.symmetric_algorithm!=OPS_SA_CAST5
+        && C.pk_session_key.symmetric_algorithm!=OPS_SA_AES_128)
         //        && C.pk_session_key.symmetric_algorithm!=OPS_SA_AES_256)
         {
         fprintf(stderr,"*** Warning: should implement support for %s\n",
                 ops_show_symmetric_algorithm(C.pk_session_key.symmetric_algorithm));
         }
+    assert(unencoded_m_buf[0]==OPS_SA_CAST5 || OPS_SA_AES_128);
     //    assert(unencoded_m_buf[0]==OPS_SA_CAST5 || OPS_SA_AES_256);
-    assert(unencoded_m_buf[0]==OPS_SA_CAST5);
+    //    assert(unencoded_m_buf[0]==OPS_SA_CAST5);
     k=ops_key_size(C.pk_session_key.symmetric_algorithm);
 
     if((unsigned)n != k+3)
@@ -2359,9 +2361,8 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
             {
             fprintf(stderr,"Bad symmetric decrypt (%02x%02x vs %02x%02x)\n",
                     buf[b-2],buf[b-1],buf[b],buf[b+1]);
-            //            ERR4P(pinfo,"Bad symmetric decrypt (%02x%02x vs %02x%02x)",
-            //                  buf[b-2],buf[b-1],buf[b],buf[b+1]);
-            return 0;
+            OPS_ERROR(errors, OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT,"Bad symmetric decrypt when parsing SE IP packet");
+            return -1;
             }
 
         // Verify trailing MDC hash

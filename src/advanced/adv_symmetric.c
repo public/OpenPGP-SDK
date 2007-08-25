@@ -246,6 +246,40 @@ static const ops_crypt_t idea=
     };
 #endif /* OPENSSL_NO_IDEA */
 
+// AES with 128-bit key (AES)
+
+#define NUMBITS_AES128 128
+
+static void aes128_init(ops_crypt_t *crypt)
+    {
+    free(crypt->data);
+    crypt->data=malloc(sizeof(AES_KEY));
+    AES_set_encrypt_key(crypt->key,NUMBITS_AES128,crypt->data);
+    }
+
+static void aes128_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { AES_ecb_encrypt(in,out,crypt->data, AES_ENCRYPT); }
+
+static void aes128_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { AES_ecb_encrypt(in,out,crypt->data, AES_DECRYPT); }
+
+static const ops_crypt_t aes128=
+    {
+    OPS_SA_AES_128,
+    AES_BLOCK_SIZE,
+    NUMBITS_AES128/8,
+    std_set_iv,
+    std_set_key,
+    aes128_init,
+    std_resync,
+    aes128_block_encrypt,
+    aes128_block_decrypt,
+    std_finish,
+    TRAILER
+    };
+
+// AES with 256-bit key
+
 static void aes256_init(ops_crypt_t *crypt)
     {
     free(crypt->data);
@@ -253,16 +287,19 @@ static void aes256_init(ops_crypt_t *crypt)
     AES_set_encrypt_key(crypt->key,256,crypt->data);
     }
 
-/*
+#ifdef BEN_ORIG
 static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
     { AES_encrypt(in,out,crypt->data); }
-    */
 
+static void aes_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { aes_block_encrypt(crypt, out, in); }
+#else
 static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
     { AES_ecb_encrypt(in,out,crypt->data, AES_ENCRYPT); }
 
 static void aes_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
     { AES_ecb_encrypt(in,out,crypt->data, AES_DECRYPT); }
+#endif
 
 static const ops_crypt_t aes256=
     {
@@ -333,6 +370,9 @@ static const ops_crypt_t *get_proto(ops_symmetric_algorithm_t alg)
     case OPS_SA_IDEA:
 	return &idea;
 #endif /* OPENSSL_NO_IDEA */
+
+    case OPS_SA_AES_128:
+	return &aes128;
 
     case OPS_SA_AES_256:
 	return &aes256;
