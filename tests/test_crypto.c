@@ -2,19 +2,6 @@
 
 #include <openpgpsdk/random.h>
 #include "openpgpsdk/std_print.h"
-/*
-#include <openpgpsdk/types.h>
-#include "openpgpsdk/packet.h"
-#include "openpgpsdk/packet-parse.h"
-#include "openpgpsdk/keyring.h"
-#include "openpgpsdk/util.h"
-#include "openpgpsdk/crypto.h"
-#include "openpgpsdk/readerwriter.h"
-#include "../src/advanced/parse_local.h"
-#include <openssl/cast.h>
-#include <openssl/aes.h>
-#include <openssl/sha.h>
-*/
  
 #include "tests.h"
 

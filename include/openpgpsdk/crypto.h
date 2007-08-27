@@ -57,7 +57,8 @@ struct _ops_crypt_t
     unsigned char siv[OPS_MAX_BLOCK_SIZE]; /* Needed for weird v3 resync */
     unsigned char key[OPS_MAX_KEY_SIZE];
     size_t num; /* Offset - see openssl _encrypt doco */
-    void *data;
+    void *encrypt_key;
+    void *decrypt_key;
     };
 
 void ops_crypto_init(void);
@@ -104,6 +105,7 @@ size_t ops_decrypt_se_ip(ops_crypt_t *decrypt,void *out,const void *in,
 		   size_t count);
 size_t ops_encrypt_se_ip(ops_crypt_t *encrypt,void *out,const void *in,
 		   size_t count);
+int ops_is_sa_supported(ops_symmetric_algorithm_t alg);
 
 void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_crypt_t *decrypt,
 			     ops_region_t *region);

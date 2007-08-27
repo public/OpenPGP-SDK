@@ -178,24 +178,33 @@ static void std_resync(ops_crypt_t *decrypt)
 
 static void std_finish(ops_crypt_t *crypt)
     {
-    free(crypt->data);
-    crypt->data=NULL;
+    if (crypt->encrypt_key)
+        {
+        free(crypt->encrypt_key);
+        crypt->encrypt_key=NULL;
+        }
+    if (crypt->decrypt_key)
+        {
+        free(crypt->decrypt_key);
+        crypt->decrypt_key=NULL;
+        }
     }
 
 static void cast5_init(ops_crypt_t *crypt)
     {
-    free(crypt->data);
-    crypt->data=malloc(sizeof(CAST_KEY));
-    CAST_set_key(crypt->data,crypt->keysize,crypt->key);
+    if (crypt->encrypt_key)
+        free(crypt->encrypt_key);
+    crypt->encrypt_key=malloc(sizeof(CAST_KEY));
+    CAST_set_key(crypt->encrypt_key,crypt->keysize,crypt->key);
     }
 
-static void cast5_encrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { CAST_ecb_encrypt(in,out,crypt->data,CAST_ENCRYPT); }
+static void cast5_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { CAST_ecb_encrypt(in,out,crypt->encrypt_key,CAST_ENCRYPT); }
 
-static void cast5_decrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { CAST_ecb_encrypt(in,out,crypt->data,CAST_DECRYPT); }
+static void cast5_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { CAST_ecb_encrypt(in,out,crypt->encrypt_key,CAST_DECRYPT); }
 
-#define TRAILER		"","","","",0,NULL
+#define TRAILER		"","","","",0,NULL,NULL
 
 static ops_crypt_t cast5=
     {
@@ -206,8 +215,8 @@ static ops_crypt_t cast5=
     std_set_key,
     cast5_init,
     std_resync,
-    cast5_encrypt,
-    cast5_decrypt,
+    cast5_block_encrypt,
+    cast5_block_decrypt,
     std_finish,
     TRAILER
     };
@@ -217,18 +226,25 @@ static void idea_init(ops_crypt_t *crypt)
     {
     assert(crypt->keysize == IDEA_KEY_LENGTH);
 
-    free(crypt->data);
-    crypt->data=malloc(sizeof(IDEA_KEY_SCHEDULE));
+    if (crypt->encrypt_key)
+        free(crypt->encrypt_key);
+    crypt->encrypt_key=malloc(sizeof(IDEA_KEY_SCHEDULE));
 
     // note that we don't invert the key when decrypting for CFB mode
-    idea_set_encrypt_key(crypt->key,crypt->data);
+    idea_set_encrypt_key(crypt->key,crypt->encrypt_key);
+
+    if (crypt->decrypt_key)
+        free(crypt->decrypt_key);
+    crypt->decrypt_key=malloc(sizeof(IDEA_KEY_SCHEDULE));
+
+    idea_set_decrypt_key(crypt->encrypt_key,crypt->decrypt_key);
     }
 
 static void idea_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { idea_ecb_encrypt(in,out,crypt->data); }
+    { idea_ecb_encrypt(in,out,crypt->encrypt_key); }
 
 static void idea_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { idea_block_encrypt(crypt,out,in); }
+    { idea_ecb_encrypt(in,out,crypt->decrypt_key); }
 
 static const ops_crypt_t idea=
     {
@@ -248,64 +264,68 @@ static const ops_crypt_t idea=
 
 // AES with 128-bit key (AES)
 
-#define NUMBITS_AES128 128
+#define KEYBITS_AES128 128
 
 static void aes128_init(ops_crypt_t *crypt)
     {
-    free(crypt->data);
-    crypt->data=malloc(sizeof(AES_KEY));
-    AES_set_encrypt_key(crypt->key,NUMBITS_AES128,crypt->data);
+    if (crypt->encrypt_key)
+        free(crypt->encrypt_key);
+    crypt->encrypt_key=malloc(sizeof(AES_KEY));
+    if (AES_set_encrypt_key(crypt->key,KEYBITS_AES128,crypt->encrypt_key))
+        fprintf(stderr,"aes128_init: Error setting encrypt_key\n");
+
+    if (crypt->decrypt_key)
+        free(crypt->decrypt_key);
+    crypt->decrypt_key=malloc(sizeof(AES_KEY));
+    if (AES_set_decrypt_key(crypt->key,KEYBITS_AES128,crypt->decrypt_key))
+        fprintf(stderr,"aes128_init: Error setting decrypt_key\n");
     }
 
-static void aes128_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { AES_ecb_encrypt(in,out,crypt->data, AES_ENCRYPT); }
+static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { AES_encrypt(in,out,crypt->encrypt_key); }
 
-static void aes128_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { AES_ecb_encrypt(in,out,crypt->data, AES_DECRYPT); }
+static void aes_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
+    { AES_decrypt(in,out,crypt->decrypt_key); }
 
 static const ops_crypt_t aes128=
     {
     OPS_SA_AES_128,
     AES_BLOCK_SIZE,
-    NUMBITS_AES128/8,
+    KEYBITS_AES128/8,
     std_set_iv,
     std_set_key,
     aes128_init,
     std_resync,
-    aes128_block_encrypt,
-    aes128_block_decrypt,
+    aes_block_encrypt,
+    aes_block_decrypt,
     std_finish,
     TRAILER
     };
 
 // AES with 256-bit key
 
+#define KEYBITS_AES256 256
+
 static void aes256_init(ops_crypt_t *crypt)
     {
-    free(crypt->data);
-    crypt->data=malloc(sizeof(AES_KEY));
-    AES_set_encrypt_key(crypt->key,256,crypt->data);
+    if (crypt->encrypt_key)
+        free(crypt->encrypt_key);
+    crypt->encrypt_key=malloc(sizeof(AES_KEY));
+    if (AES_set_encrypt_key(crypt->key,KEYBITS_AES256,crypt->encrypt_key))
+        fprintf(stderr,"aes256_init: Error setting encrypt_key\n");
+
+    if (crypt->decrypt_key)
+        free(crypt->decrypt_key);
+    crypt->decrypt_key=malloc(sizeof(AES_KEY));
+    if (AES_set_decrypt_key(crypt->key,KEYBITS_AES256,crypt->decrypt_key))
+        fprintf(stderr,"aes256_init: Error setting decrypt_key\n");
     }
-
-#ifdef BEN_ORIG
-static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { AES_encrypt(in,out,crypt->data); }
-
-static void aes_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { aes_block_encrypt(crypt, out, in); }
-#else
-static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { AES_ecb_encrypt(in,out,crypt->data, AES_ENCRYPT); }
-
-static void aes_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
-    { AES_ecb_encrypt(in,out,crypt->data, AES_DECRYPT); }
-#endif
 
 static const ops_crypt_t aes256=
     {
     OPS_SA_AES_256,
     AES_BLOCK_SIZE,
-    256/8,
+    KEYBITS_AES256/8,
     std_set_iv,
     std_set_key,
     aes256_init,
@@ -316,13 +336,16 @@ static const ops_crypt_t aes256=
     TRAILER
     };
 
+// Triple DES
+
 static void tripledes_init(ops_crypt_t *crypt)
     {
     DES_key_schedule *keys;
     int n;
 
-    free(crypt->data);
-    keys=crypt->data=malloc(3*sizeof(DES_key_schedule));
+    if (crypt->encrypt_key)
+        free(crypt->encrypt_key);
+    keys=crypt->encrypt_key=malloc(3*sizeof(DES_key_schedule));
 
     for(n=0 ; n < 3 ; ++n)
 	DES_set_key((DES_cblock *)(crypt->key+n*8),&keys[n]);
@@ -331,7 +354,7 @@ static void tripledes_init(ops_crypt_t *crypt)
 static void tripledes_block_encrypt(ops_crypt_t *crypt,void *out,
 				    const void *in)
     {
-    DES_key_schedule *keys=crypt->data;
+    DES_key_schedule *keys=crypt->encrypt_key;
 
     DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],DES_ENCRYPT);
     }
@@ -339,7 +362,7 @@ static void tripledes_block_encrypt(ops_crypt_t *crypt,void *out,
 static void tripledes_block_decrypt(ops_crypt_t *crypt,void *out,
 				    const void *in)
     {
-    DES_key_schedule *keys=crypt->data;
+    DES_key_schedule *keys=crypt->encrypt_key;
 
     DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],DES_DECRYPT);
     }
@@ -477,20 +500,42 @@ size_t ops_encrypt_se(ops_crypt_t *encrypt,void *out_,const void *in_,
     return saved;
     }
 
+int ops_is_sa_supported(ops_symmetric_algorithm_t alg)
+    {
+    switch (alg)
+        {
+    case OPS_SA_AES_128:
+    case OPS_SA_AES_256:
+    case OPS_SA_CAST5:
+    case OPS_SA_TRIPLEDES:
+#ifndef OPENSSL_NO_IDEA
+    case OPS_SA_IDEA:
+#endif
+        return 1;
+
+    default:
+        return 0;
+        }
+    }
+
 size_t ops_encrypt_se_ip(ops_crypt_t *crypt,void *out_,const void *in_,
                        size_t count)
     {
+    assert(crypt->algorithm==OPS_SA_CAST5);
+
     CAST_cfb64_encrypt(in_, out_, count,
-                       crypt->data, crypt->iv, (int *)&crypt->num, CAST_ENCRYPT);
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num, CAST_ENCRYPT);
     return count;
     }
 
 size_t ops_decrypt_se_ip(ops_crypt_t *crypt,void *out_,const void *in_,
                        size_t count)
     {
+    assert(crypt->algorithm==OPS_SA_CAST5);
+
     // \todo should not be hard-coded to CAST
 
     CAST_cfb64_encrypt(in_, out_, count,
-                       crypt->data, crypt->iv, (int *)&crypt->num, CAST_DECRYPT);
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num, CAST_DECRYPT);
     return count;
     }
