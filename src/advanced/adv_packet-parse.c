@@ -130,6 +130,7 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
 #define CBP(info,t,pc) CB(&(info)->cbinfo,t,pc)
 /*! macro to save typing */
 #define C		content.content
+
 /*! set error code in content and run CallBack to handle error */
 #define ERRCODE(cbinfo,err)	do { C.errcode.errcode=err; CB(cbinfo,OPS_PARSER_ERRCODE,&content); } while(0)
 #define ERRCODEP(pinfo,err)	do { C.errcode.errcode=err; CBP(pinfo,OPS_PARSER_ERRCODE,&content); } while(0)
@@ -139,14 +140,17 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
 /*! set error text in content and run CallBack to handle warning, do not return */
 #define WARN(warn)	do { C.error.error=warn; CB(OPS_PARSER_ERROR,&content);; } while(0)
 #define WARNP(info,warn)	do { C.error.error=warn; CBP(info,OPS_PARSER_ERROR,&content); } while(0)
+#ifdef XXX
 /*! \todo descr ERR1 macro */
 #define ERR1P(info,fmt,x)	do { format_error(&content,(fmt),(x)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 #define ERR2P(info,fmt,x,y)	do { format_error(&content,(fmt),(x),(y)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 #define ERR4P(info,fmt,x,y,z,a)	do { format_error(&content,(fmt),(x),(y),(z),(a)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
+#endif
 
 /* XXX: replace ops_ptag_t with something more appropriate for limiting
    reads */
 
+#ifdef OLD
 /* Note that this makes the parser non-reentrant, in a limited way */
 /* It is the caller's responsibility to avoid overflow in the buffer */
 static void format_error(ops_parser_content_t *content,
@@ -160,6 +164,7 @@ static void format_error(ops_parser_content_t *content,
     va_end(va);
     content->content.error.error=buf;
     }
+#endif
 
 /**
  * low-level function to read data from reader function
@@ -917,7 +922,7 @@ void ops_public_key_free(ops_public_key_t *p)
 static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
 				 ops_parse_info_t *pinfo)
     {
-    ops_parser_content_t content;
+    //    ops_parser_content_t content;
     unsigned char c[1];
 
     assert (region->length_read == 0);  /* We should not have read anything so far */
@@ -926,7 +931,11 @@ static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
 	return 0;
     key->version=c[0];
     if(key->version < 2 || key->version > 4)
-	ERR1P(pinfo,"Bad public key version (0x%02x)",key->version);
+        {
+	OPS_ERROR_1(&pinfo->errors,OPS_E_PROTO_BAD_PUBLIC_KEY_VRSN,
+                    "Bad public key version (0x%02x)",key->version);
+        return 0;
+        }
 
     if(!limited_read_time(&key->creation_time,region,pinfo))
 	return 0;
@@ -968,7 +977,8 @@ static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
 	break;
 
     default:
-	ERR1P(pinfo,"Unknown public key algorithm (%d)",key->algorithm);
+	OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_PUBLIC_KEY_ALG,"Unsupported Public Key algorithm (%s)",ops_show_pka(key->algorithm));
+        return 0;
 	}
 
     return 1;
@@ -998,8 +1008,11 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
 
     // XXX: this test should be done for all packets, surely?
     if(region->length_read != region->length)
-	ERR1P(pinfo,"Unconsumed data (%d)",
-	      region->length-region->length_read);
+        {
+        OPS_ERROR_1(&pinfo->errors,OPS_E_R_UNCONSUMED_DATA,
+                    "Unconsumed data (%d)", region->length-region->length_read);
+        return 0;
+        }
 
     CBP(pinfo,tag,&content);
 
@@ -1229,11 +1242,17 @@ static int parse_v3_signature(ops_region_t *region,
 	break;
 
     default:
-	ERR1P(pinfo,"Bad signature key algorithm (%d)",C.signature.key_algorithm);
+        OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SIGNATURE_KEY_ALG,
+                    "Unsupported signature key algorithm (%s)",
+                    ops_show_pka(C.signature.key_algorithm));
+        return 0;
 	}
 
     if(region->length_read != region->length)
-	ERR1P(pinfo,"Unconsumed data (%d)",region->length-region->length_read);
+        {
+	OPS_ERROR_1(&pinfo->errors,OPS_E_R_UNCONSUMED_DATA,"Unconsumed data (%d)",region->length-region->length_read);
+        return 0;
+        }
 
     if(C.signature.signer_id_set)
 	C.signature.hash=ops_parse_hash_find(pinfo,C.signature.signer_id);
@@ -1458,8 +1477,8 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
  
     default:
 	if(pinfo->ss_parsed[t8]&t7)
-	    ERR1P(pinfo,"Unknown signature subpacket type (%d)",
-		  c[0]&0x7f);
+	    OPS_ERROR_1(&pinfo->errors, OPS_E_PROTO_UNKNOWN_SS,
+                        "Unknown signature subpacket type (%d)", c[0]&0x7f);
 	read=ops_false;
 	break;
 	}
@@ -1468,8 +1487,9 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     if(!(pinfo->ss_parsed[t8]&t7))
 	{
 	if(content.critical)
-	    ERR1P(pinfo,"Critical signature subpacket ignored (%d)",
-		  c[0]&0x7f);
+	    OPS_ERROR_1(&pinfo->errors,OPS_E_PROTO_CRITICAL_SS_IGNORED,
+                        "Critical signature subpacket ignored (%d)",
+                        c[0]&0x7f);
 	if(!read && !limited_skip(subregion.length-1,&subregion,pinfo))
 	    return 0;
 	//	printf("skipped %d length %d\n",c[0]&0x7f,subregion.length);
@@ -1479,7 +1499,12 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	}
 
     if(read && subregion.length_read != subregion.length)
-	ERR1P(pinfo,"Unconsumed data (%d)", subregion.length-subregion.length_read);
+        {
+	OPS_ERROR_1(&pinfo->errors,OPS_E_R_UNCONSUMED_DATA,
+                    "Unconsumed data (%d)", 
+                    subregion.length-subregion.length_read);
+        return 0;
+        }
  
     CBP(pinfo,content.tag,&content);
 
@@ -1653,13 +1678,19 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo,
 	break;
 
     default:
-	ERR1P(pinfo,"Bad v4 signature key algorithm (%d)",
-	      C.signature.key_algorithm);
+	OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SIGNATURE_KEY_ALG,
+                    "Bad v4 signature key algorithm (%s)",
+                    ops_show_pka(C.signature.key_algorithm));
+        return 0;
 	}
 
     if(region->length_read != region->length)
-	ERR1P(pinfo,"Unconsumed data (%d)",
-	      region->length-region->length_read);
+        {
+	OPS_ERROR_1(&pinfo->errors,OPS_E_R_UNCONSUMED_DATA,
+                    "Unconsumed data (%d)",
+                    region->length-region->length_read);
+        return 0;
+        }
 
     CBP(pinfo,OPS_PTAG_CT_SIGNATURE_FOOTER,&content);
 
@@ -1695,7 +1726,10 @@ static int parse_signature(ops_region_t *region,ops_parse_info_t *pinfo)
 	return parse_v3_signature(region,pinfo);
     else if(c[0] == 4)
 	return parse_v4_signature(region,pinfo,v4_hashed_data_start);
-    ERR1P(pinfo,"Bad signature version (%d)",c[0]);
+
+    OPS_ERROR_1(&pinfo->errors,OPS_E_PROTO_BAD_SIGNATURE_VRSN,
+                "Bad signature version (%d)",c[0]);
+    return 0;
     }
 
 static int parse_compressed(ops_region_t *region,ops_parse_info_t *pinfo)
@@ -1724,8 +1758,12 @@ static int parse_one_pass(ops_region_t *region,ops_parse_info_t *pinfo)
     if(!limited_read(&C.one_pass_signature.version,1,region,pinfo))
 	return 0;
     if(C.one_pass_signature.version != 3)
-	ERR1P(pinfo,"Bad one-pass signature version (%d)",
-	     C.one_pass_signature.version);
+        {
+	OPS_ERROR_1(&pinfo->errors,OPS_E_PROTO_BAD_ONE_PASS_SIG_VRSN,
+                    "Bad one-pass signature version (%d)",
+                    C.one_pass_signature.version);
+        return 0;
+        }
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -2189,9 +2227,12 @@ static int parse_pk_session_key(ops_region_t *region,
 	return 0;
     C.pk_session_key.version=c[0];
     if(C.pk_session_key.version != OPS_PKSK_V3)
-	ERR1P(pinfo,
+        {
+	OPS_ERROR_1(&pinfo->errors, OPS_E_PROTO_BAD_PKSK_VRSN,
 	      "Bad public-key encrypted session key version (%d)",
 	      C.pk_session_key.version);
+        return 0;
+        }
 
     if(!limited_read(C.pk_session_key.key_id,
 		     sizeof C.pk_session_key.key_id,region,pinfo))
@@ -2228,9 +2269,9 @@ static int parse_pk_session_key(ops_region_t *region,
 	break;
 
     default:
-	ERR1P(pinfo,
-	      "Unknown public key algorithm in session key (%d)",
-	      C.pk_session_key.algorithm);
+	OPS_ERROR_1(&pinfo->errors, OPS_E_ALG_UNSUPPORTED_PUBLIC_KEY_ALG,
+                    "Unknown public key algorithm in session key (%s)",
+                    ops_show_pka(C.pk_session_key.algorithm));
 	return 0;
 	}
 
@@ -2263,7 +2304,9 @@ static int parse_pk_session_key(ops_region_t *region,
     if (!ops_is_sa_supported(C.pk_session_key.symmetric_algorithm))
         {
         // ERR1P
-        OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SYMMETRIC,"Symmetric algorithm %s not supported", ops_show_symmetric_algorithm(C.pk_session_key.symmetric_algorithm));
+        OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SYMMETRIC_ALG,
+                    "Symmetric algorithm %s not supported", 
+                    ops_show_symmetric_algorithm(C.pk_session_key.symmetric_algorithm));
         return 0;
         }
 
@@ -2281,8 +2324,9 @@ static int parse_pk_session_key(ops_region_t *region,
 
     if((unsigned)n != k+3)
         {
-        ERR2P(pinfo,"decrypted message wrong length (got %d expected %d)",
-              n,k+3);
+        OPS_ERROR_2(&pinfo->errors,OPS_E_PROTO_DECRYPTED_MSG_WRONG_LEN,
+                    "decrypted message wrong length (got %d expected %d)",
+                    n,k+3);
         return 0;
         }
     
@@ -2307,7 +2351,8 @@ static int parse_pk_session_key(ops_region_t *region,
     ops_calc_session_key_checksum(&C.pk_session_key, &cs[0]);
     if (unencoded_m_buf[k+1]!=cs[0] || unencoded_m_buf[k+2]!=cs[1])
         {
-        ERR4P(pinfo, "Session key checksum wrong: expected %2x %2x, got %2x %2x",
+        OPS_ERROR_4(&pinfo->errors, OPS_E_PROTO_BAD_SK_CHECKSUM,
+                    "Session key checksum wrong: expected %2x %2x, got %2x %2x",
               cs[0], cs[1], unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
         return 0;
         }
@@ -2462,7 +2507,7 @@ int ops_decrypt_se_data(ops_content_tag_t tag,ops_region_t *region,
 	{
 	unsigned char buf[OPS_MAX_BLOCK_SIZE+2];
 	size_t b=decrypt->blocksize;
-	ops_parser_content_t content;
+        //	ops_parser_content_t content;
 	ops_region_t encregion;
 
 
@@ -2477,8 +2522,10 @@ int ops_decrypt_se_data(ops_content_tag_t tag,ops_region_t *region,
 	if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])
 	    {
 	    ops_reader_pop_decrypt(pinfo);
-	    ERR4P(pinfo,"Bad symmetric decrypt (%02x%02x vs %02x%02x)",
-		  buf[b-2],buf[b-1],buf[b],buf[b+1]);
+	    OPS_ERROR_4(&pinfo->errors, OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT,
+                        "Bad symmetric decrypt (%02x%02x vs %02x%02x)",
+                        buf[b-2],buf[b-1],buf[b],buf[b+1]);
+            return 0;
 	    }
 
 	if(tag == OPS_PTAG_CT_SE_DATA_BODY)
@@ -2733,7 +2780,8 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 	 break;
 
     default:
-	ERR1P(pinfo,"Unknown content tag 0x%x", C.ptag.content_tag);
+	OPS_ERROR_1(&pinfo->errors,OPS_E_P_UNKNOWN_TAG,
+                    "Unknown content tag 0x%x", C.ptag.content_tag);
 	r=0;
 	}
 

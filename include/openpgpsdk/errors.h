@@ -16,9 +16,10 @@ typedef enum
 
     /* reader errors */
     OPS_E_R=0x1000,	/* general reader error */
-    OPS_E_R_READ_FAILED	=OPS_E_R+1,
-    OPS_E_R_EARLY_EOF	=OPS_E_R+2,
-    OPS_E_R_BAD_FORMAT	=OPS_E_R+3, // For example, malformed armour
+    OPS_E_R_READ_FAILED		=OPS_E_R+1,
+    OPS_E_R_EARLY_EOF		=OPS_E_R+2,
+    OPS_E_R_BAD_FORMAT		=OPS_E_R+3, // For example, malformed armour
+    OPS_E_R_UNCONSUMED_DATA	=OPS_E_R+4,
 
     /* writer errors */
     OPS_E_W=0x2000,	/* general writer error */
@@ -38,12 +39,22 @@ typedef enum
 
     /* Algorithm support errors */
     OPS_E_ALG=0x5000,			/* general algorithm error */
-    OPS_E_ALG_UNSUPPORTED_SYMMETRIC	=OPS_E_ALG+1,
+    OPS_E_ALG_UNSUPPORTED_SYMMETRIC_ALG		=OPS_E_ALG+1,
+    OPS_E_ALG_UNSUPPORTED_PUBLIC_KEY_ALG	=OPS_E_ALG+2,
+    OPS_E_ALG_UNSUPPORTED_SIGNATURE_KEY_ALG	=OPS_E_ALG+3,
+    OPS_E_ALG_UNSUPPORTED_HASH_ALG		=OPS_E_ALG+4,
 
     /* Protocol errors */
     OPS_E_PROTO=0x6000,	/* general protocol error */
-    OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT 		=OPS_E_PROTO+2,
-
+    OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT 	=OPS_E_PROTO+2,
+    OPS_E_PROTO_UNKNOWN_SS		=OPS_E_PROTO+3,
+    OPS_E_PROTO_CRITICAL_SS_IGNORED	=OPS_E_PROTO+4,
+    OPS_E_PROTO_BAD_PUBLIC_KEY_VRSN	=OPS_E_PROTO+5,
+    OPS_E_PROTO_BAD_SIGNATURE_VRSN	=OPS_E_PROTO+6,
+    OPS_E_PROTO_BAD_ONE_PASS_SIG_VRSN	=OPS_E_PROTO+7,
+    OPS_E_PROTO_BAD_PKSK_VRSN		=OPS_E_PROTO+8,
+    OPS_E_PROTO_DECRYPTED_MSG_WRONG_LEN =OPS_E_PROTO+9,
+    OPS_E_PROTO_BAD_SK_CHECKSUM		=OPS_E_PROTO+10,
     } ops_errcode_t;
 
 /** ops_errcode_name_map_t */
@@ -70,5 +81,8 @@ void ops_print_errors(ops_error_t *errstack);
 #define OPS_SYSTEM_ERROR_1(err,code,syscall,fmt,arg)	do { ops_push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,syscall); ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
 #define OPS_ERROR(err,code,fmt)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt); } while(0)
 #define OPS_ERROR_1(err,code,fmt,arg)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
+#define OPS_ERROR_2(err,code,fmt,arg,arg2)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg,arg2); } while(0)
+#define OPS_ERROR_3(err,code,fmt,arg,arg2,arg3)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg,arg2,arg3); } while(0)
+#define OPS_ERROR_4(err,code,fmt,arg,arg2,arg3,arg4)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg,arg2,arg3,arg4); } while(0)
 
 #endif /* OPS_ERRORS */
