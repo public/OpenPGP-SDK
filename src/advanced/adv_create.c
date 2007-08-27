@@ -753,14 +753,15 @@ ops_boolean_t ops_writer_passthrough(const unsigned char *src,
     { return ops_stacked_write(src,length,errors,winfo); }
 
 
-void ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char *cs)
+ops_boolean_t ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char *cs)
     {
-    int i=0;
+    unsigned int i=0;
     unsigned long checksum=0;
 
-    assert(session_key->symmetric_algorithm==OPS_SA_CAST5
-           || session_key->symmetric_algorithm==OPS_SA_AES_128);
-    for (i=0; i<CAST_KEY_LENGTH; i++)
+    if (!ops_is_sa_supported(session_key->symmetric_algorithm))
+        return ops_false;
+
+    for (i=0; i<ops_key_size(session_key->symmetric_algorithm); i++)
         {
         checksum+=session_key->key[i];
         }
@@ -769,12 +770,13 @@ void ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned c
     cs[0]=checksum >> 8;
     cs[1]=checksum & 0xFF;
 
+    return ops_true;
     //    fprintf(stderr,"\nm buf checksum: ");
     //    fprintf(stderr," %2x",cs[0]);
     //    fprintf(stderr," %2x\n",cs[1]);
     }    
 
-static void create_unencoded_m_buf(ops_pk_session_key_t *session_key, unsigned char *m_buf)
+static ops_boolean_t create_unencoded_m_buf(ops_pk_session_key_t *session_key, unsigned char *m_buf)
     {
     int i=0;
     //    unsigned long checksum=0;
@@ -792,7 +794,7 @@ static void create_unencoded_m_buf(ops_pk_session_key_t *session_key, unsigned c
         m_buf[1+i]=session_key->key[i];
         }
 
-    ops_calc_session_key_checksum(session_key, m_buf+1+CAST_KEY_LENGTH);
+    return(ops_calc_session_key_checksum(session_key, m_buf+1+CAST_KEY_LENGTH));
     }
 
 ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
@@ -884,6 +886,7 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     session_key->symmetric_algorithm=OPS_SA_AES_256;
     ops_random(session_key->key, 256/8);
     */
+    // \todo allow user to specify other algorithm
     session_key->symmetric_algorithm=OPS_SA_CAST5;
 
     ops_random(session_key->key, CAST_KEY_LENGTH);
@@ -894,7 +897,9 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     fprintf(stderr,"\n");
     */
 
-    create_unencoded_m_buf(session_key, &unencoded_m_buf[0]);
+    if (create_unencoded_m_buf(session_key, &unencoded_m_buf[0])==ops_false)
+        return NULL;
+
     /*
     printf("unencoded m buf:\n");
     for (i=0; i<sz_unencoded_m_buf; i++)
@@ -922,6 +927,7 @@ typedef struct
 ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 				       ops_pk_session_key_t *pksk)
     {
+    assert(pksk);
     assert(pksk->algorithm == OPS_PKA_RSA);
 
     return ops_write_ptag(OPS_PTAG_CT_PK_SESSION_KEY, info)

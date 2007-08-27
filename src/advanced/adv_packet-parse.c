@@ -2174,21 +2174,17 @@ static int parse_pk_session_key(ops_region_t *region,
     unsigned char c[1];
     ops_parser_content_t content;
     ops_parser_content_t pc;
-    //    unsigned char buf[8192];
+
     int n;
     BIGNUM *enc_m;
     unsigned k;
     const ops_secret_key_t *secret;
-    
+
     // Can't rely on it being CAST5
     //    const size_t sz_unencoded_m_buf=CAST_KEY_LENGTH+1+2;
     const size_t sz_unencoded_m_buf=1024;
     unsigned char unencoded_m_buf[sz_unencoded_m_buf];
     
-    //    const size_t sz_encoded_m_buf=BN_num_bytes(pub_key->key.rsa.n);
-    //    const size_t sz_encoded_m_buf=128; //\todo FIXME RW
-    //unsigned char encoded_m_buf[sz_encoded_m_buf];
-
     if(!limited_read(c,1,region,pinfo))
 	return 0;
     C.pk_session_key.version=c[0];
@@ -2263,6 +2259,13 @@ static int parse_pk_session_key(ops_region_t *region,
 
     // PKA
     C.pk_session_key.symmetric_algorithm=unencoded_m_buf[0];
+
+    if (!ops_is_sa_supported(C.pk_session_key.symmetric_algorithm))
+        {
+        // ERR1P
+        OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SYMMETRIC,"Symmetric algorithm %s not supported", ops_show_symmetric_algorithm(C.pk_session_key.symmetric_algorithm));
+        return 0;
+        }
 
     if (C.pk_session_key.symmetric_algorithm!=OPS_SA_CAST5
         && C.pk_session_key.symmetric_algorithm!=OPS_SA_AES_128)

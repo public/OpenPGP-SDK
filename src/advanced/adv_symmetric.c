@@ -9,6 +9,7 @@
 #include <openssl/des.h>
 #include "parse_local.h"
 
+#include <openpgpsdk/packet-show.h>
 #include <openpgpsdk/final.h>
 
 // \todo there's also a encrypted_arg_t in adv_create.c 
@@ -500,42 +501,82 @@ size_t ops_encrypt_se(ops_crypt_t *encrypt,void *out_,const void *in_,
     return saved;
     }
 
-int ops_is_sa_supported(ops_symmetric_algorithm_t alg)
+ops_boolean_t ops_is_sa_supported(ops_symmetric_algorithm_t alg)
     {
     switch (alg)
         {
     case OPS_SA_AES_128:
-    case OPS_SA_AES_256:
+        //    case OPS_SA_AES_256:
     case OPS_SA_CAST5:
     case OPS_SA_TRIPLEDES:
 #ifndef OPENSSL_NO_IDEA
     case OPS_SA_IDEA:
 #endif
-        return 1;
+        return ops_true;
+        break;
 
     default:
-        return 0;
+        fprintf(stderr,"\nWarning: %s not supported\n",
+                ops_show_symmetric_algorithm(alg));
+        return ops_false;
         }
     }
 
 size_t ops_encrypt_se_ip(ops_crypt_t *crypt,void *out_,const void *in_,
                        size_t count)
     {
-    assert(crypt->algorithm==OPS_SA_CAST5);
+    if (!ops_is_sa_supported(crypt->algorithm))
+        return -1;
 
-    CAST_cfb64_encrypt(in_, out_, count,
-                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num, CAST_ENCRYPT);
+    switch(crypt->algorithm)
+        {
+    case OPS_SA_CAST5:
+        CAST_cfb64_encrypt(in_, out_, count,
+                           crypt->encrypt_key, crypt->iv, 
+                           (int *)&crypt->num, CAST_ENCRYPT);
+        break;
+
+    case OPS_SA_AES_128:
+    case OPS_SA_AES_256:
+        AES_cfb128_encrypt(in_,out_,count,
+                           crypt->encrypt_key, crypt->iv, (int *)&crypt->num, AES_ENCRYPT);
+        break;
+
+    default:
+        fprintf(stderr,"ops_encrypt_se_ip: Implement support for %s\n",
+                ops_show_symmetric_algorithm(crypt->algorithm));
+        assert(0);
+        }
+
     return count;
     }
 
 size_t ops_decrypt_se_ip(ops_crypt_t *crypt,void *out_,const void *in_,
                        size_t count)
     {
-    assert(crypt->algorithm==OPS_SA_CAST5);
+    if (!ops_is_sa_supported(crypt->algorithm))
+        return -1;
 
-    // \todo should not be hard-coded to CAST
+    switch(crypt->algorithm)
+        {
+    case OPS_SA_CAST5:
+        CAST_cfb64_encrypt(in_, out_, count,
+                           crypt->encrypt_key, crypt->iv, 
+                           (int *)&crypt->num, CAST_DECRYPT);
+        break;
 
-    CAST_cfb64_encrypt(in_, out_, count,
-                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num, CAST_DECRYPT);
+    case OPS_SA_AES_128:
+    case OPS_SA_AES_256:
+        AES_cfb128_encrypt(in_,out_,count,
+                           crypt->encrypt_key, crypt->iv, 
+                           (int *)&crypt->num, AES_DECRYPT);
+        break;
+
+    default:
+        fprintf(stderr,"ops_decrypt_se_ip: Implement support for %s\n",
+                ops_show_symmetric_algorithm(crypt->algorithm));
+        assert(0);
+        }
+
     return count;
     }

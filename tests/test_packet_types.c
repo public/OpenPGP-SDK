@@ -406,6 +406,7 @@ static void test_ops_pk_session_key()
     assert(pub_key);
 
     encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
+    CU_ASSERT_FATAL(encrypted_pk_session_key!=NULL);
     ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
 
     // setup for read

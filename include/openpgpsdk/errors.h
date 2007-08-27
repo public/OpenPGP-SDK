@@ -36,9 +36,13 @@ typedef enum
     /* creator errors */
     OPS_E_C=0x4000,	/* general creator error */
 
+    /* Algorithm support errors */
+    OPS_E_ALG=0x5000,			/* general algorithm error */
+    OPS_E_ALG_UNSUPPORTED_SYMMETRIC	=OPS_E_ALG+1,
+
     /* Protocol errors */
-    OPS_E_PROTO=0x5000,	/* general protocol error */
-    OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT =OPS_E_PROTO+1,
+    OPS_E_PROTO=0x6000,	/* general protocol error */
+    OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT 		=OPS_E_PROTO+2,
 
     } ops_errcode_t;
 

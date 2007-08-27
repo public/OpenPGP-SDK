@@ -132,6 +132,7 @@ int init_suite_rsa_decrypt(void)
         }
 
 #ifndef OPENSSL_NO_IDEA
+    // \todo write test which uses PGP2 instead of using gpg to test IDEA
     /*
     // IDEA
     snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"IDEA\" --output=%s/IDEA_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
@@ -319,16 +320,6 @@ void test_rsa_decrypt_armour_passphrase(void)
     test_rsa_decrypt(armour,passphrase,filename_rsa_armour_passphrase,NULL);
     }
 
-/*
-int main()
-    {
-    CU_pSuite suite_rsa_decrypt = NULL;
-    CU_pSuite suite_rsa_encrypt = NULL;
-
-    if (CUE_SUCCESS != CU_initialize_registry())
-	return CU_get_error();
-*/
-
 CU_pSuite suite_rsa_decrypt()
 {
     CU_pSuite suite = NULL;
@@ -339,26 +330,26 @@ CU_pSuite suite_rsa_decrypt()
 
     // add tests to suite
     
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (Default)", test_rsa_decrypt_noarmour_nopassphrase))
+	    return NULL;
+    
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (CAST5)", test_rsa_decrypt_noarmour_nopassphrase_cast5))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES128)", test_rsa_decrypt_noarmour_nopassphrase_aes128))
 	    return NULL;
     
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (Default)", test_rsa_decrypt_noarmour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES256)", test_rsa_decrypt_noarmour_nopassphrase_aes256))
 	    return NULL;
     
 #ifndef OPENSSL_NO_IDEA
-    /*
+    /* \todo
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (IDEA)", test_rsa_decrypt_noarmour_nopassphrase_idea))
 	    return NULL;
     */
 #endif
     
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (3DES)", test_rsa_decrypt_noarmour_nopassphrase_3des))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES256)", test_rsa_decrypt_noarmour_nopassphrase_aes256))
 	    return NULL;
     
 #ifdef TODO

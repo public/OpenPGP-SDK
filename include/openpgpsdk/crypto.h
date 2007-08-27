@@ -105,7 +105,7 @@ size_t ops_decrypt_se_ip(ops_crypt_t *decrypt,void *out,const void *in,
 		   size_t count);
 size_t ops_encrypt_se_ip(ops_crypt_t *encrypt,void *out,const void *in,
 		   size_t count);
-int ops_is_sa_supported(ops_symmetric_algorithm_t alg);
+ops_boolean_t ops_is_sa_supported(ops_symmetric_algorithm_t alg);
 
 void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_crypt_t *decrypt,
 			     ops_region_t *region);
