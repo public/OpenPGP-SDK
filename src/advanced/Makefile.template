@@ -4,9 +4,9 @@ CC=%CC%
 
 CFLAGS=$(DM_FLAGS) -I../../include %INCLUDES% %CFLAGS% -fPIC
 LDFLAGS=-g
-LIBS=libops_adv.a -lcrypto -lz $(DM_LIB)
+#LIBS=libops_adv.a -lcrypto -lz $(DM_LIB)
 
-all: Makefile headers .depend libops_adv.a
+all: Makefile headers .depend lib
 
 LIBOBJS = adv_packet-parse.o adv_util.o adv_openssl_crypto.o adv_accumulate.o \
 	adv_memory.o adv_fingerprint.o adv_hash.o adv_keyring.o \
@@ -17,8 +17,8 @@ LIBOBJS = adv_packet-parse.o adv_util.o adv_openssl_crypto.o adv_accumulate.o \
 headers:
 	cd ../../include/openpgpsdk && make headers
 
-libops_adv.a: $(LIBOBJS)
-	ar rc libops_adv.a $(LIBOBJS)
+lib: $(LIBOBJS)
+	ar rc ../../lib/libops.a $(LIBOBJS)
 
 tags:
 	rm -f TAGS
@@ -26,7 +26,8 @@ tags:
 
 clean:
 	rm -f packet-dump verify *.o *.i
-	rm -f libops_adv.a TAGS
+	#rm -f libops_adv.a TAGS
+	rm -f TAGS
 
 .depend: *.[ch] ../../include/openpgpsdk/*.h
 	$(CC) $(CFLAGS) -E -M *.c > .depend

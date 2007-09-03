@@ -6,6 +6,11 @@ default: Makefile
 	(cd $$d; echo "+++ make in $$d"; make; echo "--- $$d"); \
 	done
 
+lib: Makefile
+	@set -e; for d in $(LIBSUBDIRS); do \
+	(cd $$d; echo "+++ make in $$d"; make; echo "--- $$d"); \
+	done
+
 force_depend:
 	@set -e; for d in $(SUBDIRS); do \
 	(cd $$d; echo "+++ make force_depend in $$d"; make force_depend ; echo "--- $$d"); \

@@ -7,7 +7,7 @@ CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../../include %INCLUDES% %CFLAGS% -fPIC
 CFLAGS+=-I../advanced
 
 LDFLAGS=-g
-LIBDEPS=../standard/libops_std.a ../advanced/libops_adv.a 
+LIBDEPS=../../lib/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% -lz $(DM_LIB)
 EXES=openpgp
 
@@ -17,7 +17,7 @@ headers:
 	cd ../../include/openpgpsdk && make headers
 
 $(LIBDEPS):
-	cd ../ && make libops.a
+	cd ../ && make lib
 
 openpgp: openpgp.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o openpgp openpgp.o $(LIBS)

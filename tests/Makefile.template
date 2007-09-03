@@ -8,7 +8,7 @@ CUNIT_INC=../include/CUnit
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include %INCLUDES% %CFLAGS%
 LDFLAGS=-g %CFLAGS%
-LIBDEPS=../src/standard/libops_std.a ../src/advanced/libops_adv.a
+LIBDEPS=../lib/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) $(CUNIT_LIB)
 
 TESTSRC=tests.c \

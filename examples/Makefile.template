@@ -4,7 +4,7 @@ CC=%CC%
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include  %INCLUDES% %CFLAGS%
 LDFLAGS=-g %CFLAGS%
-LIBDEPS=common.o ../src/standard/libops_std.a ../src/advanced/libops_adv.a
+LIBDEPS=common.o ../lib/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) %LIBS%
 EXES=packet-dump verify create-key verify2 sign-detached \
      sign-inline decrypt build-keyring encrypt
@@ -15,7 +15,7 @@ all: Makefile .depend $(EXES)
 test: test-dump test-verify test-verify-armoured test-create-key \
       test-v3-secring Makefile test-encrypt
 
-../src/standard/libops_std.a::
+../lib/libops.a::
 	cd ../src && make
 
 packet-dump: packet-dump.o $(LIBDEPS)

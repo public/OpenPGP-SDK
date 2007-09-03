@@ -1,6 +1,6 @@
 # order of build of subdirs is important
 #
-SUBDIRS=src examples
+SUBDIRS=src examples tests
 
 all: Makefiles include/openpgpsdk/configure.h headers default
 
