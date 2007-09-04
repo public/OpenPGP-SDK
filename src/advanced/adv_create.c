@@ -1085,7 +1085,8 @@ ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
 
     if (!ops_write(preamble, sz_preamble,info)
         || !ops_write(data, len, info)
-        || ops_write(ops_memory_get_data(mem_mdc), ops_memory_get_length(mem_mdc), info))
+        || !ops_write(ops_memory_get_data(mem_mdc), ops_memory_get_length(mem_mdc), info))
+        // \todo fix cleanup here and in old code functions
         return 0;
 
     ops_writer_pop(info);
