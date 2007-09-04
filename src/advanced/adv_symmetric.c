@@ -197,6 +197,8 @@ static void cast5_init(ops_crypt_t *crypt)
         free(crypt->encrypt_key);
     crypt->encrypt_key=malloc(sizeof(CAST_KEY));
     CAST_set_key(crypt->encrypt_key,crypt->keysize,crypt->key);
+    crypt->decrypt_key=malloc(sizeof(CAST_KEY));
+    CAST_set_key(crypt->decrypt_key,crypt->keysize,crypt->key);
     }
 
 static void cast5_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
@@ -204,6 +206,20 @@ static void cast5_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
 
 static void cast5_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
     { CAST_ecb_encrypt(in,out,crypt->encrypt_key,CAST_DECRYPT); }
+
+static void cast5_cfb_encrypt(ops_crypt_t *crypt,void *out,const void *in, size_t count)
+    { 
+    CAST_cfb64_encrypt(in,out,count,
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
+                       CAST_ENCRYPT); 
+    }
+
+static void cast5_cfb_decrypt(ops_crypt_t *crypt,void *out,const void *in, size_t count)
+    { 
+    CAST_cfb64_encrypt(in,out,count,
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
+                       CAST_DECRYPT); 
+    }
 
 #define TRAILER		"","","","",0,NULL,NULL
 
@@ -218,6 +234,8 @@ static ops_crypt_t cast5=
     std_resync,
     cast5_block_encrypt,
     cast5_block_decrypt,
+    cast5_cfb_encrypt,
+    cast5_cfb_decrypt,
     std_finish,
     TRAILER
     };
@@ -247,6 +265,20 @@ static void idea_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
 static void idea_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
     { idea_ecb_encrypt(in,out,crypt->decrypt_key); }
 
+static void idea_cfb_encrypt(ops_crypt_t *crypt,void *out,const void *in, size_t count)
+    { 
+    idea_cfb64_encrypt(in,out,count,
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
+                       CAST_ENCRYPT); 
+    }
+
+static void idea_cfb_decrypt(ops_crypt_t *crypt,void *out,const void *in, size_t count)
+    { 
+    idea_cfb64_encrypt(in,out,count,
+                       crypt->decrypt_key, crypt->iv, (int *)&crypt->num,
+                       CAST_DECRYPT); 
+    }
+
 static const ops_crypt_t idea=
     {
     OPS_SA_IDEA,
@@ -258,6 +290,8 @@ static const ops_crypt_t idea=
     std_resync,
     idea_block_encrypt,
     idea_block_decrypt,
+    idea_cfb_encrypt,
+    idea_cfb_decrypt,
     std_finish,
     TRAILER
     };
@@ -288,6 +322,20 @@ static void aes_block_encrypt(ops_crypt_t *crypt,void *out,const void *in)
 static void aes_block_decrypt(ops_crypt_t *crypt,void *out,const void *in)
     { AES_decrypt(in,out,crypt->decrypt_key); }
 
+static void aes_cfb_encrypt(ops_crypt_t *crypt,void *out,const void *in, size_t count)
+    { 
+    AES_cfb128_encrypt(in,out,count,
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
+                       AES_ENCRYPT); 
+    }
+
+static void aes_cfb_decrypt(ops_crypt_t *crypt,void *out,const void *in, size_t count)
+    { 
+    AES_cfb128_encrypt(in,out,count,
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
+                       AES_DECRYPT); 
+    }
+
 static const ops_crypt_t aes128=
     {
     OPS_SA_AES_128,
@@ -299,6 +347,8 @@ static const ops_crypt_t aes128=
     std_resync,
     aes_block_encrypt,
     aes_block_decrypt,
+    aes_cfb_encrypt,
+    aes_cfb_decrypt,
     std_finish,
     TRAILER
     };
@@ -333,6 +383,8 @@ static const ops_crypt_t aes256=
     std_resync,
     aes_block_encrypt,
     aes_block_decrypt,
+    aes_cfb_encrypt,
+    aes_cfb_decrypt,
     std_finish,
     TRAILER
     };
@@ -368,6 +420,26 @@ static void tripledes_block_decrypt(ops_crypt_t *crypt,void *out,
     DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],DES_DECRYPT);
     }
 
+static void tripledes_cfb_encrypt(ops_crypt_t *crypt __attribute__((__unused__)),void *out __attribute__((__unused__)),const void *in __attribute__((__unused__)), size_t count __attribute__((__unused__)))
+    { 
+    assert(0);
+    /*
+    CAST_cfb64_encrypt(in,out,count,
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
+                       CAST_ENCRYPT); 
+    */
+    }
+
+static void tripledes_cfb_decrypt(ops_crypt_t *crypt __attribute__((__unused__)),void *out __attribute__((__unused__)),const void *in __attribute__((__unused__)), size_t count __attribute__((__unused__)))
+    { 
+    assert(0);
+    /*
+    CAST_cfb64_encrypt(in,out,count,
+                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
+                       CAST_DECRYPT); 
+    */
+    }
+
 static const ops_crypt_t tripledes=
     {
     OPS_SA_TRIPLEDES,
@@ -379,6 +451,8 @@ static const ops_crypt_t tripledes=
     std_resync,
     tripledes_block_encrypt,
     tripledes_block_decrypt,
+    tripledes_cfb_encrypt,
+    tripledes_cfb_decrypt,
     std_finish,
     TRAILER
     };
@@ -528,26 +602,9 @@ size_t ops_encrypt_se_ip(ops_crypt_t *crypt,void *out_,const void *in_,
     if (!ops_is_sa_supported(crypt->algorithm))
         return -1;
 
-    switch(crypt->algorithm)
-        {
-    case OPS_SA_CAST5:
-        CAST_cfb64_encrypt(in_, out_, count,
-                           crypt->encrypt_key, crypt->iv, 
-                           (int *)&crypt->num, CAST_ENCRYPT);
-        break;
+    crypt->cfb_encrypt(crypt, out_, in_, count);
 
-    case OPS_SA_AES_128:
-    case OPS_SA_AES_256:
-        AES_cfb128_encrypt(in_,out_,count,
-                           crypt->encrypt_key, crypt->iv, (int *)&crypt->num, AES_ENCRYPT);
-        break;
-
-    default:
-        fprintf(stderr,"ops_encrypt_se_ip: Implement support for %s\n",
-                ops_show_symmetric_algorithm(crypt->algorithm));
-        assert(0);
-        }
-
+    // \todo test this number was encrypted
     return count;
     }
 
@@ -557,26 +614,8 @@ size_t ops_decrypt_se_ip(ops_crypt_t *crypt,void *out_,const void *in_,
     if (!ops_is_sa_supported(crypt->algorithm))
         return -1;
 
-    switch(crypt->algorithm)
-        {
-    case OPS_SA_CAST5:
-        CAST_cfb64_encrypt(in_, out_, count,
-                           crypt->encrypt_key, crypt->iv, 
-                           (int *)&crypt->num, CAST_DECRYPT);
-        break;
+    crypt->cfb_decrypt(crypt, out_, in_, count);
 
-    case OPS_SA_AES_128:
-    case OPS_SA_AES_256:
-        AES_cfb128_encrypt(in_,out_,count,
-                           crypt->encrypt_key, crypt->iv, 
-                           (int *)&crypt->num, AES_DECRYPT);
-        break;
-
-    default:
-        fprintf(stderr,"ops_decrypt_se_ip: Implement support for %s\n",
-                ops_show_symmetric_algorithm(crypt->algorithm));
-        assert(0);
-        }
-
+    // \todo check this number was in fact decrypted
     return count;
     }

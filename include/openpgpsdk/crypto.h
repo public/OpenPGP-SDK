@@ -37,6 +37,10 @@ typedef void ops_crypt_block_encrypt_t(ops_crypt_t *crypt,void *out,
 				       const void *in);
 typedef void ops_crypt_block_decrypt_t(ops_crypt_t *crypt,void *out,
 				       const void *in);
+typedef void ops_crypt_cfb_encrypt_t(ops_crypt_t *crypt,void *out,
+                                     const void *in, size_t count);
+typedef void ops_crypt_cfb_decrypt_t(ops_crypt_t *crypt,void *out,
+                                     const void *in, size_t count);
 typedef void ops_crypt_finish_t(ops_crypt_t *crypt);
 
 /** _ops_crypt_t */
@@ -49,8 +53,14 @@ struct _ops_crypt_t
     ops_crypt_set_key_t *set_key; /* Call this before init! */
     ops_crypt_init_t *base_init;
     ops_crypt_resync_t *decrypt_resync;
+    // encrypt/decrypt one block 
     ops_crypt_block_encrypt_t *block_encrypt;
     ops_crypt_block_decrypt_t *block_decrypt;
+
+    // Standard CFB encrypt/decrypt (as used by Sym Enc Int Prot packets)
+    ops_crypt_cfb_encrypt_t *cfb_encrypt;
+    ops_crypt_cfb_decrypt_t *cfb_decrypt;
+
     ops_crypt_finish_t *decrypt_finish;
     unsigned char iv[OPS_MAX_BLOCK_SIZE];
     unsigned char civ[OPS_MAX_BLOCK_SIZE];
