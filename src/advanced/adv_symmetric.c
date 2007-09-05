@@ -580,7 +580,7 @@ ops_boolean_t ops_is_sa_supported(ops_symmetric_algorithm_t alg)
     switch (alg)
         {
     case OPS_SA_AES_128:
-        //    case OPS_SA_AES_256:
+    case OPS_SA_AES_256:
     case OPS_SA_CAST5:
     case OPS_SA_TRIPLEDES:
 #ifndef OPENSSL_NO_IDEA

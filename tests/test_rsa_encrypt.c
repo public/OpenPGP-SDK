@@ -348,6 +348,7 @@ void test_rsa_encrypt_noarmour_singlekey(void)
     {
     int armour=0;
     char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
+    assert(pub_keyring.nkeys);
     const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
     assert(pub_key);
     test_rsa_encrypt(armour,pub_key,filename_rsa_noarmour_singlekey);

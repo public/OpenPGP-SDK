@@ -2310,16 +2310,6 @@ static int parse_pk_session_key(ops_region_t *region,
         return 0;
         }
 
-    if (C.pk_session_key.symmetric_algorithm!=OPS_SA_CAST5
-        && C.pk_session_key.symmetric_algorithm!=OPS_SA_AES_128)
-        //        && C.pk_session_key.symmetric_algorithm!=OPS_SA_AES_256)
-        {
-        fprintf(stderr,"*** Warning: should implement support for %s\n",
-                ops_show_symmetric_algorithm(C.pk_session_key.symmetric_algorithm));
-        }
-    assert(unencoded_m_buf[0]==OPS_SA_CAST5 || OPS_SA_AES_128);
-    //    assert(unencoded_m_buf[0]==OPS_SA_CAST5 || OPS_SA_AES_256);
-    //    assert(unencoded_m_buf[0]==OPS_SA_CAST5);
     k=ops_key_size(C.pk_session_key.symmetric_algorithm);
 
     if((unsigned)n != k+3)
@@ -2403,6 +2393,14 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
             return -1;
 
         // verify leading preamble
+
+        /* debug
+           fprintf(stderr,"\npreamble: ");
+           unsigned int i=0;
+           for (i=0; i<arg->decrypt->blocksize+2;i++)
+           fprintf(stderr," 0x%02x", buf[i]);
+           fprintf(stderr,"\n");
+        */
 
         size_t b=arg->decrypt->blocksize;
         if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])

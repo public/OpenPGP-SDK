@@ -1062,6 +1062,14 @@ ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
     preamble[crypt->blocksize]=preamble[crypt->blocksize-2];
     preamble[crypt->blocksize+1]=preamble[crypt->blocksize-1];
 
+    /* debug
+    fprintf(stderr,"\npreamble: ");
+    unsigned int i=0;
+    for (i=0; i<sz_preamble;i++)
+        fprintf(stderr," 0x%02x", preamble[i]);
+    fprintf(stderr,"\n");
+    */
+
     // now construct MDC packet and add to the end of the buffer
 
     ops_memory_t *mem_mdc;
@@ -1089,7 +1097,8 @@ ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
         // \todo fix cleanup here and in old code functions
         return 0;
 
-    ops_writer_pop(info);
+    //    writer_info_finalise(&info->errors,&info->winfo);
+    //    ops_writer_pop(info);
 
     // cleanup 
     ops_teardown_memory_write(cinfo_mdc, mem_mdc);

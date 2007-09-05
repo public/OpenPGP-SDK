@@ -348,11 +348,11 @@ CU_pSuite suite_rsa_decrypt()
 	    return NULL;
     */
 #endif
-    
+
+#ifdef TODO
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (3DES)", test_rsa_decrypt_noarmour_nopassphrase_3des))
 	    return NULL;
     
-#ifdef TODO
     if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_decrypt_armour_nopassphrase))
 	    return NULL;
     
