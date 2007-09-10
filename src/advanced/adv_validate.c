@@ -62,7 +62,7 @@ static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
  * \ingroup Callbacks
  */
 
-static ops_parse_cb_return_t
+ops_parse_cb_return_t
 validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     const ops_parser_content_union_t *content=&content_->content;

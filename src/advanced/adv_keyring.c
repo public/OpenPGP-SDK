@@ -213,3 +213,7 @@ void ops_set_secret_key(ops_parser_content_union_t* content,const ops_key_data_t
     *content->get_secret_key.secret_key=&key->key.skey;
     }
 
+const unsigned char* ops_get_key_id(const ops_key_data_t *key)
+    {
+    return key->key_id;
+    }

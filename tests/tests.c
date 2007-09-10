@@ -12,12 +12,6 @@
 
 #include "tests.h"
 
-extern CU_pSuite suite_crypto();
-extern CU_pSuite suite_packet_types();
-//extern CU_pSuite suite_crypt_mpi();
-extern CU_pSuite suite_rsa_decrypt();
-extern CU_pSuite suite_rsa_encrypt();
-
 char dir[MAXBUF+1];
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
@@ -26,11 +20,19 @@ unsigned char* literal_data=NULL;
 size_t sz_literal_data=0;
 char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
 char *bravo_user_id="Bravo (RSA, passphrase) <bravo@test.com>";
+char *alpha_name="Alpha";
+char *bravo_name="Bravo";
+const ops_public_key_t *alpha_pkey;
+const ops_secret_key_t *alpha_skey;
+const ops_public_key_t *bravo_pkey;
+const ops_secret_key_t *bravo_skey;
 
 const ops_key_data_t *decrypter=NULL;
 
 void setup_test_keys()
     {
+    const ops_key_data_t* alpha_keydata;
+    const ops_key_data_t* bravo_keydata;
     char keydetails[MAXBUF+1];
     char keyring_name[MAXBUF+1];
     int fd=0;
@@ -89,6 +91,23 @@ void setup_test_keys()
     snprintf(keyring_name,MAXBUF,"%s/secring.gpg", dir);
     ops_keyring_read(&sec_keyring,keyring_name);
 
+    /*
+     * set up key pointers
+     */
+
+    assert(pub_keyring.nkeys);
+    alpha_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alpha_user_id);
+    bravo_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravo_user_id);
+
+    alpha_pkey=ops_get_public_key_from_data(alpha_keydata);
+    alpha_skey=ops_get_secret_key_from_data(alpha_keydata);
+    bravo_pkey=ops_get_public_key_from_data(bravo_keydata);
+    bravo_skey=ops_get_secret_key_from_data(bravo_keydata);
+
+    assert(alpha_pkey);
+    assert(alpha_skey);
+    assert(bravo_pkey);
+    //    assert(bravo_skey); not yet set because of passphrase
     }
 
 static void cleanup()
@@ -141,6 +160,18 @@ int main()
         }
 
     if (NULL == suite_rsa_decrypt()) 
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
+    if (NULL == suite_rsa_signature()) 
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
+    if (NULL == suite_rsa_verify()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
@@ -350,6 +381,34 @@ callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *
 
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
         // ignore
+        break;
+
+    default:
+        return callback_general(content_,cbinfo);
+        }
+
+    return OPS_RELEASE_MEMORY;
+    }
+ 
+// move definition to better location
+ops_parse_cb_return_t
+validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+
+ops_parse_cb_return_t
+callback_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    //    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+
+    OPS_USED(cbinfo);
+
+    //    ops_print_packet(content_);
+
+    switch(content_->tag)
+        {
+    case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
+    case OPS_PTAG_CT_SIGNATURE_FOOTER:
+        return validate_cb(content_,cbinfo);
         break;
 
     default:
