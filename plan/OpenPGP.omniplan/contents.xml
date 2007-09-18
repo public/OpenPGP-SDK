@@ -32,7 +32,7 @@
 			<key>GanttHideRedundant</key>
 			<false/>
 			<key>GanttVisibleRect</key>
-			<string>{{-33, 0}, {732, 640}}</string>
+			<string>{{-77, 0}, {732, 640}}</string>
 			<key>OutlineVisibleRect</key>
 			<string>{{0, 0}, {524, 640}}</string>
 			<key>SelectedPlanView</key>
@@ -472,7 +472,7 @@
 	<key>taskDifferenceEngine</key>
 	<dict>
 		<key>nextId</key>
-		<integer>119</integer>
+		<integer>126</integer>
 	</dict>
 	<key>taskUserKeys</key>
 	<array/>
@@ -489,11 +489,11 @@
 				<integer>1</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>28800</real>
+			<real>57600</real>
 			<key>objectId</key>
 			<integer>-1</integer>
 			<key>workDone</key>
-			<real>8</real>
+			<real>16</real>
 			<key>workSeconds</key>
 			<real>1879200</real>
 			<key>workTime</key>
@@ -551,15 +551,16 @@
 				<integer>102</integer>
 				<integer>112</integer>
 				<integer>117</integer>
+				<integer>124</integer>
 			</array>
 			<key>objectId</key>
 			<integer>3</integer>
 			<key>task</key>
 			<string>Finish Implementation</string>
 			<key>workSeconds</key>
-			<real>403200</real>
+			<real>460800</real>
 			<key>workTime</key>
-			<real>112</real>
+			<real>128</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -803,17 +804,17 @@
 				<integer>95</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>14400</real>
+			<real>43200</real>
 			<key>objectId</key>
 			<integer>16</integer>
 			<key>task</key>
 			<string>Test Functions</string>
 			<key>workDone</key>
-			<real>4</real>
+			<real>12</real>
 			<key>workSeconds</key>
-			<real>648000</real>
+			<real>590400</real>
 			<key>workTime</key>
-			<real>180</real>
+			<real>164</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -824,8 +825,6 @@
 			</array>
 			<key>doneSeconds</key>
 			<real>14400</real>
-			<key>isExpanded</key>
-			<false/>
 			<key>objectId</key>
 			<integer>17</integer>
 			<key>prerequisites</key>
@@ -871,9 +870,10 @@
 				<integer>114</integer>
 				<integer>115</integer>
 				<integer>116</integer>
+				<integer>125</integer>
 			</array>
-			<key>desiredStart</key>
-			<string>200710230900</string>
+			<key>doneSeconds</key>
+			<real>28800</real>
 			<key>objectId</key>
 			<integer>18</integer>
 			<key>prerequisites</key>
@@ -899,10 +899,12 @@
 			</array>
 			<key>task</key>
 			<string>Sign/Verify Document</string>
+			<key>workDone</key>
+			<real>8</real>
 			<key>workSeconds</key>
-			<real>115200</real>
+			<real>144000</real>
 			<key>workTime</key>
-			<real>32</real>
+			<real>40</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -915,28 +917,24 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200710250900</string>
+			<string>200710260900</string>
 			<key>objectId</key>
 			<integer>19</integer>
 			<key>task</key>
 			<string>Create Key Pair</string>
 			<key>workSeconds</key>
-			<real>57600</real>
+			<real>28800</real>
 			<key>workTime</key>
-			<real>16</real>
+			<real>8</real>
 		</dict>
 		<dict>
-			<key>assignments</key>
+			<key>children</key>
 			<array>
-				<dict>
-					<key>id</key>
-					<integer>1</integer>
-					<key>units</key>
-					<real>0.5</real>
-				</dict>
+				<integer>120</integer>
+				<integer>121</integer>
+				<integer>122</integer>
+				<integer>123</integer>
 			</array>
-			<key>desiredStart</key>
-			<string>200710290900</string>
 			<key>objectId</key>
 			<integer>20</integer>
 			<key>prerequisites</key>
@@ -957,9 +955,9 @@
 			<key>task</key>
 			<string>Sign/Verify Key</string>
 			<key>workSeconds</key>
-			<real>57600</real>
+			<real>115200</real>
 			<key>workTime</key>
-			<real>16</real>
+			<real>32</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -2410,30 +2408,9 @@
 			<key>task</key>
 			<string>More Tests</string>
 			<key>workSeconds</key>
-			<real>288000</real>
+			<real>172800</real>
 			<key>workTime</key>
-			<real>80</real>
-		</dict>
-		<dict>
-			<key>assignments</key>
-			<array>
-				<dict>
-					<key>id</key>
-					<integer>1</integer>
-					<key>units</key>
-					<real>0.5</real>
-				</dict>
-			</array>
-			<key>desiredStart</key>
-			<string>200710310900</string>
-			<key>objectId</key>
-			<integer>96</integer>
-			<key>task</key>
-			<string>Multiple recipients for encryption</string>
-			<key>workSeconds</key>
-			<real>57600</real>
-			<key>workTime</key>
-			<real>16</real>
+			<real>48</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -2448,13 +2425,34 @@
 			<key>desiredStart</key>
 			<string>200711020900</string>
 			<key>objectId</key>
+			<integer>96</integer>
+			<key>task</key>
+			<string>Multiple recipients for encryption</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200711050900</string>
+			<key>objectId</key>
 			<integer>97</integer>
 			<key>task</key>
 			<string>Signature options</string>
 			<key>workSeconds</key>
-			<real>57600</real>
+			<real>28800</real>
 			<key>workTime</key>
-			<real>16</real>
+			<real>8</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -2473,9 +2471,9 @@
 			<key>task</key>
 			<string>Created Key Pair options</string>
 			<key>workSeconds</key>
-			<real>57600</real>
+			<real>28800</real>
 			<key>workTime</key>
-			<real>16</real>
+			<real>8</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -2544,15 +2542,15 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200711080900</string>
+			<string>200711070900</string>
 			<key>objectId</key>
 			<integer>103</integer>
 			<key>task</key>
 			<string>Use encrypt-only key for signing, etc</string>
 			<key>workSeconds</key>
-			<real>57600</real>
+			<real>28800</real>
 			<key>workTime</key>
-			<real>16</real>
+			<real>8</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -2638,6 +2636,17 @@
 			<real>8</real>
 		</dict>
 		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200711080900</string>
 			<key>objectId</key>
 			<integer>111</integer>
 			<key>task</key>
@@ -2658,6 +2667,17 @@
 			<real>8</real>
 		</dict>
 		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200710230900</string>
 			<key>objectId</key>
 			<integer>113</integer>
 			<key>task</key>
@@ -2668,16 +2688,40 @@
 			<real>8</real>
 		</dict>
 		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>doneSeconds</key>
+			<real>28800</real>
 			<key>objectId</key>
 			<integer>114</integer>
 			<key>task</key>
 			<string>Sign with V4 signature</string>
+			<key>workDone</key>
+			<real>8</real>
 			<key>workSeconds</key>
 			<real>28800</real>
 			<key>workTime</key>
 			<real>8</real>
 		</dict>
 		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200710240900</string>
 			<key>objectId</key>
 			<integer>115</integer>
 			<key>task</key>
@@ -2688,6 +2732,17 @@
 			<real>8</real>
 		</dict>
 		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200710250900</string>
 			<key>objectId</key>
 			<integer>116</integer>
 			<key>task</key>
@@ -2708,10 +2763,152 @@
 			<real>8</real>
 		</dict>
 		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200711090900</string>
 			<key>objectId</key>
 			<integer>118</integer>
 			<key>task</key>
 			<string>Encrypted and Signed</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200710290900</string>
+			<key>objectId</key>
+			<integer>120</integer>
+			<key>task</key>
+			<string>Sign with V3 sig</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200710300900</string>
+			<key>objectId</key>
+			<integer>121</integer>
+			<key>task</key>
+			<string>Sign with V4 sig</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200710310900</string>
+			<key>objectId</key>
+			<integer>122</integer>
+			<key>task</key>
+			<string>Verify V3 sig</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200711010900</string>
+			<key>objectId</key>
+			<integer>123</integer>
+			<key>task</key>
+			<string>Verify V4 sig</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>objectId</key>
+			<integer>124</integer>
+			<key>task</key>
+			<string>Hash algorithm != SHA1 in signatures</string>
+			<key>workSeconds</key>
+			<real>57600</real>
+			<key>workTime</key>
+			<real>16</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>objectId</key>
+			<integer>125</integer>
+			<key>prerequisites</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>124</integer>
+					<key>kind</key>
+					<integer>2</integer>
+				</dict>
+			</array>
+			<key>task</key>
+			<string>Test all supported Hash Algorithms</string>
 			<key>workSeconds</key>
 			<real>28800</real>
 			<key>workTime</key>
