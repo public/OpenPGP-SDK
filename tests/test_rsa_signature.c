@@ -13,8 +13,8 @@
 #include "tests.h"
 
 static char *filename_rsa_noarmour_nopassphrase="ops_rsa_signed_noarmour_nopassphrase.txt";
+static char *filename_rsa_noarmour_passphrase="ops_rsa_signed_noarmour_passphrase.txt";
 static char *filename_rsa_armour_nopassphrase="ops_rsa_signed_armour_nopassphrase.txt";
-static char *filename_rsa_noarmour_passphrase="ops_rsa_signed_armour_nopassphrase.txt";
 static char *filename_rsa_armour_passphrase="ops_rsa_signed_armour_passphrase.txt";
 
 #ifdef XXX
@@ -98,8 +98,8 @@ int init_suite_rsa_signature(void)
     // Create test files
 
     create_testfile(filename_rsa_noarmour_nopassphrase);
-    create_testfile(filename_rsa_armour_nopassphrase);
     create_testfile(filename_rsa_noarmour_passphrase);
+    create_testfile(filename_rsa_armour_nopassphrase);
     create_testfile(filename_rsa_armour_passphrase);
 
     // Return success
@@ -146,12 +146,9 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
         }
     
     // Set up armour/passphrase options
+    // OPS code armours signatures by default
 
-    /*
-    if (has_armour)
-	ops_writer_push_armour(cinfo,ops_false,ops_false,ops_false);
-	*/
-    // current_passphrase=has_passphrase ? passphrase : nopassphrase;
+    assert(has_armour);
     
     // set up signature
     sig=ops_create_signature_new();
@@ -220,6 +217,20 @@ void test_rsa_signature_noarmour_passphrase(void)
     test_rsa_signature(armour,filename_rsa_noarmour_passphrase, bravo_skey, OPS_HASH_SHA1);
     }
 
+void test_rsa_signature_armour_nopassphrase(void)
+    {
+    int armour=1;
+    assert(pub_keyring.nkeys);
+    test_rsa_signature(armour,filename_rsa_armour_nopassphrase, alpha_skey, OPS_HASH_SHA1);
+    }
+
+void test_rsa_signature_armour_passphrase(void)
+    {
+    int armour=1;
+    assert(pub_keyring.nkeys);
+    test_rsa_signature(armour,filename_rsa_armour_passphrase, bravo_skey, OPS_HASH_SHA1);
+    }
+
 CU_pSuite suite_rsa_signature()
 {
     CU_pSuite suite = NULL;
@@ -230,20 +241,20 @@ CU_pSuite suite_rsa_signature()
 
     // add tests to suite
     
+#ifdef TBD
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase", test_rsa_signature_noarmour_nopassphrase))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_signature_noarmour_passphrase))
 	    return NULL;
+#endif /*TBD*/
     
-#ifdef TBD
     if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_signature_armour_nopassphrase))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_signature_armour_passphrase))
 	    return NULL;
     
-#endif /*TBD*/
     
     return suite;
 }

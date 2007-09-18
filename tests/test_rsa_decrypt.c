@@ -23,7 +23,6 @@ static char *filename_rsa_armour_nopassphrase="dec_rsa_armour_nopassphrase.txt";
 static char *filename_rsa_noarmour_passphrase="dec_rsa_noarmour_passphrase.txt";
 static char *filename_rsa_armour_passphrase="dec_rsa_armour_passphrase.txt";
 static char *nopassphrase="";
-static char *passphrase="hello";
 static char *current_passphrase=NULL;
 
 static ops_parse_cb_return_t
@@ -235,7 +234,7 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
 
     if (has_armour)
         ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
-    current_passphrase=has_passphrase ? passphrase : nopassphrase;
+    current_passphrase=has_passphrase ? bravo_passphrase : nopassphrase;
     
     // Do the decryption
 

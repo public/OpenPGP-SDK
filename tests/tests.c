@@ -26,7 +26,7 @@ const ops_public_key_t *alpha_pkey;
 const ops_secret_key_t *alpha_skey;
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
-
+char* bravo_passphrase="hello";
 const ops_key_data_t *decrypter=NULL;
 
 void setup_test_keys()
@@ -60,7 +60,7 @@ void setup_test_keys()
     write(fd,rsa_nopass,strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
+    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --s2k-cipher-algo \"AES\" --expert --homedir=%s --batch %s",dir,keydetails);
     system(cmd);
 
     /*
@@ -78,7 +78,7 @@ void setup_test_keys()
     write(fd,rsa_pass,strlen(rsa_pass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
+    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --s2k-cipher-algo \"AES\" --expert --homedir=%s --batch %s",dir,keydetails);
     system(cmd);
     
     /*
@@ -96,18 +96,21 @@ void setup_test_keys()
      */
 
     assert(pub_keyring.nkeys);
+
     alpha_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alpha_user_id);
     bravo_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravo_user_id);
+    assert(alpha_keydata);
+    assert(bravo_keydata);
 
     alpha_pkey=ops_get_public_key_from_data(alpha_keydata);
     alpha_skey=ops_get_secret_key_from_data(alpha_keydata);
     bravo_pkey=ops_get_public_key_from_data(bravo_keydata);
-    bravo_skey=ops_get_secret_key_from_data(bravo_keydata);
+    bravo_skey=ops_decrypt_secret_key_from_data(bravo_keydata,bravo_passphrase);
 
     assert(alpha_pkey);
     assert(alpha_skey);
     assert(bravo_pkey);
-    //    assert(bravo_skey); not yet set because of passphrase
+    assert(bravo_skey); //not yet set because of passphrase
     }
 
 static void cleanup()

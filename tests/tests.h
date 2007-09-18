@@ -57,6 +57,7 @@ char* alpha_user_id;
 char* bravo_user_id;
 char* alpha_name;
 char* bravo_name;
+char* bravo_passphrase;
 const ops_public_key_t *alpha_pkey;
 const ops_secret_key_t *alpha_skey;
 const ops_public_key_t *bravo_pkey;

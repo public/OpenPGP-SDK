@@ -51,7 +51,7 @@ const ops_secret_key_t *
 ops_get_secret_key_from_data(const ops_key_data_t *data)
     {
     if(data->type != OPS_PTAG_CT_SECRET_KEY)
-	return NULL;
+        return NULL;
     return &data->key.skey;
     }
 
