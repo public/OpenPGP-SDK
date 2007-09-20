@@ -147,6 +147,7 @@ static void test_rsa_decrypt(const char *encfile, const char*testtext)
 
 static void old_test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key, const char *filename)
     {
+    char* testtext=NULL;
     ops_memory_t *mem_ldt;
     ops_create_info_t *cinfo_ldt;
 
@@ -240,9 +241,8 @@ static void old_test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub
 
     // File contents should match - checking with OPS
 
-    char buffer[MAXBUF+1];
-    create_testtext(filename,&buffer[0],MAXBUF);
-    test_rsa_decrypt(encrypted_file,buffer);
+    testtext=create_testtext(filename);
+    test_rsa_decrypt(encrypted_file,testtext);
 
     // File contents should match - check with GPG
 
@@ -340,9 +340,9 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
 
     // File contents should match - checking with OPS
 
-    char buffer[MAXBUF+1];
-    create_testtext(filename,&buffer[0],MAXBUF);
-    test_rsa_decrypt(encrypted_file,buffer);
+    char* testtext=NULL;
+    testtext=create_testtext(filename);
+    test_rsa_decrypt(encrypted_file,testtext);
 
     // File contents should match - check with GPG
 

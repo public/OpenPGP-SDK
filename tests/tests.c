@@ -219,10 +219,27 @@ int mktmpdir (void)
     return 0;
     }
 
-void create_testtext(const char *text, char *buf, const int maxlen)
+char* create_testtext(const char *text)
     {
-    buf[maxlen]='\0';
-    snprintf(buf,maxlen,"%s : Test Text\n", text);
+    const unsigned int repeats=2;
+    unsigned int i=0;
+
+    const unsigned int maxbuf=1024;
+    char buf[maxbuf+1];
+    buf[maxbuf]='\0';
+    snprintf(buf,maxbuf,"%s : Test Text\n", text);
+
+    const unsigned int sz_one=strlen(buf);
+    const unsigned int sz_big=sz_one*repeats+1;
+
+    char* bigbuf=ops_mallocz(sz_big); 
+   for (i=0; i<repeats; i++)
+        {
+        char* ptr=bigbuf+ (i*(sz_one-1));
+        snprintf(ptr,sz_one,buf);
+        }
+
+   return bigbuf;
     }
 
 void create_testdata(const char *text, unsigned char *buf, const int maxlen)
@@ -240,20 +257,18 @@ void create_testdata(const char *text, unsigned char *buf, const int maxlen)
 
 void create_testfile(const char *name)
     {
-    unsigned int i=0;
-    const unsigned int limit=1;
     char filename[MAXBUF+1];
-    char buffer[MAXBUF+1];
+    char* testtext=NULL;
 
     int fd=0;
     snprintf(filename,MAXBUF,"%s/%s",dir,name);
     if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL, 0600))<0)
 	return;
 
-    create_testtext(name,&buffer[0],MAXBUF);
-    for (i=0; i<limit; i++)
-        write(fd,buffer,strlen(buffer));
+    testtext=create_testtext(name);
+    write(fd,testtext,strlen(testtext));
     close(fd);
+    free(testtext);
     }
 
 ops_parse_cb_return_t

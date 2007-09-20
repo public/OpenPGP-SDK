@@ -1,5 +1,5 @@
 #include "CUnit/Basic.h"
-
+ 
 #include <openpgpsdk/types.h>
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/packet-parse.h"
@@ -131,26 +131,27 @@ callback_se_ip_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
  
 static void test_literal_data_packet_text()
     {
+    char* testtext=NULL;
     ops_create_info_t *cinfo;
     ops_parse_info_t *pinfo;
     ops_memory_t *mem;
 
-    char *in=ops_mallocz(MAXBUF);
+    //    char *in=ops_mallocz(MAXBUF);
     int rtn=0;
 
     // create test string
-    create_testtext("literal data packet text", &in[0], MAXBUF);
+    testtext=create_testtext("literal data packet text");
 
     /*
      * initialise needed structures for writing into memory
      */
 
-    ops_setup_memory_write(&cinfo,&mem,strlen(in));
+    ops_setup_memory_write(&cinfo,&mem,strlen(testtext));
 
     /*
      * create literal data packet
      */
-    ops_write_literal_data((unsigned char *)in,strlen(in),OPS_LDT_TEXT,cinfo);
+    ops_write_literal_data((unsigned char *)testtext,strlen(testtext),OPS_LDT_TEXT,cinfo);
 
     /*
      * initialise needed structures for reading from memory
@@ -168,12 +169,12 @@ static void test_literal_data_packet_text()
      * test it's the same
      */
 
-    CU_ASSERT(strncmp((char *)literal_data,in,MAXBUF)==0);
+    CU_ASSERT(strncmp((char *)literal_data,testtext,MAXBUF)==0);
 
     // cleanup
     local_cleanup();
     ops_teardown_memory_read(pinfo,mem);
-    free (in);
+    free (testtext);
     }
 
 static void test_literal_data_packet_data()

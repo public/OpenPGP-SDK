@@ -28,7 +28,7 @@ extern CU_pSuite suite_rsa_verify();
 
 int mktmpdir();
 extern char dir[];
-void create_testtext(const char *text, char *buf, const int maxlen);
+char* create_testtext(const char *text);
 void create_testdata(const char *text, unsigned char *buf, const int maxlen);
 void create_testfile(const char *name);
 #define MAXBUF 1024

@@ -206,7 +206,7 @@ int clean_suite_rsa_decrypt(void)
 static void test_rsa_decrypt(const int has_armour, const int has_passphrase, const char *filename, const char* protocol)
     {
     char encfile[MAXBUF+1];
-    char testtext[MAXBUF+1];
+    char* testtext;
     char *suffix= has_armour ? "asc" : "gpg";
     int fd=0;
     ops_parse_info_t *pinfo;
@@ -248,7 +248,8 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     close(fd);
     
     // File contents should match
-    create_testtext(filename,&testtext[0],MAXBUF);
+    testtext=create_testtext(filename);
+    CU_ASSERT(strlen(testtext)==sz_literal_data);
     CU_ASSERT(memcmp(literal_data,testtext,sz_literal_data)==0);
     }
 
