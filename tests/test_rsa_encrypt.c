@@ -20,9 +20,6 @@ callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *c
     {
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     static ops_boolean_t skipping;
-    //    static const ops_key_data_t *decrypter;
-    //    const ops_key_data_t *keydata=NULL;
-    //    const ops_secret_key_t *secret;
 
     OPS_USED(cbinfo);
 
@@ -58,9 +55,6 @@ callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *c
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
         return callback_literal_data(content_,cbinfo);
-        //	text=ops_mallocz(content->literal_data_body.length+1);
-        //	memcpy(text,content->literal_data_body.data,content->literal_data_body.length);
-        //		break;
 
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_ARMOUR_HEADER:
@@ -76,9 +70,7 @@ callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *c
 	break;
 
     default:
-	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
-		content_->tag);
-	assert(0);
+        return callback_general(content_,cbinfo);
 	}
 
     return OPS_RELEASE_MEMORY;
@@ -124,10 +116,10 @@ static void test_rsa_decrypt(const char *encfile, const char*testtext)
     // open encrypted file
     fd=open(encfile,O_RDONLY);
     if(fd < 0)
-	{
-	perror(encfile);
-	exit(2);
-	}
+        {
+        perror(encfile);
+        exit(2);
+        }
     
     // Set decryption reader and handling options
 
@@ -135,8 +127,6 @@ static void test_rsa_decrypt(const char *encfile, const char*testtext)
     ops_reader_set_fd(pinfo,fd);
     ops_parse_cb_set(pinfo,callback_ops_decrypt,NULL);
 
-    //    current_passphrase=nopassphrase;
-    
     // Do the decryption
 
     rtn=ops_parse(pinfo);
@@ -164,6 +154,12 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     int fd_out=0;
     int rtn=0;
     
+    /*
+     * Read from test file and write plaintext to memory
+     * in set of Literal Data packets
+     * \todo optimise using stacked writers
+     */
+
     // open file to encrypt
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
     fd_in=open(myfile,O_RDONLY);
@@ -181,33 +177,10 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
         exit(2);
         }
     
-    // ops_parse_cb_set(pinfo,callback,NULL);
-
-    // key in this instance is the public key of the recipient
-
-    // setup encrypt struct
-    //	unsigned char key[OPS_MAX_KEY_SIZE];
-    /*
-    encrypt.set_iv(&encrypt,key.iv);
-    encrypt.set_key(&encrypt,??);
-*/
-    //    ops_crypt_any(&encrypt,key.algorithm);
-    //    ops_encrypt_init(&encrypt);
-
-    //    ops_writer_push_encrypt(cinfo,key);
-
-    // Set up armour/passphrase options
-
-    /*
-    if (has_armour)
-	ops_writer_push_armour(cinfo,ops_false,ops_false,ops_false);
-	*/
-    // current_passphrase=has_passphrase ? passphrase : nopassphrase;
-    
-    // Do the encryption
+    // write plaintext to memory
 
     for (;;)
-    {
+        {
 	    unsigned char buf[MAXBUF];
 	    int n=0;
 
@@ -215,17 +188,17 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
 	    if (!n)
 		    break;
 	    assert(n>=0);
-#ifdef USING_PUSH
-	    ops_write(buf,n,cinfo);
-#else
+
         // create a simple literal data packet as the encrypted payload
         ops_setup_memory_write(&cinfo_ldt,&mem_ldt,n);
         ops_write_literal_data((unsigned char *)buf, n,
                            OPS_LDT_BINARY, cinfo_ldt);
-#endif
-    }
+        }
+    close(fd_in);
 
-    // write to file
+    /*
+     * Encrypt and write to file
+     */
 
     // Set encryption writer and handling options
 
@@ -234,10 +207,6 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     ops_writer_set_fd(cinfo,fd_out); 
 
     // Create and write encrypted PK session key
-
-    //    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
-    //    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
-    //    ops_print_public_key_verbose(pub_key);
 
     ops_pk_session_key_t* encrypted_pk_session_key;
     encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
@@ -248,25 +217,24 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     unsigned char *iv=NULL;
     iv=ops_mallocz(encrypt.blocksize);
     encrypt.set_iv(&encrypt, iv);
-    //key=ops_mallocz(encrypt.keysize); 
     encrypt.set_key(&encrypt, &encrypted_pk_session_key->key[0]);
     ops_encrypt_init(&encrypt);
 
     /*
-     * write out the encrypted packet
+     * write out encrypted packets
      */
 
     ops_write_se_ip_data( ops_memory_get_data(mem_ldt),
                           ops_memory_get_length(mem_ldt),
                           &encrypt, cinfo);
-
-    
-    // Tidy up
-
-    close(fd_in);
     close(fd_out);
 
-     // File contents should match - check with OPS
+    /*
+     * Test results
+     */
+
+    // File contents should match - checking with OPS
+
     char buffer[MAXBUF+1];
     create_testtext(filename,&buffer[0],MAXBUF);
     test_rsa_decrypt(encrypted_file,buffer);
