@@ -53,15 +53,24 @@ ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
 unsigned char* literal_data;
 size_t sz_literal_data;
+
+// "Alpha" is the user who has NO passphrase on his key
 char* alpha_user_id;
-char* bravo_user_id;
 char* alpha_name;
-char* bravo_name;
-char* bravo_passphrase;
+const ops_key_data_t *alpha_pub_keydata;
+const ops_key_data_t *alpha_sec_keydata;
 const ops_public_key_t *alpha_pkey;
 const ops_secret_key_t *alpha_skey;
+char* alpha_passphrase;
+
+// "Bravo" is the user who has a passphrase on his key
+char* bravo_name;
+char* bravo_passphrase;
+char* bravo_user_id;
+const ops_key_data_t *bravo_pub_keydata;
+const ops_key_data_t *bravo_sec_keydata;
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
-const ops_key_data_t *decrypter;
+//const ops_key_data_t *decrypter;
 #endif
 

@@ -18,21 +18,27 @@ ops_keyring_t sec_keyring;
 static char* no_passphrase="";
 unsigned char* literal_data=NULL;
 size_t sz_literal_data=0;
+
 char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
-char *bravo_user_id="Bravo (RSA, passphrase) <bravo@test.com>";
 char *alpha_name="Alpha";
-char *bravo_name="Bravo";
 const ops_public_key_t *alpha_pkey;
 const ops_secret_key_t *alpha_skey;
+const ops_key_data_t *alpha_pub_keydata;
+const ops_key_data_t *alpha_sec_keydata;
+char* alpha_passphrase="";
+
+char *bravo_user_id="Bravo (RSA, passphrase) <bravo@test.com>";
+char *bravo_name="Bravo";
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
+const ops_key_data_t *bravo_pub_keydata;
+const ops_key_data_t *bravo_sec_keydata;
 char* bravo_passphrase="hello";
+
 const ops_key_data_t *decrypter=NULL;
 
 void setup_test_keys()
     {
-    const ops_key_data_t* alpha_keydata;
-    const ops_key_data_t* bravo_keydata;
     char keydetails[MAXBUF+1];
     char keyring_name[MAXBUF+1];
     int fd=0;
@@ -97,15 +103,20 @@ void setup_test_keys()
 
     assert(pub_keyring.nkeys);
 
-    alpha_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alpha_user_id);
-    bravo_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravo_user_id);
-    assert(alpha_keydata);
-    assert(bravo_keydata);
+    alpha_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
+    bravo_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, bravo_user_id);
+    assert(alpha_pub_keydata);
+    assert(bravo_pub_keydata);
 
-    alpha_pkey=ops_get_public_key_from_data(alpha_keydata);
-    alpha_skey=ops_get_secret_key_from_data(alpha_keydata);
-    bravo_pkey=ops_get_public_key_from_data(bravo_keydata);
-    bravo_skey=ops_decrypt_secret_key_from_data(bravo_keydata,bravo_passphrase);
+    alpha_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alpha_user_id);
+    bravo_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravo_user_id);
+    assert(alpha_sec_keydata);
+    assert(bravo_sec_keydata);
+
+    alpha_pkey=ops_get_public_key_from_data(alpha_pub_keydata);
+    alpha_skey=ops_get_secret_key_from_data(alpha_sec_keydata);
+    bravo_pkey=ops_get_public_key_from_data(bravo_pub_keydata);
+    bravo_skey=ops_decrypt_secret_key_from_data(bravo_sec_keydata,bravo_passphrase);
 
     assert(alpha_pkey);
     assert(alpha_skey);
@@ -294,27 +305,25 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
             return 0;
 
         // Do we need the passphrase and not have it? If so, get it
-        ops_parser_content_t pc;
-        char *passphrase;
-        memset(&pc,'\0',sizeof pc);
+        char *passphrase=NULL;
         passphrase=NULL;
-        pc.content.secret_key_passphrase.passphrase=&passphrase;
-        pc.content.secret_key_passphrase.secret_key=ops_get_secret_key_from_data(keydata);
 
-        /* Ugh. Need to duplicate this macro here to get the passphrase 
-           Duplication to be removed when the callback gets moved to main code.
-           Can we make this inline code rather than a macro?
-        */
-#define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if((cbinfo)->cb(pc,(cbinfo)) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
-        CB(cbinfo,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
-        
+        /*
+         * Hard-coded to allow automated test
+         */
+        if (keydata==alpha_sec_keydata)
+            passphrase=alpha_passphrase;
+        else if (keydata==bravo_sec_keydata)
+            passphrase=bravo_passphrase;
+        else
+            assert(0);
+
         /* now get the key from the data */
         secret=ops_get_secret_key_from_data(keydata);
         while(!secret)
             {
             /* then it must be encrypted */
             secret=ops_decrypt_secret_key_from_data(keydata,passphrase);
-            free(passphrase);
             }
         
         *content->get_secret_key.secret_key=secret;
@@ -331,11 +340,6 @@ ops_parse_cb_return_t
 callback_cmd_get_secret_key_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
-    /*
-    static const ops_key_data_t *decrypt_key;
-    const ops_key_data_t *keydata=NULL;
-    const ops_secret_key_t *secret;
-    */
 
     OPS_USED(cbinfo);
 

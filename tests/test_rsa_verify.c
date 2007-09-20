@@ -138,13 +138,13 @@ int init_suite_rsa_verify(void)
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --quiet --compress-level 0 --sign --local-user %s --passphrase hello %s/%s",
-             dir, bravo_name, dir, filename_rsa_noarmour_passphrase);
+    snprintf(cmd,MAXBUF,"gpg --homedir=%s --quiet --compress-level 0 --sign --local-user %s --passphrase %s %s/%s",
+             dir, bravo_name, bravo_passphrase, dir, filename_rsa_noarmour_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --quiet --compress-level 0 --sign --armour --local-user %s --passphrase hello %s/%s",
-             dir, bravo_name, dir, filename_rsa_armour_passphrase);
+    snprintf(cmd,MAXBUF,"gpg --homedir=%s --quiet --compress-level 0 --sign --armour --local-user %s --passphrase %s %s/%s",
+             dir, bravo_name, bravo_passphrase, dir, filename_rsa_armour_passphrase);
     if (system(cmd))
         { return 1; }
 

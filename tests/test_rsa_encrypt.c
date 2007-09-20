@@ -11,7 +11,8 @@
 
 #include "tests.h"
 
-static char *filename_rsa_noarmour_singlekey="enc_rsa_noarmour_singlekey.txt";
+static char *filename_rsa_noarmour_nopassphrase_singlekey="enc_rsa_noarmour_np_singlekey.txt";
+static char *filename_rsa_noarmour_passphrase_singlekey="enc_rsa_noarmour_pp_singlekey.txt";
 static char *filename_rsa_armour_singlekey="enc_rsa_armour_singlekey.txt";
 
 static ops_parse_cb_return_t
@@ -92,7 +93,8 @@ int init_suite_rsa_encrypt(void)
     {
     // Create RSA test files
 
-    create_testfile(filename_rsa_noarmour_singlekey);
+    create_testfile(filename_rsa_noarmour_nopassphrase_singlekey);
+    create_testfile(filename_rsa_noarmour_passphrase_singlekey);
     create_testfile(filename_rsa_armour_singlekey);
     /*
     create_testfile(filename_rsa_noarmour_passphrase);
@@ -148,7 +150,7 @@ static void test_rsa_decrypt(const char *encfile, const char*testtext)
     CU_ASSERT(memcmp(literal_data,testtext,sz_literal_data)==0);
     }
 
-static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *key, const char *filename)
+static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key, const char *filename)
     {
     ops_memory_t *mem_ldt;
     ops_create_info_t *cinfo_ldt;
@@ -233,8 +235,8 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *key, co
 
     // Create and write encrypted PK session key
 
-    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
-    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
+    //    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
+    //    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
     //    ops_print_public_key_verbose(pub_key);
 
     ops_pk_session_key_t* encrypted_pk_session_key;
@@ -246,7 +248,7 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *key, co
     unsigned char *iv=NULL;
     iv=ops_mallocz(encrypt.blocksize);
     encrypt.set_iv(&encrypt, iv);
-    key=ops_mallocz(encrypt.keysize); 
+    //key=ops_mallocz(encrypt.keysize); 
     encrypt.set_key(&encrypt, &encrypted_pk_session_key->key[0]);
     ops_encrypt_init(&encrypt);
 
@@ -271,22 +273,29 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *key, co
 
     // File contents should match - check with GPG
 
+    char pp[MAXBUF];
+    if (pub_key==alpha_pub_keydata)
+        pp[0]='\0';
+    else if (pub_key==bravo_pub_keydata)
+        snprintf(pp,MAXBUF," --passphrase %s ", bravo_passphrase);
     snprintf(decrypted_file,MAXBUF,"%s/decrypted_%s",dir,filename);
-    snprintf(cmd,MAXBUF,"gpg --decrypt --output=%s --quiet --homedir %s %s",decrypted_file, dir, encrypted_file);
+    snprintf(cmd,MAXBUF,"gpg --decrypt --output=%s --quiet --homedir %s %s %s",decrypted_file, dir, pp, encrypted_file);
     //    printf("cmd: %s\n", cmd);
     rtn=system(cmd);
     CU_ASSERT(rtn==0);
     CU_ASSERT(file_compare(myfile,decrypted_file)==0);
     }
 
-void test_rsa_encrypt_noarmour_singlekey(void)
+void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
     {
     int armour=0;
-    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
-    assert(pub_keyring.nkeys);
-    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
-    assert(pub_key);
-    test_rsa_encrypt(armour,pub_key,filename_rsa_noarmour_singlekey);
+    test_rsa_encrypt(armour,alpha_pub_keydata,filename_rsa_noarmour_nopassphrase_singlekey);
+    }
+
+void test_rsa_encrypt_noarmour_passphrase_singlekey(void)
+    {
+    int armour=0;
+    test_rsa_encrypt(armour,bravo_pub_keydata,filename_rsa_noarmour_passphrase_singlekey);  
     }
 
 #ifdef TBD
@@ -297,13 +306,6 @@ void test_rsa_encrypt_armour_singlekey(void)
     const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
     assert(pub_key);
     test_rsa_encrypt(armour,pub_key,filename_rsa_armour_singlekey);
-    }
-
-void test_rsa_encrypt_noarmour_passphrase(void)
-    {
-    int armour=0;
-    int passphrase=1;
-    test_rsa_encrypt(armour,passphrase,filename_rsa_noarmour_passphrase);
     }
 
 void test_rsa_encrypt_armour_passphrase(void)
@@ -324,14 +326,14 @@ CU_pSuite suite_rsa_encrypt()
 
     // add tests to suite
     
-    if (NULL == CU_add_test(suite, "Unarmoured, single key", test_rsa_encrypt_noarmour_singlekey))
+    if (NULL == CU_add_test(suite, "Unarmoured, single key, no passphrase", test_rsa_encrypt_noarmour_nopassphrase_singlekey))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, single key, passphrase", test_rsa_encrypt_noarmour_passphrase_singlekey))
 	    return NULL;
     
 #ifdef TBD
     if (NULL == CU_add_test(suite, "Armoured, single key", test_rsa_encrypt_armour_singlekey))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_encrypt_noarmour_passphrase))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_encrypt_armour_passphrase))
