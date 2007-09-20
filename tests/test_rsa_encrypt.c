@@ -11,6 +11,9 @@
 
 #include "tests.h"
 
+static char *filename_rsa_noarmour_nopassphrase_singlekey_old="enc_rsa_noarmour_np_singlekey_old.txt";
+static char *filename_rsa_noarmour_passphrase_singlekey_old="enc_rsa_noarmour_pp_singlekey_old.txt";
+
 static char *filename_rsa_noarmour_nopassphrase_singlekey="enc_rsa_noarmour_np_singlekey.txt";
 static char *filename_rsa_noarmour_passphrase_singlekey="enc_rsa_noarmour_pp_singlekey.txt";
 static char *filename_rsa_armour_singlekey="enc_rsa_armour_singlekey.txt";
@@ -87,6 +90,8 @@ int init_suite_rsa_encrypt(void)
 
     create_testfile(filename_rsa_noarmour_nopassphrase_singlekey);
     create_testfile(filename_rsa_noarmour_passphrase_singlekey);
+    create_testfile(filename_rsa_noarmour_nopassphrase_singlekey_old);
+    create_testfile(filename_rsa_noarmour_passphrase_singlekey_old);
     create_testfile(filename_rsa_armour_singlekey);
     /*
     create_testfile(filename_rsa_noarmour_passphrase);
@@ -140,7 +145,7 @@ static void test_rsa_decrypt(const char *encfile, const char*testtext)
     CU_ASSERT(memcmp(literal_data,testtext,sz_literal_data)==0);
     }
 
-static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key, const char *filename)
+static void old_test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key, const char *filename)
     {
     ops_memory_t *mem_ldt;
     ops_create_info_t *cinfo_ldt;
@@ -224,7 +229,7 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
      * write out encrypted packets
      */
 
-    ops_write_se_ip_data( ops_memory_get_data(mem_ldt),
+    ops_write_se_ip_pktset( ops_memory_get_data(mem_ldt),
                           ops_memory_get_length(mem_ldt),
                           &encrypt, cinfo);
     close(fd_out);
@@ -254,6 +259,118 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     CU_ASSERT(file_compare(myfile,decrypted_file)==0);
     }
 
+static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key, const char *filename)
+    {
+    char cmd[MAXBUF+1];
+    char myfile[MAXBUF+1];
+    char encrypted_file[MAXBUF+1];
+    char decrypted_file[MAXBUF+1];
+    char *suffix= has_armour ? "asc" : "gpg";
+    int fd_in=0;
+    int fd_out=0;
+    int rtn=0;
+    
+    /*
+     * Read from test file and write plaintext to memory
+     * in set of Literal Data packets
+     * \todo optimise using stacked writers
+     */
+
+    // open file to encrypt
+    snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
+    fd_in=open(myfile,O_RDONLY);
+    if(fd_in < 0)
+        {
+        perror(myfile);
+        exit(2);
+        }
+    
+    snprintf(encrypted_file,MAXBUF,"%s/%s.%s",dir,filename,suffix);
+    fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
+    if(fd_out < 0)
+        {
+        perror(encrypted_file);
+        exit(2);
+        }
+    
+    /*
+     * This is how to do encryption
+     */
+
+    // Do setup for encrypted writing
+    // This example shows output to a file
+
+    ops_create_info_t *cinfo;
+    cinfo=ops_create_info_new();
+    ops_writer_set_fd(cinfo,fd_out); 
+
+    // Push the encrypted writer
+    ops_writer_push_encrypt_se_ip(cinfo,pub_key);
+
+    // Do the writing
+
+    for (;;)
+        {
+	    unsigned char buf[MAXBUF];
+	    int n=0;
+
+	    n=read(fd_in,buf,sizeof(buf));
+	    if (!n)
+		    break;
+	    assert(n>=0);
+
+        // This does the writing
+        ops_write(buf,n,cinfo);
+        }
+
+    // Pop the encrypted writer from the stack
+    ops_writer_pop(cinfo);
+
+    // tidy up
+    close(fd_in);
+    close(fd_out);
+
+    /*
+     * Encryption complete
+     */
+
+    /*
+     * Test results
+     */
+
+    // File contents should match - checking with OPS
+
+    char buffer[MAXBUF+1];
+    create_testtext(filename,&buffer[0],MAXBUF);
+    test_rsa_decrypt(encrypted_file,buffer);
+
+    // File contents should match - check with GPG
+
+    char pp[MAXBUF];
+    if (pub_key==alpha_pub_keydata)
+        pp[0]='\0';
+    else if (pub_key==bravo_pub_keydata)
+        snprintf(pp,MAXBUF," --passphrase %s ", bravo_passphrase);
+    snprintf(decrypted_file,MAXBUF,"%s/decrypted_%s",dir,filename);
+    snprintf(cmd,MAXBUF,"gpg --decrypt --output=%s --quiet --homedir %s %s %s",decrypted_file, dir, pp, encrypted_file);
+    //    printf("cmd: %s\n", cmd);
+    rtn=system(cmd);
+    CU_ASSERT(rtn==0);
+    CU_ASSERT(file_compare(myfile,decrypted_file)==0);
+    }
+
+void old_test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
+    {
+    int armour=0;
+    old_test_rsa_encrypt(armour,alpha_pub_keydata,filename_rsa_noarmour_nopassphrase_singlekey_old);
+    }
+
+void old_test_rsa_encrypt_noarmour_passphrase_singlekey(void)
+    {
+    int armour=0;
+    old_test_rsa_encrypt(armour,bravo_pub_keydata,filename_rsa_noarmour_passphrase_singlekey_old);  
+    }
+
 void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
     {
     int armour=0;
@@ -263,7 +380,7 @@ void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
 void test_rsa_encrypt_noarmour_passphrase_singlekey(void)
     {
     int armour=0;
-    test_rsa_encrypt(armour,bravo_pub_keydata,filename_rsa_noarmour_passphrase_singlekey);  
+    test_rsa_encrypt(armour,bravo_pub_keydata,filename_rsa_noarmour_passphrase_singlekey);
     }
 
 #ifdef TBD
@@ -298,6 +415,12 @@ CU_pSuite suite_rsa_encrypt()
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Unarmoured, single key, passphrase", test_rsa_encrypt_noarmour_passphrase_singlekey))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, single key, no passphrase (OLD)", old_test_rsa_encrypt_noarmour_nopassphrase_singlekey))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, single key, passphrase (OLD)", old_test_rsa_encrypt_noarmour_passphrase_singlekey))
 	    return NULL;
     
 #ifdef TBD

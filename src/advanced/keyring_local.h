@@ -1,6 +1,8 @@
 /** \file
  */
 
+#include <openpgpsdk/packet.h>
+
 #define DECLARE_ARRAY(type,arr)	unsigned n##arr; unsigned n##arr##_allocated; type *arr
 #define EXPAND_ARRAY(str,arr) do if(str->n##arr == str->n##arr##_allocated) \
 				{ \

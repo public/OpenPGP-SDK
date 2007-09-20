@@ -319,7 +319,7 @@ static void test_ops_se_ip()
     encrypt.set_key(&encrypt, key);
     ops_encrypt_init(&encrypt);
 
-    ops_write_se_ip_data( ops_memory_get_data(mem_ldt),
+    ops_write_se_ip_pktset( ops_memory_get_data(mem_ldt),
                           ops_memory_get_length(mem_ldt),
                           &encrypt, cinfo);
 

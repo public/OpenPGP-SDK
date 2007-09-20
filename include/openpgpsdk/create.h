@@ -100,8 +100,8 @@ ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data,
                                                      const int len, 
                                                      ops_create_info_t *info);
 
-ops_boolean_t ops_write_mdc(const unsigned char *hashed,
-							ops_create_info_t *info);
+//ops_boolean_t ops_write_mdc(const unsigned char *hashed,
+//							ops_create_info_t *info);
 
 ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
                                    const unsigned int len,

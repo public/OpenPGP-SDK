@@ -12,6 +12,7 @@ LIBOBJS = adv_packet-parse.o adv_util.o adv_openssl_crypto.o adv_accumulate.o \
 	adv_memory.o adv_fingerprint.o adv_hash.o adv_keyring.o \
 	adv_signature.o adv_compress.o adv_packet-show.o adv_create.o \
 	adv_validate.o adv_lists.o adv_armour.o adv_errors.o \
+    adv_writer_encrypt_se_ip.o adv_writer_encrypt.o \
 	adv_symmetric.o adv_crypto.o random.o adv_readerwriter.o
 
 headers:

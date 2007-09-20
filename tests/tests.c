@@ -240,6 +240,8 @@ void create_testdata(const char *text, unsigned char *buf, const int maxlen)
 
 void create_testfile(const char *name)
     {
+    unsigned int i=0;
+    const unsigned int limit=1;
     char filename[MAXBUF+1];
     char buffer[MAXBUF+1];
 
@@ -249,7 +251,8 @@ void create_testfile(const char *name)
 	return;
 
     create_testtext(name,&buffer[0],MAXBUF);
-    write(fd,buffer,strlen(buffer));
+    for (i=0; i<limit; i++)
+        write(fd,buffer,strlen(buffer));
     close(fd);
     }
 

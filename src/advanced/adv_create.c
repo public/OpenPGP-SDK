@@ -17,25 +17,6 @@
 
 #include <openpgpsdk/final.h>
 
-struct ops_writer_info
-    {
-    ops_writer_t *writer;
-    ops_writer_finaliser_t *finaliser;
-    ops_writer_destroyer_t *destroyer;
-    void *arg;
-    ops_writer_info_t *next;
-    };
-
-/**
- * \ingroup Create
- * This struct contains the required information about how to write
- */
-struct ops_create_info
-    {
-    ops_writer_info_t winfo;
-    ops_error_t *errors;	/*!< an error stack */
-    };
-
 /*
  * return true if OK, otherwise false
  */
@@ -915,11 +896,6 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     return session_key;
     }
 
-typedef struct
-    {
-    ops_crypt_t *encrypter;
-    } encrypted_arg_t;
-
 #ifndef ATTRIBUTE_UNUSED
 #define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
 #endif /* ATTRIBUTE_UNUSED */
@@ -940,69 +916,6 @@ ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
         ;
     }
 
-static ops_boolean_t encrypted_writer(const unsigned char *src,
-				      unsigned length,
-				      ops_error_t **errors,
-				      ops_writer_info_t *winfo)
-    {
-    encrypted_arg_t *arg=ops_writer_get_arg(winfo);
-
-#define BUFSZ 1024 // arbitrary number
-    unsigned char buf[BUFSZ];
-    unsigned char encbuf[BUFSZ];
-    unsigned remaining=length;
-    while (remaining)
-        {
-        unsigned len = remaining < BUFSZ ? remaining : BUFSZ;
-        memcpy(buf,src,len);
-
-        size_t done;
-        done=ops_encrypt_se_ip(arg->encrypter,
-						  encbuf,
-						  buf,
-						  len);
-
-        assert(done==len);
-
-        /*
-        fprintf(stderr,"WRITING:\nunencrypted: ");
-        int i=0;
-        for (i=0; i<16; i++)
-            fprintf(stderr,"%2x ", buf[i]);
-        fprintf(stderr,"\n");
-        fprintf(stderr,"encrypted:   ");
-        for (i=0; i<16; i++)
-            fprintf(stderr,"%2x ", encbuf[i]);
-        fprintf(stderr,"\n");
-        */
-
-        if (!ops_stacked_write(encbuf,len,errors,winfo))
-            return ops_false;
-        remaining-=done;
-        }
-
-    return ops_true;
-    }
-
-static ops_boolean_t encrypted_finaliser(ops_error_t **errors ATTRIBUTE_UNUSED,
-					 ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
-    {
-    
-    /* \todo */
-    //    assert(0);
-    //    return ops_false;
-    return ops_true;
-    }
-
-void encrypted_destroyer (ops_writer_info_t *winfo ATTRIBUTE_UNUSED)
-     
-    {
-    /* \todo */
-    //    assert(0);
-    }
-
-/* end of dummy code */
-
 ops_boolean_t ops_write_mdc(const unsigned char *hashed,
                             ops_create_info_t* info)
     {
@@ -1010,121 +923,6 @@ ops_boolean_t ops_write_mdc(const unsigned char *hashed,
     return ops_write_ptag(OPS_PTAG_CT_MDC, info)
         && ops_write_length(OPS_SHA1_HASH_SIZE,info)
         && ops_write(hashed, OPS_SHA1_HASH_SIZE, info);
-    }
-
-void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* data, const unsigned int len, unsigned char *hashed)
-    {
-    ops_hash_t hash;
-    //    unsigned char hashed[SHA_DIGEST_LENGTH];
-    unsigned char c[0];
-
-    // init
-    ops_hash_any(&hash, OPS_HASH_SHA1);
-    hash.init(&hash);
-
-    // preamble
-    hash.add(&hash,preamble,sz_preamble);
-    // plaintext
-    hash.add(&hash,data,len); 
-    // MDC packet tag
-    c[0]=0xD3;
-    hash.add(&hash,&c[0],1);   
-    // MDC packet len
-    c[0]=0x14;
-    hash.add(&hash,&c[0],1);   
-
-    //finish
-    hash.finish(&hash,hashed);
-    }
-
-ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
-                                   const unsigned int len,
-                                   ops_crypt_t *crypt,
-                                   ops_create_info_t *info)
-    {
-    unsigned char hashed[SHA_DIGEST_LENGTH];
-    const size_t sz_mdc=1+1+SHA_DIGEST_LENGTH;
-    encrypted_arg_t *arg=ops_mallocz(sizeof *arg);
-
-    size_t sz_preamble=crypt->blocksize+2;
-    unsigned char* preamble=ops_mallocz(sz_preamble);
-
-    size_t sz_buf=sz_preamble+len+sz_mdc;
-
-#define SE_IP_DATA_VERSION 1 //\todo move this
-
-    if (!ops_write_ptag(OPS_PTAG_CT_SE_IP_DATA,info)
-        || !ops_write_length(1+sz_buf,info)
-        || !ops_write_scalar(SE_IP_DATA_VERSION,1,info))
-        return 0;
-
-    ops_random(preamble, crypt->blocksize);
-    preamble[crypt->blocksize]=preamble[crypt->blocksize-2];
-    preamble[crypt->blocksize+1]=preamble[crypt->blocksize-1];
-
-    /* debug
-    fprintf(stderr,"\npreamble: ");
-    unsigned int i=0;
-    for (i=0; i<sz_preamble;i++)
-        fprintf(stderr," 0x%02x", preamble[i]);
-    fprintf(stderr,"\n");
-    */
-
-    // now construct MDC packet and add to the end of the buffer
-
-    ops_memory_t *mem_mdc;
-    ops_create_info_t *cinfo_mdc;
-
-    ops_setup_memory_write(&cinfo_mdc, &mem_mdc,sz_mdc);
-
-    ops_calc_mdc_hash(preamble,sz_preamble,data,len,&hashed[0]);
-
-    ops_write_mdc(hashed, cinfo_mdc);
-
-    // and write it out
-
-    arg->encrypter=crypt;
-    ops_writer_push(info,encrypted_writer,encrypted_finaliser,
-		    encrypted_destroyer,arg);
-
-    /*
-    fprintf(stderr,"writing %ld + %d + %ld\n", sz_preamble, len, ops_memory_get_length(mem_mdc));
-    */
-
-    if (!ops_write(preamble, sz_preamble,info)
-        || !ops_write(data, len, info)
-        || !ops_write(ops_memory_get_data(mem_mdc), ops_memory_get_length(mem_mdc), info))
-        // \todo fix cleanup here and in old code functions
-        return 0;
-
-    //    writer_info_finalise(&info->errors,&info->winfo);
-    //    ops_writer_pop(info);
-
-    // cleanup 
-    ops_teardown_memory_write(cinfo_mdc, mem_mdc);
-    free (preamble);
-
-    return 1;
-    }
-
-void ops_writer_push_encrypt(ops_create_info_t *info __attribute__((__unused__)),
-                                  const ops_key_data_t *key __attribute__((__unused__)))
-    {
-    assert(0);
-#ifdef NOTYETUSED
-    // has ops_key_data_t * key
-    // needs ops_crypt_t * crypt
-    ops_pk_session_key_t *session_key;
-    ops_crypt_t crypt;
-    //	unsigned char mykey[OPS_MAX_KEY_SIZE+OPS_MAX_HASH_SIZE];
-
-    session_key=ops_create_pk_session_key(key);
-    ops_write_pk_session_key(info,session_key);
-
-    ops_crypt_any(&crypt, session_key->symmetric_algorithm);
-    ops_encrypt_init(&crypt);
-    ops_write_se_ip_data(info,&crypt);
-#endif
     }
 
 ops_boolean_t ops_write_literal_data(const unsigned char *data, 
@@ -1166,3 +964,5 @@ ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data,
         && ops_write_length(1+encrypted_sz,info)
         && ops_write(data, len, info);
     }
+
+// EOF
