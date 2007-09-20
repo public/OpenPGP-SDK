@@ -99,78 +99,13 @@ int init_suite_rsa_encrypt(void)
     create_testfile(filename_rsa_armour_passphrase);
     */
 
-#ifdef XXX
-    int fd=0;
-    char cmd[MAXBUF+1];
-    char keydetails[MAXBUF+1];
-    char keyring_name[MAXBUF+1];
-    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
-    char *rsa_pass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Bravo\nName-Comment: RSA, passphrase\nName-Email: bravo@test.com\nPassphrase: hello\nKey-Length: 1024\n";
-    
-    // Create temp directory
-    if (!mktmpdir())
-	return 1;
-
-    /*
-     * Create a RSA keypair with no passphrase
-     */
-
-    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
-
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-	{
-	fprintf(stderr,"Can't create key details\n");
-	return 1;
-	}
-
-    write(fd,rsa_nopass,strlen(rsa_nopass));
-    close(fd);
-
-    snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
-    system(cmd);
-
-    /*
-     * Create a RSA keypair with passphrase
-     */
-
-    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.bravo");
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-	{
-	fprintf(stderr,"Can't create key details\n");
-	return 1;
-	}
-
-    write(fd,rsa_pass,strlen(rsa_pass));
-    close(fd);
-
-    snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
-    system(cmd);
-
-    // Initialise OPS 
-    ops_init();
-
-    // read keyrings
-    snprintf(keyring_name,MAXBUF,"%s/pubring.gpg", dir);
-    ops_keyring_read(&pub_keyring,keyring_name);
-
-    snprintf(keyring_name,MAXBUF,"%s/secring.gpg", dir);
-    ops_keyring_read(&sec_keyring,keyring_name);
-#endif
-
     // Return success
     return 0;
     }
 
 int clean_suite_rsa_encrypt(void)
     {
-    // char cmd[MAXBUF+1];
 	
-#ifdef XXX
-    /* Close OPS */
-    
-    ops_keyring_free(&pub_keyring);
-#endif
-
     ops_finish();
 
     reset_vars();

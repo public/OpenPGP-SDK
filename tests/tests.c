@@ -142,14 +142,6 @@ int main()
         return CU_get_error();
         }
 
-    /*
-    if (NULL == suite_crypt_mpi())
-        {
-        CU_cleanup_registry();
-        return CU_get_error();
-        }
-    */
-
     if (NULL == suite_packet_types())
         {
         CU_cleanup_registry();
@@ -174,11 +166,13 @@ int main()
         return CU_get_error();
         }
 
+#ifdef TODO
     if (NULL == suite_rsa_verify()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
+#endif
 
     // Run tests
     CU_basic_set_mode(CU_BRM_VERBOSE);
