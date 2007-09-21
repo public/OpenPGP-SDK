@@ -461,9 +461,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
 	       content->ptag.content_tag,content->ptag.length_type,
 	       content->ptag.length,content->ptag.length,
 	       content->ptag.position,content->ptag.position);
-	/*
-	print_tagname(ops_str_from_single_packet_tag(content->ptag.content_tag));
-	*/
+	print_tagname(ops_show_packet_tag(content->ptag.content_tag));
 	break;
 
     case OPS_PTAG_CT_SE_DATA_HEADER:

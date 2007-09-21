@@ -161,6 +161,7 @@ static void test_literal_data_packet_text()
 
     // and parse it
 
+    ops_memory_init(mem_literal_data,128);
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     rtn=ops_parse(pinfo);
     CU_ASSERT(rtn==1);
@@ -169,7 +170,7 @@ static void test_literal_data_packet_text()
      * test it's the same
      */
 
-    CU_ASSERT(strncmp((char *)literal_data,testtext,MAXBUF)==0);
+    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_literal_data),testtext,MAXBUF)==0);
 
     // cleanup
     local_cleanup();
@@ -208,6 +209,7 @@ static void test_literal_data_packet_data()
 
     // and parse it
 
+    ops_memory_init(mem_literal_data,128);
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     rtn=ops_parse(pinfo);
     CU_ASSERT(rtn==1);
@@ -216,7 +218,7 @@ static void test_literal_data_packet_data()
      * test it's the same
      */
 
-    CU_ASSERT(memcmp(literal_data,in,MAXBUF)==0);
+    CU_ASSERT(memcmp(ops_memory_get_data(mem_literal_data),in,MAXBUF)==0);
 
     // cleanup
     local_cleanup();
@@ -338,6 +340,7 @@ static void test_ops_se_ip()
     pinfo->decrypt.set_key(&(pinfo->decrypt), key); 
     ops_encrypt_init(&pinfo->decrypt);
 
+    ops_memory_init(mem_literal_data,0);
     rtn=ops_parse(pinfo);
     CU_ASSERT(rtn==1);
 
@@ -345,7 +348,7 @@ static void test_ops_se_ip()
      * Callback should now have literal_data parsed from packet
      */
 
-    CU_ASSERT(memcmp(literal_data,ldt_text, strlen(ldt_text))==0);
+    CU_ASSERT(memcmp(ops_memory_get_data(mem_literal_data),ldt_text, strlen(ldt_text))==0);
 
     // cleanup
     local_cleanup();
@@ -452,11 +455,7 @@ CU_pSuite suite_packet_types()
 
 static void local_cleanup()
     {
-    if (literal_data)
-        {
-        free(literal_data);
-        literal_data=NULL;
-        }
+    //    ops_memory_init(mem_literal_data);
 
     if (mdc_data)
         {

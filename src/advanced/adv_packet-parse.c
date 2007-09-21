@@ -2209,6 +2209,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 static int parse_pk_session_key(ops_region_t *region,
                                 ops_parse_info_t *pinfo)
     {
+    int debug=0;
     unsigned char c[1];
     ops_parser_content_t content;
     ops_parser_content_t pc;
@@ -2219,6 +2220,7 @@ static int parse_pk_session_key(ops_region_t *region,
     const ops_secret_key_t *secret;
 
     // Can't rely on it being CAST5
+    // \todo FIXME RW
     //    const size_t sz_unencoded_m_buf=CAST_KEY_LENGTH+1+2;
     const size_t sz_unencoded_m_buf=1024;
     unsigned char unencoded_m_buf[sz_unencoded_m_buf];
@@ -2238,14 +2240,15 @@ static int parse_pk_session_key(ops_region_t *region,
 		     sizeof C.pk_session_key.key_id,region,pinfo))
 	return 0;
 
-    /*
-    int i;
-    int x=sizeof C.pk_session_key.key_id;
-    printf("session key: public key id: x=%d\n",x);
-    for (i=0; i<x; i++)
-        printf("%2x ", C.pk_session_key.key_id[i]);
-    printf("\n");
-    */
+    if (debug)
+        {
+        int i;
+        int x=sizeof C.pk_session_key.key_id;
+        printf("session key: public key id: x=%d\n",x);
+        for (i=0; i<x; i++)
+            printf("%2x ", C.pk_session_key.key_id[i]);
+        printf("\n");
+        }
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -2324,16 +2327,20 @@ static int parse_pk_session_key(ops_region_t *region,
 
     memcpy(C.pk_session_key.key,unencoded_m_buf+1,k);
 
-    /*
-    printf("session key recovered (len=%d):\n",k);
-    unsigned int j;
-    for(j=0; j<k; j++)
-        printf("%2x ", C.pk_session_key.key[j]);
-    printf("\n");
-    */
+    if (debug)
+        {
+        printf("session key recovered (len=%d):\n",k);
+        unsigned int j;
+        for(j=0; j<k; j++)
+            printf("%2x ", C.pk_session_key.key[j]);
+        printf("\n");
+        }
 
     C.pk_session_key.checksum=unencoded_m_buf[k+1]+(unencoded_m_buf[k+2] << 8);
-    //    printf("session key checksum: %2x %2x\n", unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
+    if (debug)
+        {
+        printf("session key checksum: %2x %2x\n", unencoded_m_buf[k+1], unencoded_m_buf[k+2]);
+        }
 
     // Check checksum
 
@@ -2362,6 +2369,8 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
                              ops_reader_info_t *rinfo,
                              ops_parse_cb_info_t *cbinfo)
     {
+    int debug=0;
+
     /*
       Gets entire SE_IP data packet.
       Verifies leading preamble
@@ -2392,15 +2401,30 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
         if (!ops_stacked_limited_read(buf,decrypted_region.length, &decrypted_region,errors,rinfo,cbinfo))
             return -1;
 
+        if (debug)
+            {
+            fprintf(stderr,"\n\nentire SE IP packet (len=%d):\n",decrypted_region.length);
+            unsigned int i=0;
+            for (i=0; i<decrypted_region.length; i++)
+                {
+                fprintf(stderr,"0x%02x ", buf[i]);
+                if (!((i+1)%8))
+                    fprintf(stderr,"\n");
+                }
+            fprintf(stderr,"\n");
+            fprintf(stderr,"\n");
+            }
+
         // verify leading preamble
 
-        /* debug
-           fprintf(stderr,"\npreamble: ");
-           unsigned int i=0;
-           for (i=0; i<arg->decrypt->blocksize+2;i++)
-           fprintf(stderr," 0x%02x", buf[i]);
-           fprintf(stderr,"\n");
-        */
+        if (debug)
+            {
+            fprintf(stderr,"\npreamble: ");
+            unsigned int i=0;
+            for (i=0; i<arg->decrypt->blocksize+2;i++)
+                fprintf(stderr," 0x%02x", buf[i]);
+            fprintf(stderr,"\n");
+            }
 
         size_t b=arg->decrypt->blocksize;
         if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])
@@ -2423,6 +2447,21 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
         unsigned char* mdc=plaintext+sz_plaintext;
         unsigned char* mdc_hash=mdc+2;
     
+        if (debug)
+            {
+            unsigned int i=0;
+
+            fprintf(stderr,"\nplaintext (len=%ld): ",sz_plaintext);
+            for (i=0; i<sz_plaintext;i++)
+                fprintf(stderr," 0x%02x", plaintext[i]);
+            fprintf(stderr,"\n");
+
+            fprintf(stderr,"\nmdc (len=%ld): ",sz_mdc);
+            for (i=0; i<sz_mdc;i++)
+                fprintf(stderr," 0x%02x", mdc[i]);
+            fprintf(stderr,"\n");
+            }
+
         ops_calc_mdc_hash(preamble,sz_preamble,plaintext,sz_plaintext,&hashed[0]);
         /*
         unsigned char c[0];

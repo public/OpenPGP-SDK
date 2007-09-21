@@ -21,6 +21,7 @@ CU_pSuite suite_crypto();
 extern CU_pSuite suite_packet_types();
 extern CU_pSuite suite_rsa_decrypt();
 extern CU_pSuite suite_rsa_encrypt();
+extern CU_pSuite suite_rsa_encrypt_GPGtest();
 extern CU_pSuite suite_rsa_signature();
 extern CU_pSuite suite_rsa_verify();
 
@@ -51,8 +52,7 @@ int file_compare(char* file1, char* file2);
 
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
-unsigned char* literal_data;
-size_t sz_literal_data;
+ops_memory_t* mem_literal_data;
 
 // "Alpha" is the user who has NO passphrase on his key
 char* alpha_user_id;

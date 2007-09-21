@@ -783,6 +783,8 @@ ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
                            unsigned char* EM
 )
     {
+    int debug=0;
+
     //unsigned char encmpibuf[8192];
     //    unsigned char EM[8192];
     unsigned int k;
@@ -817,13 +819,14 @@ ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
     memcpy(EM+i, M, mLen);
     
 
-    /*
-    //    int i=0;
-    fprintf(stderr,"Encoded Message: \n");
-    for (i=0; i<mLen; i++)
-        fprintf(stderr,"%2x ", EM[i]);
-    fprintf(stderr,"\n");
-    */
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"Encoded Message: \n");
+        for (i=0; i<mLen; i++)
+            fprintf(stderr,"%2x ", EM[i]);
+        fprintf(stderr,"\n");
+        }
 
     return ops_true;
     }
@@ -840,6 +843,8 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
      * can be any, we're hardcoding RSA for now
      */
 
+    int debug=0;
+
     const ops_public_key_t* pub_key=ops_get_public_key_from_data(key);
     const size_t sz_unencoded_m_buf=CAST_KEY_LENGTH+1+2;
     unsigned char unencoded_m_buf[sz_unencoded_m_buf];
@@ -853,42 +858,44 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     session_key->version=OPS_PKSK_V3;
     memcpy(session_key->key_id, key->key_id, sizeof session_key->key_id);
 
-    /*
-    fprintf(stderr,"Encrypting for RSA key id : ");
-    unsigned int i=0;
-    for (i=0; i<sizeof session_key->key_id; i++)
-        fprintf(stderr,"%2x ", key->key_id[i]);
-    fprintf(stderr,"\n");
-    */
+    if (debug)
+        {
+        fprintf(stderr,"Encrypting for RSA key id : ");
+        unsigned int i=0;
+        for (i=0; i<sizeof session_key->key_id; i++)
+            fprintf(stderr,"%2x ", key->key_id[i]);
+        fprintf(stderr,"\n");
+        }
 
     assert(key->key.pkey.algorithm == OPS_PKA_RSA);
     session_key->algorithm=key->key.pkey.algorithm;
-    /*
-    session_key->symmetric_algorithm=OPS_SA_AES_256;
-    ops_random(session_key->key, 256/8);
-    */
+
     // \todo allow user to specify other algorithm
     session_key->symmetric_algorithm=OPS_SA_CAST5;
-
     ops_random(session_key->key, CAST_KEY_LENGTH);
-    /*
-    fprintf(stderr,"CAST5 session key created (len=%d):\n ", CAST_KEY_LENGTH);
-    for (i=0; i<CAST_KEY_LENGTH; i++)
-        fprintf(stderr,"%2x ", session_key->key[i]);
-    fprintf(stderr,"\n");
-    */
+
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"CAST5 session key created (len=%d):\n ", CAST_KEY_LENGTH);
+        for (i=0; i<CAST_KEY_LENGTH; i++)
+            fprintf(stderr,"%2x ", session_key->key[i]);
+        fprintf(stderr,"\n");
+        }
 
     if (create_unencoded_m_buf(session_key, &unencoded_m_buf[0])==ops_false)
         return NULL;
 
-    /*
-    printf("unencoded m buf:\n");
-    for (i=0; i<sz_unencoded_m_buf; i++)
-        printf("%2x ", unencoded_m_buf[i]);
-    printf("\n");
-    */
+    if (debug)
+        {
+        unsigned int i=0;
+        printf("unencoded m buf:\n");
+        for (i=0; i<sz_unencoded_m_buf; i++)
+            printf("%2x ", unencoded_m_buf[i]);
+        printf("\n");
+        }
     encode_m_buf(&unencoded_m_buf[0], sz_unencoded_m_buf, pub_key, &encoded_m_buf[0]);
-
+    
     // and encrypt it
     if(!ops_encrypt_mpi(encoded_m_buf, sz_encoded_m_buf, pub_key, &session_key->parameters))
         return NULL;

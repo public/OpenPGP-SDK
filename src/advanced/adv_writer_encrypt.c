@@ -21,37 +21,41 @@ static ops_boolean_t encrypt_writer(const unsigned char *src,
 				      ops_error_t **errors,
 				      ops_writer_info_t *winfo)
     {
+    int debug=0;
     crypt_arg_t *arg=(crypt_arg_t *)ops_writer_get_arg(winfo);
 
     if (!ops_is_sa_supported(arg->crypt->algorithm))
         assert(0); // \todo proper error handling
 
 #define BUFSZ 1024 // arbitrary number
-    unsigned char buf[BUFSZ];
+    //    unsigned char buf[BUFSZ];
     unsigned char encbuf[BUFSZ];
     unsigned remaining=length;
+    unsigned done=0;
     while (remaining)
         {
         unsigned len = remaining < BUFSZ ? remaining : BUFSZ;
-        memcpy(buf,src,len); // \todo copy needed here?
+        //        memcpy(buf,src,len); // \todo copy needed here?
         
-        arg->crypt->cfb_encrypt(arg->crypt, encbuf, buf, len);
+        arg->crypt->cfb_encrypt(arg->crypt, encbuf, src+done, len);
 
-        /*
-        fprintf(stderr,"WRITING:\nunencrypted: ");
-        int i=0;
-        for (i=0; i<16; i++)
-            fprintf(stderr,"%2x ", buf[i]);
-        fprintf(stderr,"\n");
-        fprintf(stderr,"encrypted:   ");
-        for (i=0; i<16; i++)
-            fprintf(stderr,"%2x ", encbuf[i]);
-        fprintf(stderr,"\n");
-        */
+        if (debug)
+            {
+            fprintf(stderr,"WRITING:\nunencrypted: ");
+            int i=0;
+            for (i=0; i<16; i++)
+                fprintf(stderr,"%2x ", src[done+i]);
+            fprintf(stderr,"\n");
+            fprintf(stderr,"encrypted:   ");
+            for (i=0; i<16; i++)
+                fprintf(stderr,"%2x ", encbuf[i]);
+            fprintf(stderr,"\n");
+            }
 
         if (!ops_stacked_write(encbuf,len,errors,winfo))
             return ops_false;
         remaining-=len;
+        done+=len;
         }
 
     return ops_true;

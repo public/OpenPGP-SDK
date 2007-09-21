@@ -70,10 +70,6 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
         break;
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
-        /*
-	text=ops_mallocz(content->literal_data_body.length+1);
-	memcpy(text,content->literal_data_body.data,content->literal_data_body.length);
-        */
         return callback_literal_data(content_,cbinfo);
 		break;
 
@@ -238,6 +234,7 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     
     // Do the decryption
 
+    ops_memory_init(mem_literal_data,0);
     rtn=ops_parse(pinfo);
     CU_ASSERT(rtn==1);
 
@@ -249,8 +246,10 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     
     // File contents should match
     testtext=create_testtext(filename);
-    CU_ASSERT(strlen(testtext)==sz_literal_data);
-    CU_ASSERT(memcmp(literal_data,testtext,sz_literal_data)==0);
+    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_literal_data));
+    CU_ASSERT(memcmp(ops_memory_get_data(mem_literal_data),
+                     testtext,
+                     ops_memory_get_length(mem_literal_data))==0);
     }
 
 void test_rsa_decrypt_noarmour_nopassphrase(void)

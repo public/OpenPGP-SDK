@@ -16,8 +16,7 @@ char dir[MAXBUF+1];
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
 static char* no_passphrase="";
-unsigned char* literal_data=NULL;
-size_t sz_literal_data=0;
+ops_memory_t* mem_literal_data=NULL;
 
 char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
 char *alpha_name="Alpha";
@@ -142,6 +141,7 @@ static void cleanup()
 int main()
     {
 
+    mem_literal_data=ops_memory_new();
     setup_test_keys();
 
     if (CUE_SUCCESS != CU_initialize_registry())
@@ -185,6 +185,12 @@ int main()
         }
 #endif
 
+    if (NULL == suite_rsa_encrypt_GPGtest()) 
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
     // Run tests
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
@@ -200,28 +206,29 @@ int mktmpdir (void)
     int limit=10; // don't try indefinitely
     long int rnd=0;
     while (limit--) 
-	{
-	rnd=random();
-	snprintf(dir,MAXBUF,"./testdir.%ld",rnd);
-
-	// Try to create directory
-	if (!mkdir(dir,0700))
-	    {
-	    // success
-	    return 1;
-	    }
-	else
-	    {
-	    fprintf (stderr,"Couldn't open dir: errno=%d\n", errno);
-	    perror(NULL);
-	    }
-	}
-    return 0;
+        {
+        rnd=random();
+        snprintf(dir,MAXBUF,"./testdir.%ld",rnd);
+        
+        // Try to create directory
+        if (!mkdir(dir,0700))
+            {
+            // success
+            return 1;
+            }
+        else
+            {
+            fprintf (stderr,"Couldn't open dir: errno=%d\n", errno);
+            perror(NULL);
+            }
+        }
+    fprintf(stderr,"Too many temp dirs: please delete them\n");
+    exit(1);
     }
 
 char* create_testtext(const char *text)
     {
-    const unsigned int repeats=2;
+    const unsigned int repeats=100;
     unsigned int i=0;
 
     const unsigned int maxbuf=1024;
@@ -393,9 +400,9 @@ callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *
     switch(content_->tag)
         {
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
-        sz_literal_data=content->literal_data_body.length;
-        literal_data=ops_mallocz(sz_literal_data+1);
-        memcpy(literal_data,content->literal_data_body.data,sz_literal_data);
+        ops_memory_add(mem_literal_data,
+                       content->literal_data_body.data,
+                       content->literal_data_body.length);
         break;
 
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
@@ -469,12 +476,8 @@ callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t
 
 void reset_vars()
     {
-    if (literal_data)
-        {
-        free (literal_data);
-        literal_data=NULL;
-        sz_literal_data=0;
-        }
+    ops_memory_init(mem_literal_data,0);
+
     if (decrypter)
         {
         //        free (decrypter);

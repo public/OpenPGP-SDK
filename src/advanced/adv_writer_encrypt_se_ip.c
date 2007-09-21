@@ -71,34 +71,25 @@ static ops_boolean_t encrypt_se_ip_writer(const unsigned char *src,
     ops_memory_t *my_mem;
     ops_create_info_t *my_cinfo;
 
-    const unsigned int bufsz=128; // \todo good value?
+    const unsigned int bufsz=128; // initial value; gets expanded as necessary
     ops_setup_memory_write(&cinfo_literal,&mem_literal,bufsz);
     ops_setup_memory_write(&my_cinfo,&my_mem,bufsz);
 
-    // \todo handle larger packets e.g. do loop
+    // create literal data packet from source data
+    ops_write_literal_data(src, length, OPS_LDT_BINARY, cinfo_literal);
+    assert(ops_memory_get_length(mem_literal)>length);
 
-    unsigned remaining=length;
-    unsigned done=0;
-    while (remaining && rtn==ops_true)
-        {
-        unsigned len = remaining < bufsz ? remaining : bufsz;
+    // create SE IP packet set from this literal data
+    ops_write_se_ip_pktset(ops_memory_get_data(mem_literal), 
+                           ops_memory_get_length(mem_literal), 
+                           arg->crypt, my_cinfo);
+    assert(ops_memory_get_length(my_mem)>ops_memory_get_length(mem_literal));
 
-        // create literal data packet from source data
-        ops_write_literal_data(src+done, len, OPS_LDT_BINARY, cinfo_literal);
+    // now write memory to next writer
+    rtn=ops_stacked_write(ops_memory_get_data(my_mem),
+                          ops_memory_get_length(my_mem),
+                          errors, winfo);
     
-        // create SE IP packet set from this literal data
-        ops_write_se_ip_pktset(ops_memory_get_data(mem_literal), 
-                               ops_memory_get_length(mem_literal), 
-                               arg->crypt, my_cinfo);
-
-        // now write memory to next writer
-        rtn=ops_stacked_write(ops_memory_get_data(my_mem),
-                              ops_memory_get_length(my_mem),
-                              errors, winfo);
-
-        remaining-=len;
-        done+=len;
-        }
     ops_memory_free(my_mem);
     ops_memory_free(mem_literal);
 
@@ -114,11 +105,27 @@ static void encrypt_se_ip_destroyer (ops_writer_info_t *winfo)
     free(arg);
     }
 
-void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* data, const unsigned int len, unsigned char *hashed)
+void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* plaintext, const unsigned int sz_plaintext, unsigned char *hashed)
     {
+    int debug=0;
     ops_hash_t hash;
-    //    unsigned char hashed[SHA_DIGEST_LENGTH];
     unsigned char c[0];
+
+    if (debug)
+        {
+        fprintf(stderr,"ops_calc_mdc_hash():\n");
+
+        fprintf(stderr,"\npreamble: ");
+        unsigned int i=0;
+        for (i=0; i<sz_preamble;i++)
+            fprintf(stderr," 0x%02x", preamble[i]);
+        fprintf(stderr,"\n");
+
+        fprintf(stderr,"\nplaintext (len=%d): ",sz_plaintext);
+        for (i=0; i<sz_plaintext;i++)
+            fprintf(stderr," 0x%02x", plaintext[i]);
+        fprintf(stderr,"\n");
+        }
 
     // init
     ops_hash_any(&hash, OPS_HASH_SHA1);
@@ -127,7 +134,7 @@ void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, 
     // preamble
     hash.add(&hash,preamble,sz_preamble);
     // plaintext
-    hash.add(&hash,data,len); 
+    hash.add(&hash,plaintext,sz_plaintext); 
     // MDC packet tag
     c[0]=0xD3;
     hash.add(&hash,&c[0],1);   
@@ -137,6 +144,15 @@ void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, 
 
     //finish
     hash.finish(&hash,hashed);
+
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"\nhashed (len=%d): ",SHA_DIGEST_LENGTH);
+        for (i=0; i<SHA_DIGEST_LENGTH;i++)
+            fprintf(stderr," 0x%02x", hashed[i]);
+        fprintf(stderr,"\n");
+        }
     }
 
 ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
@@ -144,6 +160,7 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
                                    ops_crypt_t *crypt,
                                    ops_create_info_t *cinfo)
     {
+    int debug=0;
     unsigned char hashed[SHA_DIGEST_LENGTH];
     const size_t sz_mdc=1+1+SHA_DIGEST_LENGTH;
     encrypt_se_ip_arg_t *arg=ops_mallocz(sizeof *arg);
@@ -164,13 +181,14 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
     preamble[crypt->blocksize]=preamble[crypt->blocksize-2];
     preamble[crypt->blocksize+1]=preamble[crypt->blocksize-1];
 
-    /* debug
-    fprintf(stderr,"\npreamble: ");
-    unsigned int i=0;
-    for (i=0; i<sz_preamble;i++)
-        fprintf(stderr," 0x%02x", preamble[i]);
-    fprintf(stderr,"\n");
-    */
+    if (debug)
+        {
+        fprintf(stderr,"\npreamble: ");
+        unsigned int i=0;
+        for (i=0; i<sz_preamble;i++)
+            fprintf(stderr," 0x%02x", preamble[i]);
+        fprintf(stderr,"\n");
+        }
 
     // now construct MDC packet and add to the end of the buffer
 
@@ -183,13 +201,32 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
 
     ops_write_mdc(hashed, cinfo_mdc);
 
+    if (debug)
+        {
+        unsigned int i=0;
+
+        fprintf(stderr,"\nplaintext: ");
+        size_t sz_plaintext=len;
+        for (i=0; i<sz_plaintext;i++)
+            fprintf(stderr," 0x%02x", data[i]);
+        fprintf(stderr,"\n");
+        
+        fprintf(stderr,"\nmdc: ");
+        size_t sz_mdc=1+1+OPS_SHA1_HASH_SIZE;
+        unsigned char* mdc=ops_memory_get_data(mem_mdc);
+        for (i=0; i<sz_mdc;i++)
+            fprintf(stderr," 0x%02x", mdc[i]);
+        fprintf(stderr,"\n");
+        }
+    
     // and write it out
 
     ops_writer_push_encrypt_crypt(cinfo, crypt);
 
-    /*
-    fprintf(stderr,"writing %ld + %d + %ld\n", sz_preamble, len, ops_memory_get_length(mem_mdc));
-    */
+    if (debug)
+        {
+        fprintf(stderr,"writing %ld + %d + %ld\n", sz_preamble, len, ops_memory_get_length(mem_mdc));
+        }
 
     if (!ops_write(preamble, sz_preamble,cinfo)
         || !ops_write(data, len, cinfo)
