@@ -32,7 +32,7 @@ int init_suite_crypt_mpi(void)
 
     snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
 
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
 	{
 	fprintf(stderr,"Can't create key details\n");
 	return 1;

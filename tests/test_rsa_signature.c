@@ -56,10 +56,15 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     int fd_in=0;
     int fd_out=0;
     int rtn=0;
+    ops_create_info_t *cinfo=NULL;
     
     // open file to sign
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
+#ifdef WIN32
+    fd_in=open(myfile,O_RDONLY | O_BINARY);
+#else
     fd_in=open(myfile,O_RDONLY);
+#endif
     if(fd_in < 0)
         {
         perror(myfile);
@@ -67,7 +72,11 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
         }
     
     snprintf(signed_file,MAXBUF,"%s/%s_%s.%s",dir,filename,ops_show_hash_algorithm(hash_alg),suffix);
+#ifdef WIN32
+    fd_out=open(signed_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
+#else
     fd_out=open(signed_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
+#endif
     if(fd_out < 0)
         {
         perror(signed_file);
@@ -84,7 +93,6 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     ops_signature_start_plaintext_signature(sig,(ops_secret_key_t *)skey,hash_alg,OPS_SIG_BINARY);
 
     // set up output file
-    ops_create_info_t *cinfo;
     cinfo=ops_create_info_new();
     ops_writer_set_fd(cinfo,fd_out); 
     ops_writer_push_dash_escaped(cinfo,sig);
@@ -113,6 +121,7 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     ops_signature_hashed_subpackets_end(sig);
     ops_write_signature(sig,(ops_public_key_t *)&skey->public_key,(ops_secret_key_t *)skey,cinfo);
     ops_writer_close(cinfo);
+    close(fd_out);
 
 #ifdef TODO
      // Check signature with OPS

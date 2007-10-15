@@ -5,7 +5,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifndef WIN32
 #include <unistd.h>
+#else
+#include <direct.h>
+#define snprintf _snprintf
+#define random   rand
+#endif
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>

@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <sys/stat.h>
 
 #include "CUnit/Basic.h"
@@ -56,7 +58,11 @@ void setup_test_keys()
 
     snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
 
+#ifdef WIN32
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
+#else
     if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
+#endif
         {
         fprintf(stderr,"Can't create Alpha key details\n");
         return;
@@ -74,7 +80,11 @@ void setup_test_keys()
 
     snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.bravo");
 
+#ifdef WIN32
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
+#else
     if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
+#endif
         {
         fprintf(stderr,"Can't create Bravo key details\n");
         return;
@@ -205,13 +215,21 @@ int mktmpdir (void)
     {
     int limit=10; // don't try indefinitely
     long int rnd=0;
+
+#ifdef WIN32
+    srand( (unsigned)time( NULL ) );
+#endif
     while (limit--) 
         {
         rnd=random();
         snprintf(dir,MAXBUF,"./testdir.%ld",rnd);
         
         // Try to create directory
+#ifndef WIN32
         if (!mkdir(dir,0700))
+#else
+    	if (!_mkdir(dir))
+#endif
             {
             // success
             return 1;
@@ -233,13 +251,18 @@ char* create_testtext(const char *text)
 
     const unsigned int maxbuf=1024;
     char buf[maxbuf+1];
+    unsigned int sz_one=0;
+    unsigned int sz_big=0;
+    char* bigbuf=NULL; 
+
     buf[maxbuf]='\0';
     snprintf(buf,maxbuf,"%s : Test Text\n", text);
 
-    const unsigned int sz_one=strlen(buf);
-    const unsigned int sz_big=sz_one*repeats+1;
+    sz_one=strlen(buf);
+    sz_big=sz_one*repeats+1;
 
-    char* bigbuf=ops_mallocz(sz_big); 
+    bigbuf=ops_mallocz(sz_big); 
+
    for (i=0; i<repeats; i++)
         {
         char* ptr=bigbuf+ (i*(sz_one-1));
@@ -256,6 +279,9 @@ void create_testdata(const char *text, unsigned char *buf, const int maxlen)
 
     snprintf((char *)buf,maxlen,"%s%s", text, preamble);
 
+#ifdef WIN32
+    srand( (unsigned)time( NULL ) );
+#endif
     for (i=strlen(text)+strlen(preamble); i<maxlen; i++)
         {
         buf[i]=(random() & 0xFF);
@@ -269,7 +295,11 @@ void create_testfile(const char *name)
 
     int fd=0;
     snprintf(filename,MAXBUF,"%s/%s",dir,name);
+#ifdef WIN32
+    if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL | O_BINARY, 0600))<0)
+#else
     if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL, 0600))<0)
+#endif
 	return;
 
     testtext=create_testtext(name);
@@ -317,6 +347,7 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     const ops_key_data_t *keydata=NULL;
     const ops_secret_key_t *secret;
+    char *passphrase=NULL;
 
     OPS_USED(cbinfo);
 
@@ -330,7 +361,6 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
             return 0;
 
         // Do we need the passphrase and not have it? If so, get it
-        char *passphrase=NULL;
         passphrase=NULL;
 
         /*

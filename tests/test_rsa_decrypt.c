@@ -213,7 +213,11 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
              protocol==NULL ? "" : protocol,
              protocol==NULL ? "" : "_",
              filename,suffix);
+#ifdef WIN32
+    fd=open(encfile,O_RDONLY | O_BINARY);
+#else
     fd=open(encfile,O_RDONLY);
+#endif
     if(fd < 0)
         {
         perror(encfile);

@@ -12,6 +12,16 @@
 
 #include "tests.h"
 
+#ifndef ATTRIBUTE_UNUSED
+
+#ifndef WIN32
+#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
+#else
+#define ATTRIBUTE_UNUSED 
+#endif // #ifndef WIN32
+
+#endif /* ATTRIBUTE_UNUSED */
+
 typedef struct
     {
     const ops_key_data_t *key;
@@ -161,7 +171,7 @@ int clean_suite_rsa_verify(void)
     return 0;
     }
 
-static void test_rsa_verify(const int has_armour, const int has_passphrase __attribute__((__unused__)), const char *filename, const char* protocol)
+static void test_rsa_verify(const int has_armour, const int has_passphrase ATTRIBUTE_UNUSED, const char *filename, const char* protocol)
     {
     char signedfile[MAXBUF+1];
     //    char testtext[MAXBUF+1];
@@ -177,7 +187,11 @@ static void test_rsa_verify(const int has_armour, const int has_passphrase __att
              protocol==NULL ? "" : protocol,
              protocol==NULL ? "" : "_",
              filename,suffix);
+#ifdef WIN32
+    fd=open(signedfile,O_RDONLY | O_BINARY);
+#else
     fd=open(signedfile,O_RDONLY);
+#endif
     if(fd < 0)
         {
         perror(signedfile);

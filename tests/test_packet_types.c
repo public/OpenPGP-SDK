@@ -237,6 +237,7 @@ static void test_ops_mdc()
     //	ops_hash_t hash;
 	char* plaintext="Text to be hashed in test_ops_mdc";
 	int rtn=0;
+    size_t sz_preamble;
 
     ops_crypt_t crypt;
     unsigned char hashed[SHA_DIGEST_LENGTH];
@@ -244,7 +245,7 @@ static void test_ops_mdc()
     ops_crypt_any(&crypt, OPS_SA_CAST5);
     ops_encrypt_init(&crypt);
 
-    size_t sz_preamble=crypt.blocksize+2;
+    sz_preamble=crypt.blocksize+2;
     preamble=ops_mallocz(sz_preamble);
     ops_random(preamble, crypt.blocksize);
     preamble[crypt.blocksize]=preamble[crypt.blocksize-2];
@@ -301,6 +302,11 @@ static void test_ops_se_ip()
     ops_create_info_t *cinfo_ldt;
     char* ldt_text="Test Data string for test_se_ip";
 
+    int rtn=0;
+    ops_create_info_t *cinfo;
+    ops_parse_info_t *pinfo;
+    ops_memory_t *mem;
+
     ops_setup_memory_write(&cinfo_ldt,&mem_ldt,strlen(ldt_text));
     ops_write_literal_data((unsigned char *)ldt_text, strlen(ldt_text),
                            OPS_LDT_TEXT, cinfo_ldt);
@@ -308,10 +314,6 @@ static void test_ops_se_ip()
     /*
      * write out the encrypted packet
      */
-    int rtn=0;
-    ops_create_info_t *cinfo;
-    ops_parse_info_t *pinfo;
-    ops_memory_t *mem;
     ops_setup_memory_write(&cinfo,&mem,MAXBUF);
 
     ops_crypt_any(&encrypt, OPS_SA_CAST5);
@@ -363,12 +365,13 @@ static void test_ops_pk_session_key()
     ops_parse_info_t *pinfo;
     ops_memory_t *mem;
     int rtn=0;
+    const ops_key_data_t *pub_key=NULL;
 
     // setup for write
     ops_setup_memory_write(&cinfo,&mem,MAXBUF);
 
     // write
-    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
+    pub_key=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
     assert(pub_key);
 
     encrypted_pk_session_key=ops_create_pk_session_key(pub_key);

@@ -132,7 +132,11 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext)
     int rtn=0;
 
     // open encrypted file
+#ifdef WIN32
+    fd=open(encfile,O_RDONLY | O_BINARY);
+#else
     fd=open(encfile,O_RDONLY);
+#endif
     if(fd < 0)
         {
         perror(encfile);
@@ -176,6 +180,10 @@ static void old_test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub
     int fd_in=0;
     int fd_out=0;
     int rtn=0;
+    ops_create_info_t *cinfo;
+    ops_pk_session_key_t* encrypted_pk_session_key;
+    ops_crypt_t encrypt;
+    unsigned char *iv=NULL;
     
     /*
      * Read from test file and write plaintext to memory
@@ -185,7 +193,11 @@ static void old_test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub
 
     // open file to encrypt
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
+#ifdef WIN32
+    fd_in=open(myfile,O_RDONLY | O_BINARY);
+#else
     fd_in=open(myfile,O_RDONLY);
+#endif
     if(fd_in < 0)
         {
         perror(myfile);
@@ -193,7 +205,11 @@ static void old_test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub
         }
     
     snprintf(encrypted_file,MAXBUF,"%s/%s.%s",dir,filename,suffix);
+#ifdef WIN32
+    fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
+#else
     fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
+#endif
     if(fd_out < 0)
         {
         perror(encrypted_file);
@@ -225,19 +241,15 @@ static void old_test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub
 
     // Set encryption writer and handling options
 
-    ops_create_info_t *cinfo;
     cinfo=ops_create_info_new();
     ops_writer_set_fd(cinfo,fd_out); 
 
     // Create and write encrypted PK session key
 
-    ops_pk_session_key_t* encrypted_pk_session_key;
     encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
     ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
 
-    ops_crypt_t encrypt;
     ops_crypt_any(&encrypt, encrypted_pk_session_key->symmetric_algorithm);
-    unsigned char *iv=NULL;
     iv=ops_mallocz(encrypt.blocksize);
     encrypt.set_iv(&encrypt, iv);
     encrypt.set_key(&encrypt, &encrypted_pk_session_key->key[0]);
@@ -294,6 +306,10 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     int fd_out=0;
     int rtn=0;
     
+    ops_create_info_t *cinfo;
+    char* testtext=NULL;
+    char pp[MAXBUF];
+
     /*
      * Read from test file and write plaintext to memory
      * in set of Literal Data packets
@@ -301,7 +317,11 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
 
     // open file to encrypt
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
+#ifdef WIN32
+    fd_in=open(myfile,O_RDONLY | O_BINARY);
+#else
     fd_in=open(myfile,O_RDONLY);
+#endif
     if(fd_in < 0)
         {
         perror(myfile);
@@ -309,7 +329,11 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
         }
     
     snprintf(encrypted_file,MAXBUF,"%s/%s%s.%s",dir,gpgtest,filename,suffix);
+#ifdef WIN32
+    fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
+#else
     fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
+#endif
     if(fd_out < 0)
         {
         perror(encrypted_file);
@@ -323,7 +347,6 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     // Do setup for encrypted writing
     // This example shows output to a file
 
-    ops_create_info_t *cinfo;
     cinfo=ops_create_info_new();
     ops_writer_set_fd(cinfo,fd_out); 
 
@@ -366,7 +389,6 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
         {
         // File contents should match - check with GPG
         
-        char pp[MAXBUF];
         if (pub_key==alpha_pub_keydata)
             pp[0]='\0';
         else if (pub_key==bravo_pub_keydata)
@@ -382,7 +404,6 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
         {
         // File contents should match - checking with OPS
         
-        char* testtext=NULL;
         testtext=create_testtext(filename);
         test_rsa_decrypt(encrypted_file,testtext);
         }
