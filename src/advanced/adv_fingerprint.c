@@ -12,6 +12,10 @@
 # include <alloca.h>
 #endif
 
+#ifdef WIN32
+#define alloca _alloca
+#endif
+
 #include <openpgpsdk/final.h>
 
 /**

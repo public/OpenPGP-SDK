@@ -19,7 +19,9 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <limits.h>
 
@@ -83,7 +85,10 @@ static int read_data(ops_data_t *data,ops_region_t *subregion,
 
     len=subregion->length-subregion->length_read;
 
-    return(limited_read_data(data,len,subregion,pinfo));
+    if ( len >= 0 ) {
+        return(limited_read_data(data,len,subregion,pinfo));
+    }
+    return 0;
     }
 
 /**
@@ -206,7 +211,7 @@ static int sub_base_read(void *dest,size_t length,ops_error_t **errors,
 
     for(n=0 ; n < length ; )
 	{
-	int r=rinfo->reader(dest+n,length-n,errors,rinfo,cbinfo);
+	int r=rinfo->reader((char*)dest+n,length-n,errors,rinfo,cbinfo);
 
 	assert(r <= (int)(length-n));
 
@@ -2140,7 +2145,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	break;
 
     default:
-	fprintf(stderr,"Unexpected aglorithm: %d\n",
+	fprintf(stderr,"Unexpected algorithm: %d\n",
 		C.secret_key.public_key.algorithm);
 	ret=0;
 	assert(0);
@@ -2218,6 +2223,8 @@ static int parse_pk_session_key(ops_region_t *region,
     BIGNUM *enc_m;
     unsigned k;
     const ops_secret_key_t *secret;
+    unsigned char cs[2];
+    unsigned char* iv;
 
     // Can't rely on it being CAST5
     // \todo FIXME RW
@@ -2344,7 +2351,6 @@ static int parse_pk_session_key(ops_region_t *region,
 
     // Check checksum
 
-    unsigned char cs[2];
     ops_calc_session_key_checksum(&C.pk_session_key, &cs[0]);
     if (unencoded_m_buf[k+1]!=cs[0] || unencoded_m_buf[k+2]!=cs[1])
         {
@@ -2358,7 +2364,7 @@ static int parse_pk_session_key(ops_region_t *region,
     CBP(pinfo,OPS_PTAG_CT_PK_SESSION_KEY,&content);
 
     ops_crypt_any(&pinfo->decrypt,C.pk_session_key.symmetric_algorithm);
-    unsigned char *iv=ops_mallocz(pinfo->decrypt.blocksize);
+    iv=ops_mallocz(pinfo->decrypt.blocksize);
     pinfo->decrypt.set_iv(&pinfo->decrypt, iv);
     pinfo->decrypt.set_key(&pinfo->decrypt,C.pk_session_key.key);
     ops_encrypt_init(&pinfo->decrypt);
@@ -2378,6 +2384,8 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
       Then passes up plaintext as requested
     */
 
+    unsigned int n=0;
+
     ops_region_t decrypted_region;
 
     decrypt_se_ip_arg_t *arg=ops_reader_get_arg(rinfo);
@@ -2388,6 +2396,17 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
 
         ops_hash_t hash;
         unsigned char hashed[SHA_DIGEST_LENGTH];
+
+        size_t b;
+        size_t sz_preamble;
+        size_t sz_mdc_hash;
+        size_t sz_mdc;
+        size_t sz_plaintext;
+
+        unsigned char* preamble;
+        unsigned char* plaintext;
+        unsigned char* mdc;
+        unsigned char* mdc_hash;
 
         ops_hash_any(&hash,OPS_HASH_SHA1);
         hash.init(&hash);
@@ -2403,8 +2422,8 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
 
         if (debug)
             {
-            fprintf(stderr,"\n\nentire SE IP packet (len=%d):\n",decrypted_region.length);
             unsigned int i=0;
+            fprintf(stderr,"\n\nentire SE IP packet (len=%d):\n",decrypted_region.length);
             for (i=0; i<decrypted_region.length; i++)
                 {
                 fprintf(stderr,"0x%02x ", buf[i]);
@@ -2419,14 +2438,14 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
 
         if (debug)
             {
-            fprintf(stderr,"\npreamble: ");
             unsigned int i=0;
+            fprintf(stderr,"\npreamble: ");
             for (i=0; i<arg->decrypt->blocksize+2;i++)
                 fprintf(stderr," 0x%02x", buf[i]);
             fprintf(stderr,"\n");
             }
 
-        size_t b=arg->decrypt->blocksize;
+        b=arg->decrypt->blocksize;
         if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])
             {
             fprintf(stderr,"Bad symmetric decrypt (%02x%02x vs %02x%02x)\n",
@@ -2437,15 +2456,15 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
 
         // Verify trailing MDC hash
 
-        size_t sz_preamble=arg->decrypt->blocksize+2;
-        size_t sz_mdc_hash=OPS_SHA1_HASH_SIZE;
-        size_t sz_mdc=1+1+sz_mdc_hash;
-        size_t sz_plaintext=decrypted_region.length-sz_preamble-sz_mdc;
+        sz_preamble=arg->decrypt->blocksize+2;
+        sz_mdc_hash=OPS_SHA1_HASH_SIZE;
+        sz_mdc=1+1+sz_mdc_hash;
+        sz_plaintext=decrypted_region.length-sz_preamble-sz_mdc;
 
-        unsigned char* preamble=buf;
-        unsigned char* plaintext=buf+sz_preamble;
-        unsigned char* mdc=plaintext+sz_plaintext;
-        unsigned char* mdc_hash=mdc+2;
+        preamble=buf;
+        plaintext=buf+sz_preamble;
+        mdc=plaintext+sz_plaintext;
+        mdc_hash=mdc+2;
     
         if (debug)
             {
@@ -2494,7 +2513,7 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
         free(buf);
         }
 
-    unsigned int n=len;
+    n=len;
     if (n > arg->plaintext_available)
         n=arg->plaintext_available;
 
@@ -3012,6 +3031,9 @@ void ops_parse_info_delete(ops_parse_info_t *pinfo)
 	}
     if(pinfo->rinfo.destroyer)
 	pinfo->rinfo.destroyer(&pinfo->rinfo);
+    ops_free_errors(pinfo->errors);
+    if(pinfo->rinfo.accumulated)
+        free(pinfo->rinfo.accumulated);
     free(pinfo);
     }
 

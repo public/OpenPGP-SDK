@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef WIN32
+#define vsnprintf _vsnprintf
+#endif
+
 #include <openpgpsdk/final.h>
 
 #define ERR(code)	{ code, #code }
@@ -116,3 +120,14 @@ void ops_print_errors(ops_error_t *errstack)
     for(err=errstack ; err!=NULL ; err=err->next)
 	ops_print_error(err);
     }
+
+void ops_free_errors(ops_error_t *errstack)
+{
+    ops_error_t *next;
+    while(errstack!=NULL) {
+        next=errstack->next;
+        free(errstack->comment);
+        free(errstack);
+        errstack=next;
+    }
+}

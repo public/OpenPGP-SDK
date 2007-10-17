@@ -89,54 +89,7 @@ ops_boolean_t ops_encrypt_mpi(const unsigned char *encoded_m_buf,
 
     unsigned char encmpibuf[8192];
     int n=0;
-#ifdef XXX
-    unsigned char EM[8192];
-    int k;
-    unsigned i;
 
-    // implementation of EME-PKCS1-v1_5-ENCODE, as defined in OpenPGP RFC
-    
-    assert(pkey->algorithm == OPS_PKA_RSA);
-
-    k=BN_num_bytes(pkey->key.rsa.n);
-    /*
-    printf("k=%d (length in octets of key modulus)\n",k);
-    printf("mLen=%d\n",mLen);
-    */
-    assert(mLen <= k-11);
-    if (mLen > k-11)
-        {
-        fprintf(stderr,"message too long\n");
-        return false;
-        }
-
-    // output will be written to ??
-
-    // these two bytes defined by RFC
-    EM[0]=0x00;
-    EM[1]=0x02;
-
-    // add non-zero random bytes of length k - mLen -3
-    for(i=2 ; i < k-mLen-1 ; ++i)
-        do
-            ops_random(EM+i, 1);
-        while(EM[i] == 0);
-
-    assert (i >= 8+2);
-
-    EM[i++]=0;
-
-    memcpy(EM+i, M, mLen);
-    
-    /*
-    int i=0;
-    fprintf(stderr,"Encoded Message: \n");
-    for (i=0; i<mLen; i++)
-        fprintf(stderr,"%2x ", EM[i]);
-    fprintf(stderr,"\n");
-    */
-
-#endif
     n=ops_rsa_public_encrypt(encmpibuf, encoded_m_buf, sz_encoded_m_buf, &pkey->key.rsa);
     assert(n!=-1);
 

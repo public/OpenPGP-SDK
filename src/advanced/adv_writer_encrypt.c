@@ -22,16 +22,17 @@ static ops_boolean_t encrypt_writer(const unsigned char *src,
 				      ops_writer_info_t *winfo)
     {
     int debug=0;
+
+#define BUFSZ 1024 // arbitrary number
+    unsigned char encbuf[BUFSZ];
+    unsigned remaining=length;
+    unsigned done=0; 
+
     crypt_arg_t *arg=(crypt_arg_t *)ops_writer_get_arg(winfo);
 
     if (!ops_is_sa_supported(arg->crypt->algorithm))
         assert(0); // \todo proper error handling
 
-#define BUFSZ 1024 // arbitrary number
-    //    unsigned char buf[BUFSZ];
-    unsigned char encbuf[BUFSZ];
-    unsigned remaining=length;
-    unsigned done=0;
     while (remaining)
         {
         unsigned len = remaining < BUFSZ ? remaining : BUFSZ;
@@ -41,8 +42,8 @@ static ops_boolean_t encrypt_writer(const unsigned char *src,
 
         if (debug)
             {
-            fprintf(stderr,"WRITING:\nunencrypted: ");
             int i=0;
+            fprintf(stderr,"WRITING:\nunencrypted: ");
             for (i=0; i<16; i++)
                 fprintf(stderr,"%2x ", src[done+i]);
             fprintf(stderr,"\n");

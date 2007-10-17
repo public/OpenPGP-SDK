@@ -131,7 +131,10 @@ int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info,
     else if(type == OPS_C_ZLIB)
 	ret=inflateInit(&arg.stream);
     else
-	assert(0);
+        {
+        assert(0);
+        return 0;
+        }
 
     if(ret != Z_OK)
 	{

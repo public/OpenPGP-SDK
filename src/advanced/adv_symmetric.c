@@ -12,6 +12,17 @@
 #include <openpgpsdk/packet-show.h>
 #include <openpgpsdk/final.h>
 
+#ifndef ATTRIBUTE_UNUSED
+
+#ifndef WIN32
+#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
+#else
+#define ATTRIBUTE_UNUSED 
+#endif // #ifndef WIN32
+
+#endif /* ATTRIBUTE_UNUSED */
+
+
 // \todo there's also a encrypted_arg_t in adv_create.c 
 // which is used for *encrypting* whereas this is used
 // for *decrypting*
@@ -65,7 +76,11 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 	    arg->decrypted_count-=n;
 	    arg->decrypted_offset+=n;
 	    length-=n;
-	    dest+=n;
+#ifdef WIN32
+	    (char*)dest+=n;
+#else
+        dest+=n;
+#endif
 	    }
 	else
 	    {
@@ -420,7 +435,7 @@ static void tripledes_block_decrypt(ops_crypt_t *crypt,void *out,
     DES_ecb3_encrypt((void *)in,out,&keys[0],&keys[1],&keys[2],DES_DECRYPT);
     }
 
-static void tripledes_cfb_encrypt(ops_crypt_t *crypt __attribute__((__unused__)),void *out __attribute__((__unused__)),const void *in __attribute__((__unused__)), size_t count __attribute__((__unused__)))
+static void tripledes_cfb_encrypt(ops_crypt_t *crypt ATTRIBUTE_UNUSED,void *out ATTRIBUTE_UNUSED,const void *in ATTRIBUTE_UNUSED, size_t count ATTRIBUTE_UNUSED)
     { 
     assert(0);
     /*
@@ -430,7 +445,7 @@ static void tripledes_cfb_encrypt(ops_crypt_t *crypt __attribute__((__unused__))
     */
     }
 
-static void tripledes_cfb_decrypt(ops_crypt_t *crypt __attribute__((__unused__)),void *out __attribute__((__unused__)),const void *in __attribute__((__unused__)), size_t count __attribute__((__unused__)))
+static void tripledes_cfb_decrypt(ops_crypt_t *crypt ATTRIBUTE_UNUSED,void *out ATTRIBUTE_UNUSED,const void *in ATTRIBUTE_UNUSED, size_t count ATTRIBUTE_UNUSED)
     { 
     assert(0);
     /*
@@ -513,7 +528,7 @@ unsigned ops_key_size(ops_symmetric_algorithm_t alg)
 void ops_encrypt_init(ops_crypt_t * encrypt)
     {
     // \todo should there be a separate ops_encrypt_init?
-    return ops_decrypt_init(encrypt);
+    ops_decrypt_init(encrypt);
     }
 
 void ops_decrypt_init(ops_crypt_t *decrypt)

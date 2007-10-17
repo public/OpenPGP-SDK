@@ -3,7 +3,10 @@
 
 #include <string.h>
 #include <assert.h>
-#include <unistd.h>
+
+#ifndef WIN32
+ #include <unistd.h>
+#endif
 
 #include <openssl/cast.h>
 
@@ -29,6 +32,9 @@ static void encrypt_se_ip_destroyer (ops_writer_info_t *winfo);
 void ops_writer_push_encrypt_se_ip(ops_create_info_t *cinfo,
                              const ops_key_data_t *pub_key)
     {
+    ops_crypt_t* encrypt;
+    unsigned char *iv=NULL;
+
     // Create arg to be used with this writer
     // Remember to free this in the destroyer
     encrypt_se_ip_arg_t *arg=ops_mallocz(sizeof *arg);
@@ -39,9 +45,8 @@ void ops_writer_push_encrypt_se_ip(ops_create_info_t *cinfo,
     ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
 
     // Setup the arg
-    ops_crypt_t* encrypt=ops_mallocz(sizeof *encrypt);
+    encrypt=ops_mallocz(sizeof *encrypt);
     ops_crypt_any(encrypt, encrypted_pk_session_key->symmetric_algorithm);
-    unsigned char *iv=NULL;
     iv=ops_mallocz(encrypt->blocksize);
     encrypt->set_iv(encrypt, iv);
     encrypt->set_key(encrypt, &encrypted_pk_session_key->key[0]);
@@ -109,14 +114,14 @@ void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, 
     {
     int debug=0;
     ops_hash_t hash;
-    unsigned char c[0];
+    unsigned char c[1];
 
     if (debug)
         {
+        unsigned int i=0;
         fprintf(stderr,"ops_calc_mdc_hash():\n");
 
         fprintf(stderr,"\npreamble: ");
-        unsigned int i=0;
         for (i=0; i<sz_preamble;i++)
             fprintf(stderr," 0x%02x", preamble[i]);
         fprintf(stderr,"\n");
@@ -163,12 +168,15 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
     int debug=0;
     unsigned char hashed[SHA_DIGEST_LENGTH];
     const size_t sz_mdc=1+1+SHA_DIGEST_LENGTH;
-    encrypt_se_ip_arg_t *arg=ops_mallocz(sizeof *arg);
+    //    encrypt_se_ip_arg_t *arg=ops_mallocz(sizeof *arg);
 
     size_t sz_preamble=crypt->blocksize+2;
     unsigned char* preamble=ops_mallocz(sz_preamble);
 
     size_t sz_buf=sz_preamble+len+sz_mdc;
+
+    ops_memory_t *mem_mdc;
+    ops_create_info_t *cinfo_mdc;
 
 #define SE_IP_DATA_VERSION 1 //\todo move this
 
@@ -183,17 +191,14 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
 
     if (debug)
         {
-        fprintf(stderr,"\npreamble: ");
         unsigned int i=0;
+        fprintf(stderr,"\npreamble: ");
         for (i=0; i<sz_preamble;i++)
             fprintf(stderr," 0x%02x", preamble[i]);
         fprintf(stderr,"\n");
         }
 
     // now construct MDC packet and add to the end of the buffer
-
-    ops_memory_t *mem_mdc;
-    ops_create_info_t *cinfo_mdc;
 
     ops_setup_memory_write(&cinfo_mdc, &mem_mdc,sz_mdc);
 
@@ -204,16 +209,17 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
     if (debug)
         {
         unsigned int i=0;
+        size_t sz_plaintext=len;
+        size_t sz_mdc=1+1+OPS_SHA1_HASH_SIZE;
+        unsigned char* mdc=NULL;
 
         fprintf(stderr,"\nplaintext: ");
-        size_t sz_plaintext=len;
         for (i=0; i<sz_plaintext;i++)
             fprintf(stderr," 0x%02x", data[i]);
         fprintf(stderr,"\n");
         
         fprintf(stderr,"\nmdc: ");
-        size_t sz_mdc=1+1+OPS_SHA1_HASH_SIZE;
-        unsigned char* mdc=ops_memory_get_data(mem_mdc);
+        mdc=ops_memory_get_data(mem_mdc);
         for (i=0; i<sz_mdc;i++)
             fprintf(stderr," 0x%02x", mdc[i]);
         fprintf(stderr,"\n");

@@ -9,10 +9,12 @@
 #include "keyring_local.h"
 #include <stdlib.h>
 #include <string.h>
+#ifndef WIN32
 #include <unistd.h>
+#include <termios.h>
+#endif
 #include <fcntl.h>
 #include <assert.h>
-#include <termios.h>
 
 #include <openpgpsdk/final.h>
 
@@ -57,6 +59,7 @@ ops_get_secret_key_from_data(const ops_key_data_t *data)
 
 static void echo_off()
     {
+#ifndef WIN32
     struct termios term;
     int r;
 
@@ -69,10 +72,12 @@ static void echo_off()
 
     r=tcsetattr(0,TCSANOW,&term);
     assert(r >= 0);
+#endif
     }
 	
 static void echo_on()
     {
+#ifndef WIN32
     struct termios term;
     int r;
 
@@ -85,6 +90,7 @@ static void echo_on()
 
     r=tcsetattr(0,TCSANOW,&term);
     assert(r >= 0);
+#endif
     }
 
 char *ops_malloc_passphrase(char *pp)
@@ -216,4 +222,34 @@ void ops_set_secret_key(ops_parser_content_union_t* content,const ops_key_data_t
 const unsigned char* ops_get_key_id(const ops_key_data_t *key)
     {
     return key->key_id;
+    }
+
+unsigned ops_get_user_id_count(const ops_key_data_t *key)
+    {
+    return key->nuids;
+    }
+
+const unsigned char* ops_get_user_id(const ops_key_data_t *key, unsigned index)
+    {
+    return key->uids[index].user_id;
+    }
+
+ops_boolean_t ops_key_is_supported(const ops_key_data_t *key)
+    {
+    if ( key->type == OPS_PTAG_CT_PUBLIC_KEY ) {
+        if ( key->key.pkey.algorithm == OPS_PKA_RSA ) {
+            return ops_true;
+        }
+    } else if ( key->type == OPS_PTAG_CT_PUBLIC_KEY ) {
+        if ( key->key.skey.algorithm == OPS_PKA_RSA ) {
+            return ops_true;
+        }
+    }
+    return ops_false;
+    }
+
+
+const ops_key_data_t* ops_keyring_get_key(const ops_keyring_t *keyring, int index)
+    {
+    return &keyring->keys[index]; 
     }

@@ -36,7 +36,7 @@ ops_get_secret_key_from_data(const ops_key_data_t *data);
 ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
 						   const char *pphrase);
 
-void ops_keyring_read(ops_keyring_t *keyring,const char *file);
+ops_boolean_t ops_keyring_read(ops_keyring_t *keyring,const char *file);
 
 char *ops_malloc_passphrase(char *passphrase);
 char *ops_get_passphrase(void);
@@ -46,5 +46,9 @@ void ops_keyring_list(const ops_keyring_t* keyring, const char* match);
 void ops_set_secret_key(ops_parser_content_union_t* content,const ops_key_data_t *key);
 
 const unsigned char* ops_get_key_id(const ops_key_data_t *key);
+unsigned ops_get_user_id_count(const ops_key_data_t *key);
+const unsigned char* ops_get_user_id(const ops_key_data_t *key, unsigned index);
+ops_boolean_t ops_key_is_supported(const ops_key_data_t *key);
+const ops_key_data_t* ops_keyring_get_key(const ops_keyring_t *keyring, int index);
 
 #endif

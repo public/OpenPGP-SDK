@@ -64,7 +64,9 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#ifndef WIN32
+ #include <unistd.h>
+#endif
 
 #include "openpgpsdk/packet.h"
 #include "keyring_local.h"
@@ -95,10 +97,11 @@ cb_keyring_read(const ops_parser_content_t *content_,
    \note If you call this twice on the same keyring struct, without calling
    ops_keyring_free() between these calls, you will introduce a memory leak.
 */
-void ops_keyring_read(ops_keyring_t *keyring,const char *file)
+ops_boolean_t ops_keyring_read(ops_keyring_t *keyring,const char *file)
     {
     ops_parse_info_t *pinfo;
     int fd;
+    ops_boolean_t res = ops_true;
 
     memset(keyring,'\0',sizeof *keyring);
 
@@ -110,22 +113,31 @@ void ops_keyring_read(ops_keyring_t *keyring,const char *file)
     //    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_RAW);
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 
+#ifdef WIN32
+    fd=open(file,O_RDONLY|O_BINARY);
+#else
     fd=open(file,O_RDONLY);
+#endif
     if(fd < 0)
-	{
-	perror(file);
-	exit(1);
-	}
+        {
+        ops_parse_info_delete(pinfo);
+        perror(file);
+        return ops_false;
+        }
 
     ops_reader_set_fd(pinfo,fd);
 
     ops_parse_cb_set(pinfo,cb_keyring_read,NULL);
 
-    ops_parse_and_accumulate(keyring,pinfo);
+    if ( ops_parse_and_accumulate(keyring,pinfo) == 0 ) {
+        res = ops_false; 
+    }
 
     close(fd);
 
     ops_parse_info_delete(pinfo);
+
+    return res;
     }
 
 /**

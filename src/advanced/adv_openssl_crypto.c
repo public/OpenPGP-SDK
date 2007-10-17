@@ -152,6 +152,7 @@ int ops_rsa_private_decrypt(unsigned char *out,const unsigned char *in,
     {
     RSA *orsa;
     int n;
+    char errbuf[1024];
 
     orsa=RSA_new();
     orsa->n=rsa->n;	// XXX: do we need n?
@@ -169,7 +170,6 @@ int ops_rsa_private_decrypt(unsigned char *out,const unsigned char *in,
 
     //    printf("ops_rsa_private_decrypt: n=%d\n",n);
 
-    char errbuf[1024];
     errbuf[0]='\0';
     if (n==-1)
         {

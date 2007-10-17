@@ -13,7 +13,9 @@
 #include <openpgpsdk/util.h>
 #include <string.h>
 #include <assert.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 
 #include <openpgpsdk/final.h>
 
@@ -846,11 +848,11 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
     int debug=0;
 
     const ops_public_key_t* pub_key=ops_get_public_key_from_data(key);
-    const size_t sz_unencoded_m_buf=CAST_KEY_LENGTH+1+2;
-    unsigned char unencoded_m_buf[sz_unencoded_m_buf];
+#define SZ_UNENCODED_M_BUF CAST_KEY_LENGTH+1+2
+    unsigned char unencoded_m_buf[SZ_UNENCODED_M_BUF];
 
     const size_t sz_encoded_m_buf=BN_num_bytes(pub_key->key.rsa.n);
-    unsigned char encoded_m_buf[sz_encoded_m_buf];
+    unsigned char* encoded_m_buf = ops_mallocz(sz_encoded_m_buf);
 
     ops_pk_session_key_t *session_key=ops_mallocz(sizeof *session_key);
 
@@ -860,8 +862,8 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
 
     if (debug)
         {
-        fprintf(stderr,"Encrypting for RSA key id : ");
         unsigned int i=0;
+        fprintf(stderr,"Encrypting for RSA key id : ");
         for (i=0; i<sizeof session_key->key_id; i++)
             fprintf(stderr,"%2x ", key->key_id[i]);
         fprintf(stderr,"\n");
@@ -884,28 +886,31 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
         }
 
     if (create_unencoded_m_buf(session_key, &unencoded_m_buf[0])==ops_false)
+        {
+        free(encoded_m_buf);
         return NULL;
+        }
 
     if (debug)
         {
         unsigned int i=0;
         printf("unencoded m buf:\n");
-        for (i=0; i<sz_unencoded_m_buf; i++)
+        for (i=0; i<SZ_UNENCODED_M_BUF; i++)
             printf("%2x ", unencoded_m_buf[i]);
         printf("\n");
         }
-    encode_m_buf(&unencoded_m_buf[0], sz_unencoded_m_buf, pub_key, &encoded_m_buf[0]);
+    encode_m_buf(&unencoded_m_buf[0], SZ_UNENCODED_M_BUF, pub_key, &encoded_m_buf[0]);
     
     // and encrypt it
     if(!ops_encrypt_mpi(encoded_m_buf, sz_encoded_m_buf, pub_key, &session_key->parameters))
+        {
+        free (encoded_m_buf);
         return NULL;
+        }
 
+    free(encoded_m_buf);
     return session_key;
     }
-
-#ifndef ATTRIBUTE_UNUSED
-#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
-#endif /* ATTRIBUTE_UNUSED */
 
 ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 				       ops_pk_session_key_t *pksk)
@@ -952,6 +957,7 @@ ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data,
                                                      const int len, 
                                                      ops_create_info_t *info)
     {
+    int done=0;
     ops_crypt_t crypt_info;
     int encrypted_sz=0;// size of encrypted data
     unsigned char *encrypted=(unsigned char *)NULL; // buffer to write encrypted data to
@@ -963,7 +969,7 @@ ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data,
     encrypted_sz=len+crypt_info.blocksize+2;
     encrypted=ops_mallocz(encrypted_sz);
 
-    int done=ops_encrypt_se(&crypt_info, encrypted, data, len);
+    done=ops_encrypt_se(&crypt_info, encrypted, data, len);
     assert(done==len);
     //    printf("len=%d, done: %d\n", len, done);
 

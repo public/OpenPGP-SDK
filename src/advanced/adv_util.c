@@ -8,7 +8,11 @@
 #include <openpgpsdk/errors.h>
 #include <stdio.h>
 #include <assert.h>
+
+#ifndef WIN32
 #include <unistd.h>
+#endif
+
 #include <string.h>
 
 #include <openpgpsdk/final.h>
