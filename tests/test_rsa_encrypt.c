@@ -13,9 +13,6 @@
 
 static int do_gpgtest=0;
 
-static char *filename_rsa_noarmour_nopassphrase_singlekey_old="enc_rsa_noarmour_np_singlekey_old.txt";
-static char *filename_rsa_noarmour_passphrase_singlekey_old="enc_rsa_noarmour_pp_singlekey_old.txt";
-
 static char *filename_rsa_noarmour_nopassphrase_singlekey="enc_rsa_noarmour_np_singlekey.txt";
 static char *filename_rsa_noarmour_passphrase_singlekey="enc_rsa_noarmour_pp_singlekey.txt";
 static char *filename_rsa_armour_singlekey="enc_rsa_armour_singlekey.txt";
@@ -94,8 +91,6 @@ int init_suite_rsa_encrypt(void)
 
     create_testfile(filename_rsa_noarmour_nopassphrase_singlekey);
     create_testfile(filename_rsa_noarmour_passphrase_singlekey);
-    create_testfile(filename_rsa_noarmour_nopassphrase_singlekey_old);
-    create_testfile(filename_rsa_noarmour_passphrase_singlekey_old);
     create_testfile(filename_rsa_armour_singlekey);
     /*
     create_testfile(filename_rsa_noarmour_passphrase);
@@ -165,134 +160,6 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext)
     CU_ASSERT(memcmp(ops_memory_get_data(mem_literal_data),testtext,ops_memory_get_length(mem_literal_data))==0);
 
     return rtn;
-    }
-
-static void old_test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key, const char *filename)
-    {
-    char* testtext=NULL;
-    ops_memory_t *mem_ldt;
-    ops_create_info_t *cinfo_ldt;
-
-    char cmd[MAXBUF+1];
-    char myfile[MAXBUF+1];
-    char encrypted_file[MAXBUF+1];
-    char decrypted_file[MAXBUF+1];
-    char *suffix= has_armour ? "asc" : "gpg";
-    int fd_in=0;
-    int fd_out=0;
-    int rtn=0;
-    ops_create_info_t *cinfo;
-    ops_pk_session_key_t* encrypted_pk_session_key;
-    ops_crypt_t encrypt;
-    unsigned char *iv=NULL;
-    
-    /*
-     * Read from test file and write plaintext to memory
-     * in set of Literal Data packets
-     * \todo optimise using stacked writers
-     */
-
-    // open file to encrypt
-    snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
-#ifdef WIN32
-    fd_in=open(myfile,O_RDONLY | O_BINARY);
-#else
-    fd_in=open(myfile,O_RDONLY);
-#endif
-    if(fd_in < 0)
-        {
-        perror(myfile);
-        exit(2);
-        }
-    
-    snprintf(encrypted_file,MAXBUF,"%s/%s.%s",dir,filename,suffix);
-#ifdef WIN32
-    fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
-#else
-    fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
-#endif
-    if(fd_out < 0)
-        {
-        perror(encrypted_file);
-        exit(2);
-        }
-    
-    // write plaintext to memory
-
-    for (;;)
-        {
-	    unsigned char buf[MAXBUF];
-	    int n=0;
-
-	    n=read(fd_in,buf,sizeof(buf));
-	    if (!n)
-		    break;
-	    assert(n>=0);
-
-        // create a simple literal data packet as the encrypted payload
-        ops_setup_memory_write(&cinfo_ldt,&mem_ldt,n);
-        ops_write_literal_data((unsigned char *)buf, n,
-                           OPS_LDT_BINARY, cinfo_ldt);
-        }
-    close(fd_in);
-
-    /*
-     * Encrypt and write to file
-     */
-
-    // Set encryption writer and handling options
-
-    cinfo=ops_create_info_new();
-    ops_writer_set_fd(cinfo,fd_out); 
-
-    // Create and write encrypted PK session key
-
-    encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
-    ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
-
-    ops_crypt_any(&encrypt, encrypted_pk_session_key->symmetric_algorithm);
-    iv=ops_mallocz(encrypt.blocksize);
-    encrypt.set_iv(&encrypt, iv);
-    encrypt.set_key(&encrypt, &encrypted_pk_session_key->key[0]);
-    ops_encrypt_init(&encrypt);
-
-    /*
-     * write out encrypted packets
-     */
-
-    ops_write_se_ip_pktset( ops_memory_get_data(mem_ldt),
-                          ops_memory_get_length(mem_ldt),
-                          &encrypt, cinfo);
-    close(fd_out);
-
-    /*
-     * Test results
-     */
-
-    if (!do_gpgtest)
-        {
-        // File contents should match - checking with OPS
-
-        testtext=create_testtext(filename);
-        CU_ASSERT(test_rsa_decrypt(encrypted_file,testtext)==1);
-        }
-
-    else
-        {
-        // File contents should match - check with GPG
-
-        char pp[MAXBUF];
-        if (pub_key==alpha_pub_keydata)
-            pp[0]='\0';
-        else if (pub_key==bravo_pub_keydata)
-            snprintf(pp,MAXBUF," --passphrase %s ", bravo_passphrase);
-        snprintf(decrypted_file,MAXBUF,"%s/decrypted_%s",dir,filename);
-        snprintf(cmd,MAXBUF,"gpg --decrypt --output=%s --quiet --homedir %s %s %s",decrypted_file, dir, pp, encrypted_file);
-        //    printf("cmd: %s\n", cmd);
-        rtn=system(cmd);
-        CU_ASSERT(rtn==0);
-        CU_ASSERT(file_compare(myfile,decrypted_file)==0);
-        }
     }
 
 static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key, const char *filename)
@@ -414,47 +281,46 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
         }
     }
 
-void old_test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
-    {
-    int armour=0;
-    old_test_rsa_encrypt(armour,alpha_pub_keydata,filename_rsa_noarmour_nopassphrase_singlekey_old);
-    }
-
-void old_test_rsa_encrypt_noarmour_passphrase_singlekey(void)
-    {
-    int armour=0;
-    old_test_rsa_encrypt(armour,bravo_pub_keydata,filename_rsa_noarmour_passphrase_singlekey_old);  
-    }
-
-void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
+static void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
     {
     int armour=0;
     test_rsa_encrypt(armour,alpha_pub_keydata,filename_rsa_noarmour_nopassphrase_singlekey);
     }
 
-void test_rsa_encrypt_noarmour_passphrase_singlekey(void)
+static void test_rsa_encrypt_noarmour_passphrase_singlekey(void)
     {
     int armour=0;
     test_rsa_encrypt(armour,bravo_pub_keydata,filename_rsa_noarmour_passphrase_singlekey);
     }
 
-#ifdef TBD
-void test_rsa_encrypt_armour_singlekey(void)
+static void test_rsa_encrypt_armour_nopassphrase_singlekey(void)
     {
+    CU_FAIL("Test TODO: Encrypt with armour/no passphrase/single-key");
+#ifdef TBD
     int armour=1;
     char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
     const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
     assert(pub_key);
     test_rsa_encrypt(armour,pub_key,filename_rsa_armour_singlekey);
+#endif
     }
 
-void test_rsa_encrypt_armour_passphrase(void)
+static void test_rsa_encrypt_armour_passphrase_singlekey(void)
     {
+    CU_FAIL("Test TODO: Encrypt with armour/passphrase/single-key");
+#ifdef TBD
     int armour=1;
     int passphrase=1;
     test_rsa_encrypt(armour,passphrase,filename_rsa_armour_passphrase);
+#endif
     }
-#endif /*TBD*/
+
+static void test_todo(void)
+    {
+    CU_FAIL("Test TODO: Encrypt to multiple keys in same keyring");
+    CU_FAIL("Test TODO: Encrypt to multiple keys where my keys is (a) first key in list; (b) last key in list; (c) in the middle of the list");
+    CU_FAIL("Test TODO: Encrypt to users with different preferences");
+    }
 
 int add_tests(CU_pSuite suite)
     {
@@ -466,22 +332,15 @@ int add_tests(CU_pSuite suite)
     if (NULL == CU_add_test(suite, "Unarmoured, single key, passphrase", test_rsa_encrypt_noarmour_passphrase_singlekey))
 	    return 0;
     
-#ifdef OLD
-    if (NULL == CU_add_test(suite, "Unarmoured, single key, no passphrase (OLD)", old_test_rsa_encrypt_noarmour_nopassphrase_singlekey))
+    if (NULL == CU_add_test(suite, "Armoured, single key, no passphrase", test_rsa_encrypt_armour_nopassphrase_singlekey))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Unarmoured, single key, passphrase (OLD)", old_test_rsa_encrypt_noarmour_passphrase_singlekey))
+    if (NULL == CU_add_test(suite, "Armoured, single key, passphrase", test_rsa_encrypt_armour_passphrase_singlekey))
 	    return 0;
-#endif
-    
-#ifdef TBD
-    if (NULL == CU_add_test(suite, "Armoured, single key", test_rsa_encrypt_armour_singlekey))
-	    return 0;
-    
-    if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_encrypt_armour_passphrase))
-	    return 0;
-#endif /*TBD*/
 
+    if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))
+	    return 0;
+    
     return 1;
     }
     

@@ -185,6 +185,18 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
         ops_print_errors(ops_parse_info_get_errors(pinfo));
         CU_ASSERT(rtn==1);
         
+        // Tidy up
+        if (has_armour)
+            ops_reader_pop_dearmour(pinfo);
+        
+        ops_public_key_free(&validate_arg.pkey);
+        if (validate_arg.subkey.version)
+            ops_public_key_free(&validate_arg.subkey);
+        ops_user_id_free(&validate_arg.user_id);
+        ops_user_attribute_free(&validate_arg.user_attribute);
+        ops_parse_info_delete(pinfo);
+        
+        close(fd);
         }
     else
         {

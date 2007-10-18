@@ -919,6 +919,10 @@ void ops_public_key_free(ops_public_key_t *p)
 	free_BN(&p->key.elgamal.y);
 	break;
 
+ case 0:
+     // nothing to free
+     break;
+     
     default:
 	assert(0);
 	}
