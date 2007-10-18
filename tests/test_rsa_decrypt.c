@@ -240,6 +240,7 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
 
     ops_memory_init(mem_literal_data,0);
     rtn=ops_parse(pinfo);
+    ops_print_errors(ops_parse_info_get_errors(pinfo));
     CU_ASSERT(rtn==1);
 
     // Tidy up
@@ -285,6 +286,15 @@ void test_rsa_decrypt_noarmour_nopassphrase_cast5(void)
     int passphrase=0;
     test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,"CAST5");
     }
+
+#ifdef TODO
+void test_rsa_decrypt_armour_nopassphrase_cast5(void)
+    {
+    int armour=1;
+    int passphrase=0;
+    test_rsa_decrypt(armour,passphrase,filename_rsa_noarmour_nopassphrase,"CAST5");
+    }
+#endif
 
 void test_rsa_decrypt_noarmour_nopassphrase_aes128(void)
     {
@@ -353,6 +363,9 @@ CU_pSuite suite_rsa_decrypt()
 #endif
 
 #ifdef TODO
+    if (NULL == CU_add_test(suite, "Armoured, no passphrase (CAST5)", test_rsa_decrypt_armour_nopassphrase_cast5))
+	    return NULL;
+    
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (3DES)", test_rsa_decrypt_noarmour_nopassphrase_3des))
 	    return NULL;
     

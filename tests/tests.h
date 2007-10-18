@@ -33,6 +33,9 @@ extern CU_pSuite suite_rsa_verify();
 
 // utility functions
 
+void setup_test_keys();
+void cleanup();
+
 int mktmpdir();
 extern char dir[];
 char* create_testtext(const char *text);

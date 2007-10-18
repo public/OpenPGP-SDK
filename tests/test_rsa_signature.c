@@ -9,13 +9,19 @@
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/std_print.h"
 #include "openpgpsdk/readerwriter.h"
+#include "openpgpsdk/validate.h"
 
 #include "tests.h"
+
+static int do_gpgtest=0;
 
 static char *filename_rsa_noarmour_nopassphrase="ops_rsa_signed_noarmour_nopassphrase.txt";
 static char *filename_rsa_noarmour_passphrase="ops_rsa_signed_noarmour_passphrase.txt";
 static char *filename_rsa_armour_nopassphrase="ops_rsa_signed_armour_nopassphrase.txt";
 static char *filename_rsa_armour_passphrase="ops_rsa_signed_armour_passphrase.txt";
+
+static ops_parse_cb_return_t
+callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 /* Signature suite initialization.
  * Create temporary directory.
@@ -24,6 +30,8 @@ static char *filename_rsa_armour_passphrase="ops_rsa_signed_armour_passphrase.tx
 
 int init_suite_rsa_signature(void)
     {
+    do_gpgtest=0;
+
     // Create test files
 
     create_testfile(filename_rsa_noarmour_nopassphrase);
@@ -32,6 +40,15 @@ int init_suite_rsa_signature(void)
     create_testfile(filename_rsa_armour_passphrase);
 
     // Return success
+    return 0;
+    }
+
+int init_suite_rsa_signature_gpgtest(void)
+    {
+    init_suite_rsa_signature();
+
+    do_gpgtest=1;
+
     return 0;
     }
 
@@ -123,15 +140,60 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     ops_writer_close(cinfo);
     close(fd_out);
 
-#ifdef TODO
-     // Check signature with OPS
+    // Check
+
+    if (!do_gpgtest)
+        {
+        int fd=0;
+        ops_parse_info_t *pinfo=NULL;
+        validate_cb_arg_t validate_arg;
+        ops_validate_result_t result;
+        int rtn=0;
+
+    // open signed file
+#ifdef WIN32
+        fd=open(signed_file,O_RDONLY | O_BINARY);
+#else
+        fd=open(signed_file,O_RDONLY);
 #endif
+        if(fd < 0)
+            {
+            perror(signed_file);
+            exit(2);
+            }
+        
+        // Set verification reader and handling options
+        
+        pinfo=ops_parse_info_new();
+        ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
+        ops_reader_set_fd(pinfo,fd);
+        
+        memset(&validate_arg,'\0',sizeof validate_arg);
+        validate_arg.result=&result;
+        validate_arg.keyring=&pub_keyring;
+        validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
+        
+        // Set up armour/passphrase options
+        
+        if (has_armour)
+            ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+        //    current_passphrase=has_passphrase ? passphrase : nopassphrase;
+        
+        // Do the verification
+        
+        rtn=ops_parse(pinfo);
+        ops_print_errors(ops_parse_info_get_errors(pinfo));
+        CU_ASSERT(rtn==1);
+        
+        }
+    else
+        {
+        // Check signature with GPG
 
-    // Check signature with GPG
-
-    snprintf(cmd,MAXBUF,"gpg --verify --quiet --homedir %s %s", dir, signed_file);
-    rtn=system(cmd);
-    CU_ASSERT(rtn==0);
+        snprintf(cmd,MAXBUF,"gpg --verify --quiet --homedir %s %s", dir, signed_file);
+        rtn=system(cmd);
+        CU_ASSERT(rtn==0);
+        }
     }
 
 void test_rsa_signature_noarmour_nopassphrase(void)
@@ -197,3 +259,109 @@ CU_pSuite suite_rsa_signature()
     return suite;
 }
 
+CU_pSuite suite_rsa_signature_GPGtest()
+{
+    CU_pSuite suite = NULL;
+
+    suite = CU_add_suite("RSA Signature Suite (GPG interop)", init_suite_rsa_signature_gpgtest, clean_suite_rsa_signature);
+
+    if (!suite)
+	    return NULL;
+
+    // add tests to suite
+    
+#ifdef TBD
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase", test_rsa_signature_noarmour_nopassphrase))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_signature_noarmour_passphrase))
+	    return NULL;
+#endif /*TBD*/
+    
+    if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_signature_armour_nopassphrase))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_signature_armour_passphrase))
+	    return NULL;
+    
+    
+    return suite;
+}
+
+static ops_parse_cb_return_t
+callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    //    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+
+    //        ops_print_packet(content_);
+
+    switch(content_->tag)
+	{
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+        break;
+
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+        return callback_literal_data(content_,cbinfo);
+        break;
+
+    case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
+ case OPS_PTAG_CT_SIGNATURE:
+ case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
+ case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
+ case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
+ case OPS_PTAG_CT_ARMOUR_HEADER:
+ case OPS_PTAG_CT_ARMOUR_TRAILER:
+        break;
+
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
+    case OPS_PTAG_CT_SIGNATURE_FOOTER:
+        return callback_signature(content_, cbinfo);
+
+        /*
+    case OPS_PTAG_CT_UNARMOURED_TEXT:
+	printf("OPS_PTAG_CT_UNARMOURED_TEXT\n");
+	if(!skipping)
+	    {
+	    puts("Skipping...");
+	    skipping=ops_true;
+	    }
+	fwrite(content->unarmoured_text.data,1,
+	       content->unarmoured_text.length,stdout);
+	break;
+
+    case OPS_PTAG_CT_PK_SESSION_KEY:
+        return callback_pk_session_key(content_,cbinfo);
+
+    case OPS_PARSER_CMD_GET_SECRET_KEY:
+        return callback_cmd_get_secret_key(content_,cbinfo);
+
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+        return callback_cmd_get_secret_key_passphrase(content_,cbinfo);
+
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+        return callback_literal_data(content_,cbinfo);
+        //	text=ops_mallocz(content->literal_data_body.length+1);
+        //	memcpy(text,content->literal_data_body.data,content->literal_data_body.length);
+        //		break;
+
+    case OPS_PARSER_PTAG:
+    case OPS_PTAG_CT_ARMOUR_HEADER:
+    case OPS_PTAG_CT_ARMOUR_TRAILER:
+    case OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY:
+    case OPS_PTAG_CT_COMPRESSED:
+    case OPS_PTAG_CT_SE_IP_DATA_BODY:
+    case OPS_PTAG_CT_SE_IP_DATA_HEADER:
+	// Ignore these packets 
+	// They're handled in ops_parse_one_packet()
+	// and nothing else needs to be done
+	break;
+*/
+
+    default:
+        return callback_general(content_,cbinfo);
+	}
+
+    return OPS_RELEASE_MEMORY;
+    }
+
+// EOF

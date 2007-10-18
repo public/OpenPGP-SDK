@@ -98,6 +98,7 @@ ops_crypt_t *ops_parse_get_decrypt(ops_parse_info_t *pinfo);
 void ops_parse_cb_set(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);
 void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg);
 void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo);
+void *ops_parse_cb_get_errors(ops_parse_cb_info_t *cbinfo);
 void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg);
 void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg);
 void ops_reader_pop(ops_parse_info_t *pinfo);

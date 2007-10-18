@@ -24,6 +24,7 @@ struct ops_parse_cb_info
     {
     ops_parse_cb_t *cb; /*!< the callback function to use when parsing */
     void *arg; /*!< the args to pass to the callback function */
+    ops_error_t** errors; /*!< the address of the error stack to use */
 
     ops_parse_cb_info_t *next;
     };

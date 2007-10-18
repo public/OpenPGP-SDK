@@ -23,56 +23,44 @@ int main()
     if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
 
-    if (NULL == suite_crypto())
-        {
-        CU_cleanup_registry();
-        return CU_get_error();
-        }
-
-    if (NULL == suite_packet_types())
-        {
-        CU_cleanup_registry();
-        return CU_get_error();
-        }
-
-    if (NULL == suite_rsa_encrypt()) 
-        {
-        CU_cleanup_registry();
-        return CU_get_error();
-        }
-
-    if (NULL == suite_rsa_decrypt()) 
-        {
-        CU_cleanup_registry();
-        return CU_get_error();
-        }
-
-    if (NULL == suite_rsa_signature()) 
-        {
-        CU_cleanup_registry();
-        return CU_get_error();
-        }
-
-    if (NULL == suite_rsa_verify()) 
+    if (NULL == suite_rsa_encrypt_GPGtest()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
 
 #ifdef TODO
-    if (NULL == suite_rsa_create_key())
+    if (NULL == suite_rsa_decrypt_GPGtest()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
 
-    if (NULL == suite_rsa_sign_key())
+    if (NULL == suite_rsa_signature_GPGtest()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
 
-    if (NULL == suite_rsa_verify_key())
+    if (NULL == suite_rsa_verify_GPGtest()) 
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
+    if (NULL == suite_rsa_create_key_GPGtest())
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
+    if (NULL == suite_rsa_sign_key_GPGtest())
+        {
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
+    if (NULL == suite_rsa_verify_key_GPGtest())
         {
         CU_cleanup_registry();
         return CU_get_error();

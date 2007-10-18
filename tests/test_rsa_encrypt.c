@@ -153,6 +153,7 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext)
 
     ops_memory_init(mem_literal_data,0);
     rtn=ops_parse(pinfo);
+    ops_print_errors(ops_parse_info_get_errors(pinfo));
     CU_ASSERT(rtn==1);
 
     // Tidy up
@@ -355,20 +356,24 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
 
     // Do the writing
 
-    const unsigned bufsz=16;
+    unsigned char* buf=NULL;
+    size_t bufsz=16;
+    int done=0;
     for (;;)
         {
-	    unsigned char buf[bufsz];
+        buf=realloc(buf,done+bufsz);
+        
 	    int n=0;
 
-	    n=read(fd_in,buf,sizeof(buf));
+	    n=read(fd_in,buf+done,bufsz);
 	    if (!n)
 		    break;
 	    assert(n>=0);
-
-        // This does the writing
-        ops_write(buf,n,cinfo);
+        done+=n;
         }
+
+    // This does the writing
+    ops_write(buf,done,cinfo);
 
     // Pop the encrypted writer from the stack
     ops_writer_pop(cinfo);

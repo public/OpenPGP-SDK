@@ -8,11 +8,13 @@
 #include <errno.h> 
 
 /** error codes */
+// Remember to add names to map in adv_errors.c
 typedef enum 
     {
     OPS_E_OK=0x0000,	/* no error */
     OPS_E_FAIL=0x0001,	/* general error */
     OPS_E_SYSTEM_ERROR=0x0002, /* system error, look at errno for details */
+    OPS_E_UNIMPLEMENTED=0x0003, /* feature not yet implemented */
 
     /* reader errors */
     OPS_E_R=0x1000,	/* general reader error */

@@ -11,18 +11,25 @@ LDFLAGS=-g %CFLAGS%
 LIBDEPS=../lib/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) $(CUNIT_LIB)
 
-TESTSRC=tests.c \
-                test_packet_types.c \
+COMMONTESTSRC= test_packet_types.c \
                 test_crypt_mpi.c test_rsa_decrypt.c test_rsa_encrypt.c \
                 test_rsa_signature.c test_rsa_verify.c \
-                test_crypto.c
+                test_crypto.c test_common.c
+COMMONTESTOBJ=$(COMMONTESTSRC:.c=.o)
 
-TESTOBJ=$(TESTSRC:.c=.o)
+TESTSRC= tests.c 
+TESTOBJ= $(TESTSRC:.c=.o)
 
-all: Makefile $(CUNIT_LIB) .depend tests
+GPGTESTSRC= tests_gpg.c
+GPGTESTOBJ= $(GPGTESTSRC:.c=.o)
 
-tests: $(CUNIT_LIB) $(TESTOBJ) $(LIBDEPS)
-	$(CC) $(LDFLAGS) -o tests $(TESTOBJ) $(LIBS)
+all: Makefile $(CUNIT_LIB) .depend tests tests_gpg
+
+tests: $(CUNIT_LIB) $(TESTOBJ) $(COMMONTESTOBJ) $(LIBDEPS)
+	$(CC) $(LDFLAGS) -o tests $(TESTOBJ) $(COMMONTESTOBJ) $(LIBS)
+
+tests_gpg: $(CUNIT_LIB) $(GPGTESTOBJ) $(COMMONTESTOBJ) $(LIBDEPS)
+	$(CC) $(LDFLAGS) -o tests_gpg $(GPGTESTOBJ) $(COMMONTESTOBJ) $(LIBS)
 
 $(CUNIT_LIB):
 	tar xvfz CUnit-2.1-0-src.tar.gz

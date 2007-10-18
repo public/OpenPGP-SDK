@@ -3044,6 +3044,7 @@ void ops_parse_cb_set(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
     {
     pinfo->cbinfo.cb=cb;
     pinfo->cbinfo.arg=arg;
+    pinfo->cbinfo.errors=&pinfo->errors;
     }
 
 void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
@@ -3057,6 +3058,9 @@ void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
 
 void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo)
     { return cbinfo->arg; }
+
+void *ops_parse_cb_get_errors(ops_parse_cb_info_t *cbinfo)
+    { return cbinfo->errors; }
 
 ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
 				   ops_parse_cb_info_t *cbinfo)

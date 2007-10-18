@@ -23,6 +23,7 @@ static ops_errcode_name_map_t errcode_name_map[] =
     { OPS_E_OK, "OPS_E_OK" },
     { OPS_E_FAIL, "OPS_E_FAIL" },
     { OPS_E_SYSTEM_ERROR, "OPS_E_SYSTEM_ERROR" },
+    { OPS_E_UNIMPLEMENTED, "OPS_E_UNIMPLEMENTED" },
 
     { OPS_E_R,	"OPS_E_R" },
     { OPS_E_R_READ_FAILED, "OPS_E_R_READ_FAILED" },

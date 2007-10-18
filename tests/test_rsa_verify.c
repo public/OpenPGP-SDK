@@ -22,29 +22,6 @@
 
 #endif /* ATTRIBUTE_UNUSED */
 
-typedef struct
-    {
-    const ops_key_data_t *key;
-    unsigned packet;
-    unsigned offset;
-    } validate_reader_arg_t;
-
-typedef struct
-    {
-    ops_public_key_t pkey;
-    ops_public_key_t subkey;
-    enum
-	{
-	ATTRIBUTE,
-	ID
-	} last_seen;
-    ops_user_id_t user_id;
-    ops_user_attribute_t user_attribute;
-    const ops_keyring_t *keyring;
-    validate_reader_arg_t *rarg;
-    ops_validate_result_t *result;
-    } validate_cb_arg_t;
-
 static char *filename_rsa_noarmour_nopassphrase="gpg_signed_noarmour_nopassphrase.txt";
 static char *filename_rsa_armour_nopassphrase="gpg_signed_armour_nopassphrase.txt";
 static char *filename_rsa_noarmour_passphrase="gpg_signed_armour_nopassphrase.txt";
@@ -218,6 +195,7 @@ static void test_rsa_verify(const int has_armour, const int has_passphrase ATTRI
     // Do the verification
 
     rtn=ops_parse(pinfo);
+    ops_print_errors(ops_parse_info_get_errors(pinfo));
     CU_ASSERT(rtn==1);
 
     // Tidy up

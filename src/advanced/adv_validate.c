@@ -9,29 +9,6 @@
 
 #include <openpgpsdk/final.h>
 
-typedef struct
-    {
-    const ops_key_data_t *key;
-    unsigned packet;
-    unsigned offset;
-    } validate_reader_arg_t;
-
-typedef struct
-    {
-    ops_public_key_t pkey;
-    ops_public_key_t subkey;
-    enum
-	{
-	ATTRIBUTE,
-	ID
-	} last_seen;
-    ops_user_id_t user_id;
-    ops_user_attribute_t user_attribute;
-    const ops_keyring_t *keyring;
-    validate_reader_arg_t *rarg;
-    ops_validate_result_t *result;
-    } validate_cb_arg_t;
-
 static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
 			   ops_reader_info_t *rinfo,
 			   ops_parse_cb_info_t *cbinfo)
@@ -67,8 +44,9 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     const ops_parser_content_union_t *content=&content_->content;
     validate_cb_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
+    ops_error_t **errors=ops_parse_cb_get_errors(cbinfo);
     const ops_key_data_t *signer;
-    ops_boolean_t valid;
+    ops_boolean_t valid=ops_false;
 
     switch(content_->tag)
 	{
@@ -150,11 +128,24 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 		    arg->rarg->key->packets[arg->rarg->packet].raw);
 	    break;
 
+    case OPS_SIG_BINARY:
+    case OPS_SIG_TEXT:
+    case OPS_SIG_STANDALONE:
+    case OPS_SIG_PRIMARY:
+    case OPS_SIG_REV_KEY:
+    case OPS_SIG_REV_SUBKEY:
+    case OPS_SIG_TIMESTAMP:
+    case OPS_SIG_3RD_PARTY:
+        OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
+                    "Verification of signature type 0x%02x not yet implemented\n", content->signature.type);
+                    break;
+
 	default:
 	    fprintf(stderr,"Unexpected signature type=0x%02x\n",
 		    content->signature.type);
 	    exit(1);
 	    }
+
 	if(valid)
 	    {
 	    printf(" validated\n");

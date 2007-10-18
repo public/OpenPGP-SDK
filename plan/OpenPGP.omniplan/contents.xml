@@ -32,9 +32,9 @@
 			<key>GanttHideRedundant</key>
 			<false/>
 			<key>GanttVisibleRect</key>
-			<string>{{-15, 398}, {622, 640}}</string>
+			<string>{{-15, 337}, {622, 640}}</string>
 			<key>OutlineVisibleRect</key>
-			<string>{{0, 398}, {634, 640}}</string>
+			<string>{{0, 337}, {634, 640}}</string>
 			<key>SelectedPlanView</key>
 			<integer>1</integer>
 			<key>SelectedView</key>
@@ -478,7 +478,7 @@
 	<key>taskDifferenceEngine</key>
 	<dict>
 		<key>nextId</key>
-		<integer>145</integer>
+		<integer>161</integer>
 	</dict>
 	<key>taskUserKeys</key>
 	<array/>
@@ -504,9 +504,9 @@
 			<key>workDone</key>
 			<real>22.399999618530273</real>
 			<key>workSeconds</key>
-			<real>2283840</real>
+			<real>2543040</real>
 			<key>workTime</key>
-			<real>634.4000244140625</real>
+			<real>706.4000244140625</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -578,15 +578,17 @@
 				<integer>124</integer>
 				<integer>132</integer>
 				<integer>138</integer>
+				<integer>145</integer>
+				<integer>150</integer>
 			</array>
 			<key>objectId</key>
 			<integer>3</integer>
 			<key>task</key>
 			<string>Finish Implementation</string>
 			<key>workSeconds</key>
-			<real>633600</real>
+			<real>691200</real>
 			<key>workTime</key>
-			<real>176</real>
+			<real>192</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -809,6 +811,10 @@
 				<integer>24</integer>
 				<integer>133</integer>
 				<integer>126</integer>
+				<integer>156</integer>
+				<integer>157</integer>
+				<integer>158</integer>
+				<integer>159</integer>
 			</array>
 			<key>doneSeconds</key>
 			<real>43200</real>
@@ -819,9 +825,9 @@
 			<key>workDone</key>
 			<real>12</real>
 			<key>workSeconds</key>
-			<real>547200</real>
+			<real>662400</real>
 			<key>workTime</key>
-			<real>152</real>
+			<real>184</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -916,9 +922,9 @@
 			<key>workDone</key>
 			<real>10.399999618530273</real>
 			<key>workSeconds</key>
-			<real>584640</real>
+			<real>671040</real>
 			<key>workTime</key>
-			<real>162.39999389648438</real>
+			<real>186.39999389648438</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -926,6 +932,8 @@
 				<integer>46</integer>
 				<integer>51</integer>
 				<integer>56</integer>
+				<integer>151</integer>
+				<integer>152</integer>
 			</array>
 			<key>doneSeconds</key>
 			<real>14400</real>
@@ -963,9 +971,9 @@
 			<key>workDone</key>
 			<real>4</real>
 			<key>workSeconds</key>
-			<real>129600</real>
+			<real>187200</real>
 			<key>workTime</key>
-			<real>36</real>
+			<real>52</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -975,6 +983,7 @@
 				<integer>115</integer>
 				<integer>116</integer>
 				<integer>125</integer>
+				<integer>154</integer>
 			</array>
 			<key>doneSeconds</key>
 			<real>23040</real>
@@ -987,9 +996,9 @@
 			<key>workDone</key>
 			<real>6.4000000953674316</real>
 			<key>workSeconds</key>
-			<real>138240</real>
+			<real>167040</real>
 			<key>workTime</key>
-			<real>38.400001525878906</real>
+			<real>46.400001525878906</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -3565,6 +3574,96 @@
 			<real>57600</real>
 			<key>workTime</key>
 			<real>16</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>145</integer>
+			<key>task</key>
+			<string>Integrate stream encryption</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>150</integer>
+			<key>task</key>
+			<string>Triple-DES</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>151</integer>
+			<key>task</key>
+			<string>Large files</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>152</integer>
+			<key>task</key>
+			<string>Stream encryption</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>154</integer>
+			<key>task</key>
+			<string>Large files</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>156</integer>
+			<key>task</key>
+			<string>Create Key Pair with OPS, test with GPG</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>157</integer>
+			<key>task</key>
+			<string>Create Key Pair with GPG, test with OPS</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>158</integer>
+			<key>task</key>
+			<string>Sign Key with OPS, verify with GPG</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>objectId</key>
+			<integer>159</integer>
+			<key>task</key>
+			<string>Sign Key with GPG, verify with OPS</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
 		</dict>
 	</array>
 	<key>topResources</key>
