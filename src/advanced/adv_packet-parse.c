@@ -609,19 +609,36 @@ static ops_boolean_t read_new_length(unsigned *length,ops_parse_info_t *pinfo)
 	return ops_false;
     if(c[0] < 192)
 	{
+    // 1. One-octet packet
 	*length=c[0];
 	return ops_true;
 	}
-    if(c[0] < 255)
-	{
-	unsigned t=(c[0]-192) << 8;
 
-	if(base_read(c,1,pinfo) != 1)
-	    return ops_false;
-	*length=t+c[0]+192;
-	return ops_true;
-	}
-    return _read_scalar(length,4,pinfo);
+    else if (c[0]>=192 && c[0]<=223)
+        {
+        // 2. Two-octet packet
+        unsigned t=(c[0]-192) << 8;
+        
+        if(base_read(c,1,pinfo) != 1)
+            return ops_false;
+        *length=t+c[0]+192;
+        return ops_true;
+        }
+
+    else if (c[0]==255)
+        {
+        // 3. Five-Octet packet
+        return _read_scalar(length,4,pinfo);
+        }
+
+    else if (c[0]>=224 && c[0]<255)
+        {
+        // 4. Partial Body Length
+        OPS_ERROR(&pinfo->errors,OPS_E_UNIMPLEMENTED,
+                    "New format Partial Body Length fields not yet implemented");
+        return ops_false;
+        }
+    return ops_false;
     }
 
 /** Read the length information for a new format Packet Tag.
