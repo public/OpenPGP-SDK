@@ -7,6 +7,8 @@
 #include <openpgpsdk/accumulate.h>
 #include <openpgpsdk/validate.h>
 #include "keyring_local.h"
+#include "parse_local.h"
+
 #include <stdlib.h>
 #include <string.h>
 #ifndef WIN32
@@ -184,6 +186,10 @@ static ops_parse_cb_return_t decrypt_cb(const ops_parser_content_t *content_,
 	*arg->skey=content->secret_key;
 	return OPS_KEEP_MEMORY;
 
+ case OPS_PARSER_PACKET_END:
+     // nothing to do
+     break;
+
     default:
 	fprintf(stderr,"Unexpected tag %d (0x%x)\n",content_->tag,
 		content_->tag);
@@ -208,6 +214,7 @@ ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
 
     ops_key_data_reader_set(pinfo,key);
     ops_parse_cb_set(pinfo,decrypt_cb,&arg);
+    pinfo->rinfo.accumulate=ops_true;
 
     ops_parse(pinfo);
 

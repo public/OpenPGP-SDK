@@ -15,6 +15,8 @@
 
 #include <openpgpsdk/final.h>
 
+static int debug=0;
+
 #define CRC24_INIT 0xb704ceL
 #define CRC24_POLY 0x1864cfbL
 
@@ -811,6 +813,21 @@ static ops_boolean_t dash_escaped_writer(const unsigned char *src,
     {
     dash_escaped_arg_t *arg=ops_writer_get_arg(winfo);
     unsigned n;
+
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"dash_escaped_writer writing %d:\n", length);
+        for (i=0; i<length; i++)
+            {
+            fprintf(stderr,"0x%02x ", src[i]);
+            if (!((i+1) % 16))
+                fprintf(stderr,"\n");
+            else if (!((i+1) % 8))
+                fprintf(stderr,"  ");
+            }
+        fprintf(stderr,"\n");
+        }
 
     // XXX: make this efficient
     for(n=0 ; n < length ; ++n)

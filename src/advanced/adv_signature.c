@@ -9,6 +9,8 @@
 
 #include <openpgpsdk/final.h>
 
+static int debug=0;
+
 /** \ingroup Create
  * needed for signature creation
  */
@@ -40,6 +42,89 @@ static unsigned char prefix_md5[]={ 0x30,0x20,0x30,0x0C,0x06,0x08,0x2A,0x86,
 static unsigned char prefix_sha1[]={ 0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0E,
 				     0x03,0x02,0x1A,0x05,0x00,0x04,0x14 };
 
+ops_boolean_t encode_hash_buf(const unsigned char *M, size_t mLen,
+                           const ops_hash_algorithm_t hash_alg,
+                           unsigned char* EM
+)
+    {
+    // implementation of EMSA-PKCS1-v1_5, as defined in OpenPGP RFC
+
+    unsigned i;
+
+    int n=0;
+    ops_hash_t hash;
+    //    unsigned char hashout[OPS_MAX_HASH_SIZE];
+    int hash_sz=0;
+    int encoded_hash_sz=0;
+    int prefix_sz=0;
+    unsigned padding_sz=0;
+    unsigned encoded_msg_sz=0;
+    unsigned char* prefix=NULL;
+
+    assert(hash_alg == OPS_HASH_SHA1);
+
+    // 1. Apply hash function to M
+
+    ops_hash_any(&hash,hash_alg);
+    hash.init(&hash);
+    hash.add(&hash,M,mLen);
+
+    // \todo combine with rsa_sign
+
+    // 2. Get hash prefix
+
+    switch(hash_alg)
+        {
+    case OPS_HASH_SHA1:
+        prefix=prefix_sha1; 
+        prefix_sz=sizeof prefix_sha1;
+        hash_sz=OPS_SHA1_HASH_SIZE;
+        encoded_hash_sz=hash_sz+prefix_sz;
+        // \todo why is Ben using a PS size of 90 in rsa_sign?
+        // (keysize-hashsize-1-2)
+        padding_sz=90;
+        break;
+
+    default:
+        assert(0);
+        }
+
+    // \todo 3. Test for len being too short
+
+    // 4 and 5. Generate PS and EM
+
+    EM[0]=0x00;
+    EM[1]=0x01;
+
+    for (i=0; i<padding_sz; i++)
+        EM[2+i]=0xFF;
+
+    i+=2;
+
+    EM[i++]=0x00;
+
+    memcpy(&EM[i],prefix,prefix_sz);
+    i+=prefix_sz;
+
+    // finally, write out hashed result
+    
+    n=hash.finish(&hash,&EM[i]);
+
+    encoded_msg_sz=i+hash_sz-1;
+
+    // \todo test n for OK response?
+
+    if (debug)
+        {
+        fprintf(stderr,"Encoded Message: \n");
+        for (i=0; i<encoded_msg_sz; i++)
+            fprintf(stderr,"%2x ", EM[i]);
+        fprintf(stderr,"\n");
+        }
+
+    return ops_true;
+    }
+
 // XXX: both this and verify would be clearer if the signature were
 // treated as an MPI.
 static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
@@ -54,6 +139,7 @@ static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
     unsigned t;
     BIGNUM *bn;
 
+
     // XXX: we assume hash is sha-1 for now
     hashsize=20+sizeof prefix_sha1;
 
@@ -63,6 +149,8 @@ static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
 
     hashbuf[0]=0;
     hashbuf[1]=1;
+    if (debug)
+        { printf("rsa_sign: PS is %d\n", keysize-hashsize-1-2); }
     for(n=2 ; n < keysize-hashsize-1 ; ++n)
 	hashbuf[n]=0xff;
     hashbuf[n++]=0;
@@ -134,6 +222,31 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
     if(hashbuf[n++] != 0)
 	return ops_false;
 
+    if (debug)
+        {
+        int zz;
+
+        printf("\n");
+        printf("hashbuf\n");
+        for (zz=0; zz<plen; zz++)
+            { printf("%02x ", hashbuf[n+zz]); }
+        printf("\n");
+        printf("prefix\n");
+        for (zz=0; zz<plen; zz++)
+            { printf("%02x ", prefix[zz]); }
+        printf("\n");
+
+        printf("\n");
+        printf("hashbuf2\n");
+        unsigned uu;
+        for (uu=0; uu<hash_length; uu++)
+            { printf("%02x ", hashbuf[n+plen+uu]); }
+        printf("\n");
+        printf("hash\n");
+        for (uu=0; uu<hash_length; uu++)
+            { printf("%02x ", hash[uu]); }
+        printf("\n");
+        }
     if(memcmp(&hashbuf[n],prefix,plen)
        || memcmp(&hashbuf[n+plen],hash,hash_length))
 	return ops_false;
@@ -162,7 +275,7 @@ static void common_init_signature(ops_hash_t *hash,const ops_signature_t *sig)
     hash->init(hash);
     }
 
-static void init_signature(ops_hash_t *hash,const ops_signature_t *sig,
+static void init_key_signature(ops_hash_t *hash,const ops_signature_t *sig,
 			   const ops_public_key_t *key)
     {
     common_init_signature(hash,sig);
@@ -188,7 +301,7 @@ static void hash_add_trailer(ops_hash_t *hash,const ops_signature_t *sig,
 	}
     }
 
-static ops_boolean_t check_signature(const unsigned char *hash,unsigned length,
+ops_boolean_t ops_check_signature(const unsigned char *hash,unsigned length,
 				     const ops_signature_t *sig,
 				     const ops_public_key_t *signer)
     {
@@ -227,7 +340,7 @@ static ops_boolean_t hash_and_check_signature(ops_hash_t *hash,
 
     n=hash->finish(hash,hashout);
 
-    return check_signature(hashout,n,sig,signer);
+    return ops_check_signature(hashout,n,sig,signer);
     }
 
 static ops_boolean_t finalise_signature(ops_hash_t *hash,
@@ -260,7 +373,7 @@ ops_check_user_id_certification_signature(const ops_public_key_t *key,
     ops_hash_t hash;
     size_t user_id_len=strlen((char *)id->user_id);
 
-    init_signature(&hash,sig,key);
+    init_key_signature(&hash,sig,key);
 
     if(sig->version == OPS_V4)
 	{
@@ -292,7 +405,7 @@ ops_check_user_attribute_certification_signature(const ops_public_key_t *key,
     {
     ops_hash_t hash;
 
-    init_signature(&hash,sig,key);
+    init_key_signature(&hash,sig,key);
 
     if(sig->version == OPS_V4)
 	{
@@ -324,7 +437,7 @@ ops_check_subkey_signature(const ops_public_key_t *key,
     {
     ops_hash_t hash;
 
-    init_signature(&hash,sig,key);
+    init_key_signature(&hash,sig,key);
     hash_add_key(&hash,subkey);
 
     return finalise_signature(&hash,sig,signer,raw_packet);
@@ -348,7 +461,7 @@ ops_check_direct_signature(const ops_public_key_t *key,
     {
     ops_hash_t hash;
 
-    init_signature(&hash,sig,key);
+    init_key_signature(&hash,sig,key);
     return finalise_signature(&hash,sig,signer,raw_packet);
     }
 
@@ -421,7 +534,7 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
 
     sig->hashed_data_length=-1;
 
-    init_signature(&sig->hash,&sig->sig,key);
+    init_key_signature(&sig->hash,&sig->sig,key);
 
     ops_hash_add_int(&sig->hash,0xb4,1);
     ops_hash_add_int(&sig->hash,strlen((char *)id->user_id),4);
@@ -473,6 +586,8 @@ void ops_signature_start_plaintext_signature(ops_create_signature_t *sig,
 void ops_signature_add_data(ops_create_signature_t *sig,const void *buf,
 			    size_t length)
     {
+    if (debug)
+        { fprintf(stderr,"ops_signature_add_data adds to hash\n"); }
     sig->hash.add(&sig->hash,buf,length);
     }
 
@@ -519,12 +634,21 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
 			 l-sig->unhashed_count_offset-2,2);
 
     // add the packet from version number to end of hashed subpackets
+
+    if (debug)
+        { fprintf(stderr, "--- Adding packet to hash from version number to hashed subpkts\n"); }
+
     sig->hash.add(&sig->hash,ops_memory_get_data(sig->mem),
 		  sig->unhashed_count_offset);
+    /* what is this??? should delete? RW
     ops_hash_add_int(&sig->hash,sig->sig.version,1);
     ops_hash_add_int(&sig->hash,0xff,1);
     // +6 for version, type, pk alg, hash alg, hashed subpacket length
     ops_hash_add_int(&sig->hash,sig->hashed_data_length+6,4);
+    */
+
+    if (debug)
+        { fprintf(stderr, "--- Finished adding packet to hash from version number to hashed subpkts\n"); }
 
     // XXX: technically, we could figure out how big the signature is
     // and write it directly to the output instead of via memory.

@@ -1,13 +1,39 @@
 #include <openpgpsdk/packet-parse.h>
+#include <openpgpsdk/packet-show.h>
 #include <openpgpsdk/keyring.h>
 #include "keyring_local.h"
 #include <openpgpsdk/util.h>
 #include <openpgpsdk/signature.h>
+#include <openpgpsdk/memory.h>
 #include <openpgpsdk/validate.h>
 #include <assert.h>
 #include <string.h>
 
 #include <openpgpsdk/final.h>
+
+static int debug=0;
+
+static ops_boolean_t check_binary_signature(const unsigned len,
+                                            const unsigned char *data,
+                                            const ops_signature_t *sig, 
+                                            const ops_public_key_t *signer __attribute__((unused)))
+    {
+    // Does the signed hash match the given hash?
+
+    int n=0;
+    ops_hash_t hash;
+    unsigned char hashout[OPS_MAX_HASH_SIZE];
+
+    //common_init_signature(&hash,sig);
+    ops_hash_any(&hash,sig->hash_algorithm);
+    hash.init(&hash);
+    hash.add(&hash,data,len);
+    hash.add(&hash,sig->v4_hashed_data,sig->v4_hashed_data_length);
+    n=hash.finish(&hash,hashout);
+
+    //    return ops_false;
+    return ops_check_signature(hashout,n,sig,signer);
+    }
 
 static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
 			   ops_reader_info_t *rinfo,
@@ -40,13 +66,16 @@ static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
  */
 
 ops_parse_cb_return_t
-validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     const ops_parser_content_union_t *content=&content_->content;
-    validate_cb_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
+    validate_key_cb_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
     ops_error_t **errors=ops_parse_cb_get_errors(cbinfo);
     const ops_key_data_t *signer;
     ops_boolean_t valid=ops_false;
+
+    if (debug)
+        printf("%s\n",ops_show_packet_tag(content_->tag));
 
     switch(content_->tag)
 	{
@@ -128,8 +157,9 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 		    arg->rarg->key->packets[arg->rarg->packet].raw);
 	    break;
 
-    case OPS_SIG_BINARY:
+#ifdef MOVED
     case OPS_SIG_TEXT:
+#endif
     case OPS_SIG_STANDALONE:
     case OPS_SIG_PRIMARY:
     case OPS_SIG_REV_KEY:
@@ -141,9 +171,8 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
                     break;
 
 	default:
-	    fprintf(stderr,"Unexpected signature type=0x%02x\n",
-		    content->signature.type);
-	    exit(1);
+            OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
+                    "Unexpected signature type 0x%02x\n", content->signature.type);
 	    }
 
 	if(valid)
@@ -172,6 +201,142 @@ validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     return OPS_RELEASE_MEMORY;
     }
 
+ops_parse_cb_return_t
+validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    const ops_parser_content_union_t *content=&content_->content;
+    validate_data_cb_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
+    ops_error_t **errors=ops_parse_cb_get_errors(cbinfo);
+    const ops_key_data_t *signer;
+    ops_boolean_t valid=ops_false;
+    //    unsigned len=0;
+    //    unsigned char *data=NULL;
+    ops_memory_t* mem=NULL;
+
+    if (debug)
+        printf("%s\n",ops_show_packet_tag(content_->tag));
+
+    switch(content_->tag)
+	{
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
+        // ignore - this gives us the "Armor Header" line "Hash: SHA1" or similar
+        break;
+
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+        // ignore
+        break;
+
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+        arg->data.literal_data_body=content->literal_data_body;
+        arg->use=LITERAL_DATA;
+        return OPS_KEEP_MEMORY;
+        break;
+
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
+        arg->data.signed_cleartext_body=content->signed_cleartext_body;
+        arg->use=SIGNED_CLEARTEXT;
+        return OPS_KEEP_MEMORY;
+        break;
+
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
+        // this gives us an ops_hash_t struct
+        break;
+
+    case OPS_PTAG_CT_SIGNATURE: // V3 sigs
+        // this gives us a signature struct with all info about hash alg, etc from the packet
+        break;
+
+    case OPS_PTAG_CT_SIGNATURE_FOOTER: // V4 sigs
+        
+        if (debug)
+            {
+            printf("\n*** hashed data:\n");
+            unsigned int zzz=0;
+            for (zzz=0; zzz<content->signature.v4_hashed_data_length; zzz++)
+                printf("0x%02x ", content->signature.v4_hashed_data[zzz]);
+            printf("\n");
+            printf("  type=%02x signer_id=",content->signature.type);
+            hexdump(content->signature.signer_id,
+                    sizeof content->signature.signer_id);
+            }
+
+        signer=ops_keyring_find_key_by_id(arg->keyring,
+                                          content->signature.signer_id);
+        if(!signer)
+            {
+            OPS_ERROR(errors,OPS_E_V_UNKNOWN_SIGNER,"Unknown Signer");
+            printf(" UNKNOWN SIGNER\n");
+            ++arg->result->unknown_signer_count;
+            break;
+            }
+        
+        mem=ops_memory_new();
+        ops_memory_init(mem,128);
+        
+        switch(content->signature.type)
+            {
+        case OPS_SIG_BINARY:
+            switch(arg->use)
+                {
+            case LITERAL_DATA:
+                ops_memory_add(mem,
+                               arg->data.literal_data_body.data,
+                               arg->data.literal_data_body.length);
+                break;
+
+            case SIGNED_CLEARTEXT:
+                ops_memory_add(mem,
+                               arg->data.signed_cleartext_body.data,
+                               arg->data.signed_cleartext_body.length);
+                break;
+
+            default:
+                assert (0);
+                }
+
+            valid=check_binary_signature(ops_memory_get_length(mem), 
+                                         ops_memory_get_data(mem),
+                                         &content->signature,
+                                         ops_get_public_key_from_data(signer));
+            break;
+
+        OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
+                    "Verification of signature type 0x%02x not yet implemented\n", content->signature.type);
+                    break;
+
+	default:
+            OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
+                    "Unexpected signature type 0x%02x\n", content->signature.type);
+	    exit(1);
+	    }
+    ops_memory_free(mem);
+
+	if(valid)
+	    {
+	    ++arg->result->valid_count;
+	    }
+	else
+	    {
+        OPS_ERROR(errors,OPS_E_V_BAD_SIGNATURE,"Bad Signature");
+	    printf(" BAD SIGNATURE\n");
+	    ++arg->result->invalid_count;
+	    }
+	break;
+
+	// ignore these
+    case OPS_PARSER_PTAG:
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
+        //    case OPS_PTAG_CT_SIGNATURE:
+	break;
+
+    default:
+	fprintf(stderr,"unexpected tag=0x%x\n",content_->tag);
+	assert(0);
+	break;
+	}
+    return OPS_RELEASE_MEMORY;
+    }
+
 static void key_data_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
@@ -188,11 +353,14 @@ void ops_key_data_reader_set(ops_parse_info_t *pinfo,const ops_key_data_t *key)
     ops_reader_set(pinfo,key_data_reader,key_data_destroyer,arg);
     }
 
+/* 
+ * Validate all signatures on a single key against the given keyring
+ */
 static void validate_key_signatures(ops_validate_result_t *result,const ops_key_data_t *key,
 				    const ops_keyring_t *keyring)
     {
     ops_parse_info_t *pinfo;
-    validate_cb_arg_t carg;
+    validate_key_cb_arg_t carg;
 
     memset(&carg,'\0',sizeof carg);
     carg.result=result;
@@ -202,7 +370,7 @@ static void validate_key_signatures(ops_validate_result_t *result,const ops_key_
 
     carg.keyring=keyring;
 
-    ops_parse_cb_set(pinfo,validate_cb,&carg);
+    ops_parse_cb_set(pinfo,validate_key_cb,&carg);
     ops_key_data_reader_set(pinfo,key);
 
     carg.rarg=ops_reader_get_arg_from_pinfo(pinfo);

@@ -29,14 +29,15 @@ int main()
         return CU_get_error();
         }
 
-#ifdef TODO
-    if (NULL == suite_rsa_decrypt_GPGtest()) 
+    if (NULL == suite_rsa_signature_GPGtest()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
 
-    if (NULL == suite_rsa_signature_GPGtest()) 
+#ifdef TODO
+
+    if (NULL == suite_rsa_decrypt_GPGtest()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
@@ -65,7 +66,7 @@ int main()
         CU_cleanup_registry();
         return CU_get_error();
         }
-#endif
+ #endif
 
     // Run tests
     CU_basic_set_mode(CU_BRM_VERBOSE);

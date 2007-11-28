@@ -39,15 +39,20 @@ typedef enum
     /* creator errors */
     OPS_E_C=0x4000,	/* general creator error */
 
+    /* validation errors */
+    OPS_E_V=0x5000, /* general validation error */
+    OPS_E_V_BAD_SIGNATURE	=OPS_E_V+1,
+    OPS_E_V_UNKNOWN_SIGNER	=OPS_E_V+2,
+
     /* Algorithm support errors */
-    OPS_E_ALG=0x5000,			/* general algorithm error */
+    OPS_E_ALG=0x6000,			/* general algorithm error */
     OPS_E_ALG_UNSUPPORTED_SYMMETRIC_ALG		=OPS_E_ALG+1,
     OPS_E_ALG_UNSUPPORTED_PUBLIC_KEY_ALG	=OPS_E_ALG+2,
     OPS_E_ALG_UNSUPPORTED_SIGNATURE_KEY_ALG	=OPS_E_ALG+3,
     OPS_E_ALG_UNSUPPORTED_HASH_ALG		=OPS_E_ALG+4,
 
     /* Protocol errors */
-    OPS_E_PROTO=0x6000,	/* general protocol error */
+    OPS_E_PROTO=0x7000,	/* general protocol error */
     OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT 	=OPS_E_PROTO+2,
     OPS_E_PROTO_UNKNOWN_SS		=OPS_E_PROTO+3,
     OPS_E_PROTO_CRITICAL_SS_IGNORED	=OPS_E_PROTO+4,

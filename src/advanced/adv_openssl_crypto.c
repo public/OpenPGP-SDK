@@ -14,6 +14,8 @@
 
 #include <openpgpsdk/final.h>
 
+static int debug=0;
+
 static void md5_init(ops_hash_t *hash)
     {
     assert(!hash->data);
@@ -44,6 +46,10 @@ void ops_hash_md5(ops_hash_t *hash)
 
 static void sha1_init(ops_hash_t *hash)
     {
+    if (debug)
+        {
+        fprintf(stderr,"***\n***\nsha1_init\n***\n");
+        }
     assert(!hash->data);
     hash->data=malloc(sizeof(SHA_CTX));
     SHA1_Init(hash->data);
@@ -52,12 +58,34 @@ static void sha1_init(ops_hash_t *hash)
 static void sha1_add(ops_hash_t *hash,const unsigned char *data,
 		     unsigned length)
     {
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"adding %d to hash:\n ", length);
+        for (i=0; i<length; i++)
+            {
+            fprintf(stderr,"0x%02x ", data[i]);
+            if (!((i+1) % 16))
+                fprintf(stderr,"\n");
+            else if (!((i+1) % 8))
+                fprintf(stderr,"  ");
+            }
+        fprintf(stderr,"\n");
+        }
     SHA1_Update(hash->data,data,length);
     }
 
 static unsigned sha1_finish(ops_hash_t *hash,unsigned char *out)
     {
     SHA1_Final(out,hash->data);
+    if (debug)
+        {
+        unsigned i=0;
+        fprintf(stderr,"***\n***\nsha1_finish\n***\n");
+        for (i=0; i<20; i++)
+            fprintf(stderr,"0x%02x ",out[i]);
+        fprintf(stderr,"\n");
+        }
     free(hash->data);
     hash->data=NULL;
     return 20;

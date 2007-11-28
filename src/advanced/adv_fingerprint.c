@@ -18,6 +18,8 @@
 
 #include <openpgpsdk/final.h>
 
+static int debug=0;
+
 /**
  * \ingroup Utils
  *
@@ -63,6 +65,9 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
 
 	ops_build_public_key(mem,key,ops_false);
 
+    if (debug)
+        { fprintf(stderr,"--- creating key fingerprint\n"); }
+
 	ops_hash_sha1(&sha1);
 	sha1.init(&sha1);
 
@@ -72,6 +77,9 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
 	ops_hash_add_int(&sha1,l,2);
 	sha1.add(&sha1,ops_memory_get_data(mem),l);
 	sha1.finish(&sha1,fp->fingerprint);
+
+    if (debug)
+        { fprintf(stderr,"--- finished creating key fingerprint\n"); }
 
 	fp->length=20;
 

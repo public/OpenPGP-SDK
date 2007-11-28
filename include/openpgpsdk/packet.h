@@ -559,6 +559,7 @@ typedef struct
     ops_signature_union_t	signature;	/*!< signature parameters */
     size_t			v4_hashed_data_start; /* only valid if accumulate is set */
     size_t			v4_hashed_data_length;
+    unsigned char* v4_hashed_data;
     ops_hash_t			*hash;		/*!< if set, the hash filled in for the data so far */
     ops_boolean_t		creation_time_set:1;
     ops_boolean_t		signer_id_set:1;
@@ -800,7 +801,7 @@ typedef struct
 typedef struct
     {
     unsigned			length;
-    unsigned char		data[8192];
+    unsigned char		data[8192]; // \todo fix hard-coded value?
     } ops_signed_cleartext_body_t;
 
 /** ops_signed_cleartext_trailer_t */

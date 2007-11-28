@@ -41,7 +41,7 @@ int init_suite_crypt_mpi(void)
     write(fd,rsa_nopass,strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --quiet --gen-key --expert --homedir=%s --batch %s",dir,keydetails);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --gen-key --expert --batch %s",dir,keydetails);
     system(cmd);
 
     // Initialise OPS 

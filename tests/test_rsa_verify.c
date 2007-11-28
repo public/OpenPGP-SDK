@@ -10,6 +10,9 @@
 #include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/validate.h"
 
+// \todo change this once we know it works
+#include "../src/advanced/parse_local.h"
+
 #include "tests.h"
 
 #ifndef ATTRIBUTE_UNUSED
@@ -36,20 +39,24 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     switch(content_->tag)
 	{
+        /*
     case OPS_PTAG_CT_LITERAL_DATA_HEADER:
         break;
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
         return callback_literal_data(content_,cbinfo);
         break;
+        */
 
     case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
-    case OPS_PTAG_CT_SIGNATURE:
         break;
 
+    case OPS_PTAG_CT_SIGNATURE:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
     case OPS_PTAG_CT_SIGNATURE_FOOTER:
-        return callback_signature(content_, cbinfo);
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+        return callback_data_signature(content_, cbinfo);
 
         /*
     case OPS_PTAG_CT_UNARMOURED_TEXT:
@@ -115,22 +122,22 @@ int init_suite_rsa_verify(void)
 
     // Now sign the test files with GPG
 
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --quiet --openpgp --compress-level 0 --sign --local-user %s %s/%s",
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --openpgp --compress-level 0 --sign --local-user %s %s/%s",
              dir, alpha_name, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --quiet --compress-level 0 --sign --armour --local-user %s %s/%s",
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --compress-level 0 --sign --armour --local-user %s %s/%s",
              dir, alpha_name, dir, filename_rsa_armour_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --quiet --compress-level 0 --sign --local-user %s --passphrase %s %s/%s",
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --compress-level 0 --sign --local-user %s --passphrase %s %s/%s",
              dir, bravo_name, bravo_passphrase, dir, filename_rsa_noarmour_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --quiet --compress-level 0 --sign --armour --local-user %s --passphrase %s %s/%s",
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty  --homedir=%s --compress-level 0 --sign --armour --local-user %s --passphrase %s %s/%s",
              dir, bravo_name, bravo_passphrase, dir, filename_rsa_armour_passphrase);
     if (system(cmd))
         { return 1; }
@@ -155,7 +162,7 @@ static void test_rsa_verify(const int has_armour, const int has_passphrase ATTRI
     char *suffix= has_armour ? "asc" : "gpg";
     int fd=0;
     ops_parse_info_t *pinfo=NULL;
-    validate_cb_arg_t validate_arg;
+    validate_data_cb_arg_t validate_arg;
     ops_validate_result_t result;
     int rtn=0;
     
@@ -178,13 +185,15 @@ static void test_rsa_verify(const int has_armour, const int has_passphrase ATTRI
     // Set verification reader and handling options
 
     pinfo=ops_parse_info_new();
-    ops_parse_cb_set(pinfo,callback,&validate_arg);
-    ops_reader_set_fd(pinfo,fd);
 
     memset(&validate_arg,'\0',sizeof validate_arg);
     validate_arg.result=&result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
+
+    ops_parse_cb_set(pinfo,callback,&validate_arg);
+    ops_reader_set_fd(pinfo,fd);
+    pinfo->rinfo.accumulate=ops_true;
 
     // Set up armour/passphrase options
 
@@ -202,11 +211,6 @@ static void test_rsa_verify(const int has_armour, const int has_passphrase ATTRI
     if (has_armour)
 	ops_reader_pop_dearmour(pinfo);
 
-    ops_public_key_free(&validate_arg.pkey);
-    if (validate_arg.subkey.version)
-        ops_public_key_free(&validate_arg.subkey);
-    ops_user_id_free(&validate_arg.user_id);
-    ops_user_attribute_free(&validate_arg.user_attribute);
     ops_parse_info_delete(pinfo);
 
     close(fd);

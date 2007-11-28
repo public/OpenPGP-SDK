@@ -120,7 +120,7 @@ int init_suite_rsa_decrypt(void)
      */
 
     // default symmetric algorithm
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
@@ -130,7 +130,7 @@ int init_suite_rsa_decrypt(void)
     // \todo write test which uses PGP2 instead of using gpg to test IDEA
     /*
     // IDEA
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"IDEA\" --output=%s/IDEA_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"IDEA\" --output=%s/IDEA_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
@@ -139,28 +139,28 @@ int init_suite_rsa_decrypt(void)
 #endif
 
     // TripleDES 
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"3DES\" --output=%s/3DES_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"3DES\" --output=%s/3DES_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
 
     // Cast5
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"CAST5\" --output=%s/CAST5_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/CAST5_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
 
     // AES128
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"AES\" --output=%s/AES128_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"AES\" --output=%s/AES128_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
 
     // AES256
-    snprintf(cmd,MAXBUF,"gpg --homedir=%s --cipher-algo \"AES256\" --output=%s/AES256_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"AES256\" --output=%s/AES256_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
@@ -168,19 +168,19 @@ int init_suite_rsa_decrypt(void)
 
 
 #ifdef TODO
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --encrypt --personal-cipher-preferences='CAST5' --armor --homedir=%s --recipient Alpha %s/%s", dir, dir, filename_rsa_armour_nopassphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --encrypt --personal-cipher-preferences='CAST5' --armor --homedir=%s --recipient Alpha %s/%s", dir, dir, filename_rsa_armour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
     
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --encrypt --s2k-cipher-algo CAST5 --homedir=%s --recipient Bravo %s/%s", dir, dir, filename_rsa_noarmour_passphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --encrypt --s2k-cipher-algo CAST5 --homedir=%s --recipient Bravo %s/%s", dir, dir, filename_rsa_noarmour_passphrase);
     if (system(cmd))
         {
         return 1;
         }
 
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --encrypt --s2k-cipher-algo CAST5 --armor --homedir=%s --recipient Bravo %s/%s", dir, dir, filename_rsa_armour_passphrase);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --encrypt --s2k-cipher-algo CAST5 --armor --homedir=%s --recipient Bravo %s/%s", dir, dir, filename_rsa_armour_passphrase);
     if (system(cmd))
         {
         return 1;

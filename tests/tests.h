@@ -27,9 +27,13 @@ CU_pSuite suite_crypto();
 extern CU_pSuite suite_packet_types();
 extern CU_pSuite suite_rsa_decrypt();
 extern CU_pSuite suite_rsa_encrypt();
-extern CU_pSuite suite_rsa_encrypt_GPGtest();
 extern CU_pSuite suite_rsa_signature();
 extern CU_pSuite suite_rsa_verify();
+
+extern CU_pSuite suite_rsa_decrypt_GPGtest();
+extern CU_pSuite suite_rsa_encrypt_GPGtest();
+extern CU_pSuite suite_rsa_signature_GPGtest();
+extern CU_pSuite suite_rsa_verify_GPGtest();
 
 // utility functions
 
@@ -54,7 +58,7 @@ callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *
 ops_parse_cb_return_t
 callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-callback_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 void reset_vars();
 int file_compare(char* file1, char* file2);

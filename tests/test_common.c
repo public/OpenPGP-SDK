@@ -71,7 +71,7 @@ void setup_test_keys()
     write(fd,rsa_nopass,strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --s2k-cipher-algo \"AES\" --expert --homedir=%s --batch %s",dir,keydetails);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --quiet --gen-key --s2k-cipher-algo \"AES\" --expert --homedir=%s --batch %s",dir,keydetails);
     system(cmd);
 
     /*
@@ -93,7 +93,7 @@ void setup_test_keys()
     write(fd,rsa_pass,strlen(rsa_pass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --openpgp --quiet --gen-key --s2k-cipher-algo \"AES\" --expert --homedir=%s --batch %s",dir,keydetails);
+    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --quiet --gen-key --s2k-cipher-algo \"AES\" --expert --homedir=%s --batch %s",dir,keydetails);
     system(cmd);
     
     /*
@@ -183,7 +183,7 @@ int mktmpdir (void)
 
 char* create_testtext(const char *text)
     {
-    const unsigned int repeats=100;
+    const unsigned int repeats=1;
     unsigned int i=0;
 
     const unsigned int maxbuf=1024;
@@ -260,6 +260,10 @@ callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
         // ignore
         break;
         
+    case OPS_PARSER_PACKET_END:
+        // nothing to do
+        break;
+
     case OPS_PARSER_ERROR:
         printf("parse error: %s\n",content->error.error);
         break;
@@ -385,10 +389,12 @@ callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *
  
 // move definition to better location
 ops_parse_cb_return_t
-validate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+ops_parse_cb_return_t
+validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 ops_parse_cb_return_t
-callback_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     //    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
 
@@ -398,10 +404,19 @@ callback_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbi
 
     switch(content_->tag)
         {
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
+
     case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
     case OPS_PTAG_CT_SIGNATURE_FOOTER:
-        return validate_cb(content_,cbinfo);
+
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+
+    case OPS_PTAG_CT_SIGNATURE:
+        return validate_data_cb(content_,cbinfo);
         break;
 
     default:

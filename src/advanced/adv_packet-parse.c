@@ -27,6 +27,8 @@
 
 #include <openpgpsdk/final.h>
 
+static int debug=0;
+
 typedef struct
     {
     // boolean: false once we've done the preamble/MDC checks
@@ -1340,7 +1342,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	if(!limited_read(C.ss_raw.raw,C.ss_raw.length,&subregion,pinfo))
 	    return 0;
 	CBP(pinfo,OPS_PTAG_RAW_SS,&content);
-	return 1;
+    return 1;
 	}
 
     switch(content.tag)
@@ -1630,15 +1632,21 @@ static int parse_signature_subpackets(ops_signature_t *sig,
  *
  * \see RFC2440bis-12 5.2.3
  */
-static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo,
-			      size_t v4_hashed_data_start)
+static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     unsigned char c[1];
     ops_parser_content_t content;
-
+    
+    // clear signature
     memset(&C.signature,'\0',sizeof C.signature);
+
+    /* We need to hash the packet data from version through the hashed subpacket data */
+
+    C.signature.v4_hashed_data_start=pinfo->rinfo.alength-1;
+
+    /* Set version,type,algorithms */
+
     C.signature.version=OPS_V4;
-    C.signature.v4_hashed_data_start=v4_hashed_data_start;
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -1659,8 +1667,25 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo,
 
     if(!parse_signature_subpackets(&C.signature,region,pinfo))
 	return 0;
+
     C.signature.v4_hashed_data_length=pinfo->rinfo.alength
-	-C.signature.v4_hashed_data_start;
+        -C.signature.v4_hashed_data_start;
+
+    // copy hashed subpackets
+    if (C.signature.v4_hashed_data)
+        free(C.signature.v4_hashed_data);
+    C.signature.v4_hashed_data=ops_mallocz(C.signature.v4_hashed_data_length);
+
+    if (!pinfo->rinfo.accumulate)
+        {
+        /* We must accumulate, else we can't check the signature */
+        fprintf(stderr,"*** ERROR: must set accumulate to true\n");
+        assert(0);
+        }
+
+    memcpy(C.signature.v4_hashed_data,
+           pinfo->rinfo.accumulated+C.signature.v4_hashed_data_start,
+           C.signature.v4_hashed_data_length);
 
     if(!parse_signature_subpackets(&C.signature,region,pinfo))
 	return 0;
@@ -1738,20 +1763,18 @@ static int parse_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     unsigned char c[1];
     ops_parser_content_t content;
-    size_t v4_hashed_data_start;
 
     assert(region->length_read == 0);  /* We should not have read anything so far */
 
     memset(&content,'\0',sizeof content);
 
-    v4_hashed_data_start=pinfo->rinfo.alength;
     if(!limited_read(c,1,region,pinfo))
 	return 0;
 
     if(c[0] == 2 || c[0] == 3)
 	return parse_v3_signature(region,pinfo);
     else if(c[0] == 4)
-	return parse_v4_signature(region,pinfo,v4_hashed_data_start);
+	return parse_v4_signature(region,pinfo);
 
     OPS_ERROR_1(&pinfo->errors,OPS_E_PROTO_BAD_SIGNATURE_VRSN,
                 "Bad signature version (%d)",c[0]);
@@ -2235,7 +2258,6 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 static int parse_pk_session_key(ops_region_t *region,
                                 ops_parse_info_t *pinfo)
     {
-    int debug=0;
     unsigned char c[1];
     ops_parser_content_t content;
     ops_parser_content_t pc;
@@ -2396,7 +2418,6 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
                              ops_reader_info_t *rinfo,
                              ops_parse_cb_info_t *cbinfo)
     {
-    int debug=0;
 
     /*
       Gets entire SE_IP data packet.
@@ -3124,6 +3145,9 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_des
     pinfo->rinfo.next=rinfo;
     pinfo->rinfo.pinfo=pinfo;
 
+    // should copy accumulate flags from other reader? RW
+    pinfo->rinfo.accumulate=rinfo->accumulate;
+    
     ops_reader_set(pinfo,reader,destroyer,arg);
     }
 

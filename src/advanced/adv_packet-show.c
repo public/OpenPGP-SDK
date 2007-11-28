@@ -40,6 +40,54 @@ static ops_map_t packet_tag_map[] =
     { OPS_PTAG_CT_USER_ATTRIBUTE,	"User Attribute" },
     { OPS_PTAG_CT_SE_IP_DATA,		"Sym. Encrypted and Integrity Protected Data" },
     { OPS_PTAG_CT_MDC,			"Modification Detection Code" },
+    { OPS_PARSER_PTAG,			"OPS_PARSER_PTAG" },
+    { OPS_PTAG_RAW_SS,			"OPS_PTAG_RAW_SS" },
+    { OPS_PTAG_SS_ALL,			"OPS_PTAG_SS_ALL" },
+    { OPS_PARSER_PACKET_END,		"OPS_PARSER_PACKET_END" },
+    { OPS_PTAG_SIGNATURE_SUBPACKET_BASE, "OPS_PTAG_SIGNATURE_SUBPACKET_BASE" },
+    /*
+    { OPS_PTAG_SS_CREATION_TIME,	"SS: Signature Creation Time" },
+    { OPS_PTAG_SS_EXPIRATION_TIME,	"SS: Signature Expiration Time" },
+    { OPS_PTAG_SS_TRUST,		"SS: Trust" },
+    { OPS_PTAG_SS_REGEXP,		"SS: Regexp" },
+    { OPS_PTAG_SS_REVOCABLE,		"SS: Revocable" },
+    { OPS_PTAG_SS_KEY_EXPIRATION_TIME,	"SS: Key Expiration Time" },
+    { OPS_PTAG_SS_RESERVED,		"SS: Reserved" },
+    { OPS_PTAG_SS_PREFERRED_SKA,	"SS: Preferred SKA" },
+    { OPS_PTAG_SS_REVOCATION_KEY,	"SS: Revocation Key" },
+    { OPS_PTAG_SS_ISSUER_KEY_ID,	"SS: Issuer Key Id" },
+    { OPS_PTAG_SS_NOTATION_DATA,	"SS: Notation Data" },
+    { OPS_PTAG_SS_PREFERRED_HASH,	"SS: Preferred Hash" },
+    { OPS_PTAG_SS_PREFERRED_COMPRESSION,"SS: Preferred Compression" },
+    { OPS_PTAG_SS_KEY_SERVER_PREFS,	"SS: Preferred Key Server" },
+    { OPS_PTAG_SS_PRIMARY_USER_ID,	"SS: Primary User ID" },
+    { OPS_PTAG_SS_POLICY_URL,		"SS: Policy URL" },
+    { OPS_PTAG_SS_KEY_FLAGS,		"SS: Key Flags" },
+    { OPS_PTAG_SS_SIGNERS_USER_ID,	"SS: Signers User ID" },
+    { OPS_PTAG_SS_REVOCATION_REASON,	"SS: Revocation Reason" },
+    { OPS_PTAG_SS_FEATURES,		"SS: Features" },
+*/
+    { OPS_PTAG_CT_LITERAL_DATA_HEADER,  "CT: Literal Data Header" },
+    { OPS_PTAG_CT_LITERAL_DATA_BODY,	"CT: Literal Data Body" },
+    { OPS_PTAG_CT_SIGNATURE_HEADER,	"CT: Signature Header" },
+    { OPS_PTAG_CT_SIGNATURE_FOOTER,	"CT: Signature Footer" },
+    { OPS_PTAG_CT_ARMOUR_HEADER,	"CT: Armour Header" },
+    { OPS_PTAG_CT_ARMOUR_TRAILER,	"CT: Armour Trailer" },
+    { OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER, "CT: Signed Cleartext Header" },
+    { OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY, "CT: Signed Cleartext Body" },
+    { OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER, "CT: Signed Cleartext Trailer" },
+    { OPS_PTAG_CT_UNARMOURED_TEXT,	"CT: Unarmoured Text" },
+    { OPS_PTAG_CT_ENCRYPTED_SECRET_KEY, "CT: Encrypted Secret Key" },
+    { OPS_PTAG_CT_SE_DATA_HEADER,	"CT: Sym Encrypted Data Header" },
+    { OPS_PTAG_CT_SE_DATA_BODY,		"CT: Sym Encrypted Data Body" },
+    { OPS_PTAG_CT_SE_IP_DATA_HEADER,	"CT: Sym Encrypted IP Data Header" },
+    { OPS_PTAG_CT_SE_IP_DATA_BODY,	"CT: Sym Encrypted IP Data Body" },
+    { OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY, "CT: Encrypted PK Session Key" },
+    { OPS_PARSER_CMD_GET_SK_PASSPHRASE,	"CMD: Get Secret Key Passphrase" },
+    { OPS_PARSER_CMD_GET_SECRET_KEY, 	"CMD: Get Secret Key" },
+    { OPS_PARSER_ERROR,			"OPS_PARSER_ERROR" },
+    { OPS_PARSER_ERRCODE,		"OPS_PARSER_ERRCODE" },
+
     { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
     };
 typedef ops_map_t packet_tag_map_t;
@@ -459,7 +507,13 @@ static ops_text_t *showall_octets_bits(ops_data_t *data,ops_bit_map_t **map,
 */
 const char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
     {
-    return show_packet_tag(packet_tag,packet_tag_map);
+    char *rtn=NULL;
+    rtn=show_packet_tag(packet_tag,packet_tag_map);
+
+    if (!rtn)
+        rtn="Unknown Tag";
+
+    return rtn;
     }
 
 /**

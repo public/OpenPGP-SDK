@@ -266,7 +266,7 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
         else if (pub_key==bravo_pub_keydata)
             snprintf(pp,MAXBUF," --passphrase %s ", bravo_passphrase);
         snprintf(decrypted_file,MAXBUF,"%s/decrypted_%s",dir,filename);
-        snprintf(cmd,MAXBUF,"gpg --decrypt --output=%s --quiet --homedir %s %s %s",decrypted_file, dir, pp, encrypted_file);
+        snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --decrypt --output=%s --homedir %s %s %s",decrypted_file, dir, pp, encrypted_file);
         //    printf("cmd: %s\n", cmd);
         rtn=system(cmd);
         CU_ASSERT(rtn==0);

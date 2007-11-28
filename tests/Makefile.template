@@ -41,7 +41,6 @@ clean:
 	rm -f TAGS
 
 .depend: *.[ch] ../include/openpgpsdk/*.h $(CUNIT_INC)
-
 	$(CC) $(CFLAGS) -E -M *.c > .depend
 
 force_depend:
