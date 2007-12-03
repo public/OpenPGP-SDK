@@ -788,11 +788,11 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
 /**
  * \param parse_info
  */
-void ops_reader_pop_dearmour(ops_parse_info_t *parse_info)
+void ops_reader_pop_dearmour(ops_parse_info_t *pinfo)
     {
-    dearmour_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(parse_info));
-
-    free(arg);
+    //    dearmour_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(parse_info));
+    //    free(arg);
+    ops_reader_pop(pinfo);
     }
 
 /**
