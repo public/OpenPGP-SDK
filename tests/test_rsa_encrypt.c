@@ -11,8 +11,6 @@
 
 #include "tests.h"
 
-static int do_gpgtest=0;
-
 static char *filename_rsa_noarmour_nopassphrase_singlekey="enc_rsa_noarmour_np_singlekey.txt";
 static char *filename_rsa_noarmour_passphrase_singlekey="enc_rsa_noarmour_pp_singlekey.txt";
 static char *filename_rsa_armour_singlekey="enc_rsa_armour_singlekey.txt";
@@ -85,8 +83,6 @@ callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *c
 
 int init_suite_rsa_encrypt(void)
     {
-    do_gpgtest=0;
-
     // Create RSA test files
 
     create_testfile(filename_rsa_noarmour_nopassphrase_singlekey);
@@ -98,15 +94,6 @@ int init_suite_rsa_encrypt(void)
     */
 
     // Return success
-    return 0;
-    }
-
-int init_suite_rsa_encrypt_gpgtest(void)
-    {
-    init_suite_rsa_encrypt();
-
-    do_gpgtest=1;
-
     return 0;
     }
 
@@ -169,7 +156,7 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     char encrypted_file[MAXBUF+1];
     char decrypted_file[MAXBUF+1];
     char *suffix= has_armour ? "asc" : "gpg";
-    char *gpgtest = do_gpgtest ? "gpgtest_" : "";
+    //    char *gpgtest = do_gpgtest ? "gpgtest_" : "";
     int fd_in=0;
     int fd_out=0;
     int rtn=0;
@@ -196,7 +183,7 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
         exit(2);
         }
     
-    snprintf(encrypted_file,MAXBUF,"%s/%s%s.%s",dir,gpgtest,filename,suffix);
+    snprintf(encrypted_file,MAXBUF,"%s/%s.%s",dir,filename,suffix);
 #ifdef WIN32
     fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
 #else
@@ -257,28 +244,23 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
      * Test results
      */
 
-    if (do_gpgtest)
-        {
-        // File contents should match - check with GPG
+    // File contents should match - check with GPG
         
-        if (pub_key==alpha_pub_keydata)
-            pp[0]='\0';
-        else if (pub_key==bravo_pub_keydata)
-            snprintf(pp,MAXBUF," --passphrase %s ", bravo_passphrase);
-        snprintf(decrypted_file,MAXBUF,"%s/decrypted_%s",dir,filename);
-        snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --decrypt --output=%s --homedir %s %s %s",decrypted_file, dir, pp, encrypted_file);
-        //    printf("cmd: %s\n", cmd);
-        rtn=system(cmd);
-        CU_ASSERT(rtn==0);
-        CU_ASSERT(file_compare(myfile,decrypted_file)==0);
-        }
-    else
-        {
-        // File contents should match - checking with OPS
+    if (pub_key==alpha_pub_keydata)
+        pp[0]='\0';
+    else if (pub_key==bravo_pub_keydata)
+        snprintf(pp,MAXBUF," --passphrase %s ", bravo_passphrase);
+    snprintf(decrypted_file,MAXBUF,"%s/decrypted_%s",dir,filename);
+    snprintf(cmd,MAXBUF,"%s --decrypt --output=%s %s %s",gpgcmd, decrypted_file, pp, encrypted_file);
+    //    printf("cmd: %s\n", cmd);
+    rtn=system(cmd);
+    CU_ASSERT(rtn==0);
+    CU_ASSERT(file_compare(myfile,decrypted_file)==0);
+
+    // File contents should match - checking with OPS
         
-        testtext=create_testtext(filename);
-        test_rsa_decrypt(encrypted_file,testtext);
-        }
+    testtext=create_testtext(filename);
+    test_rsa_decrypt(encrypted_file,testtext);
     }
 
 static void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
@@ -349,21 +331,6 @@ CU_pSuite suite_rsa_encrypt()
     CU_pSuite suite = NULL;
 
     suite = CU_add_suite("RSA Encryption Suite", init_suite_rsa_encrypt, clean_suite_rsa_encrypt);
-    if (!suite)
-	    return NULL;
-
-    if (!add_tests(suite))
-        return NULL;
-
-    return suite;
-    }
-
-CU_pSuite suite_rsa_encrypt_GPGtest()
-    {
-    CU_pSuite suite = NULL;
-
-    suite = CU_add_suite("RSA Encryption Suite (GPG interoperability)", init_suite_rsa_encrypt_gpgtest, clean_suite_rsa_encrypt);
-
     if (!suite)
 	    return NULL;
 

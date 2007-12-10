@@ -20,16 +20,10 @@ COMMONTESTOBJ=$(COMMONTESTSRC:.c=.o)
 TESTSRC= tests.c 
 TESTOBJ= $(TESTSRC:.c=.o)
 
-GPGTESTSRC= tests_gpg.c
-GPGTESTOBJ= $(GPGTESTSRC:.c=.o)
-
-all: Makefile $(CUNIT_LIB) .depend tests tests_gpg
+all: Makefile $(CUNIT_LIB) .depend tests
 
 tests: $(CUNIT_LIB) $(TESTOBJ) $(COMMONTESTOBJ) $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o tests $(TESTOBJ) $(COMMONTESTOBJ) $(LIBS)
-
-tests_gpg: $(CUNIT_LIB) $(GPGTESTOBJ) $(COMMONTESTOBJ) $(LIBDEPS)
-	$(CC) $(LDFLAGS) -o tests_gpg $(GPGTESTOBJ) $(COMMONTESTOBJ) $(LIBS)
 
 $(CUNIT_LIB):
 	tar xvfz CUnit-2.1-0-src.tar.gz

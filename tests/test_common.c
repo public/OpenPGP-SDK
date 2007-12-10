@@ -48,7 +48,7 @@ void setup()
         return;
 
     assert(strlen(dir));
-    snprintf(gpgcmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s",dir);
+    snprintf(gpgcmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --openpgp",dir);
 
     setup_test_keys();
     }

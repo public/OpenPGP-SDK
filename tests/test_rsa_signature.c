@@ -17,12 +17,13 @@
 #include "tests.h"
 
 static int debug=0;
-static int do_gpgtest=0;
 
 static char *filename_rsa_noarmour_nopassphrase="ops_rsa_signed_noarmour_nopassphrase.txt";
 static char *filename_rsa_noarmour_passphrase="ops_rsa_signed_noarmour_passphrase.txt";
 static char *filename_rsa_armour_nopassphrase="ops_rsa_signed_armour_nopassphrase.txt";
 static char *filename_rsa_armour_passphrase="ops_rsa_signed_armour_passphrase.txt";
+static char *filename_rsa_clearsign_nopassphrase="ops_rsa_signed_clearsign_nopassphrase.txt";
+static char *filename_rsa_clearsign_passphrase="ops_rsa_signed_clearsign_passphrase.txt";
 
 /* Signature suite initialization.
  * Create temporary directory.
@@ -31,25 +32,16 @@ static char *filename_rsa_armour_passphrase="ops_rsa_signed_armour_passphrase.tx
 
 int init_suite_rsa_signature(void)
     {
-    do_gpgtest=0;
-
     // Create test files
 
     create_testfile(filename_rsa_noarmour_nopassphrase);
     create_testfile(filename_rsa_noarmour_passphrase);
     create_testfile(filename_rsa_armour_nopassphrase);
     create_testfile(filename_rsa_armour_passphrase);
+    create_testfile(filename_rsa_clearsign_nopassphrase);
+    create_testfile(filename_rsa_clearsign_passphrase);
 
     // Return success
-    return 0;
-    }
-
-int init_suite_rsa_signature_gpgtest(void)
-    {
-    init_suite_rsa_signature();
-
-    do_gpgtest=1;
-
     return 0;
     }
 
@@ -62,7 +54,7 @@ int clean_suite_rsa_signature(void)
     return 0;
     }
 
-static void test_rsa_signature(const int has_armour, const char *filename, const ops_secret_key_t *skey, ops_hash_algorithm_t hash_alg)
+static void test_rsa_signature_clearsign(const char *filename, const ops_secret_key_t *skey, ops_hash_algorithm_t hash_alg)
     {
     unsigned char keyid[OPS_KEY_ID_SIZE];
     ops_create_signature_t *sig=NULL;
@@ -70,7 +62,8 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
     char signed_file[MAXBUF+1];
-    char *suffix= has_armour ? "asc" : "gpg";
+    //    char *suffix= has_armour ? "asc" : "gpg";
+    char *suffix= "asc";
     int fd_in=0;
     int fd_out=0;
     int rtn=0;
@@ -105,7 +98,7 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     // Set up armour/passphrase options
     // OPS code armours signatures by default
 
-    assert(has_armour);
+    //    assert(has_armour);
     
     // set up signature
     sig=ops_create_signature_new();
@@ -188,7 +181,7 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     
     // Set up armour/passphrase options
     
-    if (has_armour)
+    //    if (has_armour)
         ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
     //    current_passphrase=has_passphrase ? passphrase : nopassphrase;
     
@@ -199,7 +192,7 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     CU_ASSERT(rtn==1);
     
     // Tidy up
-    if (has_armour)
+    //    if (has_armour)
         ops_reader_pop_dearmour(pinfo);
     
     ops_parse_info_delete(pinfo);
@@ -216,8 +209,11 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     }
     }
 
-void test_rsa_signature_noarmour_nopassphrase(void)
+static void test_rsa_signature_noarmour_nopassphrase(void)
     {
+    CU_FAIL("Test TODO: Sign file with no armour and no passphrase");
+#ifdef TBD
+
     int armour=0;
     assert(pub_keyring.nkeys);
     test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_SHA1);
@@ -228,27 +224,49 @@ void test_rsa_signature_noarmour_nopassphrase(void)
     test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_SHA384);
     test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_SHA512);
 #endif
+#endif
     }
 
-void test_rsa_signature_noarmour_passphrase(void)
+static void test_rsa_signature_noarmour_passphrase(void)
     {
+    CU_FAIL("Test TODO: Sign file with no armour and passphrase");
+#ifdef TBD
     int armour=0;
     assert(pub_keyring.nkeys);
     test_rsa_signature(armour,filename_rsa_noarmour_passphrase, bravo_skey, OPS_HASH_SHA1);
+#endif
     }
 
-void test_rsa_signature_armour_nopassphrase(void)
+static void test_rsa_signature_armour_nopassphrase(void)
     {
+    CU_FAIL("Test TODO: Sign file with armour and no passphrase");
+#ifdef TBD
     int armour=1;
     assert(pub_keyring.nkeys);
     test_rsa_signature(armour,filename_rsa_armour_nopassphrase, alpha_skey, OPS_HASH_SHA1);
+#endif
     }
 
-void test_rsa_signature_armour_passphrase(void)
+static void test_rsa_signature_armour_passphrase(void)
     {
+    CU_FAIL("Test TODO: Sign file with armour and passphrase");
+#ifdef TBD
     int armour=1;
     assert(pub_keyring.nkeys);
     test_rsa_signature(armour,filename_rsa_armour_passphrase, bravo_skey, OPS_HASH_SHA1);
+#endif
+    }
+
+static void test_rsa_signature_clearsign_nopassphrase(void)
+    {
+    assert(pub_keyring.nkeys);
+    test_rsa_signature_clearsign(filename_rsa_armour_nopassphrase, alpha_skey, OPS_HASH_SHA1);
+    }
+
+static void test_rsa_signature_clearsign_passphrase(void)
+    {
+    assert(pub_keyring.nkeys);
+    test_rsa_signature_clearsign(filename_rsa_armour_passphrase, bravo_skey, OPS_HASH_SHA1);
     }
 
 CU_pSuite suite_rsa_signature()
@@ -261,43 +279,11 @@ CU_pSuite suite_rsa_signature()
 
     // add tests to suite
     
-#ifdef TBD
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase", test_rsa_signature_noarmour_nopassphrase))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_signature_noarmour_passphrase))
 	    return NULL;
-#endif /*TBD*/
-    
-    if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_signature_armour_nopassphrase))
-	    return NULL;
-    
-#ifdef TBD
-    if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_signature_armour_passphrase))
-	    return NULL;
-#endif    
-    
-    return suite;
-}
-
-CU_pSuite suite_rsa_signature_GPGtest()
-{
-    CU_pSuite suite = NULL;
-
-    suite = CU_add_suite("RSA Signature Suite (GPG interop)", init_suite_rsa_signature_gpgtest, clean_suite_rsa_signature);
-
-    if (!suite)
-	    return NULL;
-
-    // add tests to suite
-    
-#ifdef TBD
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase", test_rsa_signature_noarmour_nopassphrase))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_signature_noarmour_passphrase))
-	    return NULL;
-#endif /*TBD*/
     
     if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_signature_armour_nopassphrase))
 	    return NULL;
@@ -305,6 +291,11 @@ CU_pSuite suite_rsa_signature_GPGtest()
     if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_signature_armour_passphrase))
 	    return NULL;
     
+    if (NULL == CU_add_test(suite, "Clearsigned, no passphrase", test_rsa_signature_clearsign_nopassphrase))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Clearsigned, passphrase", test_rsa_signature_clearsign_passphrase))
+	    return NULL;
     
     return suite;
 }

@@ -15,8 +15,6 @@
 
 #include "tests.h"
 
-static int do_gpgtest=0;
-
 #ifndef ATTRIBUTE_UNUSED
 
 #ifndef WIN32
@@ -27,12 +25,14 @@ static int do_gpgtest=0;
 
 #endif /* ATTRIBUTE_UNUSED */
 
-static char *filename_rsa_noarmour_nopassphrase="gpg_signed_noarmour_nopassphrase.txt";
 static char *filename_rsa_armour_nopassphrase="gpg_signed_armour_nopassphrase.txt";
-static char *filename_rsa_noarmour_passphrase="gpg_signed_armour_nopassphrase.txt";
 static char *filename_rsa_armour_passphrase="gpg_signed_armour_passphrase.txt";
 
-static char *filename_rsa_clearsign_armour_nopassphrase="gpg_clearsigned_armour_nopassphrase.txt";
+static char *filename_rsa_noarmour_nopassphrase="gpg_signed_noarmour_nopassphrase.txt";
+static char *filename_rsa_noarmour_passphrase="gpg_signed_noarmour_passphrase.txt";
+
+static char *filename_rsa_clearsign_nopassphrase="gpg_clearsigned_nopassphrase.txt";
+static char *filename_rsa_clearsign_passphrase="gpg_clearsigned_passphrase.txt";
 
 /* Signature verification suite initialization.
  * Create temporary test files.
@@ -42,14 +42,13 @@ int init_suite_rsa_verify(void)
     {
     char cmd[MAXBUF+1];
 
-    do_gpgtest=0;
-
     // Create SIGNED test files
 
-    create_testfile(filename_rsa_noarmour_nopassphrase);
     create_testfile(filename_rsa_armour_nopassphrase);
-    create_testfile(filename_rsa_noarmour_passphrase);
     create_testfile(filename_rsa_armour_passphrase);
+
+    create_testfile(filename_rsa_noarmour_nopassphrase);
+    create_testfile(filename_rsa_noarmour_passphrase);
 
     // Now sign the test files with GPG
 
@@ -58,17 +57,17 @@ int init_suite_rsa_verify(void)
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --compress-level 0 --sign --local-user %s --armor %s/%s",
+    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --sign --local-user %s --armor %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_armour_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --compress-level 0 --sign --local-user %s --passphrase %s %s/%s",
+    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s %s/%s",
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_noarmour_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --compress-level 0 --sign --local-user %s --passphrase %s --armor %s/%s",
+    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s --armor %s/%s",
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_armour_passphrase);
     if (system(cmd))
         { return 1; }
@@ -77,25 +76,22 @@ int init_suite_rsa_verify(void)
      * Create CLEARSIGNED test files
      */
 
-    create_testfile(filename_rsa_clearsign_armour_nopassphrase);
+    create_testfile(filename_rsa_clearsign_nopassphrase);
+    create_testfile(filename_rsa_clearsign_passphrase);
 
     // and sign them
 
     snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --local-user %s --armor %s/%s",
-             gpgcmd, alpha_name, dir, filename_rsa_clearsign_armour_nopassphrase);
+             gpgcmd, alpha_name, dir, filename_rsa_clearsign_nopassphrase);
+    if (system(cmd))
+        { return 1; }
+
+    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --local-user %s --passphrase %s --armor %s/%s",
+             gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_clearsign_passphrase);
     if (system(cmd))
         { return 1; }
 
     // Return success
-    return 0;
-    }
-
-int init_suite_rsa_verify_gpgtest(void)
-    {
-    init_suite_rsa_verify();
-
-    do_gpgtest=1;
-
     return 0;
     }
 
@@ -175,7 +171,7 @@ static void test_rsa_verify(const int has_armour, const int has_passphrase ATTRI
 #endif
     }
 
-void test_rsa_verify_noarmour_nopassphrase(void)
+static void test_rsa_verify_noarmour_nopassphrase(void)
     {
     //    int clearsign=0;
     int armour=0;
@@ -186,40 +182,51 @@ void test_rsa_verify_noarmour_nopassphrase(void)
     test_rsa_verify(armour,passphrase,filename_rsa_noarmour_nopassphrase,NULL);
     }
 
-void test_rsa_verify_clearsign_armour_nopassphrase(void)
+static void test_rsa_verify_noarmour_passphrase(void)
+    {
+    //    int clearsign=0;
+    int armour=0;
+    int passphrase=1;
+    assert(pub_keyring.nkeys);
+    test_rsa_verify(armour,passphrase,filename_rsa_noarmour_passphrase,NULL);
+    }
+
+static void test_rsa_verify_armour_nopassphrase(void)
+    {
+    int armour=1;
+    int passphrase=0;
+    assert(pub_keyring.nkeys);
+    test_rsa_verify(armour,passphrase,filename_rsa_armour_nopassphrase,NULL);
+    }
+
+static void test_rsa_verify_armour_passphrase(void)
+    {
+    int armour=1;
+    int passphrase=1;
+    assert(pub_keyring.nkeys);
+    test_rsa_verify(armour,passphrase,filename_rsa_armour_passphrase,NULL);
+    }
+
+static void test_rsa_verify_clearsign_nopassphrase(void)
     {
     //    int clearsign=1;
     int armour=1;
     int passphrase=0;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify(armour,passphrase,filename_rsa_clearsign_armour_nopassphrase,NULL);
+    test_rsa_verify(armour,passphrase,filename_rsa_clearsign_nopassphrase,NULL);
     }
 
-#ifdef TBD
-void test_rsa_encrypt_armour_singlekey(void)
+static void test_rsa_verify_clearsign_passphrase(void)
     {
-    int armour=1;
-    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
-    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
-    assert(pub_key);
-    test_rsa_encrypt(armour,pub_key,filename_rsa_armour_singlekey);
-    }
-
-void test_rsa_encrypt_noarmour_passphrase(void)
-    {
-    int armour=0;
-    int passphrase=1;
-    test_rsa_encrypt(armour,passphrase,filename_rsa_noarmour_passphrase);
-    }
-
-void test_rsa_encrypt_armour_passphrase(void)
-    {
+    //    int clearsign=1;
     int armour=1;
     int passphrase=1;
-    test_rsa_encrypt(armour,passphrase,filename_rsa_armour_passphrase);
+    assert(pub_keyring.nkeys);
+
+    test_rsa_verify(armour,passphrase,filename_rsa_clearsign_passphrase,NULL);
     }
-#endif /*TBD*/
+
 
 CU_pSuite suite_rsa_verify()
 {
@@ -231,39 +238,24 @@ CU_pSuite suite_rsa_verify()
 
     // add tests to suite
     
-    if (NULL == CU_add_test(suite, "Clearsigned, armoured, no passphrase", test_rsa_verify_clearsign_armour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Clearsigned, no passphrase", test_rsa_verify_clearsign_nopassphrase))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Clearsigned, passphrase", test_rsa_verify_clearsign_passphrase))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_verify_armour_nopassphrase))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_verify_armour_passphrase))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Unarmoured, no passphrase", test_rsa_verify_noarmour_nopassphrase))
 	    return NULL;
     
-    /*
     if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_verify_noarmour_passphrase))
 	    return NULL;
-    */
-    return suite;
-}
 
-CU_pSuite suite_rsa_verify_GPGtest()
-{
-    CU_pSuite suite = NULL;
-
-    suite = CU_add_suite("RSA Verification Suite (GPG interop)", init_suite_rsa_verify_gpgtest, clean_suite_rsa_verify);
-    if (!suite)
-	    return NULL;
-
-    // add tests to suite
-    
-    if (NULL == CU_add_test(suite, "Clearsigned, armoured, no passphrase", test_rsa_verify_clearsign_armour_nopassphrase))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase", test_rsa_verify_noarmour_nopassphrase))
-	    return NULL;
-
-    /*
-    if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_verify_noarmour_passphrase))
-	    return NULL;
-    */
     return suite;
 }
 
