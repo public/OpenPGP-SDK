@@ -24,9 +24,6 @@ static char *filename_rsa_noarmour_passphrase="ops_rsa_signed_noarmour_passphras
 static char *filename_rsa_armour_nopassphrase="ops_rsa_signed_armour_nopassphrase.txt";
 static char *filename_rsa_armour_passphrase="ops_rsa_signed_armour_passphrase.txt";
 
-static ops_parse_cb_return_t
-callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
-
 /* Signature suite initialization.
  * Create temporary directory.
  * Create temporary test files.
@@ -78,6 +75,7 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     int fd_out=0;
     int rtn=0;
     ops_create_info_t *cinfo=NULL;
+    unsigned char buf[MAXBUF];
     
     // open file to sign
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
@@ -122,7 +120,6 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
 
     for (;;)
         {
-        unsigned char buf[MAXBUF];
         int n=0;
     
         n=read(fd_in,buf,sizeof(buf));
@@ -139,80 +136,84 @@ static void test_rsa_signature(const int has_armour, const char *filename, const
     ops_signature_add_creation_time(sig,time(NULL));
     ops_keyid(keyid,&skey->public_key);
     ops_signature_add_issuer_key_id(sig,keyid);
+
     ops_signature_hashed_subpackets_end(sig);
     ops_write_signature(sig,(ops_public_key_t *)&skey->public_key,(ops_secret_key_t *)skey,cinfo);
     ops_writer_close(cinfo);
     close(fd_out);
 
-    // Check
+    /*
+     * Validate output
+     */
 
-    if (!do_gpgtest)
+    // Check with OPS
+
+    {
+    int fd=0;
+    ops_parse_info_t *pinfo=NULL;
+    validate_data_cb_arg_t validate_arg;
+    ops_validate_result_t result;
+    int rtn=0;
+    
+    if (debug)
         {
-        int fd=0;
-        ops_parse_info_t *pinfo=NULL;
-        validate_data_cb_arg_t validate_arg;
-        ops_validate_result_t result;
-        int rtn=0;
-
-        if (debug)
-            {
-            fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
-            }
-
+        fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
+        }
+    
     // open signed file
 #ifdef WIN32
-        fd=open(signed_file,O_RDONLY | O_BINARY);
+    fd=open(signed_file,O_RDONLY | O_BINARY);
 #else
-        fd=open(signed_file,O_RDONLY);
+    fd=open(signed_file,O_RDONLY);
 #endif
-        if(fd < 0)
-            {
-            perror(signed_file);
-            exit(2);
-            }
-        
-        // Set verification reader and handling options
-        
-        pinfo=ops_parse_info_new();
-
-        memset(&validate_arg,'\0',sizeof validate_arg);
-        validate_arg.result=&result;
-        validate_arg.keyring=&pub_keyring;
-        validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
-        
-        ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-        ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
-        ops_reader_set_fd(pinfo,fd);
-        pinfo->rinfo.accumulate=ops_true;
-        
-        // Set up armour/passphrase options
-        
-        if (has_armour)
-            ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
-        //    current_passphrase=has_passphrase ? passphrase : nopassphrase;
-        
-        // Do the verification
-        
-        rtn=ops_parse(pinfo);
-        ops_print_errors(ops_parse_info_get_errors(pinfo));
-        CU_ASSERT(rtn==1);
-        
-        // Tidy up
-        if (has_armour)
-            ops_reader_pop_dearmour(pinfo);
-        
-        ops_parse_info_delete(pinfo);
-        
-        close(fd);
-        }
-    else
+    if(fd < 0)
         {
-        // Check signature with GPG
-
-        snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --verify --quiet --homedir %s %s", dir, signed_file);
-        rtn=system(cmd);
-        CU_ASSERT(rtn==0);
+        perror(signed_file);
+        exit(2);
         }
+    
+    // Set verification reader and handling options
+    
+    pinfo=ops_parse_info_new();
+    
+    memset(&validate_arg,'\0',sizeof validate_arg);
+    validate_arg.result=&result;
+    validate_arg.keyring=&pub_keyring;
+    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
+    
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
+    ops_reader_set_fd(pinfo,fd);
+    pinfo->rinfo.accumulate=ops_true;
+    
+    // Set up armour/passphrase options
+    
+    if (has_armour)
+        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+    //    current_passphrase=has_passphrase ? passphrase : nopassphrase;
+    
+    // Do the verification
+    
+    rtn=ops_parse(pinfo);
+    ops_print_errors(ops_parse_info_get_errors(pinfo));
+    CU_ASSERT(rtn==1);
+    
+    // Tidy up
+    if (has_armour)
+        ops_reader_pop_dearmour(pinfo);
+    
+    ops_parse_info_delete(pinfo);
+    
+    close(fd);
+    }
+
+    // Check signature with GPG
+    {
+
+    snprintf(cmd,MAXBUF,"%s --verify %s", gpgcmd, signed_file);
+    rtn=system(cmd);
+    CU_ASSERT(rtn==0);
+    }
     }
 
 void test_rsa_signature_noarmour_nopassphrase(void)
@@ -307,43 +308,5 @@ CU_pSuite suite_rsa_signature_GPGtest()
     
     return suite;
 }
-
-static ops_parse_cb_return_t
-callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
-    {
-    int debug=0;
-
-    if (debug)
-        { ops_print_packet(content_); }
-
-    switch(content_->tag)
-        {
-    case OPS_PTAG_RAW_SS:
-    case OPS_PTAG_SS_CREATION_TIME:
-    case OPS_PTAG_SS_ISSUER_KEY_ID:
-        // \todo should free memory?
-        return OPS_KEEP_MEMORY;
-        
-    case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
-    case OPS_PTAG_CT_ARMOUR_HEADER:
-    case OPS_PTAG_CT_ARMOUR_TRAILER:
-        break;
-        
-    case OPS_PTAG_CT_SIGNATURE:
-    case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
-    case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
-    case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
-    case OPS_PTAG_CT_SIGNATURE_HEADER:
-    case OPS_PTAG_CT_SIGNATURE_FOOTER:
-    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
-    case OPS_PTAG_CT_LITERAL_DATA_BODY:
-        return callback_data_signature(content_, cbinfo);
-
-    default:
-        return callback_general(content_,cbinfo);
-	}
-
-    return OPS_RELEASE_MEMORY;
-    }
 
 // EOF

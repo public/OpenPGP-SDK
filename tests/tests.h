@@ -37,7 +37,8 @@ extern CU_pSuite suite_rsa_verify_GPGtest();
 
 // utility functions
 
-void setup_test_keys();
+extern char gpgcmd[];
+void setup();
 void cleanup();
 
 int mktmpdir();
@@ -59,6 +60,9 @@ ops_parse_cb_return_t
 callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
 callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+ops_parse_cb_return_t
+callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+
 
 void reset_vars();
 int file_compare(char* file1, char* file2);

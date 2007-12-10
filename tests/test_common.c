@@ -15,6 +15,7 @@
 #include "tests.h"
 
 char dir[MAXBUF+1];
+char gpgcmd[MAXBUF+1];
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
 static char* no_passphrase="";
@@ -38,7 +39,21 @@ char* bravo_passphrase="hello";
 
 const ops_key_data_t *decrypter=NULL;
 
-void setup_test_keys()
+static void setup_test_keys();
+
+void setup()
+    {
+    // Create temp directory
+    if (!mktmpdir())
+        return;
+
+    assert(strlen(dir));
+    snprintf(gpgcmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s",dir);
+
+    setup_test_keys();
+    }
+
+static void setup_test_keys()
     {
     char keydetails[MAXBUF+1];
     char keyring_name[MAXBUF+1];
@@ -47,10 +62,6 @@ void setup_test_keys()
 
     char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
     char *rsa_pass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Bravo\nName-Comment: RSA, passphrase\nName-Email: bravo@test.com\nPassphrase: hello\nKey-Length: 1024\n";
-
-    // Create temp directory
-    if (!mktmpdir())
-        return;
 
     /*
      * Create a RSA keypair with no passphrase
@@ -71,7 +82,7 @@ void setup_test_keys()
     write(fd,rsa_nopass,strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --quiet --gen-key --s2k-cipher-algo \"AES\" --expert --homedir=%s --batch %s",dir,keydetails);
+    snprintf(cmd,MAXBUF,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     system(cmd);
 
     /*
@@ -93,7 +104,7 @@ void setup_test_keys()
     write(fd,rsa_pass,strlen(rsa_pass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --quiet --gen-key --s2k-cipher-algo \"AES\" --expert --homedir=%s --batch %s",dir,keydetails);
+    snprintf(cmd,MAXBUF,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     system(cmd);
     
     /*
@@ -248,6 +259,8 @@ void create_testfile(const char *name)
 ops_parse_cb_return_t
 callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
+    int debug=0;
+
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     
     OPS_USED(cbinfo);
@@ -261,7 +274,22 @@ callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
         break;
         
     case OPS_PARSER_PACKET_END:
-        // nothing to do
+        // print raw packet
+
+        if (debug)
+            {
+            unsigned i=0;
+            fprintf(stderr,"***\n***Raw Packet:\n");
+            for (i=0; i<content_->content.packet.length; i++)
+                {
+                fprintf(stderr,"0x%02x ", content_->content.packet.raw[i]);
+                if (!((i+1) % 16))
+                    fprintf(stderr,"\n");
+                else if (!((i+1) % 8))
+                    fprintf(stderr,"  ");
+                }
+            fprintf(stderr,"\n");
+            }
         break;
 
     case OPS_PARSER_ERROR:
@@ -426,6 +454,45 @@ callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t
     return OPS_RELEASE_MEMORY;
     }
  
+ops_parse_cb_return_t
+callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    /*
+    int debug=0;
+
+    if (debug)
+        { ops_print_packet(content_); }
+    */
+    switch(content_->tag)
+        {
+    case OPS_PTAG_RAW_SS:
+    case OPS_PTAG_SS_CREATION_TIME:
+    case OPS_PTAG_SS_ISSUER_KEY_ID:
+        // \todo should free memory?
+        return OPS_KEEP_MEMORY;
+        
+    case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
+    case OPS_PTAG_CT_ARMOUR_HEADER:
+    case OPS_PTAG_CT_ARMOUR_TRAILER:
+        break;
+        
+    case OPS_PTAG_CT_SIGNATURE:
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY:
+    case OPS_PTAG_CT_SIGNED_CLEARTEXT_TRAILER:
+    case OPS_PTAG_CT_SIGNATURE_HEADER:
+    case OPS_PTAG_CT_SIGNATURE_FOOTER:
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+        return callback_data_signature(content_, cbinfo);
+
+    default:
+        return callback_general(content_,cbinfo);
+	}
+
+    return OPS_RELEASE_MEMORY;
+    }
+
 ops_parse_cb_return_t
 callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {

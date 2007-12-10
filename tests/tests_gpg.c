@@ -18,7 +18,7 @@ int main()
     {
 
     mem_literal_data=ops_memory_new();
-    setup_test_keys();
+    setup();
 
     if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
@@ -35,15 +35,15 @@ int main()
         return CU_get_error();
         }
 
-#ifdef TODO
-
-    if (NULL == suite_rsa_decrypt_GPGtest()) 
+    if (NULL == suite_rsa_verify_GPGtest()) 
         {
         CU_cleanup_registry();
         return CU_get_error();
         }
 
-    if (NULL == suite_rsa_verify_GPGtest()) 
+#ifdef TODO
+
+    if (NULL == suite_rsa_decrypt_GPGtest()) 
         {
         CU_cleanup_registry();
         return CU_get_error();

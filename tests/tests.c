@@ -18,7 +18,7 @@ int main()
     {
 
     mem_literal_data=ops_memory_new();
-    setup_test_keys();
+    setup();
 
     if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
