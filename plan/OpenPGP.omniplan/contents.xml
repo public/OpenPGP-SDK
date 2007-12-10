@@ -32,9 +32,9 @@
 			<key>GanttHideRedundant</key>
 			<false/>
 			<key>GanttVisibleRect</key>
-			<string>{{-35, 0}, {622, 640}}</string>
+			<string>{{-35, 568}, {622, 640}}</string>
 			<key>OutlineVisibleRect</key>
-			<string>{{0, 0}, {634, 640}}</string>
+			<string>{{0, 568}, {634, 640}}</string>
 			<key>SelectedPlanView</key>
 			<integer>1</integer>
 			<key>SelectedView</key>
@@ -66,7 +66,7 @@
 			<key>calendarController</key>
 			<dict>
 				<key>OutlineVisibleRect</key>
-				<string>{{0, 0}, {390, 453}}</string>
+				<string>{{0, 0}, {390, 419}}</string>
 				<key>activeColumnIdentifiers</key>
 				<array>
 					<string>IM</string>
@@ -99,7 +99,7 @@
 				<key>Priority</key>
 				<real>62</real>
 				<key>Title</key>
-				<real>298</real>
+				<real>300</real>
 			</dict>
 			<key>dayWidth</key>
 			<real>5.2774105072021484</real>
@@ -116,7 +116,7 @@
 				<key>ShowGanttTitles</key>
 				<true/>
 				<key>TimelineVisibleRect</key>
-				<string>{{-227, 0}, {799, 640}}</string>
+				<string>{{-227, 370}, {799, 640}}</string>
 				<key>activeColumnIdentifiers</key>
 				<array>
 					<string>IM</string>
@@ -160,7 +160,7 @@
 	<key>displayTimes</key>
 	<true/>
 	<key>endDate</key>
-	<string>20080715 11:00</string>
+	<string>20080730 18:00</string>
 	<key>flatNumbering</key>
 	<false/>
 	<key>groupTaskStyle</key>
@@ -195,9 +195,9 @@
 		<key>NSOrientation</key>
 		<integer>0</integer>
 		<key>NSPaperName</key>
-		<string>A4</string>
+		<string>iso-a4</string>
 		<key>NSPrinterName</key>
-		<string>HP Pasanda</string>
+		<string> </string>
 		<key>NSScalingFactor</key>
 		<real>1</real>
 	</dict>
@@ -472,7 +472,7 @@
 	<key>taskDifferenceEngine</key>
 	<dict>
 		<key>nextId</key>
-		<integer>184</integer>
+		<integer>198</integer>
 	</dict>
 	<key>taskUserKeys</key>
 	<array/>
@@ -485,15 +485,15 @@
 				<integer>174</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>131040</real>
+			<real>816480</real>
 			<key>objectId</key>
 			<integer>-1</integer>
 			<key>workDone</key>
-			<real>36.400001525878906</real>
+			<real>226.80000305175781</real>
 			<key>workSeconds</key>
-			<real>4688640</real>
+			<real>5136480</real>
 			<key>workTime</key>
-			<real>1302.4000244140625</real>
+			<real>1426.800048828125</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -620,19 +620,20 @@
 				<integer>167</integer>
 				<integer>168</integer>
 				<integer>172</integer>
+				<integer>184</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>57600</real>
+			<real>633600</real>
 			<key>objectId</key>
 			<integer>3</integer>
 			<key>task</key>
 			<string>Finish Implementation</string>
 			<key>workDone</key>
-			<real>16</real>
+			<real>176</real>
 			<key>workSeconds</key>
-			<real>1850400</real>
+			<real>2138400</real>
 			<key>workTime</key>
-			<real>514</real>
+			<real>594</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -861,19 +862,17 @@
 				<integer>159</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>36000</real>
-			<key>isExpanded</key>
-			<false/>
+			<real>64800</real>
 			<key>objectId</key>
 			<integer>11</integer>
 			<key>task</key>
 			<string>Interoperability Tests</string>
 			<key>workDone</key>
-			<real>10</real>
+			<real>18</real>
 			<key>workSeconds</key>
-			<real>331200</real>
+			<real>345600</real>
 			<key>workTime</key>
-			<real>92</real>
+			<real>96</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -887,6 +886,8 @@
 				<integer>165</integer>
 				<integer>166</integer>
 			</array>
+			<key>isExpanded</key>
+			<false/>
 			<key>objectId</key>
 			<integer>12</integer>
 			<key>task</key>
@@ -955,23 +956,24 @@
 			<array>
 				<integer>17</integer>
 				<integer>18</integer>
+				<integer>185</integer>
 				<integer>19</integer>
 				<integer>170</integer>
 				<integer>20</integer>
 				<integer>95</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>37440</real>
+			<real>118080</real>
 			<key>objectId</key>
 			<integer>16</integer>
 			<key>task</key>
 			<string>Test Functions</string>
 			<key>workDone</key>
-			<real>10.399999618530273</real>
+			<real>32.799999237060547</real>
 			<key>workSeconds</key>
-			<real>822240</real>
+			<real>996480</real>
 			<key>workTime</key>
-			<real>228.39999389648438</real>
+			<real>276.79998779296875</real>
 		</dict>
 		<dict>
 			<key>children</key>
@@ -1035,17 +1037,15 @@
 				<integer>154</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>23040</real>
+			<real>51840</real>
 			<key>forcedStart</key>
 			<string>200709170900</string>
-			<key>isExpanded</key>
-			<false/>
 			<key>objectId</key>
 			<integer>18</integer>
 			<key>task</key>
 			<string>Sign/Verify Document</string>
 			<key>workDone</key>
-			<real>6.4000000953674316</real>
+			<real>14.399999618530273</real>
 			<key>workSeconds</key>
 			<real>174240</real>
 			<key>workTime</key>
@@ -1062,7 +1062,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803170900</string>
+			<string>200804161100</string>
 			<key>objectId</key>
 			<integer>19</integer>
 			<key>task</key>
@@ -1314,7 +1314,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802281600</string>
+			<string>200803261600</string>
 			<key>objectId</key>
 			<integer>34</integer>
 			<key>prerequisites</key>
@@ -1369,7 +1369,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802290900</string>
+			<string>200803270900</string>
 			<key>objectId</key>
 			<integer>36</integer>
 			<key>prerequisites</key>
@@ -1457,7 +1457,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802291100</string>
+			<string>200803271100</string>
 			<key>objectId</key>
 			<integer>48</integer>
 			<key>prerequisites</key>
@@ -1487,7 +1487,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802291400</string>
+			<string>200803271400</string>
 			<key>objectId</key>
 			<integer>49</integer>
 			<key>prerequisites</key>
@@ -1517,7 +1517,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802291600</string>
+			<string>200803271600</string>
 			<key>objectId</key>
 			<integer>50</integer>
 			<key>prerequisites</key>
@@ -1601,7 +1601,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803030900</string>
+			<string>200803280900</string>
 			<key>objectId</key>
 			<integer>53</integer>
 			<key>prerequisites</key>
@@ -1631,7 +1631,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803031100</string>
+			<string>200803281100</string>
 			<key>objectId</key>
 			<integer>54</integer>
 			<key>prerequisites</key>
@@ -1661,7 +1661,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803031400</string>
+			<string>200803281400</string>
 			<key>objectId</key>
 			<integer>55</integer>
 			<key>prerequisites</key>
@@ -1755,7 +1755,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804090900</string>
+			<string>200805091100</string>
 			<key>objectId</key>
 			<integer>59</integer>
 			<key>task</key>
@@ -1776,7 +1776,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804081600</string>
+			<string>200805090900</string>
 			<key>objectId</key>
 			<integer>60</integer>
 			<key>task</key>
@@ -1797,7 +1797,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804091100</string>
+			<string>200805091400</string>
 			<key>objectId</key>
 			<integer>61</integer>
 			<key>task</key>
@@ -1839,7 +1839,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804081100</string>
+			<string>200805081400</string>
 			<key>objectId</key>
 			<integer>64</integer>
 			<key>task</key>
@@ -1860,7 +1860,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804080900</string>
+			<string>200805081100</string>
 			<key>objectId</key>
 			<integer>65</integer>
 			<key>task</key>
@@ -1881,7 +1881,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804081400</string>
+			<string>200805081600</string>
 			<key>objectId</key>
 			<integer>66</integer>
 			<key>task</key>
@@ -1923,7 +1923,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804091600</string>
+			<string>200805120900</string>
 			<key>objectId</key>
 			<integer>68</integer>
 			<key>task</key>
@@ -1944,7 +1944,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804091400</string>
+			<string>200805091600</string>
 			<key>objectId</key>
 			<integer>69</integer>
 			<key>task</key>
@@ -1965,7 +1965,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804100900</string>
+			<string>200805121100</string>
 			<key>objectId</key>
 			<integer>70</integer>
 			<key>task</key>
@@ -2005,7 +2005,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804101100</string>
+			<string>200805121400</string>
 			<key>objectId</key>
 			<integer>72</integer>
 			<key>prerequisites</key>
@@ -2060,7 +2060,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804101400</string>
+			<string>200805121600</string>
 			<key>objectId</key>
 			<integer>74</integer>
 			<key>prerequisites</key>
@@ -2090,7 +2090,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804101600</string>
+			<string>200805130900</string>
 			<key>objectId</key>
 			<integer>75</integer>
 			<key>prerequisites</key>
@@ -2120,7 +2120,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804111100</string>
+			<string>200805131400</string>
 			<key>objectId</key>
 			<integer>76</integer>
 			<key>prerequisites</key>
@@ -2156,7 +2156,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804110900</string>
+			<string>200805131100</string>
 			<key>objectId</key>
 			<integer>77</integer>
 			<key>prerequisites</key>
@@ -2186,7 +2186,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804111400</string>
+			<string>200805131600</string>
 			<key>objectId</key>
 			<integer>78</integer>
 			<key>prerequisites</key>
@@ -2222,7 +2222,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804111600</string>
+			<string>200805140900</string>
 			<key>objectId</key>
 			<integer>79</integer>
 			<key>prerequisites</key>
@@ -2252,7 +2252,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804141100</string>
+			<string>200805141400</string>
 			<key>objectId</key>
 			<integer>80</integer>
 			<key>prerequisites</key>
@@ -2288,7 +2288,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804140900</string>
+			<string>200805141100</string>
 			<key>objectId</key>
 			<integer>81</integer>
 			<key>prerequisites</key>
@@ -2318,7 +2318,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804141400</string>
+			<string>200805141600</string>
 			<key>objectId</key>
 			<integer>82</integer>
 			<key>prerequisites</key>
@@ -2470,7 +2470,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802081100</string>
+			<string>200803171100</string>
 			<key>objectId</key>
 			<integer>89</integer>
 			<key>task</key>
@@ -2491,7 +2491,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802121100</string>
+			<string>200803191100</string>
 			<key>objectId</key>
 			<integer>90</integer>
 			<key>task</key>
@@ -2512,7 +2512,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802251100</string>
+			<string>200803211100</string>
 			<key>objectId</key>
 			<integer>91</integer>
 			<key>task</key>
@@ -2612,7 +2612,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803270900</string>
+			<string>200804281100</string>
 			<key>objectId</key>
 			<integer>96</integer>
 			<key>task</key>
@@ -2633,7 +2633,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803280900</string>
+			<string>200804291100</string>
 			<key>objectId</key>
 			<integer>97</integer>
 			<key>task</key>
@@ -2654,7 +2654,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803310900</string>
+			<string>200804301100</string>
 			<key>objectId</key>
 			<integer>98</integer>
 			<key>task</key>
@@ -2691,7 +2691,7 @@
 				</dict>
 			</array>
 			<key>forcedStart</key>
-			<string>200710310900</string>
+			<string>200712110900</string>
 			<key>objectId</key>
 			<integer>101</integer>
 			<key>task</key>
@@ -2712,7 +2712,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200711291400</string>
+			<string>200801231400</string>
 			<key>objectId</key>
 			<integer>102</integer>
 			<key>task</key>
@@ -2733,7 +2733,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804010900</string>
+			<string>200805011100</string>
 			<key>objectId</key>
 			<integer>103</integer>
 			<key>task</key>
@@ -2754,7 +2754,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200711140900</string>
+			<string>200801080900</string>
 			<key>objectId</key>
 			<integer>104</integer>
 			<key>task</key>
@@ -2775,7 +2775,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200711141400</string>
+			<string>200801081400</string>
 			<key>objectId</key>
 			<integer>105</integer>
 			<key>task</key>
@@ -2796,7 +2796,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200711150900</string>
+			<string>200801090900</string>
 			<key>objectId</key>
 			<integer>106</integer>
 			<key>task</key>
@@ -2817,7 +2817,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200711151400</string>
+			<string>200801091400</string>
 			<key>objectId</key>
 			<integer>109</integer>
 			<key>task</key>
@@ -2838,7 +2838,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802271100</string>
+			<string>200803251100</string>
 			<key>objectId</key>
 			<integer>110</integer>
 			<key>task</key>
@@ -2859,7 +2859,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804020900</string>
+			<string>200805021100</string>
 			<key>objectId</key>
 			<integer>111</integer>
 			<key>task</key>
@@ -2880,11 +2880,15 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200712031400</string>
+			<string>200801251400</string>
+			<key>doneSeconds</key>
+			<real>288000</real>
 			<key>objectId</key>
 			<integer>112</integer>
 			<key>task</key>
 			<string>Write Verification of document signatures</string>
+			<key>workDone</key>
+			<real>80</real>
 			<key>workSeconds</key>
 			<real>288000</real>
 			<key>workTime</key>
@@ -2901,7 +2905,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803071600</string>
+			<string>200804031600</string>
 			<key>objectId</key>
 			<integer>113</integer>
 			<key>task</key>
@@ -2947,7 +2951,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803100900</string>
+			<string>200804040900</string>
 			<key>objectId</key>
 			<integer>115</integer>
 			<key>prerequisites</key>
@@ -2977,7 +2981,9 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803110900</string>
+			<string>200804210900</string>
+			<key>doneSeconds</key>
+			<real>28800</real>
 			<key>objectId</key>
 			<integer>116</integer>
 			<key>prerequisites</key>
@@ -2991,6 +2997,8 @@
 			</array>
 			<key>task</key>
 			<string>Verify V4 signature</string>
+			<key>workDone</key>
+			<real>8</real>
 			<key>workSeconds</key>
 			<real>28800</real>
 			<key>workTime</key>
@@ -3007,7 +3015,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200712171400</string>
+			<string>200801251400</string>
 			<key>objectId</key>
 			<integer>117</integer>
 			<key>task</key>
@@ -3028,7 +3036,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804030900</string>
+			<string>200805051100</string>
 			<key>objectId</key>
 			<integer>118</integer>
 			<key>task</key>
@@ -3049,7 +3057,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803210900</string>
+			<string>200804221100</string>
 			<key>objectId</key>
 			<integer>120</integer>
 			<key>task</key>
@@ -3070,7 +3078,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803240900</string>
+			<string>200804231100</string>
 			<key>objectId</key>
 			<integer>121</integer>
 			<key>task</key>
@@ -3091,7 +3099,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803250900</string>
+			<string>200804241100</string>
 			<key>objectId</key>
 			<integer>122</integer>
 			<key>task</key>
@@ -3112,7 +3120,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803260900</string>
+			<string>200804251100</string>
 			<key>objectId</key>
 			<integer>123</integer>
 			<key>task</key>
@@ -3133,7 +3141,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200712191400</string>
+			<string>200801291400</string>
 			<key>objectId</key>
 			<integer>124</integer>
 			<key>task</key>
@@ -3154,7 +3162,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803120900</string>
+			<string>200804070900</string>
 			<key>objectId</key>
 			<integer>125</integer>
 			<key>prerequisites</key>
@@ -3186,21 +3194,21 @@
 				<integer>128</integer>
 				<integer>129</integer>
 				<integer>130</integer>
+				<integer>195</integer>
+				<integer>196</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>14400</real>
-			<key>isExpanded</key>
-			<false/>
+			<real>21600</real>
 			<key>objectId</key>
 			<integer>126</integer>
 			<key>task</key>
 			<string>Sign with OPS, Verify with GPG (RSA/AES/SHA1)</string>
 			<key>workDone</key>
-			<real>4</real>
+			<real>6</real>
 			<key>workSeconds</key>
-			<real>129600</real>
+			<real>136800</real>
 			<key>workTime</key>
-			<real>36</real>
+			<real>38</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -3263,7 +3271,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804151100</string>
+			<string>200805150900</string>
 			<key>objectId</key>
 			<integer>129</integer>
 			<key>prerequisites</key>
@@ -3293,7 +3301,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804171100</string>
+			<string>200805190900</string>
 			<key>objectId</key>
 			<integer>130</integer>
 			<key>prerequisites</key>
@@ -3323,7 +3331,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801041400</string>
+			<string>200801311400</string>
 			<key>objectId</key>
 			<integer>132</integer>
 			<key>task</key>
@@ -3340,21 +3348,21 @@
 				<integer>135</integer>
 				<integer>136</integer>
 				<integer>137</integer>
+				<integer>193</integer>
+				<integer>194</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>14400</real>
-			<key>isExpanded</key>
-			<false/>
+			<real>36000</real>
 			<key>objectId</key>
 			<integer>133</integer>
 			<key>task</key>
 			<string>Sign with GPG, Verify with OPS (RSA/AES/SHA1)</string>
 			<key>workDone</key>
-			<real>4</real>
+			<real>10</real>
 			<key>workSeconds</key>
-			<real>28800</real>
+			<real>36000</real>
 			<key>workTime</key>
-			<real>8</real>
+			<real>10</real>
 		</dict>
 		<dict>
 			<key>assignments</key>
@@ -3417,7 +3425,9 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804141600</string>
+			<string>200805150900</string>
+			<key>doneSeconds</key>
+			<real>7200</real>
 			<key>objectId</key>
 			<integer>136</integer>
 			<key>prerequisites</key>
@@ -3431,6 +3441,8 @@
 			</array>
 			<key>task</key>
 			<string>Unarmoured/No Passphrase</string>
+			<key>workDone</key>
+			<real>2</real>
 			<key>workSeconds</key>
 			<real>7200</real>
 			<key>workTime</key>
@@ -3447,7 +3459,9 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804150900</string>
+			<string>200805151100</string>
+			<key>doneSeconds</key>
+			<real>7200</real>
 			<key>objectId</key>
 			<integer>137</integer>
 			<key>prerequisites</key>
@@ -3461,6 +3475,8 @@
 			</array>
 			<key>task</key>
 			<string>Unarmoured/Passphrase</string>
+			<key>workDone</key>
+			<real>2</real>
 			<key>workSeconds</key>
 			<real>7200</real>
 			<key>workTime</key>
@@ -3596,7 +3612,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801081400</string>
+			<string>200802041400</string>
 			<key>objectId</key>
 			<integer>145</integer>
 			<key>task</key>
@@ -3617,7 +3633,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801101400</string>
+			<string>200802061400</string>
 			<key>objectId</key>
 			<integer>150</integer>
 			<key>task</key>
@@ -3638,7 +3654,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803031600</string>
+			<string>200803281600</string>
 			<key>objectId</key>
 			<integer>151</integer>
 			<key>task</key>
@@ -3659,7 +3675,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803051600</string>
+			<string>200804011600</string>
 			<key>objectId</key>
 			<integer>152</integer>
 			<key>task</key>
@@ -3680,7 +3696,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803130900</string>
+			<string>200804080900</string>
 			<key>objectId</key>
 			<integer>154</integer>
 			<key>task</key>
@@ -3701,7 +3717,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804211100</string>
+			<string>200805210900</string>
 			<key>objectId</key>
 			<integer>156</integer>
 			<key>task</key>
@@ -3722,7 +3738,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804211400</string>
+			<string>200805211100</string>
 			<key>objectId</key>
 			<integer>157</integer>
 			<key>task</key>
@@ -3743,7 +3759,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804211600</string>
+			<string>200805211400</string>
 			<key>objectId</key>
 			<integer>158</integer>
 			<key>task</key>
@@ -3764,7 +3780,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804220900</string>
+			<string>200805211600</string>
 			<key>objectId</key>
 			<integer>159</integer>
 			<key>task</key>
@@ -3785,7 +3801,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804040900</string>
+			<string>200805061100</string>
 			<key>objectId</key>
 			<integer>161</integer>
 			<key>task</key>
@@ -3806,7 +3822,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801141400</string>
+			<string>200802081400</string>
 			<key>objectId</key>
 			<integer>162</integer>
 			<key>task</key>
@@ -3827,7 +3843,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801181400</string>
+			<string>200802251400</string>
 			<key>objectId</key>
 			<integer>163</integer>
 			<key>task</key>
@@ -3848,7 +3864,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802271600</string>
+			<string>200803251600</string>
 			<key>objectId</key>
 			<integer>165</integer>
 			<key>task</key>
@@ -3869,7 +3885,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200802281100</string>
+			<string>200803261100</string>
 			<key>objectId</key>
 			<integer>166</integer>
 			<key>task</key>
@@ -3890,7 +3906,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801181600</string>
+			<string>200802251600</string>
 			<key>objectId</key>
 			<integer>167</integer>
 			<key>task</key>
@@ -3911,7 +3927,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801211100</string>
+			<string>200802261100</string>
 			<key>objectId</key>
 			<integer>168</integer>
 			<key>task</key>
@@ -3932,7 +3948,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200804221100</string>
+			<string>200805220900</string>
 			<key>objectId</key>
 			<integer>169</integer>
 			<key>task</key>
@@ -3953,7 +3969,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200803190900</string>
+			<string>200804181100</string>
 			<key>objectId</key>
 			<integer>170</integer>
 			<key>task</key>
@@ -3974,7 +3990,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801161400</string>
+			<string>200802121400</string>
 			<key>objectId</key>
 			<integer>171</integer>
 			<key>task</key>
@@ -3995,7 +4011,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200801251100</string>
+			<string>200803031100</string>
 			<key>objectId</key>
 			<integer>172</integer>
 			<key>task</key>
@@ -4109,7 +4125,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200806171100</string>
+			<string>200807170900</string>
 			<key>objectId</key>
 			<integer>181</integer>
 			<key>prerequisites</key>
@@ -4139,7 +4155,7 @@
 				</dict>
 			</array>
 			<key>desiredStart</key>
-			<string>200806191100</string>
+			<string>200807210900</string>
 			<key>objectId</key>
 			<integer>182</integer>
 			<key>task</key>
@@ -4162,17 +4178,290 @@
 				<integer>1</integer>
 			</array>
 			<key>doneSeconds</key>
-			<real>131040</real>
+			<real>816480</real>
 			<key>objectId</key>
 			<integer>183</integer>
 			<key>task</key>
 			<string>RELEASE V0.5</string>
 			<key>workDone</key>
-			<real>36.400001525878906</real>
+			<real>226.80000305175781</real>
 			<key>workSeconds</key>
-			<real>4659840</real>
+			<real>5136480</real>
 			<key>workTime</key>
-			<real>1294.4000244140625</real>
+			<real>1426.800048828125</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>doneSeconds</key>
+			<real>288000</real>
+			<key>forcedStart</key>
+			<string>200711260900</string>
+			<key>objectId</key>
+			<integer>184</integer>
+			<key>task</key>
+			<string>(NEW) Write Cleartext Signed document and verify</string>
+			<key>workDone</key>
+			<real>80</real>
+			<key>workSeconds</key>
+			<real>288000</real>
+			<key>workTime</key>
+			<real>80</real>
+		</dict>
+		<dict>
+			<key>children</key>
+			<array>
+				<integer>186</integer>
+				<integer>187</integer>
+				<integer>188</integer>
+				<integer>189</integer>
+				<integer>190</integer>
+				<integer>191</integer>
+			</array>
+			<key>doneSeconds</key>
+			<real>51840</real>
+			<key>forcedStart</key>
+			<string>200709170900</string>
+			<key>objectId</key>
+			<integer>185</integer>
+			<key>task</key>
+			<string>(NEW) Clearsign/Verify Document</string>
+			<key>workDone</key>
+			<real>14.399999618530273</real>
+			<key>workSeconds</key>
+			<real>174240</real>
+			<key>workTime</key>
+			<real>48.400001525878906</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200804100900</string>
+			<key>objectId</key>
+			<integer>186</integer>
+			<key>task</key>
+			<string>Sign with V3 signature</string>
+			<key>workSeconds</key>
+			<real>7200</real>
+			<key>workTime</key>
+			<real>2</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>doneSeconds</key>
+			<real>23040</real>
+			<key>forcedStart</key>
+			<string>200709170900</string>
+			<key>objectId</key>
+			<integer>187</integer>
+			<key>task</key>
+			<string>Sign with V4 signature</string>
+			<key>workDone</key>
+			<real>6.4000000953674316</real>
+			<key>workSeconds</key>
+			<real>23040</real>
+			<key>workTime</key>
+			<real>6.4000000953674316</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200804101100</string>
+			<key>objectId</key>
+			<integer>188</integer>
+			<key>prerequisites</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>112</integer>
+					<key>kind</key>
+					<integer>2</integer>
+				</dict>
+			</array>
+			<key>task</key>
+			<string>Verify V3 signature</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200803110900</string>
+			<key>doneSeconds</key>
+			<real>28800</real>
+			<key>objectId</key>
+			<integer>189</integer>
+			<key>prerequisites</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>112</integer>
+					<key>kind</key>
+					<integer>2</integer>
+				</dict>
+			</array>
+			<key>task</key>
+			<string>Verify V4 signature</string>
+			<key>workDone</key>
+			<real>8</real>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200804111100</string>
+			<key>objectId</key>
+			<integer>190</integer>
+			<key>prerequisites</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>106</integer>
+					<key>kind</key>
+					<integer>2</integer>
+				</dict>
+				<dict>
+					<key>id</key>
+					<integer>124</integer>
+					<key>kind</key>
+					<integer>2</integer>
+				</dict>
+			</array>
+			<key>task</key>
+			<string>Test all supported Hash Algorithms</string>
+			<key>workSeconds</key>
+			<real>28800</real>
+			<key>workTime</key>
+			<real>8</real>
+		</dict>
+		<dict>
+			<key>assignments</key>
+			<array>
+				<dict>
+					<key>id</key>
+					<integer>1</integer>
+					<key>units</key>
+					<real>0.5</real>
+				</dict>
+			</array>
+			<key>desiredStart</key>
+			<string>200804141100</string>
+			<key>objectId</key>
+			<integer>191</integer>
+			<key>task</key>
+			<string>Large files</string>
+			<key>workSeconds</key>
+			<real>57600</real>
+			<key>workTime</key>
+			<real>16</real>
+		</dict>
+		<dict>
+			<key>doneSeconds</key>
+			<real>3600</real>
+			<key>objectId</key>
+			<integer>193</integer>
+			<key>task</key>
+			<string>(NEW) Clearsigned/No Passphrase</string>
+			<key>workDone</key>
+			<real>1</real>
+			<key>workSeconds</key>
+			<real>3600</real>
+			<key>workTime</key>
+			<real>1</real>
+		</dict>
+		<dict>
+			<key>doneSeconds</key>
+			<real>3600</real>
+			<key>objectId</key>
+			<integer>194</integer>
+			<key>task</key>
+			<string>(NEW) Clearsigned/Passphrase</string>
+			<key>workDone</key>
+			<real>1</real>
+			<key>workSeconds</key>
+			<real>3600</real>
+			<key>workTime</key>
+			<real>1</real>
+		</dict>
+		<dict>
+			<key>doneSeconds</key>
+			<real>3600</real>
+			<key>objectId</key>
+			<integer>195</integer>
+			<key>task</key>
+			<string>(NEW) Clearsigned/No Passphrase</string>
+			<key>workDone</key>
+			<real>1</real>
+			<key>workSeconds</key>
+			<real>3600</real>
+			<key>workTime</key>
+			<real>1</real>
+		</dict>
+		<dict>
+			<key>doneSeconds</key>
+			<real>3600</real>
+			<key>objectId</key>
+			<integer>196</integer>
+			<key>task</key>
+			<string>(NEW) Clearsigned/Passphrase</string>
+			<key>workDone</key>
+			<real>1</real>
+			<key>workSeconds</key>
+			<real>3600</real>
+			<key>workTime</key>
+			<real>1</real>
 		</dict>
 	</array>
 	<key>topResources</key>
