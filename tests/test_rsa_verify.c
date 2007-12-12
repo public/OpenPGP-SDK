@@ -81,12 +81,12 @@ int init_suite_rsa_verify(void)
 
     // and sign them
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --local-user %s --armor %s/%s",
+    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_clearsign_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --local-user %s --passphrase %s --armor %s/%s",
+    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --passphrase %s --armor %s/%s",
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_clearsign_passphrase);
     if (system(cmd))
         { return 1; }

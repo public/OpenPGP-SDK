@@ -1270,7 +1270,7 @@ static int parse_v3_signature(ops_region_t *region,
 	break;
 
     default:
-        OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SIGNATURE_KEY_ALG,
+        OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SIGNATURE_ALG,
                     "Unsupported signature key algorithm (%s)",
                     ops_show_pka(C.signature.key_algorithm));
         return 0;
@@ -1729,7 +1729,7 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
 	break;
 
     default:
-	OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SIGNATURE_KEY_ALG,
+	OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SIGNATURE_ALG,
                     "Bad v4 signature key algorithm (%s)",
                     ops_show_pka(C.signature.key_algorithm));
         return 0;

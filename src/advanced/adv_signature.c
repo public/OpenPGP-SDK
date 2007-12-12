@@ -178,7 +178,7 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
 				const ops_rsa_public_key_t *rsa)
     {
     unsigned char sigbuf[8192];
-    unsigned char hashbuf[8192];
+    unsigned char hashbuf_from_sig[8192];
     unsigned n;
     unsigned keysize;
     unsigned char *prefix;
@@ -186,23 +186,19 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
 
     keysize=BN_num_bytes(rsa->n);
     /* RSA key can't be bigger than 65535 bits, so... */
-    assert(keysize <= sizeof hashbuf);
+    assert(keysize <= sizeof hashbuf_from_sig);
     assert((unsigned)BN_num_bits(sig->sig) <= 8*sizeof sigbuf);
     BN_bn2bin(sig->sig,sigbuf);
 
-    n=ops_rsa_public_decrypt(hashbuf,sigbuf,(BN_num_bits(sig->sig)+7)/8,rsa);
+    n=ops_rsa_public_decrypt(hashbuf_from_sig,sigbuf,(BN_num_bits(sig->sig)+7)/8,rsa);
+    int debug_len_decrypted=n;
 
     if(n != keysize) // obviously, this includes error returns
 	return ops_false;
 
-    /*
-    printf(" decrypt=%d ",n);
-    hexdump(hashbuf,n);
-    */
-
     // XXX: why is there a leading 0? The first byte should be 1...
     // XXX: because the decrypt should use keysize and not sigsize?
-    if(hashbuf[0] != 0 || hashbuf[1] != 1)
+    if(hashbuf_from_sig[0] != 0 || hashbuf_from_sig[1] != 1)
 	return ops_false;
 
     switch(type)
@@ -216,10 +212,10 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
 	return ops_false;
 
     for(n=2 ; n < keysize-plen-hash_length-1 ; ++n)
-	if(hashbuf[n] != 0xff)
+	if(hashbuf_from_sig[n] != 0xff)
 	    return ops_false;
 
-    if(hashbuf[n++] != 0)
+    if(hashbuf_from_sig[n++] != 0)
 	return ops_false;
 
     if (debug)
@@ -227,9 +223,9 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
         int zz;
 
         printf("\n");
-        printf("hashbuf\n");
-        for (zz=0; zz<plen; zz++)
-            { printf("%02x ", hashbuf[n+zz]); }
+        printf("hashbuf_from_sig\n");
+        for (zz=0; zz<debug_len_decrypted; zz++)
+            { printf("%02x ", hashbuf_from_sig[n+zz]); }
         printf("\n");
         printf("prefix\n");
         for (zz=0; zz<plen; zz++)
@@ -237,18 +233,18 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
         printf("\n");
 
         printf("\n");
-        printf("hashbuf2\n");
+        printf("hash from sig\n");
         unsigned uu;
         for (uu=0; uu<hash_length; uu++)
-            { printf("%02x ", hashbuf[n+plen+uu]); }
+            { printf("%02x ", hashbuf_from_sig[n+plen+uu]); }
         printf("\n");
-        printf("hash\n");
+        printf("hash passed in (should match hash from sig)\n");
         for (uu=0; uu<hash_length; uu++)
             { printf("%02x ", hash[uu]); }
         printf("\n");
         }
-    if(memcmp(&hashbuf[n],prefix,plen)
-       || memcmp(&hashbuf[n+plen],hash,hash_length))
+    if(memcmp(&hashbuf_from_sig[n],prefix,plen)
+       || memcmp(&hashbuf_from_sig[n+plen],hash,hash_length))
 	return ops_false;
 
     return ops_true;
@@ -640,12 +636,12 @@ void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
 
     sig->hash.add(&sig->hash,ops_memory_get_data(sig->mem),
 		  sig->unhashed_count_offset);
-    /* what is this??? should delete? RW
+
+    // add final trailer
     ops_hash_add_int(&sig->hash,sig->sig.version,1);
     ops_hash_add_int(&sig->hash,0xff,1);
     // +6 for version, type, pk alg, hash alg, hashed subpacket length
     ops_hash_add_int(&sig->hash,sig->hashed_data_length+6,4);
-    */
 
     if (debug)
         { fprintf(stderr, "--- Finished adding packet to hash from version number to hashed subpkts\n"); }

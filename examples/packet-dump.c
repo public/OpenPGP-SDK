@@ -15,6 +15,9 @@
 #include <string.h>
 #include <fcntl.h>
 
+// \todo change this once we know it works
+#include "../src/advanced/parse_local.h"
+
 #include <openpgpsdk/final.h>
 
 static int indent=0;
@@ -1098,6 +1101,8 @@ int main(int argc,char **argv)
 	}
     else
 	ops_reader_set_fd(pinfo,fd);
+
+    pinfo->rinfo.accumulate=ops_true;
 
     if(armour)
 	ops_reader_push_dearmour(pinfo,ops_true,ops_true,ops_true);

@@ -23,12 +23,24 @@ static ops_boolean_t check_binary_signature(const unsigned len,
     int n=0;
     ops_hash_t hash;
     unsigned char hashout[OPS_MAX_HASH_SIZE];
+    unsigned char trailer[6];
+    unsigned int hashedlen;
 
     //common_init_signature(&hash,sig);
     ops_hash_any(&hash,sig->hash_algorithm);
     hash.init(&hash);
     hash.add(&hash,data,len);
     hash.add(&hash,sig->v4_hashed_data,sig->v4_hashed_data_length);
+
+    trailer[0]=0x04; // version
+    trailer[1]=0xFF;
+    hashedlen=sig->v4_hashed_data_length;
+    trailer[2]=hashedlen >> 24;
+    trailer[3]=hashedlen >> 16;
+    trailer[4]=hashedlen >> 8;
+    trailer[5]=hashedlen;
+    hash.add(&hash,&trailer[0],6);
+
     n=hash.finish(&hash,hashout);
 
     //    return ops_false;
@@ -276,6 +288,7 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
         switch(content->signature.type)
             {
         case OPS_SIG_BINARY:
+        case OPS_SIG_TEXT:
             switch(arg->use)
                 {
             case LITERAL_DATA:
@@ -291,7 +304,9 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
                 break;
 
             default:
-                assert (0);
+                OPS_ERROR_1(errors,OPS_E_UNIMPLEMENTED,"Unimplemented Sig Use %d", arg->use);
+                printf(" Unimplemented Sig Use %d\n", arg->use);
+                break;
                 }
 
             valid=check_binary_signature(ops_memory_get_length(mem), 
@@ -307,7 +322,7 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
 	default:
             OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
                     "Unexpected signature type 0x%02x\n", content->signature.type);
-	    exit(1);
+            //	    exit(1);
 	    }
     ops_memory_free(mem);
 
