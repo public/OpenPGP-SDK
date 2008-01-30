@@ -166,27 +166,27 @@ int init_suite_rsa_decrypt(void)
         return 1;
         }
 
-
-#ifdef TODO
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --encrypt --personal-cipher-preferences='CAST5' --armor --homedir=%s --recipient Alpha %s/%s", dir, dir, filename_rsa_armour_nopassphrase);
+    // Armour, no passphrase
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --force-mdc --compress-level 0 --personal-cipher-preferences='CAST5' --encrypt --armor --recipient Alpha %s/%s", dir, dir, filename_rsa_armour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
     
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --encrypt --s2k-cipher-algo CAST5 --homedir=%s --recipient Bravo %s/%s", dir, dir, filename_rsa_noarmour_passphrase);
+    // No armour, passphrase
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --force-mdc --compress-level 0 --personal-cipher-preferences='CAST5' --encrypt --recipient Bravo %s/%s", dir, dir, filename_rsa_noarmour_passphrase);
     if (system(cmd))
         {
         return 1;
         }
-
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --openpgp --encrypt --s2k-cipher-algo CAST5 --armor --homedir=%s --recipient Bravo %s/%s", dir, dir, filename_rsa_armour_passphrase);
+    
+    // Armour, passphrase
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --force-mdc --compress-level 0 --personal-cipher-preferences='CAST5' --encrypt --armor --recipient Bravo %s/%s", dir, dir, filename_rsa_armour_passphrase);
     if (system(cmd))
         {
         return 1;
         }
-#endif
-
+    
     // Return success
     return 0;
     }
@@ -307,7 +307,6 @@ static void test_rsa_decrypt_noarmour_nopassphrase_aes256(void)
 
 //
 
-#ifdef TODO
 static void test_rsa_decrypt_armour_nopassphrase(void)
     {
     int armour=1;
@@ -328,15 +327,47 @@ static void test_rsa_decrypt_armour_passphrase(void)
     int passphrase=1;
     test_rsa_decrypt(armour,passphrase,filename_rsa_armour_passphrase,NULL);
     }
-#endif
 
 static void test_todo(void)
     {
     CU_FAIL("Test TODO: IDEA");
-    CU_FAIL("Test TODO: Armoured decryption (with&without passphrase)");
     CU_FAIL("Test TODO: Decryption with multiple keys in same keyring");
     CU_FAIL("Test TODO: Decryption with multiple keys where some are not in my keyring");
     CU_FAIL("Test TODO: Decryption with multiple keys where my key is (a) first key in list; (b) last key in list; (c) in the middle of the list");
+    }
+
+static int add_tests(CU_pSuite suite)
+    {
+    // add tests to suite
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (Default)", test_rsa_decrypt_noarmour_nopassphrase))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (CAST5)", test_rsa_decrypt_noarmour_nopassphrase_cast5))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES128)", test_rsa_decrypt_noarmour_nopassphrase_aes128))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES256)", test_rsa_decrypt_noarmour_nopassphrase_aes256))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (3DES)", test_rsa_decrypt_noarmour_nopassphrase_3des))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_decrypt_noarmour_passphrase))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_decrypt_armour_nopassphrase))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_decrypt_armour_passphrase))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))
+	    return 0;
+    
+    return 1;
     }
 
 CU_pSuite suite_rsa_decrypt()
@@ -347,26 +378,9 @@ CU_pSuite suite_rsa_decrypt()
     if (!suite)
 	    return NULL;
 
-    // add tests to suite
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (Default)", test_rsa_decrypt_noarmour_nopassphrase))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (CAST5)", test_rsa_decrypt_noarmour_nopassphrase_cast5))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES128)", test_rsa_decrypt_noarmour_nopassphrase_aes128))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (AES256)", test_rsa_decrypt_noarmour_nopassphrase_aes256))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase (3DES)", test_rsa_decrypt_noarmour_nopassphrase_3des))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))
-	    return NULL;
-    
+    if (!add_tests(suite))
+        return NULL;
+
     return suite;
 }
 
