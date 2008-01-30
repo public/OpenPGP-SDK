@@ -44,3 +44,4 @@ Makefile: Makefile.template ../configure
 	echo Makefile is older than templates, rerun configure
 	exit 1
 
+include .depend
