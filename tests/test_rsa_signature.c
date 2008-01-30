@@ -54,86 +54,19 @@ int clean_suite_rsa_signature(void)
     return 0;
     }
 
-static void test_rsa_signature_clearsign(const char *filename, const ops_secret_key_t *skey, ops_hash_algorithm_t hash_alg)
+static void test_rsa_signature_clearsign(const char *filename, const ops_secret_key_t *skey)
     {
-    unsigned char keyid[OPS_KEY_ID_SIZE];
-    ops_create_signature_t *sig=NULL;
-
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
     char signed_file[MAXBUF+1];
-    //    char *suffix= has_armour ? "asc" : "gpg";
-    char *suffix= "asc";
-    int fd_in=0;
-    int fd_out=0;
     int rtn=0;
-    ops_create_info_t *cinfo=NULL;
-    unsigned char buf[MAXBUF];
-    
-    // open file to sign
+
+    // setup filenames
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
-#ifdef WIN32
-    fd_in=open(myfile,O_RDONLY | O_BINARY);
-#else
-    fd_in=open(myfile,O_RDONLY);
-#endif
-    if(fd_in < 0)
-        {
-        perror(myfile);
-        exit(2);
-        }
-    
-    snprintf(signed_file,MAXBUF,"%s/%s_%s.%s",dir,filename,ops_show_hash_algorithm(hash_alg),suffix);
-#ifdef WIN32
-    fd_out=open(signed_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
-#else
-    fd_out=open(signed_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
-#endif
-    if(fd_out < 0)
-        {
-        perror(signed_file);
-        exit(2);
-        }
-    
-    // Set up armour/passphrase options
-    // OPS code armours signatures by default
+    snprintf(signed_file,MAXBUF,"%s.asc",myfile);
 
-    //    assert(has_armour);
-    
-    // set up signature
-    sig=ops_create_signature_new();
-    ops_signature_start_plaintext_signature(sig,(ops_secret_key_t *)skey,hash_alg,OPS_SIG_BINARY);
-
-    // set up output file
-    cinfo=ops_create_info_new();
-    ops_writer_set_fd(cinfo,fd_out); 
-    ops_writer_push_dash_escaped(cinfo,sig);
-
-    // Do the signing
-
-    for (;;)
-        {
-        int n=0;
-    
-        n=read(fd_in,buf,sizeof(buf));
-        if (!n)
-            break;
-        assert(n>=0);
-        ops_write(buf,n,cinfo);
-        }
-    close(fd_in);
-
-    // add signature
-
-    ops_writer_switch_to_signature(cinfo);
-    ops_signature_add_creation_time(sig,time(NULL));
-    ops_keyid(keyid,&skey->public_key);
-    ops_signature_add_issuer_key_id(sig,keyid);
-
-    ops_signature_hashed_subpackets_end(sig);
-    ops_write_signature(sig,(ops_public_key_t *)&skey->public_key,(ops_secret_key_t *)skey,cinfo);
-    ops_writer_close(cinfo);
-    close(fd_out);
+    // sign file
+    ops_sign_file_as_cleartext(myfile,skey);
 
     /*
      * Validate output
@@ -209,42 +142,117 @@ static void test_rsa_signature_clearsign(const char *filename, const ops_secret_
     }
     }
 
+static void test_rsa_signature_sign(const int use_armour, const char *filename, const ops_secret_key_t *skey)
+    {
+    char cmd[MAXBUF+1];
+    char myfile[MAXBUF+1];
+    char signed_file[MAXBUF+1];
+    char *suffix= use_armour ? "asc" : "ops";
+    int rtn=0;
+
+    assert(use_armour==0);
+
+    // filenames
+    snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
+    snprintf(signed_file,MAXBUF,"%s.%s",myfile,suffix);
+
+    ops_sign_file(myfile, skey);
+
+    /*
+     * Validate output
+     */
+
+    // Check with OPS
+
+    {
+    int fd=0;
+    ops_parse_info_t *pinfo=NULL;
+    validate_data_cb_arg_t validate_arg;
+    ops_validate_result_t result;
+    int rtn=0;
+    
+    if (debug)
+        {
+        fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
+        }
+    
+    // open signed file
+#ifdef WIN32
+    fd=open(signed_file,O_RDONLY | O_BINARY);
+#else
+    fd=open(signed_file,O_RDONLY);
+#endif
+    if(fd < 0)
+        {
+        perror(signed_file);
+        exit(2);
+        }
+    
+    // Set verification reader and handling options
+    
+    pinfo=ops_parse_info_new();
+    
+    memset(&validate_arg,'\0',sizeof validate_arg);
+    validate_arg.result=&result;
+    validate_arg.keyring=&pub_keyring;
+    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
+    
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
+    ops_reader_set_fd(pinfo,fd);
+    pinfo->rinfo.accumulate=ops_true;
+    
+    // Set up armour/passphrase options
+    
+    if (use_armour)
+        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+    
+    // Do the verification
+    
+    rtn=ops_parse(pinfo);
+    ops_print_errors(ops_parse_info_get_errors(pinfo));
+    CU_ASSERT(rtn==1);
+    
+    // Tidy up
+    if (use_armour)
+        ops_reader_pop_dearmour(pinfo);
+    
+    ops_parse_info_delete(pinfo);
+    
+    close(fd);
+    }
+
+    // Check signature with GPG
+    {
+
+    snprintf(cmd,MAXBUF,"%s --verify %s", gpgcmd, signed_file);
+    rtn=system(cmd);
+    CU_ASSERT(rtn==0);
+    }
+    }
+
 static void test_rsa_signature_noarmour_nopassphrase(void)
     {
-    CU_FAIL("Test TODO: Sign file with no armour and no passphrase");
-#ifdef TBD
-
     int armour=0;
     assert(pub_keyring.nkeys);
-    test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_SHA1);
-#ifdef TODO
-    test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_MD5);
-    test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_RIPEMD);
-    test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_SHA256);
-    test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_SHA384);
-    test_rsa_signature(armour,filename_rsa_noarmour_nopassphrase, alpha_skey, OPS_HASH_SHA512);
-#endif
-#endif
+    test_rsa_signature_sign(armour,filename_rsa_noarmour_nopassphrase, alpha_skey);
     }
 
 static void test_rsa_signature_noarmour_passphrase(void)
     {
-    CU_FAIL("Test TODO: Sign file with no armour and passphrase");
-#ifdef TBD
     int armour=0;
     assert(pub_keyring.nkeys);
-    test_rsa_signature(armour,filename_rsa_noarmour_passphrase, bravo_skey, OPS_HASH_SHA1);
-#endif
+    test_rsa_signature_sign(armour,filename_rsa_noarmour_passphrase, bravo_skey);
     }
 
 static void test_rsa_signature_armour_nopassphrase(void)
     {
     CU_FAIL("Test TODO: Sign file with armour and no passphrase");
-#ifdef TBD
+    //#ifdef TBD
     int armour=1;
     assert(pub_keyring.nkeys);
-    test_rsa_signature(armour,filename_rsa_armour_nopassphrase, alpha_skey, OPS_HASH_SHA1);
-#endif
+    test_rsa_signature_sign(armour,filename_rsa_armour_nopassphrase, alpha_skey);
+    //#endif
     }
 
 static void test_rsa_signature_armour_passphrase(void)
@@ -253,20 +261,20 @@ static void test_rsa_signature_armour_passphrase(void)
 #ifdef TBD
     int armour=1;
     assert(pub_keyring.nkeys);
-    test_rsa_signature(armour,filename_rsa_armour_passphrase, bravo_skey, OPS_HASH_SHA1);
+    test_rsa_signature_sign(armour,filename_rsa_armour_passphrase, bravo_skey);
 #endif
     }
 
 static void test_rsa_signature_clearsign_nopassphrase(void)
     {
     assert(pub_keyring.nkeys);
-    test_rsa_signature_clearsign(filename_rsa_armour_nopassphrase, alpha_skey, OPS_HASH_SHA1);
+    test_rsa_signature_clearsign(filename_rsa_clearsign_nopassphrase, alpha_skey);
     }
 
 static void test_rsa_signature_clearsign_passphrase(void)
     {
     assert(pub_keyring.nkeys);
-    test_rsa_signature_clearsign(filename_rsa_armour_passphrase, bravo_skey, OPS_HASH_SHA1);
+    test_rsa_signature_clearsign(filename_rsa_clearsign_passphrase, bravo_skey);
     }
 
 CU_pSuite suite_rsa_signature()

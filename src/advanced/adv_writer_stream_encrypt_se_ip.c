@@ -345,7 +345,7 @@ static ops_boolean_t stream_encrypt_se_ip_finaliser(ops_error_t**      errors,
                                &arg->mem_literal,
                                ops_memory_get_length(arg->mem_data)+32);
 
-        ops_write_literal_data(ops_memory_get_data(arg->mem_data),
+        ops_write_literal_data_from_buf(ops_memory_get_data(arg->mem_data),
                                ops_memory_get_length(arg->mem_data),
                                OPS_LDT_BINARY, arg->cinfo_literal);
 

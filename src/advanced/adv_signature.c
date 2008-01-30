@@ -265,7 +265,7 @@ static void hash_add_key(ops_hash_t *hash,const ops_public_key_t *key)
     ops_memory_free(mem);
     }
 
-static void common_init_signature(ops_hash_t *hash,const ops_signature_t *sig)
+static void initialise_hash(ops_hash_t *hash,const ops_signature_t *sig)
     {
     ops_hash_any(hash,sig->hash_algorithm);
     hash->init(hash);
@@ -274,7 +274,7 @@ static void common_init_signature(ops_hash_t *hash,const ops_signature_t *sig)
 static void init_key_signature(ops_hash_t *hash,const ops_signature_t *sig,
 			   const ops_public_key_t *key)
     {
-    common_init_signature(hash,sig);
+    initialise_hash(hash,sig);
     hash_add_key(hash,key);
     }
 
@@ -483,7 +483,7 @@ ops_check_hash_signature(ops_hash_t *hash,
     return finalise_signature(hash,sig,signer,NULL);
     }
 
-static void start_signature(ops_create_signature_t *sig)
+static void start_signature_in_mem(ops_create_signature_t *sig)
     {
     // since this has subpackets and stuff, we have to buffer the whole
     // thing to get counts before writing.
@@ -536,20 +536,21 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
     ops_hash_add_int(&sig->hash,strlen((char *)id->user_id),4);
     sig->hash.add(&sig->hash,id->user_id,strlen((char *)id->user_id));
 
-    start_signature(sig);
+    start_signature_in_mem(sig);
     }
 
 /**
  * \ingroup Create
  *
- * Create a V4 public key signature over some plaintext.
+ * Create a V4 public key signature over some cleartext.
  * 
  * \param sig The signature structure to initialise
  * \param id
  * \param type
  * \todo Expand description. Allow other hashes.
  */
-void ops_signature_start_plaintext_signature(ops_create_signature_t *sig,
+
+void ops_signature_start_signature(ops_create_signature_t *sig,
 					     ops_secret_key_t *key,
 					     ops_hash_algorithm_t hash,
 					     ops_sig_type_t type)
@@ -566,8 +567,18 @@ void ops_signature_start_plaintext_signature(ops_create_signature_t *sig,
 
     sig->hashed_data_length=-1;
 
-    common_init_signature(&sig->hash,&sig->sig);
-    start_signature(sig);
+    if (debug)
+        { fprintf(stderr,"initialising hash for sig in mem\n"); }
+    initialise_hash(&sig->hash,&sig->sig);
+    start_signature_in_mem(sig);
+    }
+
+void ops_signature_start_cleartext_signature(ops_create_signature_t *sig,
+                                   ops_secret_key_t *key,
+                                   ops_hash_algorithm_t hash,
+                                   ops_sig_type_t type)
+    {
+    ops_signature_start_signature(sig,key,hash,type);
     }
 
 /**

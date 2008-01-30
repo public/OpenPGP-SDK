@@ -1042,7 +1042,7 @@ static ops_boolean_t linebreak_writer(const unsigned char *src,
 /**
  * \param info
  */
-void ops_writer_switch_to_signature(ops_create_info_t *info)
+void ops_writer_switch_to_armoured_signature(ops_create_info_t *info)
     {
     static char header[]="\r\n-----BEGIN PGP SIGNATURE-----\r\nVersion: "
 	OPS_VERSION_STRING "\r\n\r\n";

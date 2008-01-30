@@ -13,7 +13,8 @@
 
 static char *filename_rsa_noarmour_nopassphrase_singlekey="enc_rsa_noarmour_np_singlekey.txt";
 static char *filename_rsa_noarmour_passphrase_singlekey="enc_rsa_noarmour_pp_singlekey.txt";
-static char *filename_rsa_armour_singlekey="enc_rsa_armour_singlekey.txt";
+static char *filename_rsa_armour_nopassphrase_singlekey="enc_rsa_armour_np_singlekey.txt";
+static char *filename_rsa_armour_passphrase_singlekey="enc_rsa_armour_pp_singlekey.txt";
 
 static ops_parse_cb_return_t
 callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
@@ -87,11 +88,8 @@ int init_suite_rsa_encrypt(void)
 
     create_testfile(filename_rsa_noarmour_nopassphrase_singlekey);
     create_testfile(filename_rsa_noarmour_passphrase_singlekey);
-    create_testfile(filename_rsa_armour_singlekey);
-    /*
-    create_testfile(filename_rsa_noarmour_passphrase);
-    create_testfile(filename_rsa_armour_passphrase);
-    */
+    create_testfile(filename_rsa_armour_nopassphrase_singlekey);
+    create_testfile(filename_rsa_armour_passphrase_singlekey);
 
     // Return success
     return 0;
@@ -277,24 +275,20 @@ static void test_rsa_encrypt_noarmour_passphrase_singlekey(void)
 
 static void test_rsa_encrypt_armour_nopassphrase_singlekey(void)
     {
-    CU_FAIL("Test TODO: Encrypt with armour/no passphrase/single-key");
-#ifdef TBD
     int armour=1;
     char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
     const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
     assert(pub_key);
-    test_rsa_encrypt(armour,pub_key,filename_rsa_armour_singlekey);
-#endif
+    test_rsa_encrypt(armour,pub_key,filename_rsa_armour_nopassphrase_singlekey);
     }
 
 static void test_rsa_encrypt_armour_passphrase_singlekey(void)
     {
-    CU_FAIL("Test TODO: Encrypt with armour/passphrase/single-key");
-#ifdef TBD
     int armour=1;
-    int passphrase=1;
-    test_rsa_encrypt(armour,passphrase,filename_rsa_armour_passphrase);
-#endif
+    char *user_id=bravo_user_id;
+    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
+    assert(pub_key);
+    test_rsa_encrypt(armour,pub_key,filename_rsa_armour_passphrase_singlekey);
     }
 
 static void test_todo(void)
@@ -304,7 +298,7 @@ static void test_todo(void)
     CU_FAIL("Test TODO: Encrypt to users with different preferences");
     }
 
-int add_tests(CU_pSuite suite)
+static int add_tests(CU_pSuite suite)
     {
     // add tests to suite
     

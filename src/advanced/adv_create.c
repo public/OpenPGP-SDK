@@ -13,11 +13,14 @@
 #include <openpgpsdk/util.h>
 #include <string.h>
 #include <assert.h>
+#include <fcntl.h>
 #ifndef WIN32
 #include <unistd.h>
 #endif
 
 #include <openpgpsdk/final.h>
+
+static int debug=0;
 
 /*
  * return true if OK, otherwise false
@@ -937,7 +940,8 @@ ops_boolean_t ops_write_mdc(const unsigned char *hashed,
         && ops_write(hashed, OPS_SHA1_HASH_SIZE, info);
     }
 
-ops_boolean_t ops_write_literal_data(const unsigned char *data, 
+// RENAMED from ops_boolean_t ops_write_literal_data(const unsigned char *data, 
+ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data, 
                                      const int maxlen, 
                                      const ops_literal_data_type_t type,
                                      ops_create_info_t *info)
@@ -951,6 +955,79 @@ ops_boolean_t ops_write_literal_data(const unsigned char *data,
         && ops_write_scalar(0, 1, info)
         && ops_write_scalar(0, 4, info)
         && ops_write(data, maxlen, info);
+    }
+
+ops_boolean_t ops_write_literal_data_from_file(const char *filename, 
+                                     const ops_literal_data_type_t type,
+                                     ops_create_info_t *info)
+    {
+    size_t initial_size=1024;
+    int fd=0;
+    ops_boolean_t rtn;
+    unsigned char buf[1024];
+    ops_memory_t* mem=NULL;
+    size_t len=0;
+
+#ifdef WIN32
+    fd=open(filename,O_RDONLY | O_BINARY);
+#else
+    fd=open(filename,O_RDONLY);
+#endif
+    if (fd < 0)
+        return ops_false;
+
+    mem=ops_mallocz(sizeof mem);
+    ops_memory_init(mem,initial_size);
+    for (;;)
+        {
+        int n=0;
+        n=read(fd,buf,1024);
+        if (!n)
+            break;
+        ops_memory_add(mem, &buf[0], n);
+        }
+    close(fd);    
+    // \todo add date
+    // \todo do we need to check text data for <cr><lf> line endings ?
+    len=ops_memory_get_length(mem);
+    rtn=ops_write_ptag(OPS_PTAG_CT_LITERAL_DATA, info)
+        && ops_write_length(1+1+4+len,info)
+        && ops_write_scalar(type, 1, info)
+        && ops_write_scalar(0, 1, info)
+        && ops_write_scalar(0, 4, info)
+        && ops_write(ops_memory_get_data(mem), len, info);
+
+    ops_memory_free(mem);
+    return rtn;
+    }
+
+ops_memory_t* ops_write_buf_from_file(const char *filename)
+    {
+    size_t initial_size=1024;
+    int fd=0;
+    unsigned char buf[1024];
+    ops_memory_t* mem=NULL;
+
+#ifdef WIN32
+    fd=open(filename,O_RDONLY | O_BINARY);
+#else
+    fd=open(filename,O_RDONLY);
+#endif
+    if (fd < 0)
+        return ops_false;
+
+    mem=ops_mallocz(sizeof mem);
+    ops_memory_init(mem,initial_size);
+    for (;;)
+        {
+        int n=0;
+        n=read(fd,buf,1024);
+        if (!n)
+            break;
+        ops_memory_add(mem, &buf[0], n);
+        }
+    close(fd);    
+    return mem;
     }
 
 ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data, 
@@ -976,6 +1053,26 @@ ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data,
     return ops_write_ptag(OPS_PTAG_CT_SE_DATA, info)
         && ops_write_length(1+encrypted_sz,info)
         && ops_write(data, len, info);
+    }
+
+ops_boolean_t ops_write_one_pass_sig(const ops_secret_key_t* skey,
+                                     const ops_hash_algorithm_t hash_alg,
+                                     const ops_sig_type_t sig_type,
+                                     ops_create_info_t* info)
+    {
+    unsigned char keyid[OPS_KEY_ID_SIZE];
+    if (debug)
+        { fprintf(stderr,"calling ops_keyid in write_one_pass_sig: this calls sha1_init\n"); }
+    ops_keyid(keyid,&skey->public_key);
+
+    return ops_write_ptag(OPS_PTAG_CT_ONE_PASS_SIGNATURE, info)
+        && ops_write_length(1+1+1+1+8+1, info)
+        && ops_write_scalar (3, 1, info) // version
+        && ops_write_scalar (sig_type, 1, info)
+        && ops_write_scalar (hash_alg, 1, info)
+        && ops_write_scalar (skey->public_key.algorithm,  1, info)
+        && ops_write(keyid, 8, info)
+        && ops_write_scalar (1, 1, info);
     }
 
 // EOF

@@ -475,6 +475,9 @@ callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
     case OPS_PTAG_CT_ARMOUR_HEADER:
     case OPS_PTAG_CT_ARMOUR_TRAILER:
         break;
+
+    case OPS_PTAG_CT_UNARMOURED_TEXT:
+        break;
         
     case OPS_PTAG_CT_SIGNATURE:
     case OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER:

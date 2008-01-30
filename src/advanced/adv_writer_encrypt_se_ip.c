@@ -81,7 +81,7 @@ static ops_boolean_t encrypt_se_ip_writer(const unsigned char *src,
     ops_setup_memory_write(&my_cinfo,&my_mem,bufsz);
 
     // create literal data packet from source data
-    ops_write_literal_data(src, length, OPS_LDT_BINARY, cinfo_literal);
+    ops_write_literal_data_from_buf(src, length, OPS_LDT_BINARY, cinfo_literal);
     assert(ops_memory_get_length(mem_literal)>length);
 
     // create SE IP packet set from this literal data

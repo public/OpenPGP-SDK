@@ -92,16 +92,18 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key);
 
 void ops_create_m_buf(ops_pk_session_key_t *session_key, unsigned char *buf);
 
-ops_boolean_t ops_write_literal_data(const unsigned char *data, 
+// RENAMED from ops_boolean_t ops_write_literal_data(const unsigned char *data, 
+ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data, 
                                      const int maxlen, 
                                      const ops_literal_data_type_t type,
                                      ops_create_info_t *info);
+ops_boolean_t ops_write_literal_data_from_file(const char *filename, 
+                                               const ops_literal_data_type_t type,
+                                               ops_create_info_t *info);
+ops_memory_t* ops_write_buf_from_file(const char *filename);
 ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data, 
                                                      const int len, 
                                                      ops_create_info_t *info);
-
-//ops_boolean_t ops_write_mdc(const unsigned char *hashed,
-//							ops_create_info_t *info);
 
 ops_boolean_t ops_write_se_ip_data(const unsigned char *data,
                                    const unsigned int len,
@@ -111,5 +113,7 @@ ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 				       ops_pk_session_key_t *pksk);
 ops_boolean_t ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char *cs);
 void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* data, const unsigned int len, unsigned char *hashed);
+
+ops_boolean_t ops_write_one_pass_sig(const ops_secret_key_t* skey, const ops_hash_algorithm_t hash_alg, const ops_sig_type_t sig_type, ops_create_info_t* info);
 
 #endif

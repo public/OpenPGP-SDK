@@ -151,7 +151,7 @@ static void test_literal_data_packet_text()
     /*
      * create literal data packet
      */
-    ops_write_literal_data((unsigned char *)testtext,strlen(testtext),OPS_LDT_TEXT,cinfo);
+    ops_write_literal_data_from_buf((unsigned char *)testtext,strlen(testtext),OPS_LDT_TEXT,cinfo);
 
     /*
      * initialise needed structures for reading from memory
@@ -199,7 +199,7 @@ static void test_literal_data_packet_data()
     /*
      * create literal data packet
      */
-    ops_write_literal_data(in,MAXBUF,OPS_LDT_BINARY,cinfo);
+    ops_write_literal_data_from_buf(in,MAXBUF,OPS_LDT_BINARY,cinfo);
 
     /*
      * initialise needed structures for reading from memory
@@ -308,7 +308,7 @@ static void test_ops_se_ip()
     ops_memory_t *mem;
 
     ops_setup_memory_write(&cinfo_ldt,&mem_ldt,strlen(ldt_text));
-    ops_write_literal_data((unsigned char *)ldt_text, strlen(ldt_text),
+    ops_write_literal_data_from_buf((unsigned char *)ldt_text, strlen(ldt_text),
                            OPS_LDT_TEXT, cinfo_ldt);
 
     /*
