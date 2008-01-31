@@ -878,7 +878,7 @@ static ops_boolean_t dash_escaped_writer(const unsigned char *src,
 /**
  * \param winfo
  */
-void dash_escaped_destroyer(ops_writer_info_t *winfo)
+static void dash_escaped_destroyer(ops_writer_info_t *winfo)
     {
     dash_escaped_arg_t *arg=ops_writer_get_arg(winfo);
 
@@ -892,7 +892,7 @@ void dash_escaped_destroyer(ops_writer_info_t *winfo)
  * \param sig
  * \todo should return errors
  */
-void ops_writer_push_dash_escaped(ops_create_info_t *info,
+void ops_writer_push_clearsigned(ops_create_info_t *info,
 				  ops_create_signature_t *sig)
     {
     static char header[]="-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: ";
@@ -1059,3 +1059,59 @@ void ops_writer_switch_to_armoured_signature(ops_create_info_t *info)
     ops_writer_push(info,base64_writer,signature_finaliser,
 		    ops_writer_generic_destroyer,base64);
     }
+
+static ops_boolean_t armoured_message_finaliser(ops_error_t **errors,
+					 ops_writer_info_t *winfo)
+    {
+    // TODO: This is same as signature_finaliser apart from trailer.
+    base64_arg_t *arg=ops_writer_get_arg(winfo);
+    static char trailer[]="\r\n-----END PGP MESSAGE-----\r\n";
+    unsigned char c[3];
+
+    if(arg->pos)
+	{
+	if(!ops_stacked_write(&b64map[arg->t],1,errors,winfo))
+	    return ops_false;
+	if(arg->pos == 1 && !ops_stacked_write("==",2,errors,winfo))
+	    return ops_false;
+	if(arg->pos == 2 && !ops_stacked_write("=",1,errors,winfo))
+	    return ops_false;
+	}
+    /* Ready for the checksum */
+    if(!ops_stacked_write("\r\n=",3,errors,winfo))
+	return ops_false;
+
+    arg->pos=0; /* get ready to write the checksum */
+
+    c[0]=arg->checksum >> 16;
+    c[1]=arg->checksum >> 8;
+    c[2]=arg->checksum;
+    /* push the checksum through our own writer */
+    if(!base64_writer(c,3,errors,winfo))
+	return ops_false;
+
+    return ops_stacked_write(trailer,sizeof trailer-1,errors,winfo);
+    }
+
+static void armoured_message_destroyer(ops_writer_info_t *winfo)
+    {
+    base64_arg_t *arg=ops_writer_get_arg(winfo);
+    free(arg);
+    }
+
+void ops_writer_push_armoured_message(ops_create_info_t *info,
+				  ops_create_signature_t *sig)
+    {
+    static char header[]="-----BEGIN PGP MESSAGE-----\r\nHash: ";
+    const char *hash=ops_text_from_hash(ops_signature_get_hash(sig));
+    base64_arg_t *base64;
+
+    ops_write(header,sizeof header-1,info);
+    ops_write(hash,strlen(hash),info);
+    ops_write("\r\n\r\n",4,info);
+    base64=ops_mallocz(sizeof *base64);
+    base64->checksum=CRC24_INIT;
+    ops_writer_push(info,base64_writer,armoured_message_finaliser,armoured_message_destroyer,base64);
+    }
+
+// EOF

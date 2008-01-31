@@ -112,11 +112,9 @@ static void test_rsa_signature_clearsign(const char *filename, const ops_secret_
     ops_reader_set_fd(pinfo,fd);
     pinfo->rinfo.accumulate=ops_true;
     
-    // Set up armour/passphrase options
+    // Must de-armour because it's clearsigned
     
-    //    if (has_armour)
-        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
-    //    current_passphrase=has_passphrase ? passphrase : nopassphrase;
+    ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
     
     // Do the verification
     
@@ -150,13 +148,11 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
     char *suffix= use_armour ? "asc" : "ops";
     int rtn=0;
 
-    assert(use_armour==0);
-
     // filenames
     snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
     snprintf(signed_file,MAXBUF,"%s.%s",myfile,suffix);
 
-    ops_sign_file(myfile, skey);
+    ops_sign_file(myfile, signed_file, skey, use_armour);
 
     /*
      * Validate output
@@ -247,22 +243,16 @@ static void test_rsa_signature_noarmour_passphrase(void)
 
 static void test_rsa_signature_armour_nopassphrase(void)
     {
-    CU_FAIL("Test TODO: Sign file with armour and no passphrase");
-    //#ifdef TBD
     int armour=1;
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(armour,filename_rsa_armour_nopassphrase, alpha_skey);
-    //#endif
     }
 
 static void test_rsa_signature_armour_passphrase(void)
     {
-    CU_FAIL("Test TODO: Sign file with armour and passphrase");
-#ifdef TBD
     int armour=1;
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(armour,filename_rsa_armour_passphrase, bravo_skey);
-#endif
     }
 
 static void test_rsa_signature_clearsign_nopassphrase(void)
@@ -293,16 +283,16 @@ CU_pSuite suite_rsa_signature()
     if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_signature_noarmour_passphrase))
 	    return NULL;
     
-    if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_signature_armour_nopassphrase))
-	    return NULL;
-    
-    if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_signature_armour_passphrase))
-	    return NULL;
-    
     if (NULL == CU_add_test(suite, "Clearsigned, no passphrase", test_rsa_signature_clearsign_nopassphrase))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Clearsigned, passphrase", test_rsa_signature_clearsign_passphrase))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_rsa_signature_armour_nopassphrase))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_signature_armour_passphrase))
 	    return NULL;
     
     return suite;

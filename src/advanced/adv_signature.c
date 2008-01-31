@@ -550,7 +550,7 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
  * \todo Expand description. Allow other hashes.
  */
 
-void ops_signature_start_signature(ops_create_signature_t *sig,
+static void ops_signature_start_signature(ops_create_signature_t *sig,
 					     ops_secret_key_t *key,
 					     ops_hash_algorithm_t hash,
 					     ops_sig_type_t type)
@@ -574,6 +574,14 @@ void ops_signature_start_signature(ops_create_signature_t *sig,
     }
 
 void ops_signature_start_cleartext_signature(ops_create_signature_t *sig,
+                                   ops_secret_key_t *key,
+                                   ops_hash_algorithm_t hash,
+                                   ops_sig_type_t type)
+    {
+    ops_signature_start_signature(sig,key,hash,type);
+    }
+
+void ops_signature_start_message_signature(ops_create_signature_t *sig,
                                    ops_secret_key_t *key,
                                    ops_hash_algorithm_t hash,
                                    ops_sig_type_t type)

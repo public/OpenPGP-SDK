@@ -48,10 +48,16 @@ void ops_signature_start_cleartext_signature(ops_create_signature_t *sig,
 					     ops_secret_key_t *key,
 					     ops_hash_algorithm_t hash,
 					     ops_sig_type_t type);
+void ops_signature_start_message_signature(ops_create_signature_t *sig,
+					     ops_secret_key_t *key,
+					     ops_hash_algorithm_t hash,
+					     ops_sig_type_t type);
+/*
 void ops_signature_start_signature(ops_create_signature_t *sig,
 					     ops_secret_key_t *key,
 					     ops_hash_algorithm_t hash,
 					     ops_sig_type_t type);
+*/
 void ops_signature_add_data(ops_create_signature_t *sig,const void *buf,
 			    size_t length);
 ops_hash_t *ops_signature_get_hash(ops_create_signature_t *sig);
@@ -66,6 +72,6 @@ void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 
 // Standard Interface
 void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey);
-void ops_sign_file(const char* filename, const ops_secret_key_t *skey);
+void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const int use_armour);
 
 #endif
