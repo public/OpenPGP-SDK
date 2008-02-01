@@ -551,9 +551,9 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
  */
 
 static void ops_signature_start_signature(ops_create_signature_t *sig,
-					     ops_secret_key_t *key,
-					     ops_hash_algorithm_t hash,
-					     ops_sig_type_t type)
+					     const ops_secret_key_t *key,
+					     const ops_hash_algorithm_t hash,
+					     const ops_sig_type_t type)
     {
     sig->info=ops_create_info_new();
 
@@ -574,17 +574,17 @@ static void ops_signature_start_signature(ops_create_signature_t *sig,
     }
 
 void ops_signature_start_cleartext_signature(ops_create_signature_t *sig,
-                                   ops_secret_key_t *key,
-                                   ops_hash_algorithm_t hash,
-                                   ops_sig_type_t type)
+                                   const ops_secret_key_t *key,
+                                   const ops_hash_algorithm_t hash,
+                                   const ops_sig_type_t type)
     {
     ops_signature_start_signature(sig,key,hash,type);
     }
 
 void ops_signature_start_message_signature(ops_create_signature_t *sig,
-                                   ops_secret_key_t *key,
-                                   ops_hash_algorithm_t hash,
-                                   ops_sig_type_t type)
+                                   const ops_secret_key_t *key,
+                                   const ops_hash_algorithm_t hash,
+                                   const ops_sig_type_t type)
     {
     ops_signature_start_signature(sig,key,hash,type);
     }
@@ -638,8 +638,8 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
  * \todo get a better description of how/when this is used
  */
 
-void ops_write_signature(ops_create_signature_t *sig,ops_public_key_t *key,
-			 ops_secret_key_t *skey,ops_create_info_t *info)
+void ops_write_signature(ops_create_signature_t *sig, const ops_public_key_t *key,
+			 const ops_secret_key_t *skey, const ops_create_info_t *info)
     {
     size_t l=ops_memory_get_length(sig->mem);
 

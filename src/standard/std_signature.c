@@ -59,7 +59,7 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     
     // set up signature
     sig=ops_create_signature_new();
-    ops_signature_start_cleartext_signature(sig,(ops_secret_key_t *)skey,OPS_HASH_SHA1,OPS_SIG_BINARY);
+    ops_signature_start_cleartext_signature(sig,skey,OPS_HASH_SHA1,OPS_SIG_BINARY);
 
     // set up output file
     cinfo=ops_create_info_new();
@@ -90,7 +90,7 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     ops_signature_add_issuer_key_id(sig,keyid);
     ops_signature_hashed_subpackets_end(sig);
 
-    ops_write_signature(sig,(ops_public_key_t *)&skey->public_key,(ops_secret_key_t *)skey,cinfo);
+    ops_write_signature(sig,&skey->public_key,skey,cinfo);
     ops_writer_close(cinfo);
     close(fd_out);
     }
@@ -131,7 +131,7 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     
     // set up signature
     sig=ops_create_signature_new();
-    ops_signature_start_message_signature(sig,(ops_secret_key_t *)skey, hash_alg, sig_type);
+    ops_signature_start_message_signature(sig, skey, hash_alg, sig_type);
 
     // set up output file
     cinfo=ops_create_info_new();
@@ -173,7 +173,7 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     ops_signature_hashed_subpackets_end(sig);
 
     // write out sig
-    ops_write_signature(sig,(ops_public_key_t *)&skey->public_key,(ops_secret_key_t *)skey,cinfo);
+    ops_write_signature(sig,&skey->public_key,skey,cinfo);
     ops_writer_close(cinfo);
     close(fd_out);
 
