@@ -104,7 +104,7 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     ops_create_signature_t *sig=NULL;
 
     int fd_out=0;
-    ops_create_info_t *cinfo_out=NULL;
+    ops_create_info_t *cinfo=NULL;
 
     ops_hash_algorithm_t hash_alg=OPS_HASH_SHA1;
     ops_sig_type_t sig_type=OPS_SIG_BINARY;
@@ -132,19 +132,20 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     // set up signature
     sig=ops_create_signature_new();
     ops_signature_start_message_signature(sig,(ops_secret_key_t *)skey, hash_alg, sig_type);
+
     // set up output file
-    cinfo_out=ops_create_info_new();
-    ops_writer_set_fd(cinfo_out,fd_out); 
+    cinfo=ops_create_info_new();
+    ops_writer_set_fd(cinfo,fd_out); 
 
     //  set armoured/not armoured here
     if (use_armour)
-        ops_writer_push_armoured_message(cinfo_out,sig);
+        ops_writer_push_armoured_message(cinfo);
 
     if (debug)
         { fprintf(stderr, "** Writing out one pass sig\n"); } 
 
     // write one_pass_sig
-    ops_write_one_pass_sig(skey, hash_alg, sig_type, cinfo_out);
+    ops_write_one_pass_sig(skey, hash_alg, sig_type, cinfo);
 
     // hash file contents
     hash=ops_signature_get_hash(sig);
@@ -155,7 +156,7 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     if (debug)
         { fprintf(stderr,"** Writing out data now\n"); }
 
-    ops_write_literal_data_from_buf(ops_memory_get_data(mem_buf), ops_memory_get_length(mem_buf), OPS_LDT_BINARY, cinfo_out);
+    ops_write_literal_data_from_buf(ops_memory_get_data(mem_buf), ops_memory_get_length(mem_buf), OPS_LDT_BINARY, cinfo);
 
     if (debug)
         { fprintf(stderr,"** After Writing out data now\n");}
@@ -172,13 +173,12 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     ops_signature_hashed_subpackets_end(sig);
 
     // write out sig
-    ops_write_signature(sig,(ops_public_key_t *)&skey->public_key,(ops_secret_key_t *)skey,cinfo_out);
-    ops_writer_close(cinfo_out);
+    ops_write_signature(sig,(ops_public_key_t *)&skey->public_key,(ops_secret_key_t *)skey,cinfo);
+    ops_writer_close(cinfo);
     close(fd_out);
 
-    //    ops_writer_close(cinfo_ld);
-
     // tidy up
+    ops_create_info_delete(cinfo);
     ops_create_signature_delete(sig);
     ops_memory_free(mem_buf);
     }

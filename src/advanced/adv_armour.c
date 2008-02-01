@@ -1099,16 +1099,15 @@ static void armoured_message_destroyer(ops_writer_info_t *winfo)
     free(arg);
     }
 
-void ops_writer_push_armoured_message(ops_create_info_t *info,
-				  ops_create_signature_t *sig)
+void ops_writer_push_armoured_message(ops_create_info_t *info)
+//				  ops_create_signature_t *sig)
     {
-    static char header[]="-----BEGIN PGP MESSAGE-----\r\nHash: ";
-    const char *hash=ops_text_from_hash(ops_signature_get_hash(sig));
+    static char header[]="-----BEGIN PGP MESSAGE-----\r\n";
+
     base64_arg_t *base64;
 
     ops_write(header,sizeof header-1,info);
-    ops_write(hash,strlen(hash),info);
-    ops_write("\r\n\r\n",4,info);
+    ops_write("\r\n",2,info);
     base64=ops_mallocz(sizeof *base64);
     base64->checksum=CRC24_INIT;
     ops_writer_push(info,base64_writer,armoured_message_finaliser,armoured_message_destroyer,base64);

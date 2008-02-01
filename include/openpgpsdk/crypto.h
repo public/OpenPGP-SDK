@@ -4,6 +4,7 @@
 #ifndef OPS_CRYPTO_H
 #define OPS_CRYPTO_H
 
+#include "keyring.h"
 #include "util.h"
 #include "packet.h"
 #include "packet-parse.h"
@@ -136,5 +137,7 @@ ops_boolean_t ops_encrypt_mpi(const unsigned char *buf, const size_t buflen,
 struct ops_key_data;
 void ops_writer_push_encrypt(ops_create_info_t *info,
                              const struct ops_key_data *key);
+
+void ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_key_data_t *pub_key, const int use_armour);
 
 #endif
