@@ -639,7 +639,7 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
  */
 
 void ops_write_signature(ops_create_signature_t *sig, const ops_public_key_t *key,
-			 const ops_secret_key_t *skey, const ops_create_info_t *info)
+			 const ops_secret_key_t *skey, ops_create_info_t *info)
     {
     size_t l=ops_memory_get_length(sig->mem);
 

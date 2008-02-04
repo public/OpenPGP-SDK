@@ -30,9 +30,6 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     static ops_boolean_t skipping;
-    //    static const ops_key_data_t *decrypter;
-    //    const ops_key_data_t *keydata=NULL;
-    //    const ops_secret_key_t *secret;
 
     OPS_USED(cbinfo);
 
@@ -120,7 +117,7 @@ int init_suite_rsa_decrypt(void)
      */
 
     // default symmetric algorithm
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
@@ -130,7 +127,7 @@ int init_suite_rsa_decrypt(void)
     // \todo write test which uses PGP2 instead of using gpg to test IDEA
     /*
     // IDEA
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"IDEA\" --output=%s/IDEA_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"IDEA\" --output=%s/IDEA_%s.gpg  --force-mdc --compress-level 0 --quiet --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
@@ -139,28 +136,28 @@ int init_suite_rsa_decrypt(void)
 #endif
 
     // TripleDES 
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"3DES\" --output=%s/3DES_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"3DES\" --output=%s/3DES_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
 
     // Cast5
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/CAST5_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/CAST5_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
 
     // AES128
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"AES\" --output=%s/AES128_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"AES\" --output=%s/AES128_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
         }
 
     // AES256
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"AES256\" --output=%s/AES256_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"AES256\" --output=%s/AES256_%s.gpg  --force-mdc --compress-level 0 --encrypt --recipient Alpha %s/%s", dir, dir, filename_rsa_noarmour_nopassphrase, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         {
         return 1;
@@ -209,7 +206,7 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     int rtn=0;
     
     // open encrypted file
-    snprintf(encfile,MAXBUF,"%s/%s%s%s.%s",dir,
+    snprintf(encfile,sizeof encfile,"%s/%s%s%s.%s",dir,
              protocol==NULL ? "" : protocol,
              protocol==NULL ? "" : "_",
              filename,suffix);
@@ -330,6 +327,7 @@ static void test_rsa_decrypt_armour_passphrase(void)
 
 static void test_todo(void)
     {
+    CU_FAIL("Test TODO: All armoured/passphrase combinations with AES128/256)");
     CU_FAIL("Test TODO: IDEA");
     CU_FAIL("Test TODO: Decryption with multiple keys in same keyring");
     CU_FAIL("Test TODO: Decryption with multiple keys where some are not in my keyring");

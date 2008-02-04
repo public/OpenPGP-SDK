@@ -30,7 +30,7 @@ int init_suite_crypt_mpi(void)
      * Create a RSA keypair with no passphrase
      */
 
-    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
+    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.alpha");
 
     if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
 	{
@@ -41,17 +41,17 @@ int init_suite_crypt_mpi(void)
     write(fd,rsa_nopass,strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --gen-key --expert --batch %s",dir,keydetails);
+    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --gen-key --expert --batch %s",dir,keydetails);
     system(cmd);
 
     // Initialise OPS 
     ops_init();
 
     // read keyrings
-    snprintf(pubring,MAXBUF,"%s/pubring.gpg", dir);
+    snprintf(pubring,sizeof pubring,"%s/pubring.gpg", dir);
     ops_keyring_read(&pub_keyring,pubring);
 
-    snprintf(secring,MAXBUF,"%s/secring.gpg", dir);
+    snprintf(secring,sizeof secring,"%s/secring.gpg", dir);
     ops_keyring_read(&sec_keyring,secring);
 
     char keyid[]="Alpha (RSA, no passphrase) <alpha@test.com>";
@@ -79,7 +79,7 @@ int clean_suite_crypt_mpi(void)
 
 #ifdef XXX
     /* Remove test dir and files */
-    snprintf(cmd,MAXBUF,"rm -rf %s", dir);
+    snprintf(cmd,sizeof cmd,"rm -rf %s", dir);
     if (system(cmd))
 	{
 	perror("Can't delete test directory ");

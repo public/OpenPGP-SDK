@@ -48,7 +48,7 @@ void setup()
         return;
 
     assert(strlen(dir));
-    snprintf(gpgcmd,MAXBUF,"gpg --quiet --no-tty --homedir=%s --openpgp",dir);
+    snprintf(gpgcmd,sizeof gpgcmd,"gpg --quiet --no-tty --homedir=%s --openpgp",dir);
 
     setup_test_keys();
     }
@@ -67,7 +67,7 @@ static void setup_test_keys()
      * Create a RSA keypair with no passphrase
      */
 
-    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.alpha");
+    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.alpha");
 
 #ifdef WIN32
     if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
@@ -82,14 +82,14 @@ static void setup_test_keys()
     write(fd,rsa_nopass,strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     system(cmd);
 
     /*
      * Create a RSA keypair with passphrase
      */
 
-    snprintf(keydetails,MAXBUF,"%s/%s",dir,"keydetails.bravo");
+    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.bravo");
 
 #ifdef WIN32
     if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
@@ -104,17 +104,17 @@ static void setup_test_keys()
     write(fd,rsa_pass,strlen(rsa_pass));
     close(fd);
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     system(cmd);
     
     /*
      * read keyrings
      */
 
-    snprintf(keyring_name,MAXBUF,"%s/pubring.gpg", dir);
+    snprintf(keyring_name,sizeof keyring_name,"%s/pubring.gpg", dir);
     ops_keyring_read(&pub_keyring,keyring_name);
 
-    snprintf(keyring_name,MAXBUF,"%s/secring.gpg", dir);
+    snprintf(keyring_name,sizeof keyring_name,"%s/secring.gpg", dir);
     ops_keyring_read(&sec_keyring,keyring_name);
 
     /*
@@ -151,7 +151,7 @@ void cleanup()
     return;
 
     /* Remove test dir and files */
-    snprintf(cmd,MAXBUF,"rm -rf %s", dir);
+    snprintf(cmd,sizeof cmd,"rm -rf %s", dir);
     if (system(cmd))
         {
         perror("Can't delete test directory ");
@@ -170,7 +170,7 @@ int mktmpdir (void)
     while (limit--) 
         {
         rnd=random();
-        snprintf(dir,MAXBUF,"./testdir.%ld",rnd);
+        snprintf(dir,sizeof dir,"./testdir.%ld",rnd);
         
         // Try to create directory
 #ifndef WIN32
@@ -204,7 +204,7 @@ char* create_testtext(const char *text)
     char* bigbuf=NULL; 
 
     buf[maxbuf]='\0';
-    snprintf(buf,maxbuf,"%s : Test Text\n", text);
+    snprintf(buf,sizeof buf,"%s : Test Text\n", text);
 
     sz_one=strlen(buf);
     sz_big=sz_one*repeats+1;
@@ -242,7 +242,7 @@ void create_testfile(const char *name)
     char* testtext=NULL;
 
     int fd=0;
-    snprintf(filename,MAXBUF,"%s/%s",dir,name);
+    snprintf(filename,sizeof filename,"%s/%s",dir,name);
 #ifdef WIN32
     if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL | O_BINARY, 0600))<0)
 #else

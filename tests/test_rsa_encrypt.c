@@ -105,7 +105,7 @@ int clean_suite_rsa_encrypt(void)
     return 0;
     }
 
-static int test_rsa_decrypt(const char *encfile, const char*testtext)
+static int test_rsa_decrypt(const char *encfile, const char*testtext, const int use_armour)
     {
     int fd=0;
     ops_parse_info_t *pinfo;
@@ -132,6 +132,8 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext)
     // Do the decryption
 
     ops_memory_init(mem_literal_data,0);
+    if (use_armour)
+        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
     rtn=ops_parse(pinfo);
     ops_print_errors(ops_parse_info_get_errors(pinfo));
     CU_ASSERT(rtn==1);
@@ -147,96 +149,22 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext)
     return rtn;
     }
 
-static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key, const char *filename)
+static void test_rsa_encrypt(const int use_armour, const char* filename, const ops_key_data_t *pub_key)
     {
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
     char encrypted_file[MAXBUF+1];
     char decrypted_file[MAXBUF+1];
-    char *suffix= has_armour ? "asc" : "gpg";
-    //    char *gpgtest = do_gpgtest ? "gpgtest_" : "";
-    int fd_in=0;
-    int fd_out=0;
+    char* testtext;
+    char *suffix= use_armour ? "asc" : "ops";
     int rtn=0;
-    
-    ops_create_info_t *cinfo;
-    char* testtext=NULL;
     char pp[MAXBUF];
 
-    /*
-     * Read from test file and write plaintext to memory
-     * in set of Literal Data packets
-     */
+    // filenames
+    snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
+    snprintf(encrypted_file,sizeof encrypted_file,"%s/%s.%s",dir,filename,suffix);
 
-    // open file to encrypt
-    snprintf(myfile,MAXBUF,"%s/%s",dir,filename);
-#ifdef WIN32
-    fd_in=open(myfile,O_RDONLY | O_BINARY);
-#else
-    fd_in=open(myfile,O_RDONLY);
-#endif
-    if(fd_in < 0)
-        {
-        perror(myfile);
-        exit(2);
-        }
-    
-    snprintf(encrypted_file,MAXBUF,"%s/%s.%s",dir,filename,suffix);
-#ifdef WIN32
-    fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
-#else
-    fd_out=open(encrypted_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
-#endif
-    if(fd_out < 0)
-        {
-        perror(encrypted_file);
-        exit(2);
-        }
-    
-    /*
-     * This shows how to use encryption
-     */
-
-    // Do setup for encrypted writing
-    // This example shows output to a file
-
-    cinfo=ops_create_info_new();
-    ops_writer_set_fd(cinfo,fd_out); 
-
-    // Push the encrypted writer
-    ops_writer_push_encrypt_se_ip(cinfo,pub_key);
-
-    // Do the writing
-
-    unsigned char* buf=NULL;
-    size_t bufsz=16;
-    int done=0;
-    for (;;)
-        {
-        buf=realloc(buf,done+bufsz);
-        
-	    int n=0;
-
-	    n=read(fd_in,buf+done,bufsz);
-	    if (!n)
-		    break;
-	    assert(n>=0);
-        done+=n;
-        }
-
-    // This does the writing
-    ops_write(buf,done,cinfo);
-
-    // Pop the encrypted writer from the stack
-    ops_writer_pop(cinfo);
-
-    // tidy up
-    close(fd_in);
-    close(fd_out);
-
-    /*
-     * Encryption complete
-     */
+    ops_encrypt_file(myfile,encrypted_file, pub_key, use_armour);
 
     /*
      * Test results
@@ -247,9 +175,9 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     if (pub_key==alpha_pub_keydata)
         pp[0]='\0';
     else if (pub_key==bravo_pub_keydata)
-        snprintf(pp,MAXBUF," --passphrase %s ", bravo_passphrase);
-    snprintf(decrypted_file,MAXBUF,"%s/decrypted_%s",dir,filename);
-    snprintf(cmd,MAXBUF,"%s --decrypt --output=%s %s %s",gpgcmd, decrypted_file, pp, encrypted_file);
+        snprintf(pp,sizeof pp," --passphrase %s ", bravo_passphrase);
+    snprintf(decrypted_file,sizeof decrypted_file,"%s/decrypted_%s",dir,filename);
+    snprintf(cmd,sizeof cmd,"%s --decrypt --output=%s %s %s",gpgcmd, decrypted_file, pp, encrypted_file);
     //    printf("cmd: %s\n", cmd);
     rtn=system(cmd);
     CU_ASSERT(rtn==0);
@@ -258,41 +186,42 @@ static void test_rsa_encrypt(const int has_armour, const ops_key_data_t *pub_key
     // File contents should match - checking with OPS
         
     testtext=create_testtext(filename);
-    test_rsa_decrypt(encrypted_file,testtext);
+    test_rsa_decrypt(encrypted_file,testtext, use_armour);
+
+    // tidy up
+    free(testtext);
     }
 
 static void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
     {
     int armour=0;
-    test_rsa_encrypt(armour,alpha_pub_keydata,filename_rsa_noarmour_nopassphrase_singlekey);
+    test_rsa_encrypt(armour,filename_rsa_noarmour_nopassphrase_singlekey, alpha_pub_keydata);
     }
 
 static void test_rsa_encrypt_noarmour_passphrase_singlekey(void)
     {
     int armour=0;
-    test_rsa_encrypt(armour,bravo_pub_keydata,filename_rsa_noarmour_passphrase_singlekey);
+    test_rsa_encrypt(armour,filename_rsa_noarmour_passphrase_singlekey,bravo_pub_keydata);
     }
 
 static void test_rsa_encrypt_armour_nopassphrase_singlekey(void)
     {
     int armour=1;
-    char *user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
-    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
-    assert(pub_key);
-    test_rsa_encrypt(armour,pub_key,filename_rsa_armour_nopassphrase_singlekey);
+    test_rsa_encrypt(armour,filename_rsa_armour_nopassphrase_singlekey,alpha_pub_keydata);
     }
 
 static void test_rsa_encrypt_armour_passphrase_singlekey(void)
     {
     int armour=1;
-    char *user_id=bravo_user_id;
-    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, user_id);
-    assert(pub_key);
-    test_rsa_encrypt(armour,pub_key,filename_rsa_armour_passphrase_singlekey);
+    test_rsa_encrypt(armour,filename_rsa_armour_passphrase_singlekey,bravo_pub_keydata);
     }
 
 static void test_todo(void)
     {
+    CU_FAIL("Test TODO: Use AES128");
+    CU_FAIL("Test TODO: Use AES256");
+    CU_FAIL("Test TODO: Test large files");
+    CU_FAIL("Test TODO: Test stream encryption");
     CU_FAIL("Test TODO: Encrypt to multiple keys in same keyring");
     CU_FAIL("Test TODO: Encrypt to multiple keys where my keys is (a) first key in list; (b) last key in list; (c) in the middle of the list");
     CU_FAIL("Test TODO: Encrypt to users with different preferences");

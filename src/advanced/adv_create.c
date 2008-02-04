@@ -1030,6 +1030,32 @@ ops_memory_t* ops_write_buf_from_file(const char *filename)
     return mem;
     }
 
+int ops_write_file_from_buf(const char *filename, const char* buf, const size_t len)
+    {
+    int fd=0;
+    size_t n=0;
+
+#ifdef WIN32
+    fd=open(filename,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
+#else
+    fd=open(filename,O_WRONLY | O_CREAT | O_EXCL, 0600);
+#endif
+    if (fd < 0)
+        {
+        perror(NULL); 
+        return 0;
+        }
+
+    n=write(fd,buf,len);
+    if (n!=len)
+        return 0;
+
+    if(!close(fd))
+        return 1;
+
+    return 0;
+    }
+
 ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data, 
                                                      const int len, 
                                                      ops_create_info_t *info)

@@ -57,27 +57,27 @@ int init_suite_rsa_verify(void)
 
     // Now sign the test files with GPG
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --sign --local-user %s %s/%s",
+    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --sign --local-user %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s --armor %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_armour_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s %s/%s",
+    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s %s/%s",
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_noarmour_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s --armor %s/%s",
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_armour_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --sign --local-user %s %s/%s",
+    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_noarmour_fail_bad_sig);
     if (system(cmd))
         { return 1; }
@@ -92,17 +92,17 @@ int init_suite_rsa_verify(void)
 
     // and sign them
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_clearsign_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --passphrase %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --passphrase %s --armor %s/%s",
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_clearsign_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,MAXBUF,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_clearsign_fail_bad_sig);
     if (system(cmd))
         { return 1; }
@@ -132,7 +132,7 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
     int rtn=0;
     
     // open signed file
-    snprintf(signedfile,MAXBUF,"%s/%s.%s",
+    snprintf(signedfile,sizeof signedfile,"%s/%s.%s",
              dir, filename,
              suffix);
 #ifdef WIN32

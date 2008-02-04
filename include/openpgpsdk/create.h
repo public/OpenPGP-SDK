@@ -100,7 +100,10 @@ ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data,
 ops_boolean_t ops_write_literal_data_from_file(const char *filename, 
                                                const ops_literal_data_type_t type,
                                                ops_create_info_t *info);
+
 ops_memory_t* ops_write_buf_from_file(const char *filename);
+int ops_write_file_from_buf(const char* filename, const char* buf, const size_t len);
+
 ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data, 
                                                      const int len, 
                                                      ops_create_info_t *info);

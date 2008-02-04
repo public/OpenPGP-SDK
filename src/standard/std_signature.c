@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <fcntl.h>
+#include <string.h>
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -33,7 +34,6 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     unsigned char buf[MAXBUF];
     
     // open file to sign
-    //    snprintf(myfile,MAXBUF,"%s/%s",filename);
 #ifdef WIN32
     fd_in=open(filename,O_RDONLY | O_BINARY);
 #else
@@ -45,7 +45,7 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
         exit(2);
         }
     
-    snprintf(signed_file,MAXBUF,"%s.%s",filename,suffix);
+    snprintf(signed_file,sizeof signed_file,"%s.%s",filename,suffix);
 #ifdef WIN32
     fd_out=open(signed_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
 #else
@@ -93,6 +93,48 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     ops_write_signature(sig,&skey->public_key,skey,cinfo);
     ops_writer_close(cinfo);
     close(fd_out);
+    }
+
+
+/* It is the calling function's responsibility to free signed_cleartext */
+/* signed_cleartext should be a NULL pointer when passed in */
+void ops_sign_buf_as_cleartext(const char* cleartext, const size_t len, ops_memory_t** signed_cleartext, const ops_secret_key_t *skey)
+    {
+    // \todo allow choice of hash algorithams
+    // enforce use of SHA1 for now
+
+    unsigned char keyid[OPS_KEY_ID_SIZE];
+    ops_create_signature_t *sig=NULL;
+
+    ops_create_info_t *cinfo=NULL;
+    
+    assert(*signed_cleartext==NULL);
+
+    // set up signature
+    sig=ops_create_signature_new();
+    ops_signature_start_cleartext_signature(sig,skey,OPS_HASH_SHA1,OPS_SIG_BINARY);
+
+    // set up output file
+    ops_setup_memory_write(&cinfo, signed_cleartext, len);
+
+    ops_writer_push_clearsigned(cinfo,sig);
+
+    // Do the signing
+
+    ops_write(cleartext,len,cinfo);
+
+    // add signature with subpackets:
+    // - creation time
+    // - key id
+    ops_writer_switch_to_armoured_signature(cinfo);
+
+    ops_signature_add_creation_time(sig,time(NULL));
+    ops_keyid(keyid,&skey->public_key);
+    ops_signature_add_issuer_key_id(sig,keyid);
+    ops_signature_hashed_subpackets_end(sig);
+
+    ops_write_signature(sig,&skey->public_key,skey,cinfo);
+    ops_writer_close(cinfo);
     }
 
 void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const int use_armour)
