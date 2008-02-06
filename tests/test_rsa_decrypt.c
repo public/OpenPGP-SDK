@@ -22,6 +22,9 @@ static char *filename_rsa_noarmour_nopassphrase="dec_rsa_noarmour_nopassphrase.t
 static char *filename_rsa_armour_nopassphrase="dec_rsa_armour_nopassphrase.txt";
 static char *filename_rsa_noarmour_passphrase="dec_rsa_noarmour_passphrase.txt";
 static char *filename_rsa_armour_passphrase="dec_rsa_armour_passphrase.txt";
+static char *filename_rsa_noarmour_compress_base="rsa_noarmour_compress";
+static char *filename_rsa_armour_compress_base="rsa_armour_compress";
+
 static char *nopassphrase="";
 static char *current_passphrase=NULL;
 
@@ -183,7 +186,37 @@ int init_suite_rsa_decrypt(void)
         {
         return 1;
         }
-    
+
+    int level=0;
+    for (level=0; level<=MAX_COMPRESS_LEVEL; level++)
+        {
+        char filename[MAXBUF+1];
+
+        // unarmoured
+        snprintf(filename, sizeof filename, "gpg_%s_%d.txt", 
+                 filename_rsa_noarmour_compress_base, level);
+        create_testfile(filename);
+
+        // just ZIP/Cast5 for now
+        snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/%s.gpg  --force-mdc --compress-algo \"ZIP\" --compress-level %d --encrypt --recipient Alpha %s/%s", dir, dir, filename, level, dir, filename);
+        if (system(cmd))
+            {
+            return 1;
+            }
+
+        // armoured
+        snprintf(filename, sizeof filename, "gpg_%s_%d.txt", 
+                 filename_rsa_armour_compress_base, level);
+        create_testfile(filename);
+
+        snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/%s.asc  --force-mdc --compress-algo \"ZIP\" --compress-level %d --encrypt --armor --recipient Alpha %s/%s", dir, dir, filename, level, dir, filename);
+        
+        if (system(cmd))
+            {
+            return 1;
+            }
+        }
+
     // Return success
     return 0;
     }
@@ -325,6 +358,36 @@ static void test_rsa_decrypt_armour_passphrase(void)
     test_rsa_decrypt(armour,passphrase,filename_rsa_armour_passphrase,NULL);
     }
 
+static void test_rsa_decrypt_noarmour_compressed(void)
+    {
+    int armour=0;
+    int passphrase=0;
+    char filename[MAXBUF+1];
+    int level=0;
+    for (level=1; level<=MAX_COMPRESS_LEVEL; level++)
+        {
+        // unarmoured
+        snprintf(filename, sizeof filename, "gpg_%s_%d.txt", 
+                 filename_rsa_noarmour_compress_base, level);
+        test_rsa_decrypt(armour,passphrase,filename,NULL);
+        }
+    }
+
+static void test_rsa_decrypt_armour_compressed(void)
+    {
+    int armour=1;
+    int passphrase=0;
+    char filename[MAXBUF+1];
+    int level=0;
+    for (level=1; level<=MAX_COMPRESS_LEVEL; level++)
+        {
+        // unarmoured
+        snprintf(filename, sizeof filename, "gpg_%s_%d.txt", 
+                 filename_rsa_armour_compress_base, level);
+        test_rsa_decrypt(armour,passphrase,filename,NULL);
+        }
+    }
+
 static void test_todo(void)
     {
     CU_FAIL("Test TODO: All armoured/passphrase combinations with AES128/256)");
@@ -360,6 +423,12 @@ static int add_tests(CU_pSuite suite)
 	    return 0;
     
     if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_decrypt_armour_passphrase))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Unarmoured, compressed", test_rsa_decrypt_noarmour_compressed))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "Armoured, compressed", test_rsa_decrypt_armour_compressed))
 	    return 0;
     
     if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))

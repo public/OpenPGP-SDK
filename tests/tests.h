@@ -89,5 +89,10 @@ const ops_key_data_t *bravo_sec_keydata;
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
 //const ops_key_data_t *decrypter;
+
+// defs
+#define MAXBUF 1024
+#define MAX_COMPRESS_LEVEL 7
+
 #endif
 

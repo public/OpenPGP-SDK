@@ -194,7 +194,7 @@ int mktmpdir (void)
 
 char* create_testtext(const char *text)
     {
-    const unsigned int repeats=1;
+    const unsigned int repeats=10;
     unsigned int i=0;
 
     const unsigned int maxbuf=1024;
