@@ -9,6 +9,7 @@
 
 #include "CUnit/Basic.h"
 #include "openpgpsdk/readerwriter.h"
+#include "openpgpsdk/std_print.h"
 // \todo remove the need for this
 #include "../src/advanced/parse_local.h"
 
@@ -495,6 +496,38 @@ callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
 
     return OPS_RELEASE_MEMORY;
     }
+
+ops_parse_cb_return_t
+callback_verify_example(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    ops_parse_cb_return_t rtn;
+
+    // run standard callback
+    rtn=callback_verify(content_,cbinfo);
+
+    // do extra work here, if needed
+    switch(content_->tag)
+        {
+    case OPS_PTAG_CT_SIGNATURE_FOOTER:
+
+        // When we get this tag, we know that the signature
+        // has been parsed. The signature struct has been filled in 
+        // with everything known about the signature.
+
+        // example: print out the signature creation time
+        if (content_->content.signature.creation_time_set)
+            {
+            printf("\nsignature creation time : %s", 
+                   ctime(&content_->content.signature.creation_time));
+            }
+        break;
+
+    default:
+        break;
+        }
+
+    return rtn;
+	}
 
 ops_parse_cb_return_t
 callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)

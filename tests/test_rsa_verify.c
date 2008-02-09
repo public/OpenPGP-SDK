@@ -3,6 +3,7 @@
 #include <openpgpsdk/types.h>
 #include "openpgpsdk/keyring.h"
 #include <openpgpsdk/armour.h>
+#include "openpgpsdk/memory.h"
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/packet-parse.h"
 #include "openpgpsdk/util.h"
@@ -25,16 +26,20 @@
 
 #endif /* ATTRIBUTE_UNUSED */
 
-static char *filename_rsa_armour_nopassphrase="gpg_signed_armour_nopassphrase.txt";
-static char *filename_rsa_armour_passphrase="gpg_signed_armour_passphrase.txt";
+static int debug=0;
 
-static char *filename_rsa_noarmour_nopassphrase="gpg_signed_noarmour_nopassphrase.txt";
-static char *filename_rsa_noarmour_passphrase="gpg_signed_noarmour_passphrase.txt";
-static char *filename_rsa_noarmour_fail_bad_sig="gpg_signed_noarmour_fail_bad_sig.txt";
+static char *filename_rsa_armour_nopassphrase="gpg_rsa_sign_armour_nopassphrase.txt";
+static char *filename_rsa_armour_passphrase="gpg_rsa_sign_armour_passphrase.txt";
 
-static char *filename_rsa_clearsign_nopassphrase="gpg_clearsigned_nopassphrase.txt";
-static char *filename_rsa_clearsign_passphrase="gpg_clearsigned_passphrase.txt";
-static char *filename_rsa_clearsign_fail_bad_sig="gpg_clearsigned_fail_bad_sig.txt";
+static char *filename_rsa_noarmour_nopassphrase="gpg_rsa_sign_noarmour_nopassphrase.txt";
+static char *filename_rsa_noarmour_passphrase="gpg_rsa_sign_noarmour_passphrase.txt";
+static char *filename_rsa_noarmour_fail_bad_sig="gpg_rsa_sign_noarmour_fail_bad_sig.txt";
+
+static char *filename_rsa_clearsign_nopassphrase="gpg_rsa_clearsign_nopassphrase.txt";
+static char *filename_rsa_clearsign_passphrase="gpg_rsa_clearsign_passphrase.txt";
+static char *filename_rsa_clearsign_fail_bad_sig="gpg_rsa_clearsign_fail_bad_sig.txt";
+static char *filename_rsa_noarmour_compress_base="gpg_rsa_sign_noarmour_compress";
+static char *filename_rsa_armour_compress_base="gpg_rsa_sign_armour_compress";
 
 typedef ops_parse_cb_return_t (*ops_callback)(const ops_parser_content_t *, ops_parse_cb_info_t *);
 
@@ -109,6 +114,38 @@ int init_suite_rsa_verify(void)
     // sig will be turned bad on verification
     // \todo make sig bad here instead
 
+    // compression
+
+    int level=0;
+    for (level=0; level<=MAX_COMPRESS_LEVEL; level++)
+        {
+        char filename[MAXBUF+1];
+
+        // unarmoured
+        snprintf(filename, sizeof filename, "%s_%d.txt", 
+                 filename_rsa_noarmour_compress_base, level);
+        create_testfile(filename);
+
+        // just ZIP for now
+        snprintf(cmd,sizeof cmd,"%s --openpgp --compress-algo \"ZIP\" --compress-level %d --sign --local-user %s %s/%s", 
+                 gpgcmd, level, alpha_name, dir, filename);
+        if (system(cmd))
+            {
+            return 1;
+            }
+
+        // armoured
+        snprintf(filename, sizeof filename, "%s_%d.txt", 
+                 filename_rsa_armour_compress_base, level);
+        create_testfile(filename);
+
+        snprintf(cmd,sizeof cmd,"%s --openpgp --compress-algo \"ZIP\" --compress-level %d --sign --armour --local-user %s %s/%s", 
+                 gpgcmd, level, alpha_name, dir, filename);
+        if (system(cmd))
+            {
+            return 1;
+            }
+        }
     // Return success
     return 0;
     }
@@ -128,9 +165,11 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
     char *suffix= has_armour ? "asc" : "gpg";
     int fd=0;
     validate_data_cb_arg_t validate_arg;
-    ops_validate_result_t result;
+    ops_validate_result_t* result;
     int rtn=0;
     
+    result=ops_mallocz(sizeof (ops_validate_result_t));
+
     // open signed file
     snprintf(signedfile,sizeof signedfile,"%s/%s.%s",
              dir, filename,
@@ -149,7 +188,7 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
     // Set verification reader and handling options
 
     memset(&validate_arg,'\0',sizeof validate_arg);
-    validate_arg.result=&result;
+    validate_arg.result=result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
 
@@ -166,11 +205,20 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
 
     rtn=ops_parse(pinfo);
 
+    if (debug)
+        {
+        printf("valid=%d, invalid=%d, unknown=%d\n",
+               result->valid_count,
+               result->invalid_count,
+               result->unknown_signer_count);
+        }
+
     // Tidy up
     if (has_armour)
         ops_reader_pop_dearmour(pinfo);
 
     close(fd);
+    ops_validate_result_free(result);
 
     return (rtn);
     }
@@ -193,7 +241,6 @@ static void test_rsa_verify_ok(const int has_armour, const char *filename)
     // clean up
     ops_parse_info_delete(pinfo);
     }
-
 
 static void test_rsa_verify_fail(const int has_armour, const char *filename, ops_callback callback, ops_errcode_t expected_errcode)
     {
@@ -240,6 +287,36 @@ static void test_rsa_verify_noarmour_passphrase(void)
     assert(pub_keyring.nkeys);
     test_rsa_verify_ok(armour,filename_rsa_noarmour_passphrase);
     }
+
+#ifdef TODO
+static void test_rsa_decrypt_noarmour_compressed(void)
+    {
+    int armour=0;
+    char filename[MAXBUF+1];
+    int level=0;
+    for (level=0; level<=MAX_COMPRESS_LEVEL; level++)
+        {
+        // unarmoured
+        snprintf(filename, sizeof filename, "%s_%d.txt", 
+                 filename_rsa_noarmour_compress_base, level);
+        test_rsa_verify_ok(armour,filename);
+        }
+    }
+
+static void test_rsa_decrypt_armour_compressed(void)
+    {
+    int armour=1;
+    char filename[MAXBUF+1];
+    int level=0;
+    for (level=0; level<=MAX_COMPRESS_LEVEL; level++)
+        {
+        // armoured
+        snprintf(filename, sizeof filename, "%s_%d.txt", 
+                 filename_rsa_armour_compress_base, level);
+        test_rsa_verify_ok(armour,filename);
+        }
+    }
+#endif
 
 static void test_rsa_verify_armour_nopassphrase(void)
     {

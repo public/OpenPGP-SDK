@@ -1,9 +1,14 @@
 typedef struct
     {
     unsigned int valid_count;
+    ops_key_data_t * valid_keys;
     unsigned int invalid_count;
+    ops_key_data_t * invalid_keys;
     unsigned int unknown_signer_count;
+    unsigned char * unknown_keys;
     } ops_validate_result_t;
+
+void ops_validate_result_free(ops_validate_result_t *result);
 
 void ops_validate_all_signatures(ops_validate_result_t *result,
 				 const ops_keyring_t *ring);

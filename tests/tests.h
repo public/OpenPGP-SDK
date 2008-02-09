@@ -62,6 +62,8 @@ ops_parse_cb_return_t
 callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
 callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+ops_parse_cb_return_t
+callback_verify_example(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 
 void reset_vars();

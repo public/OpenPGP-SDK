@@ -17,13 +17,13 @@ To be removed when callback gets added to main body of code
 #include "../src/advanced/parse_local.h"
 #include "../src/advanced/keyring_local.h"
 
-static char *filename_rsa_noarmour_nopassphrase="dec_rsa_noarmour_nopassphrase.txt";
+static char *filename_rsa_noarmour_nopassphrase="gpg_rsa_enc_noarmour_nopassphrase.txt";
 
-static char *filename_rsa_armour_nopassphrase="dec_rsa_armour_nopassphrase.txt";
-static char *filename_rsa_noarmour_passphrase="dec_rsa_noarmour_passphrase.txt";
-static char *filename_rsa_armour_passphrase="dec_rsa_armour_passphrase.txt";
-static char *filename_rsa_noarmour_compress_base="rsa_noarmour_compress";
-static char *filename_rsa_armour_compress_base="rsa_armour_compress";
+static char *filename_rsa_armour_nopassphrase="gpg_rsa_enc_armour_nopassphrase.txt";
+static char *filename_rsa_noarmour_passphrase="gpg_rsa_enc_noarmour_passphrase.txt";
+static char *filename_rsa_armour_passphrase="gpg_rsa_enc_armour_passphrase.txt";
+static char *filename_rsa_noarmour_compress_base="gpg_rsa_enc_noarmour_compress";
+static char *filename_rsa_armour_compress_base="gpg_rsa_enc_armour_compress";
 
 static char *nopassphrase="";
 static char *current_passphrase=NULL;
@@ -193,7 +193,7 @@ int init_suite_rsa_decrypt(void)
         char filename[MAXBUF+1];
 
         // unarmoured
-        snprintf(filename, sizeof filename, "gpg_%s_%d.txt", 
+        snprintf(filename, sizeof filename, "%s_%d.txt", 
                  filename_rsa_noarmour_compress_base, level);
         create_testfile(filename);
 
@@ -205,7 +205,7 @@ int init_suite_rsa_decrypt(void)
             }
 
         // armoured
-        snprintf(filename, sizeof filename, "gpg_%s_%d.txt", 
+        snprintf(filename, sizeof filename, "%s_%d.txt", 
                  filename_rsa_armour_compress_base, level);
         create_testfile(filename);
 
@@ -367,7 +367,7 @@ static void test_rsa_decrypt_noarmour_compressed(void)
     for (level=1; level<=MAX_COMPRESS_LEVEL; level++)
         {
         // unarmoured
-        snprintf(filename, sizeof filename, "gpg_%s_%d.txt", 
+        snprintf(filename, sizeof filename, "%s_%d.txt", 
                  filename_rsa_noarmour_compress_base, level);
         test_rsa_decrypt(armour,passphrase,filename,NULL);
         }
@@ -382,7 +382,7 @@ static void test_rsa_decrypt_armour_compressed(void)
     for (level=1; level<=MAX_COMPRESS_LEVEL; level++)
         {
         // unarmoured
-        snprintf(filename, sizeof filename, "gpg_%s_%d.txt", 
+        snprintf(filename, sizeof filename, "%s_%d.txt", 
                  filename_rsa_armour_compress_base, level);
         test_rsa_decrypt(armour,passphrase,filename,NULL);
         }

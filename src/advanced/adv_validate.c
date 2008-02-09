@@ -77,6 +77,66 @@ static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
  * \ingroup Callbacks
  */
 
+static void add_key_to_valid_list(ops_validate_result_t * result, const ops_key_data_t *signer)
+    {
+    size_t newsize;
+    size_t start;
+
+    // increment count
+    ++result->valid_count;
+
+    // increase size of array
+    newsize=sizeof signer * result->valid_count;
+    if (!result->valid_keys)
+        result->valid_keys=malloc(newsize);
+    else
+        result->valid_keys=realloc(result->valid_keys, newsize);
+
+    // copy key ptr to array
+    start=(sizeof signer) * (result->valid_count-1);
+    memcpy(result->valid_keys+start,signer,sizeof signer);
+    }
+
+static void add_key_to_invalid_list(ops_validate_result_t * result, const ops_key_data_t *signer)
+    {
+    size_t newsize;
+    size_t start;
+
+    // increment count
+    ++result->invalid_count;
+
+    // increase size of array
+    newsize=sizeof signer * result->invalid_count;
+    if (!result->invalid_keys)
+        result->invalid_keys=malloc(newsize);
+    else
+        result->invalid_keys=realloc(result->invalid_keys, newsize);
+
+    // copy key ptr to array
+    start=(sizeof signer) * (result->invalid_count-1);
+    memcpy(result->invalid_keys+start,signer,sizeof signer);
+    }
+
+static void add_key_to_unknown_list(ops_validate_result_t * result, const unsigned char signer_id[OPS_KEY_ID_SIZE])
+    {
+    size_t newsize;
+    size_t start;
+
+    // increment count
+    ++result->unknown_signer_count;
+
+    // increase size of array
+    newsize=sizeof signer_id * result->unknown_signer_count;
+    if (!result->unknown_keys)
+        result->unknown_keys=malloc(newsize);
+    else
+        result->unknown_keys=realloc(result->unknown_keys, newsize);
+
+    // copy key id to array
+    start=OPS_KEY_ID_SIZE * (result->unknown_signer_count-1);
+    memcpy(result->unknown_keys+start, signer_id, OPS_KEY_ID_SIZE);
+    }
+
 ops_parse_cb_return_t
 validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
@@ -129,7 +189,8 @@ validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
 	if(!signer)
 	    {
 	    printf(" UNKNOWN SIGNER\n");
-	    ++arg->result->unknown_signer_count;
+        //	    ++arg->result->unknown_signer_count;
+        add_key_to_unknown_list(arg->result, content->signature.signer_id);
 	    break;
 	    }
 
@@ -189,13 +250,16 @@ validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
 
 	if(valid)
 	    {
-	    printf(" validated\n");
-	    ++arg->result->valid_count;
+        //	    printf(" validated\n");
+	    //++arg->result->valid_count;
+        add_key_to_valid_list(arg->result, signer);
 	    }
 	else
 	    {
-	    printf(" BAD SIGNATURE\n");
-	    ++arg->result->invalid_count;
+        OPS_ERROR(errors,OPS_E_V_BAD_SIGNATURE,"Bad Signature");
+        //	    printf(" BAD SIGNATURE\n");
+        //	    ++arg->result->invalid_count;
+        add_key_to_invalid_list(arg->result, signer);
 	    }
 	break;
 
@@ -278,7 +342,8 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
             {
             OPS_ERROR(errors,OPS_E_V_UNKNOWN_SIGNER,"Unknown Signer");
             printf(" UNKNOWN SIGNER\n");
-            ++arg->result->unknown_signer_count;
+            //            ++arg->result->unknown_signer_count;
+            add_key_to_unknown_list(arg->result, content->signature.signer_id);
             break;
             }
         
@@ -296,45 +361,44 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
                                arg->data.literal_data_body.data,
                                arg->data.literal_data_body.length);
                 break;
-
+                
             case SIGNED_CLEARTEXT:
                 ops_memory_add(mem,
                                arg->data.signed_cleartext_body.data,
                                arg->data.signed_cleartext_body.length);
                 break;
-
+                
             default:
                 OPS_ERROR_1(errors,OPS_E_UNIMPLEMENTED,"Unimplemented Sig Use %d", arg->use);
                 printf(" Unimplemented Sig Use %d\n", arg->use);
                 break;
                 }
-
+            
             valid=check_binary_signature(ops_memory_get_length(mem), 
                                          ops_memory_get_data(mem),
                                          &content->signature,
                                          ops_get_public_key_from_data(signer));
             break;
 
-        OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
-                    "Verification of signature type 0x%02x not yet implemented\n", content->signature.type);
-                    break;
-
-	default:
+        default:
             OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
-                    "Unexpected signature type 0x%02x\n", content->signature.type);
-            //	    exit(1);
+                        "Verification of signature type 0x%02x not yet implemented\n", content->signature.type);
+            break;
+            
 	    }
     ops_memory_free(mem);
 
 	if(valid)
 	    {
-	    ++arg->result->valid_count;
+        add_key_to_valid_list(arg->result, signer);
+        //	    ++arg->result->valid_count;
 	    }
 	else
 	    {
         OPS_ERROR(errors,OPS_E_V_BAD_SIGNATURE,"Bad Signature");
-	    printf(" BAD SIGNATURE\n");
-	    ++arg->result->invalid_count;
+        //	    printf(" BAD SIGNATURE\n");
+        //	    ++arg->result->invalid_count;
+        add_key_to_invalid_list(arg->result, signer);
 	    }
 	break;
 
@@ -410,3 +474,20 @@ void ops_validate_all_signatures(ops_validate_result_t *result,
     for(n=0 ; n < ring->nkeys ; ++n)
 	validate_key_signatures(result,&ring->keys[n],ring);
     }
+
+void ops_validate_result_free(ops_validate_result_t *result)
+    {
+    if (!result)
+        return;
+
+    if (result->valid_keys)
+        free(result->valid_keys);
+    if (result->invalid_keys)
+        free(result->invalid_keys);
+    if (result->unknown_keys)
+        free(result->unknown_keys);
+
+    free(result);
+    }
+
+// eof

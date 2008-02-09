@@ -82,7 +82,7 @@ static void test_rsa_signature_clearsign_file(const char *filename, const ops_se
     int fd=0;
     ops_parse_info_t *pinfo=NULL;
     validate_data_cb_arg_t validate_arg;
-    ops_validate_result_t result;
+    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));
     int rtn=0;
     
     if (debug)
@@ -107,7 +107,7 @@ static void test_rsa_signature_clearsign_file(const char *filename, const ops_se
     pinfo=ops_parse_info_new();
     
     memset(&validate_arg,'\0',sizeof validate_arg);
-    validate_arg.result=&result;
+    validate_arg.result=result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
@@ -133,6 +133,7 @@ static void test_rsa_signature_clearsign_file(const char *filename, const ops_se
     ops_parse_info_delete(pinfo);
     
     close(fd);
+    ops_validate_result_free(result);
     }
 
     // Check signature with GPG
@@ -179,7 +180,8 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     int fd=0;
     ops_parse_info_t *pinfo=NULL;
     validate_data_cb_arg_t validate_arg;
-    ops_validate_result_t result;
+    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));
+
     int rtn=0;
     
     if (debug)
@@ -204,7 +206,7 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     pinfo=ops_parse_info_new();
     
     memset(&validate_arg,'\0',sizeof validate_arg);
-    validate_arg.result=&result;
+    validate_arg.result=result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
@@ -230,6 +232,7 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     ops_parse_info_delete(pinfo);
     
     close(fd);
+    ops_validate_result_free(result);
     }
 
     // Check signature with GPG
@@ -265,7 +268,7 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
     int fd=0;
     ops_parse_info_t *pinfo=NULL;
     validate_data_cb_arg_t validate_arg;
-    ops_validate_result_t result;
+    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));;
     int rtn=0;
     
     if (debug)
@@ -290,7 +293,7 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
     pinfo=ops_parse_info_new();
     
     memset(&validate_arg,'\0',sizeof validate_arg);
-    validate_arg.result=&result;
+    validate_arg.result=result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
@@ -317,6 +320,7 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
     ops_parse_info_delete(pinfo);
     
     close(fd);
+    ops_validate_result_free(result);
     }
 
     // Check signature with GPG
