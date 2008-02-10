@@ -141,6 +141,8 @@ fileSubst('tests/Makefile','#','');
 fileSubst('util/Makefile.oink','#','');
 fileSubst('include/openpgpsdk/configure.h','/*','*/');
 
+print "make cunit\n";
+system('make cunit') == 0 || exit;
 print "make clean\n";
 system('make clean') == 0 || exit;
 print "make force_depend\n";

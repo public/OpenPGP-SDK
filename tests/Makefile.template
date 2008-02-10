@@ -20,14 +20,10 @@ COMMONTESTOBJ=$(COMMONTESTSRC:.c=.o)
 TESTSRC= tests.c 
 TESTOBJ= $(TESTSRC:.c=.o)
 
-all: Makefile $(CUNIT_LIB) .depend tests
+all: Makefile .depend tests
 
 tests: $(CUNIT_LIB) $(TESTOBJ) $(COMMONTESTOBJ) $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o tests $(TESTOBJ) $(COMMONTESTOBJ) $(LIBS)
-
-$(CUNIT_LIB):
-	tar xvfz CUnit-2.1-0-src.tar.gz
-	(cd CUnit-2.1-0 && ./configure --prefix $(PWD)/../ && make && make install)
 
 clean:
 	rm -f $(EXES) *.o *.i

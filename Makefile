@@ -27,6 +27,8 @@ clean:
 	find . -name '*.core' | xargs rm -f
 	rm -rf oink-links
 	-rm lib/*
+	# reinstall the CUnit libs
+	(cd CUnit-2.1-0; make install)
 
 Makefiles:
 	@set -e; for d in $(SUBDIRS); do \
@@ -42,6 +44,13 @@ test::
 
 doc::
 	cd doc && make
+
+cunit:
+	if [ ! -d CUnit-2.1-0 ]; then \
+        	tar xvfz CUnit-2.1-0-src.tar.gz; \
+        	(cd CUnit-2.1-0 && ./configure --prefix $(PWD) && make && make install); \
+	fi
+
 
 coverity::
 	cov-build --dir coverity make
