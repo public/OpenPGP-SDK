@@ -1,4 +1,4 @@
-LIBSUBDIRS=advanced
+LIBSUBDIRS=lib
 SUBDIRS=$(LIBSUBDIRS) app
 
 default: Makefile
