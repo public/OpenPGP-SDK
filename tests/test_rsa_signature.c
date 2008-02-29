@@ -12,7 +12,7 @@
 #include "openpgpsdk/validate.h"
 
 // \todo change this once we know it works
-#include "../src/advanced/parse_local.h"
+#include "../src/lib/parse_local.h"
 
 #include "tests.h"
 
@@ -309,8 +309,7 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
     
     // Do the verification
     
-    rtn=ops_parse(pinfo);
-    ops_print_errors(ops_parse_info_get_errors(pinfo));
+    rtn=ops_parse_and_print_errors(pinfo);
     CU_ASSERT(rtn==1);
     
     // Tidy up

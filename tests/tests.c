@@ -9,8 +9,6 @@
 
 #include "CUnit/Basic.h"
 #include "openpgpsdk/readerwriter.h"
-// \todo remove the need for this
-#include "../src/advanced/parse_local.h"
 
 #include "tests.h"
 

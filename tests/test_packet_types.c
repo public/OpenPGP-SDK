@@ -9,7 +9,7 @@
 #include "openpgpsdk/crypto.h"
 #include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/random.h"
-#include "../src/advanced/parse_local.h"
+#include "../src/lib/parse_local.h"
 
 #include <openssl/aes.h>
 #include <openssl/cast.h>

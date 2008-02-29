@@ -5,59 +5,16 @@
 #include "tests.h"
 #include "openpgpsdk/types.h"
 #include "openpgpsdk/keyring.h"
-#include "../src/advanced/keyring_local.h"
+#include "../src/lib/keyring_local.h"
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/create.h"
 
-//static char secring[MAXBUF+1];
-//static char pubring[MAXBUF+1];
 static const ops_key_data_t *pubkey;
 static const ops_key_data_t *seckey;
 
 int init_suite_crypt_mpi(void)
     {
-#ifdef XXX
-    static char keydetails[MAXBUF+1];
-    int fd=0;
-    char cmd[MAXBUF+1];
-    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
-    
-    // Create temp directory
-    if (!mktmpdir())
-	return 1;
-
-    /*
-     * Create a RSA keypair with no passphrase
-     */
-
-    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.alpha");
-
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
-	{
-	fprintf(stderr,"Can't create key details\n");
-	return 1;
-	}
-
-    write(fd,rsa_nopass,strlen(rsa_nopass));
-    close(fd);
-
-    snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --gen-key --expert --batch %s",dir,keydetails);
-    system(cmd);
-
-    // Initialise OPS 
-    ops_init();
-
-    // read keyrings
-    snprintf(pubring,sizeof pubring,"%s/pubring.gpg", dir);
-    ops_keyring_read(&pub_keyring,pubring);
-
-    snprintf(secring,sizeof secring,"%s/secring.gpg", dir);
-    ops_keyring_read(&sec_keyring,secring);
-
-    char keyid[]="Alpha (RSA, no passphrase) <alpha@test.com>";
-#endif
     pubkey=ops_keyring_find_key_by_userid(&pub_keyring,alpha_user_id);
-    //    seckey=ops_keyring_find_key_by_userid(&sec_keyring,keyid);
     seckey=ops_keyring_find_key_by_userid(&sec_keyring,alpha_user_id);
 
     // Return success
@@ -67,14 +24,6 @@ int init_suite_crypt_mpi(void)
 int clean_suite_crypt_mpi(void)
     {
 	
-#ifdef XXX
-    char cmd[MAXBUF+1];
-    /* Close OPS */
-    
-    ops_keyring_free(&pub_keyring);
-    ops_keyring_free(&sec_keyring);
-#endif
-
     ops_finish();
 
 #ifdef XXX

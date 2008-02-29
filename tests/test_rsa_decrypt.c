@@ -10,13 +10,6 @@
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/std_print.h"
 
-/* 
-These include files are needed by callback.
-To be removed when callback gets added to main body of code
-*/
-#include "../src/advanced/parse_local.h"
-#include "../src/advanced/keyring_local.h"
-
 static char *filename_rsa_noarmour_nopassphrase="gpg_rsa_enc_noarmour_nopassphrase.txt";
 
 static char *filename_rsa_armour_nopassphrase="gpg_rsa_enc_armour_nopassphrase.txt";
@@ -27,6 +20,14 @@ static char *filename_rsa_armour_compress_base="gpg_rsa_enc_armour_compress";
 
 static char *nopassphrase="";
 static char *current_passphrase=NULL;
+
+/* \todo add support for bzip2
+static char *algos[]={ "zip", "zlib", "bzip2" };
+static int n_algos=3;
+*/
+
+static char *algos[]={ "zip", "zlib" };
+static int n_algos=2;
 
 static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
@@ -188,32 +189,35 @@ int init_suite_rsa_decrypt(void)
         }
 
     int level=0;
+    int alg=0;
     for (level=0; level<=MAX_COMPRESS_LEVEL; level++)
         {
-        char filename[MAXBUF+1];
-
-        // unarmoured
-        snprintf(filename, sizeof filename, "%s_%d.txt", 
-                 filename_rsa_noarmour_compress_base, level);
-        create_testfile(filename);
-
-        // just ZIP/Cast5 for now
-        snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/%s.gpg  --force-mdc --compress-algo \"ZIP\" --compress-level %d --encrypt --recipient Alpha %s/%s", dir, dir, filename, level, dir, filename);
-        if (system(cmd))
+        for (alg=0; alg < n_algos; alg++)
             {
-            return 1;
-            }
+            char filename[MAXBUF+1];
 
-        // armoured
-        snprintf(filename, sizeof filename, "%s_%d.txt", 
-                 filename_rsa_armour_compress_base, level);
-        create_testfile(filename);
+            // unarmoured
+            snprintf(filename, sizeof filename, "%s_%s_%d.txt", 
+                     filename_rsa_noarmour_compress_base, algos[alg], level);
+            create_testfile(filename);
 
-        snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/%s.asc  --force-mdc --compress-algo \"ZIP\" --compress-level %d --encrypt --armor --recipient Alpha %s/%s", dir, dir, filename, level, dir, filename);
+            snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/%s.gpg  --force-mdc --compress-algo \"%s\" --compress-level %d --encrypt --recipient Alpha %s/%s", dir, dir, filename, algos[alg], level, dir, filename);
+            if (system(cmd))
+                {
+                return 1;
+                }
+
+            // armoured
+            snprintf(filename, sizeof filename, "%s_%s_%d.txt", 
+                     filename_rsa_armour_compress_base, algos[alg], level);
+            create_testfile(filename);
+
+            snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"CAST5\" --output=%s/%s.asc  --force-mdc --compress-algo \"%s\" --compress-level %d --encrypt --armor --recipient Alpha %s/%s", dir, dir, filename, algos[alg], level, dir, filename);
         
-        if (system(cmd))
-            {
-            return 1;
+            if (system(cmd))
+                {
+                return 1;
+                }
             }
         }
 
@@ -269,8 +273,7 @@ static void test_rsa_decrypt(const int has_armour, const int has_passphrase, con
     // Do the decryption
 
     ops_memory_init(mem_literal_data,0);
-    rtn=ops_parse(pinfo);
-    ops_print_errors(ops_parse_info_get_errors(pinfo));
+    rtn=ops_parse_and_print_errors(pinfo);
     CU_ASSERT(rtn==1);
 
     // Tidy up
@@ -364,12 +367,16 @@ static void test_rsa_decrypt_noarmour_compressed(void)
     int passphrase=0;
     char filename[MAXBUF+1];
     int level=0;
+    int alg=0;
     for (level=1; level<=MAX_COMPRESS_LEVEL; level++)
         {
-        // unarmoured
-        snprintf(filename, sizeof filename, "%s_%d.txt", 
-                 filename_rsa_noarmour_compress_base, level);
-        test_rsa_decrypt(armour,passphrase,filename,NULL);
+        for (alg=0; alg<n_algos; alg++)
+            {
+            // unarmoured
+            snprintf(filename, sizeof filename, "%s_%s_%d.txt", 
+                     filename_rsa_noarmour_compress_base, algos[alg],level);
+            test_rsa_decrypt(armour,passphrase,filename,NULL);
+            }
         }
     }
 
@@ -379,12 +386,16 @@ static void test_rsa_decrypt_armour_compressed(void)
     int passphrase=0;
     char filename[MAXBUF+1];
     int level=0;
+    int alg=0;
     for (level=1; level<=MAX_COMPRESS_LEVEL; level++)
         {
-        // unarmoured
-        snprintf(filename, sizeof filename, "%s_%d.txt", 
-                 filename_rsa_armour_compress_base, level);
-        test_rsa_decrypt(armour,passphrase,filename,NULL);
+        for (alg=0; alg<n_algos; alg++)
+            {
+            // unarmoured
+            snprintf(filename, sizeof filename, "%s_%s_%d.txt", 
+                     filename_rsa_armour_compress_base, algos[alg], level);
+            test_rsa_decrypt(armour,passphrase,filename,NULL);
+            }
         }
     }
 
