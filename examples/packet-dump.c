@@ -16,7 +16,7 @@
 #include <fcntl.h>
 
 // \todo change this once we know it works
-#include "../src/advanced/parse_local.h"
+#include "../src/lib/parse_local.h"
 
 #include <openpgpsdk/final.h>
 
