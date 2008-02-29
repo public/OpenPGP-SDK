@@ -2889,6 +2889,15 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
 	if(!consume_packet(&region,pinfo,ops_false))
 	    r=-1;
 
+    // also consume it if there's been an error?
+    // \todo decide what to do about an error on an
+    //       indeterminate packet
+    if (r==0)
+        {
+        if (!consume_packet(&region,pinfo,ops_false))
+            r=-1;
+        }
+
     /* set pktlen */
 
     *pktlen=pinfo->rinfo.alength;
@@ -2945,6 +2954,14 @@ int ops_parse(ops_parse_info_t *pinfo)
 	r=ops_parse_one_packet(pinfo,&pktlen);
 	} while (r != -1);
 
+    return pinfo->errors ? 0 : 1;
+    }
+
+int ops_parse_and_print_errors(ops_parse_info_t *pinfo)
+    {
+    int r;
+    r=ops_parse(pinfo);
+    ops_print_errors(pinfo->errors);
     return pinfo->errors ? 0 : 1;
     }
 

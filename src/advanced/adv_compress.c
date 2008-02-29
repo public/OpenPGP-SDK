@@ -1,11 +1,15 @@
 /** \file
  */
    
-#include <openpgpsdk/compress.h>
 #include <zlib.h>
 #include <assert.h>
 #include <string.h>
 
+#include <openpgpsdk/compress.h>
+#include <openpgpsdk/packet-parse.h>
+#include <openpgpsdk/crypto.h>
+#include <openpgpsdk/errors.h>
+#include "parse_local.h"
 #include <openpgpsdk/final.h>
 
 #define DECOMPRESS_BUFFER	1024
@@ -130,9 +134,14 @@ int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info,
 	ret=inflateInit2(&arg.stream,-15);
     else if(type == OPS_C_ZLIB)
 	ret=inflateInit(&arg.stream);
+    else if (type == OPS_C_BZIP2)
+        {
+        OPS_ERROR_1(&parse_info->errors, OPS_E_ALG_UNSUPPORTED_COMPRESS_ALG, "Compression algorithm %s is not yet supported", "BZIP2");
+        return 0;
+        }
     else
         {
-        assert(0);
+        OPS_ERROR_1(&parse_info->errors, OPS_E_ALG_UNSUPPORTED_COMPRESS_ALG, "Compression algorithm %d is not yet supported", type);
         return 0;
         }
 
