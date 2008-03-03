@@ -269,6 +269,7 @@ callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
     switch(content_->tag)
         {
     case OPS_PARSER_PTAG:
+    case OPS_PTAG_CT_COMPRESSED: 
         // ignore
         break;
         

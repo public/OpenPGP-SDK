@@ -7,6 +7,7 @@
 #include "openpgpsdk/std_print.h"
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/crypto.h"
+#include "openpgpsdk/compress.h"
 #include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/random.h"
 #include "../src/lib/parse_local.h"
@@ -170,7 +171,8 @@ static void test_literal_data_packet_text()
      * test it's the same
      */
 
-    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_literal_data),testtext,MAXBUF)==0);
+    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_literal_data));
+    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_literal_data),testtext,strlen(testtext))==0);
 
     // cleanup
     local_cleanup();
@@ -224,6 +226,113 @@ static void test_literal_data_packet_data()
     local_cleanup();
     ops_teardown_memory_read(pinfo,mem);
     free (in);
+    }
+
+static void test_compressed_literal_data_packet_text()
+    {
+    int debug=0;
+    char* testtext=NULL;
+
+    ops_create_info_t *cinfo_uncompress;
+    ops_memory_t 	*mem_uncompress;
+
+    ops_create_info_t *cinfo_compress;
+    ops_memory_t 	*mem_compress;
+
+    ops_parse_info_t *pinfo;
+
+    int rtn=0;
+    unsigned int i;
+    ops_memory_t* mem;
+    unsigned char* data;
+    unsigned int len;
+
+    // create test string
+    testtext=create_testtext("compressed literal data packet text - ");
+
+    /*
+     * initialise needed structures for writing into memory
+     */
+
+    ops_setup_memory_write(&cinfo_uncompress,&mem_uncompress,strlen(testtext));
+    ops_setup_memory_write(&cinfo_compress,&mem_compress,strlen(testtext));
+
+    /*
+     * create literal data packet
+     */
+    ops_write_literal_data_from_buf((unsigned char *)testtext,strlen(testtext),OPS_LDT_TEXT,cinfo_uncompress);
+
+    // mem_uncompress now contains a LDT packet containing the text
+
+    if (debug)
+        {
+        mem=mem_uncompress;
+        data=ops_memory_get_data(mem);
+        len=ops_memory_get_length(mem);
+        fprintf(stderr,"\nuncompressed: (%d)\n", len);
+        for (i=0; i<len; i++)
+            {
+            fprintf(stderr," 0x%02x", data[i]);
+            }
+        fprintf(stderr,"\n");
+        }
+
+    ops_write_compressed(ops_memory_get_data(mem_uncompress), ops_memory_get_length(mem_uncompress), cinfo_compress);
+
+    // mem_compress should now contain a COMPRESSION packet containing the LDT
+
+    /*
+     * initialise needed structures for reading from memory
+     */
+
+    if (debug)
+        {
+        mem=mem_compress;
+        data=ops_memory_get_data(mem);
+        len=ops_memory_get_length(mem);
+        fprintf(stderr,"\ncompressed: (%d)\n",len);
+        for (i=0; i<len; i++)
+            {
+            fprintf(stderr," 0x%02x", data[i]);
+            }
+        fprintf(stderr,"\n");
+        }
+
+    ops_setup_memory_read(&pinfo,mem_compress,callback_literal_data);
+
+    // and parse it
+
+    ops_memory_init(mem_literal_data,128);
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    rtn=ops_parse(pinfo);
+    CU_ASSERT(rtn==1);
+
+    if (debug)
+        {
+        mem=mem_literal_data;
+        data=ops_memory_get_data(mem);
+        len=ops_memory_get_length(mem);
+        fprintf(stderr,"\nliteral_data: (%d)\n",len);
+        for (i=0; i<len; i++)
+            {
+            fprintf(stderr," 0x%02x", data[i]);
+            }
+        fprintf(stderr,"\n");
+        }
+
+    /*
+     * test it's the same
+     */
+
+
+    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_literal_data));
+    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_literal_data),testtext,strlen(testtext))==0);
+
+    // cleanup
+    local_cleanup();
+    ops_teardown_memory_read(pinfo,mem_compress);
+    //    ops_teardown_memory_read(pinfo,mem);
+    free (testtext);
     }
 
 static void test_ops_mdc()
@@ -442,6 +551,9 @@ CU_pSuite suite_packet_types()
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Tag 11: Literal Data packet in Data mode", test_literal_data_packet_data))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Tag 8 and 11: Compressed Literal Data packet in Text mode", test_compressed_literal_data_packet_text))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Tag 19: Modification Detection Code packet", test_ops_mdc))
