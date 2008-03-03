@@ -11,6 +11,7 @@
 #include <openssl/cast.h>
 
 #include "keyring_local.h"
+#include <openpgpsdk/compress.h>
 #include <openpgpsdk/create.h>
 #include <openpgpsdk/keyring.h>
 #include <openpgpsdk/random.h>
@@ -73,22 +74,31 @@ static ops_boolean_t encrypt_se_ip_writer(const unsigned char *src,
     ops_memory_t *mem_literal;
     ops_create_info_t *cinfo_literal;
 
+    ops_memory_t *mem_compressed;
+    ops_create_info_t *cinfo_compressed;
+
     ops_memory_t *my_mem;
     ops_create_info_t *my_cinfo;
 
     const unsigned int bufsz=128; // initial value; gets expanded as necessary
     ops_setup_memory_write(&cinfo_literal,&mem_literal,bufsz);
+    ops_setup_memory_write(&cinfo_compressed,&mem_compressed,bufsz);
     ops_setup_memory_write(&my_cinfo,&my_mem,bufsz);
 
     // create literal data packet from source data
     ops_write_literal_data_from_buf(src, length, OPS_LDT_BINARY, cinfo_literal);
     assert(ops_memory_get_length(mem_literal)>length);
 
-    // create SE IP packet set from this literal data
-    ops_write_se_ip_pktset(ops_memory_get_data(mem_literal), 
-                           ops_memory_get_length(mem_literal), 
+    // create compressed packet from literal data packet
+    ops_write_compressed(ops_memory_get_data(mem_literal),
+                         ops_memory_get_length(mem_literal),
+                         cinfo_compressed);
+
+    // create SE IP packet set from this compressed literal data
+    ops_write_se_ip_pktset(ops_memory_get_data(mem_compressed), 
+                           ops_memory_get_length(mem_compressed), 
                            arg->crypt, my_cinfo);
-    assert(ops_memory_get_length(my_mem)>ops_memory_get_length(mem_literal));
+    assert(ops_memory_get_length(my_mem)>ops_memory_get_length(mem_compressed));
 
     // now write memory to next writer
     rtn=ops_stacked_write(ops_memory_get_data(my_mem),
@@ -96,6 +106,7 @@ static ops_boolean_t encrypt_se_ip_writer(const unsigned char *src,
                           errors, winfo);
     
     ops_memory_free(my_mem);
+    ops_memory_free(mem_compressed);
     ops_memory_free(mem_literal);
 
     return rtn;
