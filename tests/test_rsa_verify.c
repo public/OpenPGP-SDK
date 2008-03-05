@@ -41,6 +41,8 @@ static char *filename_rsa_clearsign_fail_bad_sig="gpg_rsa_clearsign_fail_bad_sig
 static char *filename_rsa_noarmour_compress_base="gpg_rsa_sign_noarmour_compress";
 static char *filename_rsa_armour_compress_base="gpg_rsa_sign_armour_compress";
 
+static char *filename_rsa_v3sig="gpg_rsa_sign_v3sig.txt";
+
 typedef ops_parse_cb_return_t (*ops_callback)(const ops_parser_content_t *, ops_parse_cb_info_t *);
 
 /* Signature verification suite initialization.
@@ -55,6 +57,8 @@ int init_suite_rsa_verify(void)
 
     create_testfile(filename_rsa_armour_nopassphrase);
     create_testfile(filename_rsa_armour_passphrase);
+
+    create_testfile(filename_rsa_v3sig);
 
     create_testfile(filename_rsa_noarmour_nopassphrase);
     create_testfile(filename_rsa_noarmour_passphrase);
@@ -84,6 +88,12 @@ int init_suite_rsa_verify(void)
 
     snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_noarmour_fail_bad_sig);
+    if (system(cmd))
+        { return 1; }
+
+    // V3 signature
+    snprintf(cmd,sizeof cmd,"%s --compress-level 0 --sign --force-v3-sigs --local-user %s %s/%s",
+             gpgcmd, alpha_name, dir, filename_rsa_v3sig);
     if (system(cmd))
         { return 1; }
 
@@ -273,6 +283,14 @@ static void test_rsa_verify_fail(const int has_armour, const char *filename, ops
     ops_parse_info_delete(pinfo);
     }
 
+static void test_rsa_verify_v3sig(void)
+    {
+    int armour=0;
+    assert(pub_keyring.nkeys);
+
+    test_rsa_verify_ok(armour,filename_rsa_v3sig);
+    }
+
 static void test_rsa_verify_noarmour_nopassphrase(void)
     {
     int armour=0;
@@ -439,6 +457,9 @@ CU_pSuite suite_rsa_verify()
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_rsa_verify_noarmour_passphrase))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "V3 signature verification", test_rsa_verify_v3sig))
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "Unarmoured: should fail on bad sig", test_rsa_verify_noarmour_fail_bad_sig))
