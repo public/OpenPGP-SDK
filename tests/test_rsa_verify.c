@@ -43,6 +43,8 @@ static char *filename_rsa_armour_compress_base="gpg_rsa_sign_armour_compress";
 
 static char *filename_rsa_v3sig="gpg_rsa_sign_v3sig.txt";
 
+static char *filename_rsa_hash_md5="gpg_rsa_hash_md5.txt";
+
 typedef ops_parse_cb_return_t (*ops_callback)(const ops_parser_content_t *, ops_parse_cb_info_t *);
 
 /* Signature verification suite initialization.
@@ -59,6 +61,7 @@ int init_suite_rsa_verify(void)
     create_testfile(filename_rsa_armour_passphrase);
 
     create_testfile(filename_rsa_v3sig);
+    create_testfile(filename_rsa_hash_md5);
 
     create_testfile(filename_rsa_noarmour_nopassphrase);
     create_testfile(filename_rsa_noarmour_passphrase);
@@ -94,6 +97,12 @@ int init_suite_rsa_verify(void)
     // V3 signature
     snprintf(cmd,sizeof cmd,"%s --compress-level 0 --sign --force-v3-sigs --local-user %s %s/%s",
              gpgcmd, alpha_name, dir, filename_rsa_v3sig);
+    if (system(cmd))
+        { return 1; }
+
+    // MD5 hash
+    snprintf(cmd,sizeof cmd,"%s --compress-level 0 --sign --digest-algo \"MD5\" --local-user %s %s/%s",
+             gpgcmd, alpha_name, dir, filename_rsa_hash_md5);
     if (system(cmd))
         { return 1; }
 
@@ -291,6 +300,14 @@ static void test_rsa_verify_v3sig(void)
     test_rsa_verify_ok(armour,filename_rsa_v3sig);
     }
 
+static void test_rsa_verify_hash_md5(void)
+    {
+    int armour=0;
+    assert(pub_keyring.nkeys);
+
+    test_rsa_verify_ok(armour,filename_rsa_hash_md5);
+    }
+
 static void test_rsa_verify_noarmour_nopassphrase(void)
     {
     int armour=0;
@@ -460,6 +477,9 @@ CU_pSuite suite_rsa_verify()
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "V3 signature verification", test_rsa_verify_v3sig))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "MD5 Hash", test_rsa_verify_hash_md5))
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "Unarmoured: should fail on bad sig", test_rsa_verify_noarmour_fail_bad_sig))
