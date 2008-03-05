@@ -19,40 +19,49 @@ int main()
     setup();
 
     if (CUE_SUCCESS != CU_initialize_registry())
+        {
+        fprintf(stderr,"ERROR: initializing registry\n");
         return CU_get_error();
+        }
 
     if (NULL == suite_crypto())
         {
+        fprintf(stderr,"ERROR: initialising suite_crypto\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
 
     if (NULL == suite_packet_types())
         {
+        fprintf(stderr,"ERROR: initialising suite_packet_types\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
 
     if (NULL == suite_rsa_encrypt()) 
         {
+        fprintf(stderr,"ERROR: initialising suite_encrypt\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
 
     if (NULL == suite_rsa_decrypt()) 
         {
+        fprintf(stderr,"ERROR: initialising suite_decrypt\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
 
     if (NULL == suite_rsa_signature()) 
         {
+        fprintf(stderr,"ERROR: initialising suite_signature\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
 
     if (NULL == suite_rsa_verify()) 
         {
+        fprintf(stderr,"ERROR: initialising suite_verify\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
@@ -60,18 +69,21 @@ int main()
 #ifdef TODO
     if (NULL == suite_rsa_create_key())
         {
+        fprintf(stderr,"ERROR: initialising suite_rsa_create_key\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
 
     if (NULL == suite_rsa_sign_key())
         {
+        fprintf(stderr,"ERROR: initialising suite_rsa_sign_key\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
 
     if (NULL == suite_rsa_verify_key())
         {
+        fprintf(stderr,"ERROR: initialising suite_rsa_verify_key\n");
         CU_cleanup_registry();
         return CU_get_error();
         }

@@ -502,41 +502,6 @@ static void test_ops_pk_session_key()
     ops_teardown_memory_read(pinfo,mem);
     }
 
-#ifdef XXX
-static void test_ops_encrypted_pk_sk()
-    {
-    ops_pk_session_key_t *encrypted_pk_session_key;
-    ops_create_info_t *cinfo;
-    ops_parse_info_t *pinfo;
-    ops_memory_t *mem;
-    int rtn=0;
-
-    // setup for write
-    ops_setup_memory_write(&cinfo,&mem,MAXBUF);
-
-    // write
-    const ops_key_data_t *pub_key=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
-    assert(pub_key);
-
-    encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
-    ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
-
-    // setup for read
-    ops_setup_memory_read(&pinfo,mem,callback_encrypted_pk_session_key);
-
-    // read
-    rtn=ops_parse(pinfo);
-    CU_ASSERT(rtn==1);
-
-    // test
-    CU_ASSERT(memcmp(encrypted_pk_session_key, encrypted_pk_sk, sz_encrypted_pk_sk)==0);
-
-    // cleanup
-    local_cleanup();
-    ops_teardown_memory_read(pinfo,mem);
-    }
-#endif
-
 CU_pSuite suite_packet_types()
 {
     CU_pSuite suite = NULL;
