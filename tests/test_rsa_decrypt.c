@@ -21,13 +21,8 @@ static char *filename_rsa_armour_compress_base="gpg_rsa_enc_armour_compress";
 static char *nopassphrase="";
 static char *current_passphrase=NULL;
 
-/* \todo add support for bzip2
 static char *algos[]={ "zip", "zlib", "bzip2" };
 static int n_algos=3;
-*/
-
-static char *algos[]={ "zip", "zlib" };
-static int n_algos=2;
 
 static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)

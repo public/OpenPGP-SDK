@@ -2,6 +2,7 @@
  */
    
 #include <zlib.h>
+#include <bzlib.h>
 #include <assert.h>
 #include <string.h>
 
@@ -16,13 +17,25 @@
 
 typedef struct
     {
+    ops_compression_type_t type;
     ops_region_t *region;
     unsigned char in[DECOMPRESS_BUFFER];
     unsigned char out[DECOMPRESS_BUFFER];
-    z_stream stream;
+    z_stream zstream; // ZIP and ZLIB
     size_t offset;
     int inflate_ret;
-    } decompress_arg_t;
+    } z_decompress_arg_t;
+
+typedef struct
+    {
+    ops_compression_type_t type;
+    ops_region_t *region;
+    char in[DECOMPRESS_BUFFER];
+    char out[DECOMPRESS_BUFFER];
+    bz_stream bzstream; // BZIP2
+    size_t offset;
+    int inflate_ret;
+    } bz_decompress_arg_t;
 
 typedef struct
     {
@@ -33,41 +46,45 @@ typedef struct
 
 #define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,cbinfo); return -1; } while(0)
 
-static int compressed_data_reader(void *dest,size_t length,
+// \todo remove code duplication between this and bzip2_compressed_data_reader
+static int zlib_compressed_data_reader(void *dest,size_t length,
 				  ops_error_t **errors,
 				  ops_reader_info_t *rinfo,
 				  ops_parse_cb_info_t *cbinfo)
     {
-    decompress_arg_t *arg=ops_reader_get_arg(rinfo);
+    z_decompress_arg_t *arg=ops_reader_get_arg(rinfo);
+    assert(arg->type==OPS_C_ZIP || arg->type==OPS_C_ZLIB);
+
     ops_parser_content_t content;
     int saved=length;
 
     if(/*arg->region->indeterminate && */ arg->inflate_ret == Z_STREAM_END
-       && arg->stream.next_out == &arg->out[arg->offset])
-	return 0;
+       && arg->zstream.next_out == &arg->out[arg->offset])
+        return 0;
 
     if(arg->region->length_read == arg->region->length)
-	{
-	if(arg->inflate_ret != Z_STREAM_END)
-	    ERR("Compressed data didn't end when region ended.");
-    /*
-	else
-	    return 0;
-    */
-	}
+        {
+        if(arg->inflate_ret != Z_STREAM_END)
+            ERR("Compressed data didn't end when region ended.");
+        /*
+          else
+          return 0;
+          www.zlib.org
+        */
+        }
 
     while(length > 0)
 	{
 	unsigned len;
 
-	if(&arg->out[arg->offset] == arg->stream.next_out)
+	if(&arg->out[arg->offset] == arg->zstream.next_out)
 	    {
 	    int ret;
 
-	    arg->stream.next_out=arg->out;
-	    arg->stream.avail_out=sizeof arg->out;
+	    arg->zstream.next_out=arg->out;
+	    arg->zstream.avail_out=sizeof arg->out;
 	    arg->offset=0;
-	    if(arg->stream.avail_in == 0)
+	    if(arg->zstream.avail_in == 0)
 		{
 		unsigned n=arg->region->length;
 
@@ -84,12 +101,12 @@ static int compressed_data_reader(void *dest,size_t length,
 					     errors,rinfo,cbinfo))
 		    return -1;
 
-		arg->stream.next_in=arg->in;
-		arg->stream.avail_in=arg->region->indeterminate
+		arg->zstream.next_in=arg->in;
+		arg->zstream.avail_in=arg->region->indeterminate
 		    ? arg->region->last_read : n;
 		}
 
-	    ret=inflate(&arg->stream,Z_SYNC_FLUSH);
+	    ret=inflate(&arg->zstream,Z_SYNC_FLUSH);
 	    if(ret == Z_STREAM_END)
 		{
 		if(!arg->region->indeterminate
@@ -99,12 +116,93 @@ static int compressed_data_reader(void *dest,size_t length,
 	    else if(ret != Z_OK)
 		{
 		fprintf(stderr,"ret=%d\n",ret);
-		ERR(arg->stream.msg);
+		ERR(arg->zstream.msg);
 		}
 	    arg->inflate_ret=ret;
 	    }
-	assert(arg->stream.next_out > &arg->out[arg->offset]);
-	len=arg->stream.next_out-&arg->out[arg->offset];
+	assert(arg->zstream.next_out > &arg->out[arg->offset]);
+	len=arg->zstream.next_out-&arg->out[arg->offset];
+	if(len > length)
+	    len=length;
+	memcpy(dest,&arg->out[arg->offset],len);
+	arg->offset+=len;
+	length-=len;
+	}
+
+    return saved;
+    }
+
+// \todo remove code duplication between this and zlib_compressed_data_reader
+static int bzip2_compressed_data_reader(void *dest,size_t length,
+				  ops_error_t **errors,
+				  ops_reader_info_t *rinfo,
+				  ops_parse_cb_info_t *cbinfo)
+    {
+    bz_decompress_arg_t *arg=ops_reader_get_arg(rinfo);
+    assert(arg->type==OPS_C_BZIP2);
+
+    ops_parser_content_t content;
+    int saved=length;
+
+    if(arg->inflate_ret == BZ_STREAM_END
+       && arg->bzstream.next_out == &arg->out[arg->offset])
+        return 0;
+
+    if(arg->region->length_read == arg->region->length)
+        {
+        if(arg->inflate_ret != BZ_STREAM_END)
+            ERR("Compressed data didn't end when region ended.");
+        }
+
+    while(length > 0)
+	{
+	unsigned len;
+
+	if(&arg->out[arg->offset] == arg->bzstream.next_out)
+	    {
+	    int ret;
+
+	    arg->bzstream.next_out=(char *) arg->out;
+	    arg->bzstream.avail_out=sizeof arg->out;
+	    arg->offset=0;
+	    if(arg->bzstream.avail_in == 0)
+		{
+		unsigned n=arg->region->length;
+
+		if(!arg->region->indeterminate)
+		    {
+		    n-=arg->region->length_read;
+		    if(n > sizeof arg->in)
+			n=sizeof arg->in;
+		    }
+		else
+		    n=sizeof arg->in;
+
+		if(!ops_stacked_limited_read((unsigned char *)arg->in,n,arg->region,
+					     errors,rinfo,cbinfo))
+		    return -1;
+
+		arg->bzstream.next_in=arg->in;
+		arg->bzstream.avail_in=arg->region->indeterminate
+		    ? arg->region->last_read : n;
+		}
+
+	    ret=BZ2_bzDecompress(&arg->bzstream);
+	    if(ret == BZ_STREAM_END)
+		{
+		if(!arg->region->indeterminate
+		   && arg->region->length_read != arg->region->length)
+		    ERR("Compressed stream ended before packet end.");
+		}
+	    else if(ret != BZ_OK)
+		{
+		fprintf(stderr,"ret=%d\n",ret);
+        //		ERR(arg->bzstream.msg); //\todo add error handling
+		}
+	    arg->inflate_ret=ret;
+	    }
+	assert(arg->bzstream.next_out > &arg->out[arg->offset]);
+	len=arg->bzstream.next_out-&arg->out[arg->offset];
 	if(len > length)
 	    len=length;
 	memcpy(dest,&arg->out[arg->offset],len);
@@ -125,42 +223,96 @@ static int compressed_data_reader(void *dest,size_t length,
 int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info,
 		   ops_compression_type_t type)
     {
-    decompress_arg_t arg;
+    z_decompress_arg_t z_arg;
+    bz_decompress_arg_t bz_arg;
     int ret;
 
-    memset(&arg,'\0',sizeof arg);
-
-    arg.region=region;
-
-    arg.stream.next_in=Z_NULL;
-    arg.stream.avail_in=0;
-    arg.stream.next_out=arg.out;
-    arg.offset=0;
-    arg.stream.zalloc=Z_NULL;
-    arg.stream.zfree=Z_NULL;
-
-    if(type == OPS_C_ZIP)
-	ret=inflateInit2(&arg.stream,-15);
-    else if(type == OPS_C_ZLIB)
-	ret=inflateInit(&arg.stream);
-    else if (type == OPS_C_BZIP2)
+    switch (type)
         {
-        OPS_ERROR_1(&parse_info->errors, OPS_E_ALG_UNSUPPORTED_COMPRESS_ALG, "Compression algorithm %s is not yet supported", "BZIP2");
-        return 0;
-        }
-    else
-        {
+    case OPS_C_ZIP:
+    case OPS_C_ZLIB:
+        memset(&z_arg,'\0',sizeof z_arg);
+
+        z_arg.region=region;
+        z_arg.offset=0;
+        z_arg.type=type;
+
+        z_arg.zstream.next_in=Z_NULL;
+        z_arg.zstream.avail_in=0;
+        z_arg.zstream.next_out=z_arg.out;
+        z_arg.zstream.zalloc=Z_NULL;
+        z_arg.zstream.zfree=Z_NULL;
+        z_arg.zstream.opaque=Z_NULL;
+        break;
+
+    case OPS_C_BZIP2:
+        memset(&bz_arg,'\0',sizeof bz_arg);
+
+        bz_arg.region=region;
+        bz_arg.offset=0;
+        bz_arg.type=type;
+
+        bz_arg.bzstream.next_in=NULL;
+        bz_arg.bzstream.avail_in=0;
+        bz_arg.bzstream.next_out=bz_arg.out;
+        bz_arg.bzstream.bzalloc=NULL;
+        bz_arg.bzstream.bzfree=NULL;
+        bz_arg.bzstream.opaque=NULL;
+        break;
+
+    default:
         OPS_ERROR_1(&parse_info->errors, OPS_E_ALG_UNSUPPORTED_COMPRESS_ALG, "Compression algorithm %d is not yet supported", type);
         return 0;
         }
 
-    if(ret != Z_OK)
-	{
-	fprintf(stderr,"ret=%d\n",ret);
-	return 0;
-	}
+    switch(type)
+        {
+    case OPS_C_ZIP:
+        ret=inflateInit2(&z_arg.zstream,-15);
+        break;
 
-    ops_reader_push(parse_info,compressed_data_reader,NULL,&arg);
+    case OPS_C_ZLIB:
+        ret=inflateInit(&z_arg.zstream);
+        break;
+
+    case OPS_C_BZIP2:
+        /*
+        OPS_ERROR_1(&parse_info->errors, OPS_E_ALG_UNSUPPORTED_COMPRESS_ALG, "Compression algorithm %s is not yet supported", "BZIP2");
+        return 0;
+        */
+        ret=BZ2_bzDecompressInit(&bz_arg.bzstream, 1, 0);
+        break;
+
+    default:
+        OPS_ERROR_1(&parse_info->errors, OPS_E_ALG_UNSUPPORTED_COMPRESS_ALG, "Compression algorithm %d is not yet supported", type);
+        return 0;
+        }
+
+    switch (type)
+        {
+    case OPS_C_ZIP:
+    case OPS_C_ZLIB:
+        if(ret != Z_OK)
+            {
+            OPS_ERROR_1(&parse_info->errors, OPS_E_P_DECOMPRESSION_ERROR, "Cannot initialise ZIP or ZLIB stream for decompression: error=%d", ret);
+            return 0;
+            }
+        ops_reader_push(parse_info,zlib_compressed_data_reader,NULL,&z_arg);
+        break;
+
+    case OPS_C_BZIP2:
+        if (ret != BZ_OK)
+            {
+            OPS_ERROR_1(&parse_info->errors, OPS_E_P_DECOMPRESSION_ERROR, "Cannot initialise BZIP2 stream for decompression: error=%d", ret);
+            return 0;
+            }
+        ops_reader_push(parse_info,bzip2_compressed_data_reader,NULL,&bz_arg);
+        break;
+
+    default:
+        OPS_ERROR_1(&parse_info->errors, OPS_E_ALG_UNSUPPORTED_COMPRESS_ALG, "Compression algorithm %d is not yet supported", type);
+        return 0;
+        }
 
     ret=ops_parse(parse_info);
 

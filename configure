@@ -24,7 +24,7 @@ sub trace {
 
 our %Subst=(
 	    CRYPTO_LIBS => '-lcrypto',
-	    ZLIB => '-lz',
+	    ZLIB => '-lz -lbz2',
 	    INCLUDES => '',
 	    CFLAGS => '',
 	   );
