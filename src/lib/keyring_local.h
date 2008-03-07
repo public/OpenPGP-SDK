@@ -10,25 +10,25 @@
 				str->arr=realloc(str->arr,str->n##arr##_allocated*sizeof *str->arr); \
 				} while(0)
 
-/** ops_key_data_key_t
+/** ops_keydata_key_t
  */
 typedef union
     {
     ops_public_key_t pkey;
     ops_secret_key_t skey;
-    } ops_key_data_key_t;
+    } ops_keydata_key_t;
     
 
 // XXX: gonna have to expand this to hold onto subkeys, too...
-/** \struct ops_key_data
+/** \struct ops_keydata
  * \todo expand to hold onto subkeys
  */
-struct ops_key_data
+struct ops_keydata
     {
     DECLARE_ARRAY(ops_user_id_t,uids);
     DECLARE_ARRAY(ops_packet_t,packets);
     unsigned char key_id[8];
     ops_fingerprint_t fingerprint;
     ops_content_tag_t type;
-    ops_key_data_key_t key;
+    ops_keydata_key_t key;
     };

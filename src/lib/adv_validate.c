@@ -47,7 +47,7 @@ static ops_boolean_t check_binary_signature(const unsigned len,
     return ops_check_signature(hashout,n,sig,signer);
     }
 
-static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
+static int keydata_reader(void *dest,size_t length,ops_error_t **errors,
 			   ops_reader_info_t *rinfo,
 			   ops_parse_cb_info_t *cbinfo)
     {
@@ -77,7 +77,7 @@ static int key_data_reader(void *dest,size_t length,ops_error_t **errors,
  * \ingroup Callbacks
  */
 
-static void add_key_to_valid_list(ops_validate_result_t * result, const ops_key_data_t *signer)
+static void add_key_to_valid_list(ops_validate_result_t * result, const ops_keydata_t *signer)
     {
     size_t newsize;
     size_t start;
@@ -97,7 +97,7 @@ static void add_key_to_valid_list(ops_validate_result_t * result, const ops_key_
     memcpy(result->valid_keys+start,signer,sizeof signer);
     }
 
-static void add_key_to_invalid_list(ops_validate_result_t * result, const ops_key_data_t *signer)
+static void add_key_to_invalid_list(ops_validate_result_t * result, const ops_keydata_t *signer)
     {
     size_t newsize;
     size_t start;
@@ -143,7 +143,7 @@ validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
     const ops_parser_content_union_t *content=&content_->content;
     validate_key_cb_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
     ops_error_t **errors=ops_parse_cb_get_errors(cbinfo);
-    const ops_key_data_t *signer;
+    const ops_keydata_t *signer;
     ops_boolean_t valid=ops_false;
 
     if (debug)
@@ -283,7 +283,7 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
     const ops_parser_content_union_t *content=&content_->content;
     validate_data_cb_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
     ops_error_t **errors=ops_parse_cb_get_errors(cbinfo);
-    const ops_key_data_t *signer;
+    const ops_keydata_t *signer;
     ops_boolean_t valid=ops_false;
     //    unsigned len=0;
     //    unsigned char *data=NULL;
@@ -416,10 +416,10 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
     return OPS_RELEASE_MEMORY;
     }
 
-static void key_data_destroyer(ops_reader_info_t *rinfo)
+static void keydata_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
-void ops_key_data_reader_set(ops_parse_info_t *pinfo,const ops_key_data_t *key)
+void ops_keydata_reader_set(ops_parse_info_t *pinfo,const ops_keydata_t *key)
     {
     validate_reader_arg_t *arg=malloc(sizeof *arg);
 
@@ -429,13 +429,13 @@ void ops_key_data_reader_set(ops_parse_info_t *pinfo,const ops_key_data_t *key)
     arg->packet=0;
     arg->offset=0;
 
-    ops_reader_set(pinfo,key_data_reader,key_data_destroyer,arg);
+    ops_reader_set(pinfo,keydata_reader,keydata_destroyer,arg);
     }
 
 /* 
  * Validate all signatures on a single key against the given keyring
  */
-static void validate_key_signatures(ops_validate_result_t *result,const ops_key_data_t *key,
+static void validate_key_signatures(ops_validate_result_t *result,const ops_keydata_t *key,
 				    const ops_keyring_t *keyring)
     {
     ops_parse_info_t *pinfo;
@@ -450,7 +450,7 @@ static void validate_key_signatures(ops_validate_result_t *result,const ops_key_
     carg.keyring=keyring;
 
     ops_parse_cb_set(pinfo,validate_key_cb,&carg);
-    ops_key_data_reader_set(pinfo,key);
+    ops_keydata_reader_set(pinfo,key);
 
     carg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
 

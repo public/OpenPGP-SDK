@@ -20,7 +20,7 @@
 
 #include <openpgpsdk/final.h>
 
-void ops_key_data_free(ops_key_data_t *key)
+void ops_keydata_free(ops_keydata_t *key)
     {
     unsigned n;
 
@@ -41,18 +41,18 @@ void ops_key_data_free(ops_key_data_t *key)
     }
 
 const ops_public_key_t *
-ops_get_public_key_from_data(const ops_key_data_t *data)
+ops_get_public_key_from_data(const ops_keydata_t *data)
     {
     if(data->type == OPS_PTAG_CT_PUBLIC_KEY)
 	return &data->key.pkey;
     return &data->key.skey.public_key;
     }
 
-ops_boolean_t ops_key_is_secret(const ops_key_data_t *data)
+ops_boolean_t ops_key_is_secret(const ops_keydata_t *data)
     { return data->type != OPS_PTAG_CT_PUBLIC_KEY; }
 
 const ops_secret_key_t *
-ops_get_secret_key_from_data(const ops_key_data_t *data)
+ops_get_secret_key_from_data(const ops_keydata_t *data)
     {
     if(data->type != OPS_PTAG_CT_SECRET_KEY)
         return NULL;
@@ -128,7 +128,7 @@ char *ops_get_passphrase(void)
 
 typedef struct
     {
-    const ops_key_data_t *key;
+    const ops_keydata_t *key;
     char *pphrase;
     ops_secret_key_t *skey;
     } decrypt_arg_t;
@@ -200,7 +200,7 @@ static ops_parse_cb_return_t decrypt_cb(const ops_parser_content_t *content_,
     return OPS_RELEASE_MEMORY;
     }
 
-ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
+ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_keydata_t *key,
 						   const char *pphrase)
     {
     ops_parse_info_t *pinfo;
@@ -212,7 +212,7 @@ ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
 
     pinfo=ops_parse_info_new();
 
-    ops_key_data_reader_set(pinfo,key);
+    ops_keydata_reader_set(pinfo,key);
     ops_parse_cb_set(pinfo,decrypt_cb,&arg);
     pinfo->rinfo.accumulate=ops_true;
 
@@ -221,27 +221,27 @@ ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_key_data_t *key,
     return arg.skey;
     }
 
-void ops_set_secret_key(ops_parser_content_union_t* content,const ops_key_data_t *key)
+void ops_set_secret_key(ops_parser_content_union_t* content,const ops_keydata_t *key)
     {
     *content->get_secret_key.secret_key=&key->key.skey;
     }
 
-const unsigned char* ops_get_key_id(const ops_key_data_t *key)
+const unsigned char* ops_get_key_id(const ops_keydata_t *key)
     {
     return key->key_id;
     }
 
-unsigned ops_get_user_id_count(const ops_key_data_t *key)
+unsigned ops_get_user_id_count(const ops_keydata_t *key)
     {
     return key->nuids;
     }
 
-const unsigned char* ops_get_user_id(const ops_key_data_t *key, unsigned index)
+const unsigned char* ops_get_user_id(const ops_keydata_t *key, unsigned index)
     {
     return key->uids[index].user_id;
     }
 
-ops_boolean_t ops_key_is_supported(const ops_key_data_t *key)
+ops_boolean_t ops_key_is_supported(const ops_keydata_t *key)
     {
     if ( key->type == OPS_PTAG_CT_PUBLIC_KEY ) {
         if ( key->key.pkey.algorithm == OPS_PKA_RSA ) {
@@ -256,7 +256,11 @@ ops_boolean_t ops_key_is_supported(const ops_key_data_t *key)
     }
 
 
-const ops_key_data_t* ops_keyring_get_key(const ops_keyring_t *keyring, int index)
+const ops_keydata_t* ops_keyring_get_key(const ops_keyring_t *keyring, int index)
     {
     return &keyring->keys[index]; 
     }
+
+// \todo document OPS keyring format
+
+// eof

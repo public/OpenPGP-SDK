@@ -16,7 +16,7 @@
 
 #define MAXBUF 1024
 
-void ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_key_data_t *pub_key, const int use_armour)
+void ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_keydata_t *pub_key, const int use_armour)
     {
     int fd_in=0;
     int fd_out=0;

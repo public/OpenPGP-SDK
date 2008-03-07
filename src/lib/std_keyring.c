@@ -154,7 +154,7 @@ void ops_keyring_free(ops_keyring_t *keyring)
     int n;
 
     for(n=0 ; n < keyring->nkeys ; ++n)
-	ops_key_data_free(&keyring->keys[n]);
+	ops_keydata_free(&keyring->keys[n]);
     free(keyring->keys);
     keyring->keys=NULL;
     }
@@ -169,7 +169,7 @@ void ops_keyring_free(ops_keyring_t *keyring)
 
    \return Ptr to key, if found; NULL, if not found
 */
-const ops_key_data_t *
+const ops_keydata_t *
 ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 			   const unsigned char keyid[OPS_KEY_ID_SIZE])
     {
@@ -192,7 +192,7 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 
    \return Ptr to Key, if found; NULL, if not found
 */
-const ops_key_data_t *
+const ops_keydata_t *
 ops_keyring_find_key_by_userid(const ops_keyring_t *keyring,
 				 const char *userid)
     {
@@ -227,7 +227,7 @@ ops_keyring_list(const ops_keyring_t* keyring,
     {
     int n;
     unsigned int i;
-    ops_key_data_t* key;
+    ops_keydata_t* key;
 
     printf ("%d keys\n", keyring->nkeys);
     for(n=0,key=&keyring->keys[n] ; n < keyring->nkeys ; ++n,++key)

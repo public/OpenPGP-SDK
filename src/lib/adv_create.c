@@ -836,7 +836,7 @@ ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
     return ops_true;
     }
 
-ops_pk_session_key_t *ops_create_pk_session_key(const ops_key_data_t *key)
+ops_pk_session_key_t *ops_create_pk_session_key(const ops_keydata_t *key)
     {
     /*
      * Creates a random session key and encrypts it for the given key
@@ -1100,5 +1100,7 @@ ops_boolean_t ops_write_one_pass_sig(const ops_secret_key_t* skey,
         && ops_write(keyid, 8, info)
         && ops_write_scalar (1, 1, info);
     }
+
+
 
 // EOF

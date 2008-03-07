@@ -44,7 +44,7 @@ static void stream_encrypt_se_ip_destroyer (ops_writer_info_t *winfo);
 //
 
 void ops_writer_push_stream_encrypt_se_ip(ops_create_info_t *cinfo,
-                                          const ops_key_data_t *pub_key)
+                                          const ops_keydata_t *pub_key)
     {
     ops_crypt_t* encrypt;
     unsigned char *iv=NULL;

@@ -37,7 +37,7 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
 void ops_writer_push_encrypt_crypt(ops_create_info_t *cinfo,
                                    ops_crypt_t *crypt);
 void ops_writer_push_encrypt_se_ip(ops_create_info_t *cinfo,
-                                   const ops_key_data_t *pub_key);
+                                   const ops_keydata_t *pub_key);
 
 
 //

@@ -261,3 +261,52 @@ void ops_crypto_finish()
 
 const char *ops_text_from_hash(ops_hash_t *hash)
     { return hash->name; }
+
+ops_boolean_t ops_generate_rsa_keypair(const int numbits, const unsigned long e, ops_secret_key_t* skey)
+    {
+    RSA *rsa=NULL;
+
+    // generate the key pair
+
+    rsa=RSA_generate_key(numbits,e,NULL,NULL);
+
+    // populate ops key from ssl key
+
+    skey->public_key.version=4;
+    //\todo    skey->public_key.creation_time=NULL; // \todo
+    skey->public_key.days_valid=0;
+    skey->public_key.algorithm= OPS_PKA_RSA;
+
+    skey->public_key.key.rsa.n=rsa->n;
+    skey->public_key.key.rsa.e=rsa->e;
+
+    skey->s2k_usage=OPS_S2KU_NONE;
+    // \todo     skey->s2k_specifier_t=OPS_S2KS_SALTED;
+    skey->algorithm=OPS_SA_AES_128; // \todo make param
+    skey->hash_algorithm=OPS_HASH_SHA1; // \todo make param
+    skey->octet_count=0;
+    skey->checksum=0;
+
+    skey->key.rsa.d=rsa->d;
+    skey->key.rsa.p=rsa->p;
+    skey->key.rsa.q=rsa->q;
+    skey->key.rsa.u=NULL;
+
+    /* debug */
+    RSA* test=RSA_new();
+
+    test->n=skey->public_key.key.rsa.n;
+    test->e=skey->public_key.key.rsa.e;
+
+    test->d=skey->key.rsa.d;
+    test->p=skey->key.rsa.p;
+    test->q=skey->key.rsa.q;
+
+    assert(RSA_check_key(test)==1);
+    RSA_free(test);
+    /* end debug */
+
+    return ops_true;
+    }
+
+// eof

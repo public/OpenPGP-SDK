@@ -55,7 +55,7 @@ static void showtime_short(time_t t);
 */
 
 void 
-ops_print_public_key(const ops_key_data_t *key)
+ops_print_public_key(const ops_keydata_t *key)
     {
     printf("pub ");
 
@@ -94,7 +94,7 @@ ops_print_public_key(const ops_key_data_t *key)
 */
 
 void 
-ops_print_public_key_verbose(const ops_key_data_t *key)
+ops_print_public_key_verbose(const ops_keydata_t *key)
     {
     const ops_public_key_t* pkey=&key->key.pkey;
 
@@ -143,7 +143,7 @@ ops_print_public_key_verbose(const ops_key_data_t *key)
 */
 
 void 
-ops_print_secret_key(const ops_key_data_t* key)
+ops_print_secret_key(const ops_keydata_t* key)
     {
     const ops_secret_key_t* skey=&key->key.skey;
     if(key->type == OPS_PTAG_CT_SECRET_KEY)
@@ -543,7 +543,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
     ops_text_t *text;
     const char *str;
 #ifdef XXX
-    const ops_key_data_t *decrypter;
+    const ops_keydata_t *decrypter;
     const ops_secret_key_t *secret;
 #endif
     static ops_boolean_t unarmoured;
@@ -623,7 +623,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	else
 	    print_tagname("PUBLIC SUBKEY");
 
-	ops_print_public_key((const ops_key_data_t *) &content->public_key);
+	ops_print_public_key((const ops_keydata_t *) &content->public_key);
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -1064,13 +1064,13 @@ int ops_print_packet(const ops_parser_content_t *content_)
 
     case OPS_PTAG_CT_SECRET_KEY:
 	print_tagname("OPS_PTAG_CT_SECRET_KEY");
-	ops_print_secret_key((const ops_key_data_t *)&content->secret_key);
+	ops_print_secret_key((const ops_keydata_t *)&content->secret_key);
 	break;
 
     case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY:
 	//	print_secret_key(content_->tag,&content->secret_key);
 	print_tagname("OPS_PTAG_CT_ENCRYPTED_SECRET_KEY");
-	ops_print_secret_key((const ops_key_data_t *)&content->secret_key);
+	ops_print_secret_key((const ops_keydata_t *)&content->secret_key);
 	break;
 
     case OPS_PTAG_CT_ARMOUR_HEADER:

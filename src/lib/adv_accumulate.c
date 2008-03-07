@@ -28,7 +28,7 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     accumulate_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
     const ops_parser_content_union_t *content=&content_->content;
     ops_keyring_t *keyring=arg->keyring;
-    ops_key_data_t *cur=NULL;
+    ops_keydata_t *cur=NULL;
     const ops_public_key_t *pkey;
 
     if(keyring->nkeys >= 0)
@@ -137,7 +137,7 @@ int ops_parse_and_accumulate(ops_keyring_t *keyring,
     return rtn;
     }
 
-static void dump_one_key_data(const ops_key_data_t *key)
+static void dump_one_keydata(const ops_keydata_t *key)
     {
     unsigned n;
 
@@ -169,5 +169,5 @@ void ops_dump_keyring(const ops_keyring_t *keyring)
     int n;
 
     for(n=0 ; n < keyring->nkeys ; ++n)
-	dump_one_key_data(&keyring->keys[n]);
+	dump_one_keydata(&keyring->keys[n]);
     }
