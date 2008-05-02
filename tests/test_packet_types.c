@@ -474,7 +474,7 @@ static void test_ops_pk_session_key()
     ops_parse_info_t *pinfo;
     ops_memory_t *mem;
     int rtn=0;
-    const ops_key_data_t *pub_key=NULL;
+    const ops_keydata_t *pub_key=NULL;
 
     // setup for write
     ops_setup_memory_write(&cinfo,&mem,MAXBUF);

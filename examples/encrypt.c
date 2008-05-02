@@ -10,7 +10,7 @@ int main(int argc,char **argv)
     const char *keyfile;
     const char *user_id;
     ops_keyring_t keyring;
-    const ops_key_data_t *key;
+    const ops_keydata_t *key;
     ops_create_info_t *info;
 
     if(argc != 3)
@@ -34,7 +34,7 @@ int main(int argc,char **argv)
 
     info = ops_create_info_new();
     ops_writer_set_fd(info, 1);  // stdout for now
-    ops_writer_push_encrypt(info, key);
+    ops_writer_push_encrypt_keydata(info, key);
 
     for( ; ; )
 	{

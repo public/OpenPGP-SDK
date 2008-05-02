@@ -128,7 +128,7 @@ void ops_reader_pop_hash(ops_parse_info_t *pinfo);
 
 int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
 		    const ops_secret_key_t *skey);
-ops_boolean_t ops_encrypt_mpi(const unsigned char *buf, const size_t buflen,
+ops_boolean_t ops_rsa_encrypt_mpi(const unsigned char *buf, const size_t buflen,
 			      const ops_public_key_t *pkey,
 			      ops_pk_session_key_parameters_t *spk);
 
@@ -141,6 +141,7 @@ void ops_writer_push_encrypt(ops_create_info_t *info,
 void ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_keydata_t *pub_key, const int use_armour);
 
 // Keys
-ops_boolean_t ops_generate_rsa_keypair(const int numbits, const unsigned long e, ops_secret_key_t* skey);
+ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e, ops_keydata_t* keydata);
+ops_keydata_t* ops_rsa_create_selfsigned_keypair(const int numbits, const unsigned long e, ops_user_id_t * userid);
 
 #endif

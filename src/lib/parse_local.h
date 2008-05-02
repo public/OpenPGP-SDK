@@ -1,5 +1,8 @@
 /** \file */
 
+#include <openpgpsdk/types.h>
+#include <openpgpsdk/crypto.h>
+
 /** ops_reader_info */
 struct ops_reader_info
     {

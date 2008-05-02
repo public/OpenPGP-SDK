@@ -5,6 +5,7 @@
 #define OPS_KEYRING_H
 
 #include "packet.h"
+#include "memory.h"
 
 typedef struct ops_keydata ops_keydata_t;
 
@@ -33,6 +34,8 @@ ops_get_public_key_from_data(const ops_keydata_t *data);
 ops_boolean_t ops_key_is_secret(const ops_keydata_t *data);
 const ops_secret_key_t *
 ops_get_secret_key_from_data(const ops_keydata_t *data);
+ops_secret_key_t *
+ops_get_writable_secret_key_from_data(ops_keydata_t *data);
 ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_keydata_t *key,
 						   const char *pphrase);
 
@@ -50,5 +53,14 @@ unsigned ops_get_user_id_count(const ops_keydata_t *key);
 const unsigned char* ops_get_user_id(const ops_keydata_t *key, unsigned index);
 ops_boolean_t ops_key_is_supported(const ops_keydata_t *key);
 const ops_keydata_t* ops_keyring_get_key(const ops_keyring_t *keyring, int index);
+
+ops_user_id_t* ops_add_userid_to_keydata(ops_keydata_t* keydata, const ops_user_id_t* userid);
+ops_packet_t* ops_add_packet_to_keydata(ops_keydata_t* keydata, const ops_packet_t* packet);
+void ops_add_signed_userid_to_keydata(ops_keydata_t* keydata, const ops_user_id_t* userid, const ops_packet_t* packet);
+
+ops_boolean_t ops_add_selfsigned_userid_to_keydata(ops_keydata_t* keydata, ops_user_id_t* userid);
+
+ops_keydata_t *ops_keydata_new(void);
+void ops_keydata_init(ops_keydata_t* keydata, const ops_content_tag_t type);
 
 #endif

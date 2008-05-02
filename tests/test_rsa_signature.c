@@ -388,6 +388,8 @@ static void test_todo(void)
     CU_FAIL("Test TODO: Test large files");
     CU_FAIL("Test TODO: Sign with V3 signature?");
     CU_FAIL("Test TODO: Use other hash algorithms?");
+    CU_FAIL("Test TODO: Check for key/signature expiry");
+    CU_FAIL("Test TODO: Check for key/signature revocation");
     }
 
 static int add_tests(CU_pSuite suite)

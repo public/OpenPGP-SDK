@@ -421,7 +421,7 @@ static ops_parse_cb_return_t callback(const ops_parser_content_t *content_,
     const ops_parser_content_union_t *content=&content_->content;
     ops_text_t *text;
     const char *str;
-    const ops_key_data_t *decrypter;
+    const ops_keydata_t *decrypter;
     const ops_secret_key_t *secret;
     static ops_boolean_t unarmoured;
 

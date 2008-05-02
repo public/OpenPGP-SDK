@@ -6,6 +6,8 @@
 #include <openpgpsdk/util.h>
 #include <openpgpsdk/accumulate.h>
 #include <openpgpsdk/validate.h>
+#include <openpgpsdk/signature.h>
+#include <openpgpsdk/readerwriter.h>
 #include "keyring_local.h"
 #include "parse_local.h"
 
@@ -38,6 +40,8 @@ void ops_keydata_free(ops_keydata_t *key)
 	ops_public_key_free(&key->key.pkey);
     else
 	ops_secret_key_free(&key->key.skey);
+
+    free(key);
     }
 
 const ops_public_key_t *
@@ -56,6 +60,16 @@ ops_get_secret_key_from_data(const ops_keydata_t *data)
     {
     if(data->type != OPS_PTAG_CT_SECRET_KEY)
         return NULL;
+
+    return &data->key.skey;
+    }
+
+ops_secret_key_t *
+ops_get_writable_secret_key_from_data(ops_keydata_t *data)
+    {
+    if (data->type != OPS_PTAG_CT_SECRET_KEY)
+        return NULL;
+
     return &data->key.skey;
     }
 
@@ -262,5 +276,153 @@ const ops_keydata_t* ops_keyring_get_key(const ops_keyring_t *keyring, int index
     }
 
 // \todo document OPS keyring format
+
+// \todo check where userid pointers are copied
+void ops_copy_userid(ops_user_id_t* dst, const ops_user_id_t* src)
+    {
+    int len=strlen((char *)src->user_id);
+    if (dst->user_id)
+        free(dst->user_id);
+    dst->user_id=ops_mallocz(len+1);
+
+    memcpy(dst->user_id, src->user_id, len);
+    }
+
+// \todo check where pkt pointers are copied
+void ops_copy_packet(ops_packet_t* dst, const ops_packet_t* src)
+    {
+    if (dst->raw)
+        free(dst->raw);
+    dst->raw=ops_mallocz(src->length);
+
+    dst->length=src->length;
+    memcpy(dst->raw, src->raw, src->length);
+    }
+
+ops_user_id_t* ops_add_userid_to_keydata(ops_keydata_t* keydata, const ops_user_id_t* userid)
+    {
+    ops_user_id_t* new_uid=NULL;
+
+    EXPAND_ARRAY(keydata, uids);
+
+    // initialise new entry in array
+    new_uid=&keydata->uids[keydata->nuids];
+
+    //    keydata->uids[keydata->nuids].user_id=NULL;
+    new_uid->user_id=NULL;
+
+    // now copy it
+    //    ops_copy_userid(&keydata->uids[keydata->nuids],userid);
+    ops_copy_userid(new_uid,userid);
+    keydata->nuids++;
+
+    return new_uid;
+    }
+
+ops_packet_t* ops_add_packet_to_keydata(ops_keydata_t* keydata, const ops_packet_t* packet)
+    {
+    ops_packet_t* new_pkt=NULL;
+
+    EXPAND_ARRAY(keydata, packets);
+
+    // initialise new entry in array
+    new_pkt=&keydata->packets[keydata->npackets];
+    new_pkt->length=0;
+    new_pkt->raw=NULL;
+
+    // now copy it
+    ops_copy_packet(new_pkt, packet);
+    keydata->npackets++;
+
+    return new_pkt;
+    }
+
+void ops_add_signed_userid_to_keydata(ops_keydata_t* keydata, const ops_user_id_t* user_id, const ops_packet_t* sigpacket)
+    {
+    //int i=0;
+    ops_user_id_t * uid=NULL;
+    ops_packet_t * pkt=NULL;
+
+    uid=ops_add_userid_to_keydata(keydata, user_id);
+    pkt=ops_add_packet_to_keydata(keydata, sigpacket);
+
+    /*
+     * add entry in sigs array to link the userid and sigpacket
+     */
+
+    // and add ptr to it from the sigs array
+    EXPAND_ARRAY(keydata, sigs);
+
+    // setup new entry in array
+
+    keydata->sigs[keydata->nsigs].userid=uid;
+    keydata->sigs[keydata->nsigs].packet=pkt;
+
+    keydata->nsigs++;
+    }
+
+ops_boolean_t ops_add_selfsigned_userid_to_keydata(ops_keydata_t* keydata, ops_user_id_t* userid)
+    {
+    ops_packet_t sigpacket;
+
+    ops_memory_t* mem_userid=NULL;
+    ops_create_info_t* cinfo_userid=NULL;
+
+    ops_memory_t* mem_sig=NULL;
+    ops_create_info_t* cinfo_sig=NULL;
+
+    ops_create_signature_t *sig=NULL;
+    //    unsigned char keyid[OPS_KEY_ID_SIZE];
+
+    /*
+     * create signature packet for this userid
+     */
+
+    // create userid pkt
+    ops_setup_memory_write(&cinfo_userid, &mem_userid, 128);
+    ops_write_struct_user_id(userid, cinfo_userid);
+
+    // create sig for this pkt
+
+    sig=ops_create_signature_new();
+    ops_signature_start_key_signature(sig, &keydata->key.skey.public_key, userid, OPS_CERT_POSITIVE);
+    ops_signature_add_creation_time(sig,time(NULL));
+    ops_signature_add_issuer_key_id(sig,keydata->key_id);
+    ops_signature_add_primary_user_id(sig, ops_true);
+    ops_signature_hashed_subpackets_end(sig);
+
+    ops_setup_memory_write(&cinfo_sig, &mem_sig, 128);
+    ops_write_signature(sig,&keydata->key.skey.public_key,&keydata->key.skey, cinfo_sig);
+
+    // add this packet to keydata
+
+    sigpacket.length=ops_memory_get_length(mem_sig);
+    sigpacket.raw=ops_memory_get_data(mem_sig);
+    //    pkt=ops_add_packet_to_keydata(keydata, &packet);
+    //    ops_add_signature_to_keydata(keydata, keydata->key_id, packet);
+
+    // add userid to keydata
+    ops_add_signed_userid_to_keydata(keydata, userid, &sigpacket);
+
+    // cleanup
+    ops_create_signature_delete(sig);
+    ops_create_info_delete(cinfo_userid);
+    ops_create_info_delete(cinfo_sig);
+    ops_memory_free(mem_userid);
+    ops_memory_free(mem_sig);
+
+    return ops_true;
+    }
+
+ops_keydata_t *ops_keydata_new(void)
+    { return ops_mallocz(sizeof(ops_keydata_t)); }
+
+void ops_keydata_init(ops_keydata_t* keydata, const ops_content_tag_t type)
+    {
+    assert(keydata->type==OPS_PTAG_CT_RESERVED);
+    assert(type==OPS_PTAG_CT_PUBLIC_KEY || type==OPS_PTAG_CT_SECRET_KEY);
+
+    keydata->type=type;
+    }
 
 // eof

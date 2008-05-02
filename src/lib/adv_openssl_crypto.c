@@ -3,6 +3,9 @@
 
 #include <openpgpsdk/configure.h>
 #include <openpgpsdk/crypto.h>
+#include <openpgpsdk/keyring.h>
+#include <openpgpsdk/readerwriter.h>
+#include "keyring_local.h"
 #include <openpgpsdk/std_print.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
@@ -15,6 +18,21 @@
 #include <openpgpsdk/final.h>
 
 static int debug=0;
+
+void test_secret_key(const ops_secret_key_t *skey)
+    {
+    RSA* test=RSA_new();
+
+    test->n=BN_dup(skey->public_key.key.rsa.n);
+    test->e=BN_dup(skey->public_key.key.rsa.e);
+
+    test->d=BN_dup(skey->key.rsa.d);
+    test->p=BN_dup(skey->key.rsa.p);
+    test->q=BN_dup(skey->key.rsa.q);
+
+    assert(RSA_check_key(test)==1);
+    RSA_free(test);
+    }
 
 static void md5_init(ops_hash_t *hash)
     {
@@ -262,9 +280,14 @@ void ops_crypto_finish()
 const char *ops_text_from_hash(ops_hash_t *hash)
     { return hash->name; }
 
-ops_boolean_t ops_generate_rsa_keypair(const int numbits, const unsigned long e, ops_secret_key_t* skey)
+ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e, ops_keydata_t* keydata)
     {
+    ops_secret_key_t *skey=NULL;
     RSA *rsa=NULL;
+    BN_CTX *ctx=BN_CTX_new();
+
+    ops_keydata_init(keydata,OPS_PTAG_CT_SECRET_KEY);
+    skey=ops_get_writable_secret_key_from_data(keydata);
 
     // generate the key pair
 
@@ -277,36 +300,88 @@ ops_boolean_t ops_generate_rsa_keypair(const int numbits, const unsigned long e,
     skey->public_key.days_valid=0;
     skey->public_key.algorithm= OPS_PKA_RSA;
 
-    skey->public_key.key.rsa.n=rsa->n;
-    skey->public_key.key.rsa.e=rsa->e;
+    skey->public_key.key.rsa.n=BN_dup(rsa->n);
+    skey->public_key.key.rsa.e=BN_dup(rsa->e);
 
-    skey->s2k_usage=OPS_S2KU_NONE;
+    skey->s2k_usage=OPS_S2KU_ENCRYPTED_AND_HASHED;
     // \todo     skey->s2k_specifier_t=OPS_S2KS_SALTED;
-    skey->algorithm=OPS_SA_AES_128; // \todo make param
+    skey->s2k_specifier=OPS_S2KS_SIMPLE;
+    skey->algorithm=OPS_SA_CAST5; // \todo make param
     skey->hash_algorithm=OPS_HASH_SHA1; // \todo make param
     skey->octet_count=0;
     skey->checksum=0;
 
-    skey->key.rsa.d=rsa->d;
-    skey->key.rsa.p=rsa->p;
-    skey->key.rsa.q=rsa->q;
-    skey->key.rsa.u=NULL;
+    skey->key.rsa.d=BN_dup(rsa->d);
+    skey->key.rsa.p=BN_dup(rsa->p);
+    skey->key.rsa.q=BN_dup(rsa->q);
+    skey->key.rsa.u=BN_mod_inverse(NULL,rsa->p, rsa->q, ctx);
+    assert(skey->key.rsa.u);
+    BN_CTX_free(ctx);
 
-    /* debug */
-    RSA* test=RSA_new();
+    RSA_free(rsa);
 
-    test->n=skey->public_key.key.rsa.n;
-    test->e=skey->public_key.key.rsa.e;
+    ops_keyid(keydata->key_id, &keydata->key.skey.public_key);
+    ops_fingerprint(&keydata->fingerprint, &keydata->key.skey.public_key);
 
-    test->d=skey->key.rsa.d;
-    test->p=skey->key.rsa.p;
-    test->q=skey->key.rsa.q;
+    // Generate checksum
 
-    assert(RSA_check_key(test)==1);
-    RSA_free(test);
-    /* end debug */
+    ops_create_info_t *cinfo=NULL;
+    ops_memory_t *mem=NULL;
+
+    ops_setup_memory_write(&cinfo, &mem, 128);
+
+    ops_push_skey_checksum_writer(cinfo, skey);
+
+    switch(skey->public_key.algorithm)
+	{
+	//    case OPS_PKA_DSA:
+	//	return ops_write_mpi(key->key.dsa.x,info);
+
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	if(!ops_write_mpi(skey->key.rsa.d,cinfo)
+	   || !ops_write_mpi(skey->key.rsa.p,cinfo)
+	   || !ops_write_mpi(skey->key.rsa.q,cinfo)
+	   || !ops_write_mpi(skey->key.rsa.u,cinfo))
+	    return ops_false;
+	break;
+
+	//    case OPS_PKA_ELGAMAL:
+	//	return ops_write_mpi(key->key.elgamal.x,info);
+
+    default:
+	assert(0);
+	break;
+	}
+
+    // close rather than pop, since its the only one on the stack
+    ops_writer_close(cinfo);
+    ops_teardown_memory_write(cinfo, mem);
+
+    // should now have checksum in skey struct
+
+    // test
+    if (debug)
+        test_secret_key(skey);
 
     return ops_true;
+    }
+
+ops_keydata_t* ops_rsa_create_selfsigned_keypair(const int numbits, const unsigned long e, ops_user_id_t * userid)
+    {
+    ops_keydata_t *keydata=NULL;
+
+    keydata=ops_keydata_new();
+
+    if (ops_rsa_generate_keypair(numbits, e, keydata) != ops_true
+        || ops_add_selfsigned_userid_to_keydata(keydata, userid) != ops_true)
+        {
+        ops_keydata_free(keydata);
+        return NULL;
+        }
+
+    return keydata;
     }
 
 // eof

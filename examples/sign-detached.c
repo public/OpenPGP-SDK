@@ -50,7 +50,7 @@ int main(int argc,char **argv)
 	}
 
     sig=ops_create_signature_new();
-    ops_signature_start_plaintext_signature(sig,skey,alg,OPS_SIG_BINARY);
+    ops_signature_start_cleartext_signature(sig,skey,alg,OPS_SIG_BINARY);
 
     fd=open(plainfile,O_RDONLY);
     if(fd < 0)

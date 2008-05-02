@@ -58,6 +58,7 @@ ops_boolean_t ops_write_ptag(ops_content_tag_t tag,ops_create_info_t *opt);
 ops_boolean_t ops_write_scalar(unsigned n,unsigned length,
 			       ops_create_info_t *opt);
 ops_boolean_t ops_write_mpi(const BIGNUM *bn,ops_create_info_t *opt);
+ops_boolean_t ops_write_encrypted_mpi(const BIGNUM *bn, ops_crypt_t* crypt, ops_create_info_t *info);
 ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
 				  ops_create_info_t *opt);
 
@@ -86,6 +87,8 @@ void ops_fast_create_rsa_secret_key(ops_secret_key_t *key,time_t time,
 				    BIGNUM *p,BIGNUM *q,BIGNUM *d,BIGNUM *u,
 				    BIGNUM *n,BIGNUM *e);
 ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
+                                          const unsigned char* passphrase,
+                                          const size_t pplen,
 					  ops_create_info_t *info);
 
 ops_pk_session_key_t *ops_create_pk_session_key(const ops_keydata_t *key);
@@ -118,5 +121,8 @@ ops_boolean_t ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, u
 void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* data, const unsigned int len, unsigned char *hashed);
 
 ops_boolean_t ops_write_one_pass_sig(const ops_secret_key_t* skey, const ops_hash_algorithm_t hash_alg, const ops_sig_type_t sig_type, ops_create_info_t* info);
+
+ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_create_info_t *info);
+ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const unsigned char* passphrase, size_t pplen, ops_create_info_t *info);
 
 #endif

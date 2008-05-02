@@ -2,6 +2,7 @@
 #include <openpgpsdk/packet-show.h>
 #include <openpgpsdk/keyring.h>
 #include "keyring_local.h"
+#include "parse_local.h"
 #include <openpgpsdk/util.h>
 #include <openpgpsdk/signature.h>
 #include <openpgpsdk/memory.h>
@@ -138,7 +139,7 @@ static void add_key_to_unknown_list(ops_validate_result_t * result, const unsign
     }
 
 ops_parse_cb_return_t
-validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     const ops_parser_content_union_t *content=&content_->content;
     validate_key_cb_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
@@ -150,20 +151,24 @@ validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
         printf("%s\n",ops_show_packet_tag(content_->tag));
 
     switch(content_->tag)
-	{
+        {
     case OPS_PTAG_CT_PUBLIC_KEY:
-	assert(arg->pkey.version == 0);
-	arg->pkey=content->public_key;
-	return OPS_KEEP_MEMORY;
-
+        assert(arg->pkey.version == 0);
+        arg->pkey=content->public_key;
+        return OPS_KEEP_MEMORY;
+        
     case OPS_PTAG_CT_PUBLIC_SUBKEY:
-	if(arg->subkey.version)
-	    ops_public_key_free(&arg->subkey);
-	arg->subkey=content->public_key;
-	return OPS_KEEP_MEMORY;
+        if(arg->subkey.version)
+            ops_public_key_free(&arg->subkey);
+        arg->subkey=content->public_key;
+        return OPS_KEEP_MEMORY;
+        
+    case OPS_PTAG_CT_SECRET_KEY:
+        arg->skey=content->secret_key;
+        arg->pkey=arg->skey.public_key;
+        return OPS_KEEP_MEMORY;
 
     case OPS_PTAG_CT_USER_ID:
-	printf("user id=%s\n",content->user_id.user_id);
 	if(arg->user_id.user_id)
 	    ops_user_id_free(&arg->user_id);
 	arg->user_id=content->user_id;
@@ -180,16 +185,16 @@ validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
 	return OPS_KEEP_MEMORY;
 
     case OPS_PTAG_CT_SIGNATURE_FOOTER:
-	printf("  type=%02x signer_id=",content->signature.type);
-	hexdump(content->signature.signer_id,
+        /*
+        printf("  type=%02x signer_id=",content->signature.type);
+        hexdump(content->signature.signer_id,
 		sizeof content->signature.signer_id);
+        */
 
 	signer=ops_keyring_find_key_by_id(arg->keyring,
 					   content->signature.signer_id);
 	if(!signer)
 	    {
-	    printf(" UNKNOWN SIGNER\n");
-        //	    ++arg->result->unknown_signer_count;
         add_key_to_unknown_list(arg->result, content->signature.signer_id);
 	    break;
 	    }
@@ -267,7 +272,15 @@ validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
     case OPS_PTAG_CT_SIGNATURE:
+ case OPS_PARSER_PACKET_END:
 	break;
+
+ case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+     if (arg->cb_get_passphrase)
+         {
+         return arg->cb_get_passphrase(content_,cbinfo);
+         }
+     break;
 
     default:
 	fprintf(stderr,"unexpected tag=0x%x\n",content_->tag);
@@ -341,8 +354,6 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
         if(!signer)
             {
             OPS_ERROR(errors,OPS_E_V_UNKNOWN_SIGNER,"Unknown Signer");
-            printf(" UNKNOWN SIGNER\n");
-            //            ++arg->result->unknown_signer_count;
             add_key_to_unknown_list(arg->result, content->signature.signer_id);
             break;
             }
@@ -435,21 +446,25 @@ void ops_keydata_reader_set(ops_parse_info_t *pinfo,const ops_keydata_t *key)
 /* 
  * Validate all signatures on a single key against the given keyring
  */
-static void validate_key_signatures(ops_validate_result_t *result,const ops_keydata_t *key,
-				    const ops_keyring_t *keyring)
+void ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata_t *key,
+                                 const ops_keyring_t *keyring,
+                                 ops_parse_cb_return_t cb_get_passphrase (const ops_parser_content_t *, ops_parse_cb_info_t *)
+                                 )
     {
     ops_parse_info_t *pinfo;
     validate_key_cb_arg_t carg;
 
     memset(&carg,'\0',sizeof carg);
     carg.result=result;
+    carg.cb_get_passphrase=cb_get_passphrase;
 
     pinfo=ops_parse_info_new();
     //    ops_parse_options(&opt,OPS_PTAG_CT_SIGNATURE,OPS_PARSE_PARSED);
 
     carg.keyring=keyring;
 
-    ops_parse_cb_set(pinfo,validate_key_cb,&carg);
+    ops_parse_cb_set(pinfo,ops_validate_key_cb,&carg);
+    pinfo->rinfo.accumulate=ops_true;
     ops_keydata_reader_set(pinfo,key);
 
     carg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
@@ -466,13 +481,15 @@ static void validate_key_signatures(ops_validate_result_t *result,const ops_keyd
     }
 
 void ops_validate_all_signatures(ops_validate_result_t *result,
-				 const ops_keyring_t *ring)
+                                 const ops_keyring_t *ring,
+                                 ops_parse_cb_return_t cb (const ops_parser_content_t *, ops_parse_cb_info_t *)
+)
     {
     int n;
 
     memset(result,'\0',sizeof *result);
     for(n=0 ; n < ring->nkeys ; ++n)
-	validate_key_signatures(result,&ring->keys[n],ring);
+        ops_validate_key_signatures(result,&ring->keys[n],ring, cb);
     }
 
 void ops_validate_result_free(ops_validate_result_t *result)

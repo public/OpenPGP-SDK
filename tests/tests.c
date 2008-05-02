@@ -66,28 +66,12 @@ int main()
         return CU_get_error();
         }
 
-#ifdef TODO
-    if (NULL == suite_rsa_create_key())
+    if (NULL == suite_rsa_keys())
         {
-        fprintf(stderr,"ERROR: initialising suite_rsa_create_key\n");
+        fprintf(stderr,"ERROR: initialising suite_rsa_keys\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
-
-    if (NULL == suite_rsa_sign_key())
-        {
-        fprintf(stderr,"ERROR: initialising suite_rsa_sign_key\n");
-        CU_cleanup_registry();
-        return CU_get_error();
-        }
-
-    if (NULL == suite_rsa_verify_key())
-        {
-        fprintf(stderr,"ERROR: initialising suite_rsa_verify_key\n");
-        CU_cleanup_registry();
-        return CU_get_error();
-        }
-#endif
 
     // Run tests
     CU_basic_set_mode(CU_BRM_VERBOSE);

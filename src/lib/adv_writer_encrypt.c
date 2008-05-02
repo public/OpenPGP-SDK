@@ -5,6 +5,8 @@
 #include <string.h>
 #include <openpgpsdk/readerwriter.h>
 
+static int debug=0;
+
 typedef struct 
     {
     ops_crypt_t* crypt;
@@ -21,7 +23,6 @@ static ops_boolean_t encrypt_writer(const unsigned char *src,
 				      ops_error_t **errors,
 				      ops_writer_info_t *winfo)
     {
-    int debug=0;
 
 #define BUFSZ 1024 // arbitrary number
     unsigned char encbuf[BUFSZ];
@@ -54,7 +55,11 @@ static ops_boolean_t encrypt_writer(const unsigned char *src,
             }
 
         if (!ops_stacked_write(encbuf,len,errors,winfo))
+            {
+            if (debug)
+                { fprintf(stderr, "encrypted_writer got error from stacked write, returning\n"); }
             return ops_false;
+            }
         remaining-=len;
         done+=len;
         }

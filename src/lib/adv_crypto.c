@@ -80,7 +80,7 @@ int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM
     return n-i;
     }
 
-ops_boolean_t ops_encrypt_mpi(const unsigned char *encoded_m_buf,
+ops_boolean_t ops_rsa_encrypt_mpi(const unsigned char *encoded_m_buf,
                               const size_t sz_encoded_m_buf,
 			      const ops_public_key_t *pkey,
 			      ops_pk_session_key_parameters_t *skp)

@@ -29,6 +29,7 @@ extern CU_pSuite suite_rsa_decrypt();
 extern CU_pSuite suite_rsa_encrypt();
 extern CU_pSuite suite_rsa_signature();
 extern CU_pSuite suite_rsa_verify();
+extern CU_pSuite suite_rsa_keys();
 
 extern CU_pSuite suite_rsa_decrypt_GPGtest();
 extern CU_pSuite suite_rsa_encrypt_GPGtest();
@@ -76,8 +77,8 @@ ops_memory_t* mem_literal_data;
 // "Alpha" is the user who has NO passphrase on his key
 char* alpha_user_id;
 char* alpha_name;
-const ops_key_data_t *alpha_pub_keydata;
-const ops_key_data_t *alpha_sec_keydata;
+const ops_keydata_t *alpha_pub_keydata;
+const ops_keydata_t *alpha_sec_keydata;
 const ops_public_key_t *alpha_pkey;
 const ops_secret_key_t *alpha_skey;
 char* alpha_passphrase;
@@ -86,15 +87,25 @@ char* alpha_passphrase;
 char* bravo_name;
 char* bravo_passphrase;
 char* bravo_user_id;
-const ops_key_data_t *bravo_pub_keydata;
-const ops_key_data_t *bravo_sec_keydata;
+const ops_keydata_t *bravo_pub_keydata;
+const ops_keydata_t *bravo_sec_keydata;
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
-//const ops_key_data_t *decrypter;
+//const ops_keydata_t *decrypter;
 
 // defs
 #define MAXBUF 1024
 #define MAX_COMPRESS_LEVEL 7
+
+#ifndef ATTRIBUTE_UNUSED
+
+#ifndef WIN32
+#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
+#else
+#define ATTRIBUTE_UNUSED 
+#endif // #ifndef WIN32
+
+#endif /* ATTRIBUTE_UNUSED */
 
 #endif
 

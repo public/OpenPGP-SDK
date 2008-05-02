@@ -52,7 +52,7 @@ int main(int argc,char **argv)
 	}
 
     sig=ops_create_signature_new();
-    ops_signature_start_plaintext_signature(sig,skey,alg,OPS_SIG_BINARY);
+    ops_signature_start_cleartext_signature(sig,skey,alg,OPS_SIG_BINARY);
 
     fd=open(sigfile,O_CREAT|O_TRUNC|O_WRONLY,0666);
     if(fd < 0)
@@ -63,7 +63,7 @@ int main(int argc,char **argv)
 
     info=ops_create_info_new();
     ops_writer_set_fd(info,fd);
-    ops_writer_push_dash_escaped(info,sig);
+    ops_writer_push_clearsigned(info,sig);
 
     fd=open(plainfile,O_RDONLY);
     if(fd < 0)
@@ -90,7 +90,7 @@ int main(int argc,char **argv)
 
     close(fd);
 
-    ops_writer_switch_to_signature(info);
+    ops_writer_switch_to_armoured_signature(info);
 
     ops_signature_add_creation_time(sig,time(NULL));
 

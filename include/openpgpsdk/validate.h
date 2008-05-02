@@ -10,8 +10,14 @@ typedef struct
 
 void ops_validate_result_free(ops_validate_result_t *result);
 
+void ops_validate_key_signatures(ops_validate_result_t *result,
+                                 const ops_keydata_t* keydata,
+                                 const ops_keyring_t *ring,
+                                 ops_parse_cb_return_t cb (const ops_parser_content_t *, ops_parse_cb_info_t *));
 void ops_validate_all_signatures(ops_validate_result_t *result,
-				 const ops_keyring_t *ring);
+                                 const ops_keyring_t *ring,
+                                 ops_parse_cb_return_t (const ops_parser_content_t *, ops_parse_cb_info_t *));
+
 void ops_keydata_reader_set(ops_parse_info_t *pinfo,
 			     const ops_keydata_t *key);
 
@@ -26,9 +32,10 @@ typedef struct
     {
     ops_public_key_t pkey;
     ops_public_key_t subkey;
+    ops_secret_key_t skey;
     enum
 	{
-	ATTRIBUTE,
+	ATTRIBUTE=1,
 	ID,
 	} last_seen;
     ops_user_id_t user_id;
@@ -37,6 +44,7 @@ typedef struct
     const ops_keyring_t *keyring;
     validate_reader_arg_t *rarg;
     ops_validate_result_t *result;
+    ops_parse_cb_return_t (*cb_get_passphrase) (const ops_parser_content_t *, ops_parse_cb_info_t *);
     } validate_key_cb_arg_t;
 
 typedef struct
@@ -61,4 +69,7 @@ ops_boolean_t ops_check_signature(const unsigned char *hash,
                                   unsigned length,
                                   const ops_signature_t *sig,
                                   const ops_public_key_t *signer);
+ops_parse_cb_return_t
+ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+
 // EOF

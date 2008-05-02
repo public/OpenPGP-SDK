@@ -55,7 +55,7 @@ static void showtime_short(time_t t);
 */
 
 void 
-ops_print_public_key(const ops_keydata_t *key)
+ops_print_public_keydata(const ops_keydata_t *key)
     {
     printf("pub ");
 
@@ -85,19 +85,10 @@ ops_print_public_key(const ops_keydata_t *key)
 	}
     }
 
-/**
-   \ingroup StdPrintKeyring
-
-   Prints a public key in full detail
-
-   \param key Ptr to public key
-*/
-
 void 
-ops_print_public_key_verbose(const ops_keydata_t *key)
+ops_print_public_key_t(const ops_public_key_t *pkey)
     {
-    const ops_public_key_t* pkey=&key->key.pkey;
-
+    printf("------- PUBLIC KEY ------\n");
     print_unsigned_int("Version",pkey->version);
     print_time("Creation Time", pkey->creation_time);
     if(pkey->version == OPS_V3)
@@ -132,6 +123,60 @@ ops_print_public_key_verbose(const ops_keydata_t *key)
     default:
 	assert(0);
 	}
+
+    printf("------- end of PUBLIC KEY ------\n");
+    }
+
+/**
+   \ingroup StdPrintKeyring
+
+   Prints a public key in full detail
+
+   \param key Ptr to public key
+*/
+
+void 
+ops_print_public_keydata_verbose(const ops_keydata_t *key)
+    {
+    const ops_public_key_t* pkey=&key->key.pkey;
+
+    ops_print_public_key_t(pkey);
+    /*
+    print_unsigned_int("Version",pkey->version);
+    print_time("Creation Time", pkey->creation_time);
+    if(pkey->version == OPS_V3)
+	print_unsigned_int("Days Valid",pkey->days_valid);
+
+    print_string_and_value("Algorithm",ops_show_pka(pkey->algorithm),
+			   pkey->algorithm);
+
+    switch(pkey->algorithm)
+	{
+    case OPS_PKA_DSA:
+	print_bn("p",pkey->key.dsa.p);
+	print_bn("q",pkey->key.dsa.q);
+	print_bn("g",pkey->key.dsa.g);
+	print_bn("y",pkey->key.dsa.y);
+	break;
+
+    case OPS_PKA_RSA:
+    case OPS_PKA_RSA_ENCRYPT_ONLY:
+    case OPS_PKA_RSA_SIGN_ONLY:
+	print_bn("n",pkey->key.rsa.n);
+	print_bn("e",pkey->key.rsa.e);
+	break;
+
+    case OPS_PKA_ELGAMAL:
+    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
+	print_bn("p",pkey->key.elgamal.p);
+	print_bn("g",pkey->key.elgamal.g);
+	print_bn("y",pkey->key.elgamal.y);
+	break;
+
+    default:
+	assert(0);
+	}
+    */
     }
 
 /**
@@ -143,14 +188,26 @@ ops_print_public_key_verbose(const ops_keydata_t *key)
 */
 
 void 
-ops_print_secret_key(const ops_keydata_t* key)
+ops_print_secret_keydata(const ops_keydata_t* key)
     {
     const ops_secret_key_t* skey=&key->key.skey;
     if(key->type == OPS_PTAG_CT_SECRET_KEY)
 	print_tagname("SECRET_KEY");
     else
 	print_tagname("ENCRYPTED_SECRET_KEY");
-    ops_print_public_key(key);
+    ops_print_public_keydata(key);
+    ops_print_secret_key(key->type,skey);
+	}
+
+void 
+ops_print_secret_key(const ops_content_tag_t type, const ops_secret_key_t* skey)
+    {
+    printf("------- SECRET KEY or ENCRYPTED SECRET KEY ------\n");
+    if(type == OPS_PTAG_CT_SECRET_KEY)
+	print_tagname("SECRET_KEY");
+    else
+	print_tagname("ENCRYPTED_SECRET_KEY");
+    //    ops_print_public_key(key);
     printf("S2K Usage: %d\n",skey->s2k_usage);
     if(skey->s2k_usage != OPS_S2KU_NONE)
 	{
@@ -167,7 +224,7 @@ ops_print_secret_key(const ops_keydata_t* key)
 	}
 
     /* no more set if encrypted */
-    if(key->type == OPS_PTAG_CT_ENCRYPTED_SECRET_KEY)
+    if(type == OPS_PTAG_CT_ENCRYPTED_SECRET_KEY)
 	return;
 
     switch(skey->public_key.algorithm)
@@ -191,6 +248,8 @@ ops_print_secret_key(const ops_keydata_t* key)
 	print_hexdump("Checkhash",skey->checkhash,OPS_CHECKHASH_SIZE);
     else
 	printf("Checksum: %04x\n",skey->checksum);
+
+    printf("------- end of SECRET KEY or ENCRYPTED SECRET KEY ------\n");
     }
 
 // static functions
@@ -623,7 +682,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	else
 	    print_tagname("PUBLIC SUBKEY");
 
-	ops_print_public_key((const ops_keydata_t *) &content->public_key);
+	ops_print_public_keydata((const ops_keydata_t *) &content->public_key);
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -1064,13 +1123,13 @@ int ops_print_packet(const ops_parser_content_t *content_)
 
     case OPS_PTAG_CT_SECRET_KEY:
 	print_tagname("OPS_PTAG_CT_SECRET_KEY");
-	ops_print_secret_key((const ops_keydata_t *)&content->secret_key);
+	ops_print_secret_keydata((const ops_keydata_t *)&content->secret_key);
 	break;
 
     case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY:
 	//	print_secret_key(content_->tag,&content->secret_key);
 	print_tagname("OPS_PTAG_CT_ENCRYPTED_SECRET_KEY");
-	ops_print_secret_key((const ops_keydata_t *)&content->secret_key);
+	ops_print_secret_keydata((const ops_keydata_t *)&content->secret_key);
 	break;
 
     case OPS_PTAG_CT_ARMOUR_HEADER:

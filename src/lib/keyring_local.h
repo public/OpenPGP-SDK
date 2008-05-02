@@ -19,6 +19,12 @@ typedef union
     } ops_keydata_key_t;
     
 
+typedef struct 
+    {
+    ops_user_id_t* userid;
+    ops_packet_t* packet;
+    } sigpacket_t;
+
 // XXX: gonna have to expand this to hold onto subkeys, too...
 /** \struct ops_keydata
  * \todo expand to hold onto subkeys
@@ -27,6 +33,7 @@ struct ops_keydata
     {
     DECLARE_ARRAY(ops_user_id_t,uids);
     DECLARE_ARRAY(ops_packet_t,packets);
+    DECLARE_ARRAY(sigpacket_t, sigs);
     unsigned char key_id[8];
     ops_fingerprint_t fingerprint;
     ops_content_tag_t type;

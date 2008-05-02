@@ -65,16 +65,13 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     case OPS_PTAG_CT_USER_ID:
 	//	printf("User ID: %s\n",content->user_id.user_id);
 	assert(cur);
-	EXPAND_ARRAY(cur,uids);
-	cur->uids[cur->nuids++]=content->user_id;
+    ops_add_userid_to_keydata(cur, &content->user_id);
 	return OPS_KEEP_MEMORY;
 
     case OPS_PARSER_PACKET_END:
 	if(!cur)
 	    return OPS_RELEASE_MEMORY;
-
-	EXPAND_ARRAY(cur,packets);
-	cur->packets[cur->npackets++]=content->packet;
+    ops_add_packet_to_keydata(cur, &content->packet);
 	return OPS_KEEP_MEMORY;
 
     case OPS_PARSER_ERROR:

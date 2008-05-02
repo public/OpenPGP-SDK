@@ -176,8 +176,10 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
     int n;
 
     for(n=0 ; n < keyring->nkeys ; ++n)
-	if(!memcmp(keyring->keys[n].key_id,keyid,OPS_KEY_ID_SIZE))
-	    return &keyring->keys[n];
+        {
+        if(!memcmp(keyring->keys[n].key_id,keyid,OPS_KEY_ID_SIZE))
+            return &keyring->keys[n];
+        }
 
     return NULL;
     }
@@ -240,9 +242,9 @@ ops_keyring_list(const ops_keyring_t* keyring,
 	    //	    if(!strcmp((char *)keyring->keys[n].uids[i].user_id,userid))
 	    //	       return &keyring->keys[n].keyid[0];
 	    if (ops_key_is_secret(key))
-		ops_print_secret_key(key);
+		ops_print_secret_keydata(key);
 	    else
-		ops_print_public_key(key);
+		ops_print_public_keydata(key);
 	    }
 
 	}
@@ -254,18 +256,17 @@ static ops_parse_cb_return_t
 cb_keyring_read(const ops_parser_content_t *content_,
 		ops_parse_cb_info_t *cbinfo)
     {
-    //    const ops_parser_content_union_t *content=&content_->content;
+    const ops_parser_content_union_t *content=&content_->content;
+    char* passphrase="hello";
+    char* pp=ops_mallocz(strlen(passphrase)+1);
     //    char buffer[1024];
     //    size_t n;
+
 
     OPS_USED(cbinfo);
 
     switch(content_->tag)
-	{
-    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-	// we don't want to prompt when reading the keyring
-	break;
-
+        {
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY: // we get these because we didn't prompt
     case OPS_PTAG_CT_SIGNATURE_HEADER:
@@ -273,7 +274,13 @@ cb_keyring_read(const ops_parser_content_t *content_,
     case OPS_PTAG_CT_SIGNATURE:
     case OPS_PTAG_CT_TRUST:
     case OPS_PARSER_ERRCODE:
-	break;
+        break;
+
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+        strncpy(pp,passphrase,strlen(passphrase));
+        *(content->secret_key_passphrase.passphrase)=pp;
+        return OPS_KEEP_MEMORY;
+        break;
 
 	/*
     default:

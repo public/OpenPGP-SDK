@@ -20,7 +20,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     static ops_boolean_t skipping;
-    static const ops_key_data_t *decrypter;
+    static const ops_keydata_t *decrypter;
 
     OPS_USED(cbinfo);
 
@@ -77,7 +77,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     case OPS_PARSER_CMD_GET_SECRET_KEY:
 	printf("TBD: OPS_PARSER_CMD_GET_SECRET_KEY\n");
-	const ops_key_data_t* key=ops_keyring_find_key_by_id(&keyring,content->get_secret_key.pk_session_key->key_id);
+	const ops_keydata_t* key=ops_keyring_find_key_by_id(&keyring,content->get_secret_key.pk_session_key->key_id);
 	if (!key || !ops_key_is_secret(key))
 	    return 0;
 

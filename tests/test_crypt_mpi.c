@@ -9,8 +9,8 @@
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/create.h"
 
-static const ops_key_data_t *pubkey;
-static const ops_key_data_t *seckey;
+static const ops_keydata_t *pubkey;
+static const ops_keydata_t *seckey;
 
 int init_suite_crypt_mpi(void)
     {

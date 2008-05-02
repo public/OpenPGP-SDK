@@ -12,6 +12,8 @@
 #include <openpgpsdk/packet-show.h>
 #include <openpgpsdk/final.h>
 
+static int debug=0;
+
 #ifndef ATTRIBUTE_UNUSED
 
 #ifndef WIN32
@@ -53,12 +55,15 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 	}
     else if(rinfo->pinfo->reading_v3_secret
 	    && rinfo->pinfo->reading_mpi_length)
+        {
 	arg->prev_read_was_plain=ops_true;
+        }
 
     while(length > 0)
 	{
 	if(arg->decrypted_count)
 	    {
+
 	    unsigned n;
 
 	    // if we are reading v3 we should never read more than
@@ -88,7 +93,9 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 	    unsigned char buffer[1024];
 
 	    if(!n)
+            {
 		return -1;
+            }
 
 	    if(!arg->region->indeterminate)
 		{
@@ -99,7 +106,9 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 		    n=sizeof buffer;
 		}
 	    else
+            {
 		n=sizeof buffer;
+            }
 
 	    // we can only read as much as we're asked for in v3 keys
 	    // because they're partially unencrypted!
@@ -109,7 +118,9 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 
 	    if(!ops_stacked_limited_read(buffer,n,arg->region,errors,rinfo,
 					 cbinfo))
+            {
 		return -1;
+            }
 
 	    if(!rinfo->pinfo->reading_v3_secret
 	       || !rinfo->pinfo->reading_mpi_length)
@@ -118,17 +129,18 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
                                   arg->decrypted,
                                   buffer,n);
 
-                /*
-        fprintf(stderr,"READING:\nencrypted: ");
-        int i=0;
-        for (i=0; i<16; i++)
-            fprintf(stderr,"%2x ", buffer[i]);
-        fprintf(stderr,"\n");
-        fprintf(stderr,"decrypted:   ");
-        for (i=0; i<16; i++)
-            fprintf(stderr,"%2x ", arg->decrypted[i]);
-        fprintf(stderr,"\n");
-                */
+                if (debug)
+                    {
+                    fprintf(stderr,"READING:\nencrypted: ");
+                    int i=0;
+                    for (i=0; i<16; i++)
+                        fprintf(stderr,"%2x ", buffer[i]);
+                    fprintf(stderr,"\n");
+                    fprintf(stderr,"decrypted:   ");
+                    for (i=0; i<16; i++)
+                        fprintf(stderr,"%2x ", arg->decrypted[i]);
+                    fprintf(stderr,"\n");
+                    }
                 }
 	    else
 		{

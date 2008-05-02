@@ -16,16 +16,6 @@
 
 #include "tests.h"
 
-#ifndef ATTRIBUTE_UNUSED
-
-#ifndef WIN32
-#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
-#else
-#define ATTRIBUTE_UNUSED 
-#endif // #ifndef WIN32
-
-#endif /* ATTRIBUTE_UNUSED */
-
 static int debug=0;
 
 static char *filename_rsa_armour_nopassphrase="gpg_rsa_sign_armour_nopassphrase.txt";

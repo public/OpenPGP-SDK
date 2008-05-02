@@ -149,7 +149,7 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext, const int 
     return rtn;
     }
 
-static void test_rsa_encrypt(const int use_armour, const char* filename, const ops_key_data_t *pub_key)
+static void test_rsa_encrypt(const int use_armour, const char* filename, const ops_keydata_t *pub_key)
     {
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];

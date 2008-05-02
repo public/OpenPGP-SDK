@@ -11,7 +11,8 @@
 #include <openpgpsdk/compress.h>
 #include <openpgpsdk/errors.h>
 #include <openpgpsdk/readerwriter.h>
-#include "openpgpsdk/packet-show.h"
+#include <openpgpsdk/packet-show.h>
+#include <openpgpsdk/std_print.h>
 
 #include "parse_local.h"
 
@@ -570,6 +571,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
 
     pinfo->reading_mpi_length=ops_true;
     ret=limited_read_scalar(&length,2,region,pinfo);
+
     pinfo->reading_mpi_length=ops_false;
     if(!ret)
 	return 0;
@@ -2002,16 +2004,26 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     int blocksize;
     ops_boolean_t crypted;
 
+    if (debug)
+        { fprintf(stderr,"\n---------\nparse_secret_key:\n"); 
+        fprintf(stderr,"region length=%d, length_read=%d, remainder=%d\n", region->length, region->length_read, region->length-region->length_read);
+        }
+
     memset(&content,'\0',sizeof content);
     if(!parse_public_key_data(&C.secret_key.public_key,region,pinfo))
 	return 0;
+
+    if (debug)
+        {
+        fprintf(stderr,"parse_secret_key: public key parsed\n");
+        ops_print_public_key_t(&C.secret_key.public_key);
+        }
 
     pinfo->reading_v3_secret=C.secret_key.public_key.version != OPS_V4;
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
     C.secret_key.s2k_usage=c[0];
-
     if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
 	checksum_length=20;
 
@@ -2036,7 +2048,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 
 	if(C.secret_key.s2k_specifier != OPS_S2KS_SIMPLE
 	   && !limited_read(C.secret_key.salt,8,region,pinfo))
+        {
 	    return 0;
+        }
 
 	if(C.secret_key.s2k_specifier == OPS_S2KS_ITERATED_AND_SALTED)
 	    {
@@ -2081,6 +2095,12 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	CBP(pinfo,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
 	if(!passphrase)
 	    {
+        if (debug)
+            {
+            // \todo make into proper error
+            fprintf(stderr,"parse_secret_key: can't get passphrase\n");
+            }
+
 	    if(!consume_packet(region,pinfo,ops_false))
 	       return 0;
 
@@ -2147,10 +2167,28 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	free(passphrase);
 
 	ops_crypt_any(&decrypt,C.secret_key.algorithm);
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"\nREADING:\niv=");
+        for (i=0; i<ops_block_size(C.secret_key.algorithm); i++)
+            {
+            fprintf(stderr, "%02x ", C.secret_key.iv[i]);
+            }
+        fprintf(stderr,"\n");
+        fprintf(stderr,"key=");
+        for (i=0; i<CAST_KEY_LENGTH; i++)
+            {
+            fprintf(stderr, "%02x ", key[i]);
+            }
+        fprintf(stderr,"\n");
+        }
 	decrypt.set_iv(&decrypt,C.secret_key.iv);
 	decrypt.set_key(&decrypt,key);
 
-	ops_reader_push_decrypt(pinfo,&decrypt,region);
+    // now read encrypted data
+
+    ops_reader_push_decrypt(pinfo,&decrypt,region);
 
 	/* Since all known encryption for PGP doesn't compress, we can
 	   limit to the same length as the current region (for now).
@@ -2158,7 +2196,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	ops_init_subregion(&encregion,NULL);
 	encregion.length=region->length-region->length_read;
 	if(C.secret_key.public_key.version != OPS_V4)
+        {
 	    encregion.length-=2;
+        }
 	saved_region=region;
 	region=&encregion;
 	}
@@ -2169,7 +2209,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	ops_reader_push_hash(pinfo,&checkhash);
 	}
     else
-	ops_reader_push_sum16(pinfo);
+        {
+        ops_reader_push_sum16(pinfo);
+        }
 
     switch(C.secret_key.public_key.algorithm)
 	{
@@ -2181,6 +2223,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.q,region,pinfo)
 	   || !limited_read_mpi(&C.secret_key.key.rsa.u,region,pinfo))
 	    ret=0;
+
 	break;
 
     case OPS_PKA_DSA:
@@ -2194,6 +2237,12 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	ret=0;
 	assert(0);
 	}
+
+    if (debug)
+        {
+        fprintf(stderr,"4 MPIs read\n");
+        ops_print_secret_key(OPS_PTAG_CT_SECRET_KEY, &C.secret_key);
+        }
 
     pinfo->reading_v3_secret=ops_false;
 
@@ -2243,7 +2292,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	}
 
     if(crypted && C.secret_key.public_key.version == OPS_V4)
-	ops_reader_pop_decrypt(pinfo);
+        {
+        ops_reader_pop_decrypt(pinfo);
+        }
 
     assert(!ret || region->length_read == region->length);
 
@@ -2251,6 +2302,9 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 	return 0;
 
     CBP(pinfo,OPS_PTAG_CT_SECRET_KEY,&content);
+
+    if (debug)
+        { fprintf(stderr, "--- end of parse_secret_key\n\n"); }
 
     return 1;
     }

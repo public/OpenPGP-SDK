@@ -24,19 +24,19 @@ char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
 char *alpha_name="Alpha";
 const ops_public_key_t *alpha_pkey;
 const ops_secret_key_t *alpha_skey;
-const ops_key_data_t *alpha_pub_keydata;
-const ops_key_data_t *alpha_sec_keydata;
+const ops_keydata_t *alpha_pub_keydata;
+const ops_keydata_t *alpha_sec_keydata;
 char* alpha_passphrase="";
 
 char *bravo_user_id="Bravo (RSA, passphrase) <bravo@test.com>";
 char *bravo_name="Bravo";
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
-const ops_key_data_t *bravo_pub_keydata;
-const ops_key_data_t *bravo_sec_keydata;
+const ops_keydata_t *bravo_pub_keydata;
+const ops_keydata_t *bravo_sec_keydata;
 char* bravo_passphrase="hello";
 
-const ops_key_data_t *decrypter=NULL;
+const ops_keydata_t *decrypter=NULL;
 
 static void setup_test_keys();
 
@@ -314,7 +314,7 @@ ops_parse_cb_return_t
 callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
-    const ops_key_data_t *keydata=NULL;
+    const ops_keydata_t *keydata=NULL;
     const ops_secret_key_t *secret;
     char *passphrase=NULL;
 

@@ -31,7 +31,7 @@ static ops_parse_cb_return_t
 callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
     const ops_parser_content_union_t *content=&content_->content;
-    const ops_key_data_t *signer;
+    const ops_keydata_t *signer;
 
     OPS_USED(cbinfo);
 
