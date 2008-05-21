@@ -39,7 +39,8 @@ ops_get_writable_secret_key_from_data(ops_keydata_t *data);
 ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_keydata_t *key,
 						   const char *pphrase);
 
-ops_boolean_t ops_keyring_read(ops_keyring_t *keyring,const char *file);
+ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring,const char *filename);
+ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t *mem);
 
 char *ops_malloc_passphrase(char *passphrase);
 char *ops_get_passphrase(void);

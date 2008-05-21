@@ -18,12 +18,12 @@
     char* filename="~/.gnupg/pubring.gpg";
 
     // Read keyring from file
-    ops_keyring_read(&keyring,filename);
+    ops_keyring_read_from_file(&keyring,filename);
 
     // do actions using keyring   
     ... 
 
-    // Free memory alloc-ed in ops_keyring_read()
+    // Free memory alloc-ed in ops_keyring_read_from_file()
     ops_keyring_free();
     \endcode
 */
@@ -42,7 +42,7 @@
     ops_key_data_t *key;
 
     // Read keyring from file
-    ops_keyring_read(&keyring,"~/.gnupg/pubring.gpg");
+    ops_keyring_read_from_file(&keyring,"~/.gnupg/pubring.gpg");
 
     // Search for keys
 
@@ -55,7 +55,7 @@
     // do something with key
     ...
     
-    // Free memory alloc-ed in ops_keyring_read()
+    // Free memory alloc-ed in ops_keyring_read_from_file()
     ops_keyring_free();
     \endcode
  */
@@ -75,6 +75,7 @@
 #include "openpgpsdk/keyring.h"
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/std_print.h"
+#include "openpgpsdk/readerwriter.h"
 
 static ops_parse_cb_return_t
 cb_keyring_read(const ops_parser_content_t *content_,
@@ -97,7 +98,7 @@ cb_keyring_read(const ops_parser_content_t *content_,
    \note If you call this twice on the same keyring struct, without calling
    ops_keyring_free() between these calls, you will introduce a memory leak.
 */
-ops_boolean_t ops_keyring_read(ops_keyring_t *keyring,const char *file)
+ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring,const char *filename)
     {
     ops_parse_info_t *pinfo;
     int fd;
@@ -114,14 +115,14 @@ ops_boolean_t ops_keyring_read(ops_keyring_t *keyring,const char *file)
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 
 #ifdef WIN32
-    fd=open(file,O_RDONLY|O_BINARY);
+    fd=open(filename,O_RDONLY|O_BINARY);
 #else
-    fd=open(file,O_RDONLY);
+    fd=open(filename,O_RDONLY);
 #endif
     if(fd < 0)
         {
         ops_parse_info_delete(pinfo);
-        perror(file);
+        perror(filename);
         return ops_false;
         }
 
@@ -136,6 +137,50 @@ ops_boolean_t ops_keyring_read(ops_keyring_t *keyring,const char *file)
     close(fd);
 
     ops_parse_info_delete(pinfo);
+
+    return res;
+    }
+
+/**
+   \ingroup StdKeyring
+   
+   Reads a keyring from memory
+   
+   \param keyring Ptr to existing keyring
+   \param mem ptr to memory struct containing keyring info
+   
+   \note Keyring struct must already exist.
+
+   \note Can be used with either a public or secret keyring.
+
+   \note You must call ops_keyring_free() after usage to free alloc-ed memory.
+
+   \note If you call this twice on the same keyring struct, without calling
+   ops_keyring_free() between these calls, you will introduce a memory leak.
+*/
+ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* mem)
+    {
+    ops_parse_info_t *pinfo=NULL;
+    ops_boolean_t res = ops_true;
+
+    // \todo need to free memory first?
+    memset(keyring,'\0',sizeof *keyring);
+
+    pinfo=ops_parse_info_new();
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+
+    ops_setup_memory_read(&pinfo, mem, cb_keyring_read);
+
+    if ( ops_parse_and_accumulate(keyring,pinfo) == 0 ) 
+        {
+        res = ops_false; 
+        } 
+    else 
+        {
+        res = ops_true;
+        }
+
+    ops_teardown_memory_read(pinfo, mem);
 
     return res;
     }
