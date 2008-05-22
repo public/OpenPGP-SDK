@@ -58,6 +58,7 @@ static void setup_test_keys()
     char keyring_name[MAXBUF+1];
     int fd=0;
     char cmd[MAXBUF+1];
+    ops_boolean_t armour=ops_false;
 
     char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
     char *rsa_pass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Bravo\nName-Comment: RSA, passphrase\nName-Email: bravo@test.com\nPassphrase: hello\nKey-Length: 1024\n";
@@ -111,10 +112,10 @@ static void setup_test_keys()
      */
 
     snprintf(keyring_name,sizeof keyring_name,"%s/pubring.gpg", dir);
-    ops_keyring_read(&pub_keyring,keyring_name);
+    ops_keyring_read_from_file(&pub_keyring,armour,keyring_name);
 
     snprintf(keyring_name,sizeof keyring_name,"%s/secring.gpg", dir);
-    ops_keyring_read(&sec_keyring,keyring_name);
+    ops_keyring_read_from_file(&sec_keyring,armour,keyring_name);
 
     /*
      * set up key pointers

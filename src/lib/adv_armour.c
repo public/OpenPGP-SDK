@@ -908,6 +908,7 @@ void ops_writer_push_clearsigned(ops_create_info_t *info,
     ops_writer_push(info,dash_escaped_writer,NULL,dash_escaped_destroyer,arg);
     }
 
+
 /**
  * \struct base64_arg_t
  */
@@ -1093,12 +1094,6 @@ static ops_boolean_t armoured_message_finaliser(ops_error_t **errors,
     return ops_stacked_write(trailer,sizeof trailer-1,errors,winfo);
     }
 
-static void armoured_message_destroyer(ops_writer_info_t *winfo)
-    {
-    base64_arg_t *arg=ops_writer_get_arg(winfo);
-    free(arg);
-    }
-
 void ops_writer_push_armoured_message(ops_create_info_t *info)
 //				  ops_create_signature_t *sig)
     {
@@ -1110,7 +1105,134 @@ void ops_writer_push_armoured_message(ops_create_info_t *info)
     ops_write("\r\n",2,info);
     base64=ops_mallocz(sizeof *base64);
     base64->checksum=CRC24_INIT;
-    ops_writer_push(info,base64_writer,armoured_message_finaliser,armoured_message_destroyer,base64);
+    ops_writer_push(info,base64_writer,armoured_message_finaliser,ops_writer_generic_destroyer,base64);
+    }
+
+static ops_boolean_t armoured_finaliser(ops_armor_type_t type, ops_error_t **errors,
+					 ops_writer_info_t *winfo)
+    {
+    static char tail_public_key[]="\r\n-----END PGP PUBLIC KEY BLOCK-----\r\n";
+    static char tail_private_key[]="\r\n-----END PGP PRIVATE KEY BLOCK-----\r\n";
+
+    char* tail=NULL;
+    unsigned int sz_tail=0;
+
+    switch(type)
+        {
+    case OPS_PGP_PUBLIC_KEY_BLOCK:
+        tail=tail_public_key;
+        sz_tail=sizeof tail_public_key-1;
+        break;
+
+    case OPS_PGP_PRIVATE_KEY_BLOCK:
+        tail=tail_private_key;
+        sz_tail=sizeof tail_private_key-1;
+        break;
+
+    default:
+        assert(0);
+        }
+
+    base64_arg_t *arg=ops_writer_get_arg(winfo);
+    unsigned char c[3];
+
+    if(arg->pos)
+	{
+	if(!ops_stacked_write(&b64map[arg->t],1,errors,winfo))
+	    return ops_false;
+	if(arg->pos == 1 && !ops_stacked_write("==",2,errors,winfo))
+	    return ops_false;
+	if(arg->pos == 2 && !ops_stacked_write("=",1,errors,winfo))
+	    return ops_false;
+	}
+    /* Ready for the checksum */
+    if(!ops_stacked_write("\r\n=",3,errors,winfo))
+	return ops_false;
+
+    arg->pos=0; /* get ready to write the checksum */
+
+    c[0]=arg->checksum >> 16;
+    c[1]=arg->checksum >> 8;
+    c[2]=arg->checksum;
+    /* push the checksum through our own writer */
+    if(!base64_writer(c,3,errors,winfo))
+	return ops_false;
+
+    return ops_stacked_write(tail,sz_tail,errors,winfo);
+    }
+
+static ops_boolean_t armoured_public_key_finaliser(ops_error_t **errors,
+					 ops_writer_info_t *winfo)
+    {
+    return armoured_finaliser(OPS_PGP_PUBLIC_KEY_BLOCK,errors,winfo);
+    }
+
+static ops_boolean_t armoured_private_key_finaliser(ops_error_t **errors,
+					 ops_writer_info_t *winfo)
+    {
+    return armoured_finaliser(OPS_PGP_PRIVATE_KEY_BLOCK,errors,winfo);
+    }
+
+// XXX: should return errors.
+/**
+ * \param info
+ * \todo should return errors
+ */
+/*
+void ops_writer_push_armoured_public_key(ops_create_info_t *info)
+    {
+    static char header[]="-----BEGIN PGP PUBLIC KEY BLOCK-----\r\nVersion: "
+        OPS_VERSION_STRING "\r\n\r\n";
+    base64_arg_t *arg=ops_mallocz(sizeof *arg);
+
+    ops_write(header,sizeof header-1,info);
+
+    arg->checksum=CRC24_INIT;
+    ops_writer_push(info,base64_writer,armoured_public_key_finaliser,ops_writer_generic_destroyer,arg);
+    }
+*/
+
+// XXX: should return errors.
+/**
+ * \param info
+ * \todo should return errors
+ */
+// \todo use this for other armoured types
+void ops_writer_push_armoured(ops_create_info_t *info, ops_armor_type_t type)
+    {
+    static char hdr_public_key[]="-----BEGIN PGP PUBLIC KEY BLOCK-----\r\nVersion: "
+        OPS_VERSION_STRING "\r\n\r\n";
+    static char hdr_private_key[]="-----BEGIN PGP PRIVATE KEY BLOCK-----\r\nVersion: "
+        OPS_VERSION_STRING "\r\n\r\n";
+
+    char* header=NULL;
+    unsigned int sz_hdr=0;
+    ops_boolean_t (* finaliser)(ops_error_t **errors, ops_writer_info_t *winfo);
+
+    switch(type)
+        {
+    case OPS_PGP_PUBLIC_KEY_BLOCK:
+        header=hdr_public_key;
+        sz_hdr=sizeof hdr_public_key-1;
+        finaliser=armoured_public_key_finaliser;
+        break;
+
+    case OPS_PGP_PRIVATE_KEY_BLOCK:
+        header=hdr_private_key;
+        sz_hdr=sizeof hdr_private_key-1;
+        finaliser=armoured_private_key_finaliser;
+        break;
+
+    default:
+        assert(0);
+        }
+
+    ops_write(header,sz_hdr,info);
+
+    base64_arg_t *arg=ops_mallocz(sizeof *arg);
+
+    arg->checksum=CRC24_INIT;
+    ops_writer_push(info,base64_writer,finaliser,ops_writer_generic_destroyer,arg);
     }
 
 // EOF

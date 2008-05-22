@@ -3,6 +3,7 @@
 
 #include <openssl/cast.h>
 
+#include <openpgpsdk/armour.h>
 #include <openpgpsdk/create.h>
 #include <openpgpsdk/keyring.h>
 #include <openpgpsdk/memory.h>
@@ -22,6 +23,9 @@
 #include <openpgpsdk/final.h>
 
 static int debug=0;
+
+static ops_boolean_t writer_info_finalise(ops_error_t **errors,
+                                          ops_writer_info_t *winfo);
 
 /*
  * return true if OK, otherwise false
@@ -530,10 +534,13 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
  }
 
 
-ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_create_info_t *info)
+ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_boolean_t armoured, ops_create_info_t *info)
     {
     ops_boolean_t rtn;
     unsigned int i=0,j=0;
+
+    if (armoured)
+        { ops_writer_push_armoured(info, OPS_PGP_PUBLIC_KEY_BLOCK); }
 
     // public key
     rtn=ops_write_struct_public_key(&key->key.skey.public_key,info);
@@ -569,13 +576,22 @@ ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_cr
 
         // subkey packets and corresponding signatures and optional revocation
 
+    if (armoured)
+        { 
+        writer_info_finalise(&info->errors, &info->winfo);
+        ops_writer_pop(info); 
+        }
+
     return rtn;
     }
 
-ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const unsigned char* passphrase, const size_t pplen, ops_create_info_t *info)
+ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const unsigned char* passphrase, const size_t pplen, ops_boolean_t armoured, ops_create_info_t *info)
     {
     ops_boolean_t rtn;
     unsigned int i=0,j=0;
+
+    if (armoured)
+        { ops_writer_push_armoured(info,OPS_PGP_PRIVATE_KEY_BLOCK); }
 
     // public key
     rtn=ops_write_struct_secret_key(&key->key.skey,passphrase,pplen,info);
@@ -610,6 +626,12 @@ ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const 
         // TODO: user attributes and corresponding signatures
 
         // subkey packets and corresponding signatures and optional revocation
+
+    if (armoured)
+        { 
+        writer_info_finalise(&info->errors, &info->winfo);
+        ops_writer_pop(info); 
+        }
 
     return rtn;
     }
@@ -988,7 +1010,7 @@ void ops_writer_push(ops_create_info_t *info,
     }
 
 void ops_writer_pop(ops_create_info_t *info)
-    {
+    { 
     ops_writer_info_t *next;
 
     // Make sure the finaliser has been called.

@@ -122,7 +122,7 @@ void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, 
 
 ops_boolean_t ops_write_one_pass_sig(const ops_secret_key_t* skey, const ops_hash_algorithm_t hash_alg, const ops_sig_type_t sig_type, ops_create_info_t* info);
 
-ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_create_info_t *info);
-ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const unsigned char* passphrase, size_t pplen, ops_create_info_t *info);
+ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_boolean_t armoured, ops_create_info_t *info);
+ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const unsigned char* passphrase, size_t pplen, ops_boolean_t armoured, ops_create_info_t *info);
 
 #endif

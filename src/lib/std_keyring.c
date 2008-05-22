@@ -72,6 +72,7 @@
 #include "keyring_local.h"
 
 #include "openpgpsdk/accumulate.h"
+#include "openpgpsdk/armour.h"
 #include "openpgpsdk/keyring.h"
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/std_print.h"
@@ -98,7 +99,7 @@ cb_keyring_read(const ops_parser_content_t *content_,
    \note If you call this twice on the same keyring struct, without calling
    ops_keyring_free() between these calls, you will introduce a memory leak.
 */
-ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring,const char *filename)
+ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boolean_t armour, const char *filename)
     {
     ops_parse_info_t *pinfo;
     int fd;
@@ -130,6 +131,9 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring,const char *file
 
     ops_parse_cb_set(pinfo,cb_keyring_read,NULL);
 
+    if (armour)
+        { ops_reader_push_dearmour(pinfo, ops_false, ops_false, ops_false); }
+
     if ( ops_parse_and_accumulate(keyring,pinfo) == 0 ) {
         res = ops_false; 
     }
@@ -160,6 +164,8 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring,const char *file
 */
 ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* mem)
     {
+    // \todo currently assuming this is an armoured key.
+
     ops_parse_info_t *pinfo=NULL;
     ops_boolean_t res = ops_true;
 
@@ -171,6 +177,8 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* me
 
     ops_setup_memory_read(&pinfo, mem, cb_keyring_read);
 
+    ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_true);
+
     if ( ops_parse_and_accumulate(keyring,pinfo) == 0 ) 
         {
         res = ops_false; 
@@ -179,7 +187,9 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* me
         {
         res = ops_true;
         }
+    ops_print_errors(ops_parse_info_get_errors(pinfo));
 
+    ops_reader_pop_dearmour(pinfo);
     ops_teardown_memory_read(pinfo, mem);
 
     return res;
