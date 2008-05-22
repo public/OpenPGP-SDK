@@ -82,6 +82,8 @@ static void verify_keypair(ops_boolean_t armoured)
     char filename[MAXBUF+1];
     int fd=0;
     char *suffix = armoured ? "asc" : "ops";
+    char cmd[MAXBUF+1];
+    int rtn=0;
 
     uid.user_id=(unsigned char *)"Test User 2<test2@nowhere.com>";
 
@@ -100,6 +102,10 @@ static void verify_keypair(ops_boolean_t armoured)
     ops_write_transferable_public_key(keydata,armoured,cinfo);
     ops_teardown_file_write(cinfo,fd);
 
+    /*
+     * Validate public key with OPS
+     */
+
     // generate keyring from this file
     ops_keyring_read_from_file(&pub_keyring, armoured, filename);
 
@@ -113,6 +119,12 @@ static void verify_keypair(ops_boolean_t armoured)
     CU_ASSERT(result->unknown_signer_count==0);
 
     ops_validate_result_free(result);
+
+    // Validate public key with GPG
+
+    snprintf(cmd, sizeof cmd, "%s --import --no-allow-non-selfsigned-uid %s", gpgcmd, filename);
+    rtn=system(cmd);
+    CU_ASSERT(rtn==0); 
 
     /*
      * sec key
@@ -138,6 +150,11 @@ static void verify_keypair(ops_boolean_t armoured)
     CU_ASSERT(result->unknown_signer_count==0);
 
     ops_validate_result_free(result);
+
+    // validate with GPG
+    snprintf(cmd, sizeof cmd, "%s --import --no-allow-non-selfsigned-uid %s", gpgcmd, filename);
+    rtn=system(cmd);
+    CU_ASSERT(rtn==0); 
 
     // cleanup
     ops_keydata_free(keydata);
@@ -174,6 +191,8 @@ static void test_rsa_keys_verify_keypair_fail(void)
     uid1.user_id=(unsigned char *)name1;
     char* name2="Second<user2@nowhere.com>";
     uid2.user_id=(unsigned char *)name2;
+    char cmd[MAXBUF+1];
+    int rtn=0;
 
     /*
      * Create keys and keyrings
@@ -217,15 +236,6 @@ static void test_rsa_keys_verify_keypair_fail(void)
     ops_teardown_file_write(cinfo,fd);
     ops_keyring_read_from_file(&keyring3, armour, filename);
 
-
-    // sec key
-    
-    /*
-    ops_setup_memory_write(&cinfo, &mem_seckey, 128);
-    ops_write_struct_secret_key(seckey, cinfo);
-    ops_create_info_delete(cinfo);
-    */
-
     /*
      * Test: Validate key against keyring without this key in it. 
      * should fail as unknown
@@ -245,6 +255,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
      * Test: Check correct behaviour if signature is bad
      * Change signature on key to be incorrect.
      * Then validate key against keyring with this key on it.
+     * Should fail as invalid.
      */
 
     result=ops_mallocz(sizeof(ops_validate_result_t));
@@ -257,6 +268,11 @@ static void test_rsa_keys_verify_keypair_fail(void)
     CU_ASSERT(result->invalid_count==1);
     CU_ASSERT(result->unknown_signer_count==0);
     ops_validate_result_free(result);
+
+    // validate with GPG - should fail
+    snprintf(cmd, sizeof cmd, "%s --import --no-allow-non-selfsigned-uid %s", gpgcmd, filename);
+    rtn=system(cmd);
+    CU_ASSERT(rtn!=0); 
 
     /*
      * cleanup
