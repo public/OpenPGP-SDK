@@ -381,7 +381,7 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
     if (!ops_write_scalar(key->algorithm,1,info))
         return ops_false;
 
-    assert(key->s2k_specifier==OPS_S2KS_SIMPLE); // = 1 \todo should be salted or iterated-and-salted
+    assert(key->s2k_specifier==OPS_S2KS_SIMPLE || key->s2k_specifier==OPS_S2KS_SALTED); // = 1 \todo could also be iterated-and-salted
     if (!ops_write_scalar(key->s2k_specifier,1,info))
         return ops_false;
     
@@ -395,11 +395,14 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
         // nothing more to do
         break;
 
-        /* \todo
     case OPS_S2KS_SALTED:
-    // 8-octet salt value
+        // 8-octet salt value
+        ops_random((void *)&key->salt[0],OPS_SALT_SIZE);
+        if (!ops_write(key->salt, OPS_SALT_SIZE, info))
+            return ops_false;
         break;
 
+        /* \todo
     case OPS_S2KS_ITERATED_AND_SALTED:
     // 8-octet salt value
     // 1-octet count
@@ -419,7 +422,8 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
     switch(key->s2k_specifier)
         {
     case OPS_S2KS_SIMPLE:
-        // RFC4880: section 3.7.1.1
+    case OPS_S2KS_SALTED:
+        // RFC4880: section 3.7.1.1 and 3.7.1.2
 
         done=0;
         for (i=0; done<CAST_KEY_LENGTH; i++ )
@@ -438,6 +442,9 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
                 hash.add(&hash, &zero, 1);
                 }
 
+            if (key->s2k_specifier==OPS_S2KS_SALTED)
+                { hash.add(&hash, key->salt, OPS_SALT_SIZE); }
+
             hash.add(&hash, passphrase, pplen);
             hash.finish(&hash, hashed);
 
@@ -450,10 +457,6 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
         break;
 
         /* \todo
-    case OPS_S2KS_SALTED:
-    // 8-octet salt value
-        break;
-
     case OPS_S2KS_ITERATED_AND_SALTED:
     // 8-octet salt value
     // 1-octet count

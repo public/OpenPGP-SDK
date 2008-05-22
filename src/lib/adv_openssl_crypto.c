@@ -304,8 +304,8 @@ ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e,
     skey->public_key.key.rsa.e=BN_dup(rsa->e);
 
     skey->s2k_usage=OPS_S2KU_ENCRYPTED_AND_HASHED;
-    // \todo     skey->s2k_specifier_t=OPS_S2KS_SALTED;
-    skey->s2k_specifier=OPS_S2KS_SIMPLE;
+    skey->s2k_specifier=OPS_S2KS_SALTED;
+    //skey->s2k_specifier=OPS_S2KS_SIMPLE;
     skey->algorithm=OPS_SA_CAST5; // \todo make param
     skey->hash_algorithm=OPS_HASH_SHA1; // \todo make param
     skey->octet_count=0;
