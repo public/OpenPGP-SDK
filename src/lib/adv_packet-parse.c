@@ -116,7 +116,7 @@ static int read_unsigned_string(unsigned char **str,ops_region_t *subregion,
 
     /*! ensure the string is NULL-terminated */
 
-    (*str)[len]=(char) NULL;
+    (*str)[len]='\0';
 
     return 1;
     }
@@ -1370,7 +1370,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     case OPS_PTAG_SS_REVOCABLE:
 	if(!limited_read(bool,1,&subregion,pinfo))
 	    return 0;
-	C.ss_revocable.revocable=!!bool;
+	C.ss_revocable.revocable=!!bool[0];
 	break;
 
     case OPS_PTAG_SS_ISSUER_KEY_ID:
@@ -1399,7 +1399,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     case OPS_PTAG_SS_PRIMARY_USER_ID:
 	if(!limited_read (bool,1,&subregion,pinfo))
 	    return 0;
-	C.ss_primary_user_id.primary_user_id = !!bool;
+	C.ss_primary_user_id.primary_user_id = !!bool[0];
 	break;
  
     case OPS_PTAG_SS_KEY_FLAGS:
