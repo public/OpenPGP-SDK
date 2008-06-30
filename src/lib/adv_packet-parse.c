@@ -2016,7 +2016,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     if (debug)
         {
         fprintf(stderr,"parse_secret_key: public key parsed\n");
-        ops_print_public_key_t(&C.secret_key.public_key);
+        ops_print_public_key(&C.secret_key.public_key);
         }
 
     pinfo->reading_v3_secret=C.secret_key.public_key.version != OPS_V4;
@@ -2243,7 +2243,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     if (debug)
         {
         fprintf(stderr,"4 MPIs read\n");
-        ops_print_secret_key(OPS_PTAG_CT_SECRET_KEY, &C.secret_key);
+        //        ops_print_secret_key_verbose(OPS_PTAG_CT_SECRET_KEY, &C.secret_key);
         }
 
     pinfo->reading_v3_secret=ops_false;

@@ -492,7 +492,7 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
             }
         fprintf(stderr,"\n");
 
-        ops_print_secret_key(OPS_PTAG_CT_SECRET_KEY,key);
+        //ops_print_secret_key(OPS_PTAG_CT_SECRET_KEY,key);
 
         fprintf(stderr,"turning encryption on...\n");
         }

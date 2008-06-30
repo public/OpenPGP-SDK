@@ -86,7 +86,7 @@ ops_print_public_keydata(const ops_keydata_t *key)
     }
 
 void 
-ops_print_public_key_t(const ops_public_key_t *pkey)
+ops_print_public_key(const ops_public_key_t *pkey)
     {
     printf("------- PUBLIC KEY ------\n");
     print_unsigned_int("Version",pkey->version);
@@ -140,43 +140,7 @@ ops_print_public_keydata_verbose(const ops_keydata_t *key)
     {
     const ops_public_key_t* pkey=&key->key.pkey;
 
-    ops_print_public_key_t(pkey);
-    /*
-    print_unsigned_int("Version",pkey->version);
-    print_time("Creation Time", pkey->creation_time);
-    if(pkey->version == OPS_V3)
-	print_unsigned_int("Days Valid",pkey->days_valid);
-
-    print_string_and_value("Algorithm",ops_show_pka(pkey->algorithm),
-			   pkey->algorithm);
-
-    switch(pkey->algorithm)
-	{
-    case OPS_PKA_DSA:
-	print_bn("p",pkey->key.dsa.p);
-	print_bn("q",pkey->key.dsa.q);
-	print_bn("g",pkey->key.dsa.g);
-	print_bn("y",pkey->key.dsa.y);
-	break;
-
-    case OPS_PKA_RSA:
-    case OPS_PKA_RSA_ENCRYPT_ONLY:
-    case OPS_PKA_RSA_SIGN_ONLY:
-	print_bn("n",pkey->key.rsa.n);
-	print_bn("e",pkey->key.rsa.e);
-	break;
-
-    case OPS_PKA_ELGAMAL:
-    case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	print_bn("p",pkey->key.elgamal.p);
-	print_bn("g",pkey->key.elgamal.g);
-	print_bn("y",pkey->key.elgamal.y);
-	break;
-
-    default:
-	assert(0);
-	}
-    */
+    ops_print_public_key(pkey);
     }
 
 /**
@@ -187,20 +151,50 @@ ops_print_public_keydata_verbose(const ops_keydata_t *key)
    \param key Ptr to public key
 */
 
-void 
-ops_print_secret_keydata(const ops_keydata_t* key)
+void
+ops_print_secret_keydata(const ops_keydata_t *key)
     {
-    const ops_secret_key_t* skey=&key->key.skey;
+    printf("sec ");
+    ops_show_pka(key->key.pkey.algorithm);
+    printf(" ");
+
+    hexdump(key->key_id, OPS_KEY_ID_SIZE);
+    printf(" ");
+
+    print_time_short(key->key.pkey.creation_time);
+    printf(" ");
+
+    if (key->nuids==1)
+	{
+	// print on same line as other info
+	printf ("%s\n", key->uids[0].user_id);
+	}
+    else
+	{
+	// print all uids on separate line 
+	unsigned int i;
+	printf("\n");
+	for (i=0; i<key->nuids; i++)
+	    {
+	    printf("uid                              %s\n",key->uids[i].user_id);
+	    }
+	}
+    }
+
+/*
+void 
+ops_print_secret_key_verbose(const ops_secret_key_t* skey)
+    {
     if(key->type == OPS_PTAG_CT_SECRET_KEY)
 	print_tagname("SECRET_KEY");
     else
 	print_tagname("ENCRYPTED_SECRET_KEY");
-    ops_print_public_keydata(key);
     ops_print_secret_key(key->type,skey);
 	}
+*/
 
 void 
-ops_print_secret_key(const ops_content_tag_t type, const ops_secret_key_t* skey)
+ops_print_secret_key_verbose(const ops_content_tag_t type, const ops_secret_key_t* skey)
     {
     printf("------- SECRET KEY or ENCRYPTED SECRET KEY ------\n");
     if(type == OPS_PTAG_CT_SECRET_KEY)
@@ -250,6 +244,14 @@ ops_print_secret_key(const ops_content_tag_t type, const ops_secret_key_t* skey)
 	printf("Checksum: %04x\n",skey->checksum);
 
     printf("------- end of SECRET KEY or ENCRYPTED SECRET KEY ------\n");
+    }
+
+void
+ops_print_secret_keydata_verbose(const ops_keydata_t *key)
+    {
+    const ops_secret_key_t* skey=&key->key.skey;
+    ops_print_public_keydata(key);
+    ops_print_secret_key_verbose(key->type,skey);
     }
 
 // static functions
