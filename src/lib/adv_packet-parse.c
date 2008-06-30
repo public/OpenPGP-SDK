@@ -2226,16 +2226,18 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 
 	break;
 
+    /*
     case OPS_PKA_DSA:
+        
 	if(!limited_read_mpi(&C.secret_key.key.dsa.x,region,pinfo))
 	    ret=0;
 	break;
+    */
 
     default:
-	fprintf(stderr,"Unexpected algorithm: %d\n",
-		C.secret_key.public_key.algorithm);
-	ret=0;
-	assert(0);
+        OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_PUBLIC_KEY_ALG,"Unsupported Public Key algorithm (%s)",ops_show_pka(C.secret_key.public_key.algorithm));
+        ret=0;
+        //	assert(0);
 	}
 
     if (debug)

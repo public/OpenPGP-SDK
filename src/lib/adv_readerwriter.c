@@ -79,6 +79,37 @@ void ops_teardown_file_write(ops_create_info_t *cinfo, int fd)
     ops_create_info_delete(cinfo);
     }
 
+int ops_setup_file_append(ops_create_info_t **cinfo, char* filename)
+    {
+    int fd;
+    /*
+     * initialise needed structures for writing to file
+     */
+
+#ifdef WIN32
+    fd=open(filename,O_WRONLY | O_APPEND | O_BINARY, 0600);
+#else
+    fd=open(filename,O_WRONLY | O_APPEND, 0600);
+#endif
+    if(fd < 0)
+        {
+        perror(filename);
+        exit(2);
+        }
+    
+    *cinfo=ops_create_info_new();
+
+    ops_writer_set_fd(*cinfo,fd);
+
+    return fd;
+    }
+
+void ops_teardown_file_append(ops_create_info_t *cinfo, int fd)
+    {
+    close(fd);
+    ops_create_info_delete(cinfo);
+    }
+
 int ops_setup_file_read(ops_parse_info_t **pinfo, char *filename,
                         void* arg,
                         ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *),

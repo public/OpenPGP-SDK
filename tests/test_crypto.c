@@ -2,6 +2,7 @@
 
 #include <openpgpsdk/random.h>
 #include "openpgpsdk/std_print.h"
+#include "openpgpsdk/packet-show.h"
  
 #include "tests.h"
 
@@ -40,7 +41,13 @@ static void test_ecb(ops_symmetric_algorithm_t alg)
      * Empty IV, made-up key
      */
 
-    ops_crypt_any(&crypt, alg);
+    if (!ops_crypt_any(&crypt, alg))
+        {
+        fprintf(stderr,"Failed to initialise crypt struct: alg=%d (%s)\n",alg,ops_show_symmetric_algorithm(alg));
+        CU_FAIL("Failed to initialise crypt struct");
+        return;
+        }
+
     iv=ops_mallocz(crypt.blocksize);
     key=ops_mallocz(crypt.keysize);
     snprintf((char *)key, crypt.keysize, "MY KEY");
@@ -133,7 +140,12 @@ static void test_cfb(ops_symmetric_algorithm_t alg)
      * Empty IV, made-up key
      */
 
-    ops_crypt_any(&crypt, alg);
+    if(!ops_crypt_any(&crypt, alg))
+        {
+        fprintf(stderr,"Failed to initialise crypt struct: alg=%d (%s)\n",alg,ops_show_symmetric_algorithm(alg));
+        CU_FAIL("Failed to initialise crypt struct");
+        return;
+        }
     iv=ops_mallocz(crypt.blocksize);
     key=ops_mallocz(crypt.keysize);
     snprintf((char *)key, crypt.keysize, "MY CFB KEY");
@@ -188,12 +200,12 @@ static void test_cfb_idea()
     test_cfb(OPS_SA_IDEA);
     }
 #endif
+#endif
 
 static void test_cfb_3des()
     {
     test_cfb(OPS_SA_TRIPLEDES);
     }
-#endif
 
 static void test_cfb_cast()
     {
@@ -320,10 +332,10 @@ CU_pSuite suite_crypto()
     if (NULL == CU_add_test(suite, "Test CFB (IDEA)", test_cfb_idea))
 	    return NULL;
 #endif
+#endif
 
     if (NULL == CU_add_test(suite, "Test CFB (TripleDES)", test_cfb_3des))
 	    return NULL;
-#endif
 
     if (NULL == CU_add_test(suite, "Test CFB (CAST)", test_cfb_cast))
 	    return NULL;

@@ -105,7 +105,7 @@ unsigned ops_key_size(ops_symmetric_algorithm_t alg);
 int ops_decrypt_data(ops_content_tag_t tag,ops_region_t *region,
 		     ops_parse_info_t *parse_info);
 
-void ops_crypt_any(ops_crypt_t *decrypt,ops_symmetric_algorithm_t alg);
+int ops_crypt_any(ops_crypt_t *decrypt,ops_symmetric_algorithm_t alg);
 void ops_decrypt_init(ops_crypt_t *decrypt);
 void ops_encrypt_init(ops_crypt_t *encrypt);
 size_t ops_decrypt_se(ops_crypt_t *decrypt,void *out,const void *in,

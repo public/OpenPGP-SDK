@@ -166,6 +166,17 @@ static void test_rsa_keys_verify_keypair(void)
     verify_keypair(armoured);
     }
 
+static void test_rsa_keys_read_from_file(void)
+    {
+    ops_keyring_t keyring;
+    ops_boolean_t armoured=ops_false;
+    char filename[MAXBUF+1];
+    snprintf(filename,MAXBUF,"%s/%s", dir, "pubring.gpg");
+
+    ops_keyring_read_from_file(&keyring, armoured, filename);
+    ops_keyring_free(&keyring);
+    }
+
 static void test_rsa_keys_verify_armoured_keypair(void)
     {
     ops_boolean_t armoured=ops_true;
@@ -318,6 +329,9 @@ CU_pSuite suite_rsa_keys()
         return NULL;
 
     if (NULL == CU_add_test(suite, "Verify self-signed key pair fails", test_rsa_keys_verify_keypair_fail))
+        return NULL;
+
+    if (NULL == CU_add_test(suite, "Read keyring from file", test_rsa_keys_read_from_file))
         return NULL;
 
     if (NULL == CU_add_test(suite, "TODO", test_rsa_keys_todo))

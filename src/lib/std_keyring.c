@@ -137,6 +137,11 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boole
     if ( ops_parse_and_accumulate(keyring,pinfo) == 0 ) {
         res = ops_false; 
     }
+    else
+        {
+        res = ops_true;
+        }
+    ops_print_errors(ops_parse_info_get_errors(pinfo));
 
     close(fd);
 
@@ -206,10 +211,6 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* me
  */
 void ops_keyring_free(ops_keyring_t *keyring)
     {
-    int n;
-
-    for(n=0 ; n < keyring->nkeys ; ++n)
-	ops_keydata_free(&keyring->keys[n]);
     free(keyring->keys);
     keyring->keys=NULL;
     }

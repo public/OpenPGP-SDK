@@ -36,6 +36,7 @@ typedef enum
     OPS_E_P_MPI_FORMAT_ERROR	=OPS_E_P+4,
     OPS_E_P_PACKET_NOT_CONSUMED	=OPS_E_P+5,
     OPS_E_P_DECOMPRESSION_ERROR	=OPS_E_P+6,
+    OPS_E_P_NO_USERID			=OPS_E_P+7,
 
     /* creator errors */
     OPS_E_C=0x4000,	/* general creator error */

@@ -57,6 +57,10 @@ void ops_teardown_memory_read(ops_parse_info_t *pinfo, ops_memory_t *mem);
 int ops_setup_file_write(ops_create_info_t **cinfo, char* filename);
 void ops_teardown_file_write(ops_create_info_t *cinfo, int fd);
 
+// file appending
+int ops_setup_file_append(ops_create_info_t **cinfo, char* filename);
+void ops_teardown_file_append(ops_create_info_t *cinfo, int fd);
+
 // file reading
 int ops_setup_file_read(ops_parse_info_t **pinfo, char *filename, void* arg,
                         ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *), ops_boolean_t accumulate);

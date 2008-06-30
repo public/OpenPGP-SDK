@@ -64,7 +64,12 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 
     case OPS_PTAG_CT_USER_ID:
 	//	printf("User ID: %s\n",content->user_id.user_id);
-	assert(cur);
+        if (!cur)
+            {
+            OPS_ERROR(cbinfo->errors,OPS_E_P_NO_USERID, "No user id found");
+            return OPS_KEEP_MEMORY;
+            }
+        //	assert(cur);
     ops_add_userid_to_keydata(cur, &content->user_id);
 	return OPS_KEEP_MEMORY;
 
@@ -85,7 +90,7 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
 	default:
 	    fprintf(stderr,"parse error: %s\n",
 		    ops_errcode(content->errcode.errcode));
-	    assert(0);
+	    //assert(0);
 	    }
 	break;
 

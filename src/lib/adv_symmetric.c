@@ -418,6 +418,7 @@ static const ops_crypt_t aes256=
 
 // Triple DES
 
+#ifdef TRIPLEDES_TBD
 static void tripledes_init(ops_crypt_t *crypt)
     {
     DES_key_schedule *keys;
@@ -449,22 +450,18 @@ static void tripledes_block_decrypt(ops_crypt_t *crypt,void *out,
 
 static void tripledes_cfb_encrypt(ops_crypt_t *crypt ATTRIBUTE_UNUSED,void *out ATTRIBUTE_UNUSED,const void *in ATTRIBUTE_UNUSED, size_t count ATTRIBUTE_UNUSED)
     { 
-    assert(0);
-    /*
-    CAST_cfb64_encrypt(in,out,count,
-                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
-                       CAST_ENCRYPT); 
-    */
+    DES_key_schedule *keys=crypt->encrypt_key;
+    DES_ede3_cfb64_encrypt(in,out,count,
+                           &keys[0],&keys[1],&keys[2], crypt->iv, (int *)&crypt->num,
+                       DES_ENCRYPT); 
     }
 
 static void tripledes_cfb_decrypt(ops_crypt_t *crypt ATTRIBUTE_UNUSED,void *out ATTRIBUTE_UNUSED,const void *in ATTRIBUTE_UNUSED, size_t count ATTRIBUTE_UNUSED)
     { 
-    assert(0);
-    /*
-    CAST_cfb64_encrypt(in,out,count,
-                       crypt->encrypt_key, crypt->iv, (int *)&crypt->num,
-                       CAST_DECRYPT); 
-    */
+    DES_key_schedule *keys=crypt->encrypt_key;
+    DES_ede3_cfb64_encrypt(in,out,count,
+                           &keys[0],&keys[1],&keys[2], crypt->iv, (int *)&crypt->num,
+                       DES_DECRYPT); 
     }
 
 static const ops_crypt_t tripledes=
@@ -483,6 +480,7 @@ static const ops_crypt_t tripledes=
     std_finish,
     TRAILER
     };
+#endif /*TRIPLEDES_TBD*/
 
 static const ops_crypt_t *get_proto(ops_symmetric_algorithm_t alg)
     {
@@ -502,20 +500,33 @@ static const ops_crypt_t *get_proto(ops_symmetric_algorithm_t alg)
     case OPS_SA_AES_256:
 	return &aes256;
 
+#ifdef TRIPLEDES_TBD
     case OPS_SA_TRIPLEDES:
 	return &tripledes;
+#endif /* 3DES_TBD */
 
     default:
-	// XXX: remove these
-	fprintf(stderr,"Unknown algorithm: %d\n",alg);
-	assert(0);
+        fprintf(stderr,"Unknown algorithm: %d (%s)\n",alg,ops_show_symmetric_algorithm(alg));
+        //	assert(0);
 	}
 
     return NULL;
     }
 
-void ops_crypt_any(ops_crypt_t *crypt,ops_symmetric_algorithm_t alg)
-    { *crypt=*get_proto(alg); }
+int ops_crypt_any(ops_crypt_t *crypt,ops_symmetric_algorithm_t alg)
+    { 
+    const ops_crypt_t *ptr=get_proto(alg);
+    if (ptr)
+        {
+        *crypt=*ptr; 
+        return 1;
+        }
+    else
+        {
+        memset(crypt,'\0',sizeof *crypt);
+        return 0;
+        }
+    }
 
 unsigned ops_block_size(ops_symmetric_algorithm_t alg)
     {
