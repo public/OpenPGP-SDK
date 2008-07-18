@@ -95,7 +95,7 @@ callback_encrypted_pk_session_key(const ops_parser_content_t *content_,ops_parse
 		break;
 
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-        return callback_cmd_get_secret_key_passphrase(content_,cbinfo);
+        return test_cb_get_passphrase(content_,cbinfo);
 
     case OPS_PARSER_CMD_GET_SECRET_KEY:
         return callback_cmd_get_secret_key(content_,cbinfo);
@@ -133,58 +133,57 @@ callback_se_ip_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
 static void test_literal_data_packet_text()
     {
     char* testtext=NULL;
-    ops_create_info_t *cinfo;
-    ops_parse_info_t *pinfo;
-    ops_memory_t *mem;
+    ops_create_info_t *cinfo=NULL;
+    ops_parse_info_t *pinfo=NULL;
+    ops_memory_t *mem=NULL;
+    ops_memory_t *mem_out=NULL;
 
-    //    char *in=ops_mallocz(MAXBUF);
     int rtn=0;
 
     // create test string
     testtext=create_testtext("literal data packet text");
 
-    /*
-     * initialise needed structures for writing into memory
-     */
-
+    // initialise needed structures for writing into memory
     ops_setup_memory_write(&cinfo,&mem,strlen(testtext));
 
-    /*
-     * create literal data packet
-     */
+    // create literal data packet
     ops_write_literal_data_from_buf((unsigned char *)testtext,strlen(testtext),OPS_LDT_TEXT,cinfo);
 
-    /*
-     * initialise needed structures for reading from memory
-     */
+    /* mem now contains the literal data packet with the original text in it. */
 
+    // setup for reading from this mem
     ops_setup_memory_read(&pinfo,mem,callback_literal_data);
 
-    // and parse it
+    // setup for writing parsed data to mem_out
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
 
-    ops_memory_init(mem_literal_data,128);
+    // other setup
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    rtn=ops_parse(pinfo);
+
+    // do it
+    rtn=ops_parse_and_print_errors(pinfo);
     CU_ASSERT(rtn==1);
 
     /*
      * test it's the same
      */
 
-    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_literal_data));
-    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_literal_data),testtext,strlen(testtext))==0);
+    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_out));
+    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_out),testtext,strlen(testtext))==0);
 
     // cleanup
     local_cleanup();
     ops_teardown_memory_read(pinfo,mem);
+    ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
     free (testtext);
     }
 
 static void test_literal_data_packet_data()
     {
-    ops_create_info_t *cinfo;
-    ops_parse_info_t *pinfo;
-    ops_memory_t *mem;
+    ops_create_info_t *cinfo=NULL;
+    ops_parse_info_t *pinfo=NULL;
+    ops_memory_t *mem=NULL;
+    ops_memory_t *mem_out=NULL;
 
     unsigned char *in=ops_mallocz(MAXBUF);
     int rtn=0;
@@ -192,27 +191,25 @@ static void test_literal_data_packet_data()
     // create test data buffer
     create_testdata("literal data packet data", &in[0], MAXBUF);
 
-    /*
-     * initialise needed structures for writing into memory
-     */
+    // initialise needed structures for writing into memory
 
     ops_setup_memory_write(&cinfo,&mem,MAXBUF);
 
-    /*
-     * create literal data packet
-     */
+    // create literal data packet
     ops_write_literal_data_from_buf(in,MAXBUF,OPS_LDT_BINARY,cinfo);
 
-    /*
-     * initialise needed structures for reading from memory
-     */
+    /* mem now contains the literal data packet with the original text in it. */
 
+    // setup for reading from this mem
     ops_setup_memory_read(&pinfo,mem,callback_literal_data);
 
-    // and parse it
+    // setup for writing parsed data to 2nd mem
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
 
-    ops_memory_init(mem_literal_data,128);
+    // other setup
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+
+    // do it
     rtn=ops_parse(pinfo);
     CU_ASSERT(rtn==1);
 
@@ -220,11 +217,12 @@ static void test_literal_data_packet_data()
      * test it's the same
      */
 
-    CU_ASSERT(memcmp(ops_memory_get_data(mem_literal_data),in,MAXBUF)==0);
+    CU_ASSERT(memcmp(ops_memory_get_data(mem_out),in,MAXBUF)==0);
 
     // cleanup
     local_cleanup();
     ops_teardown_memory_read(pinfo,mem);
+    ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
     free (in);
     }
 
@@ -233,36 +231,30 @@ static void test_compressed_literal_data_packet_text()
     int debug=0;
     char* testtext=NULL;
 
-    ops_create_info_t *cinfo_uncompress;
-    ops_memory_t 	*mem_uncompress;
+    ops_create_info_t *cinfo_uncompress=NULL;
+    ops_memory_t 	*mem_uncompress=NULL;
 
-    ops_create_info_t *cinfo_compress;
-    ops_memory_t 	*mem_compress;
+    ops_create_info_t *cinfo_compress=NULL;
+    ops_memory_t 	*mem_compress=NULL;
 
-    ops_parse_info_t *pinfo;
+    ops_parse_info_t *pinfo=NULL;
 
     int rtn=0;
     unsigned int i;
-    ops_memory_t* mem;
-    unsigned char* data;
+    ops_memory_t* mem=NULL;
+    ops_memory_t* mem_out=NULL;
+    unsigned char* data=NULL;
     unsigned int len;
 
     // create test string
     testtext=create_testtext("compressed literal data packet text - ");
 
-    /*
-     * initialise needed structures for writing into memory
-     */
-
+    // initialise
     ops_setup_memory_write(&cinfo_uncompress,&mem_uncompress,strlen(testtext));
     ops_setup_memory_write(&cinfo_compress,&mem_compress,strlen(testtext));
 
-    /*
-     * create literal data packet
-     */
+    // create literal data packet with uncompressed text
     ops_write_literal_data_from_buf((unsigned char *)testtext,strlen(testtext),OPS_LDT_TEXT,cinfo_uncompress);
-
-    // mem_uncompress now contains a LDT packet containing the text
 
     if (debug)
         {
@@ -277,13 +269,10 @@ static void test_compressed_literal_data_packet_text()
         fprintf(stderr,"\n");
         }
 
+    // create compressed packet
     ops_write_compressed(ops_memory_get_data(mem_uncompress), ops_memory_get_length(mem_uncompress), cinfo_compress);
 
     // mem_compress should now contain a COMPRESSION packet containing the LDT
-
-    /*
-     * initialise needed structures for reading from memory
-     */
 
     if (debug)
         {
@@ -298,39 +287,31 @@ static void test_compressed_literal_data_packet_text()
         fprintf(stderr,"\n");
         }
 
+    // setup for reading from this compressed packet
     ops_setup_memory_read(&pinfo,mem_compress,callback_literal_data);
 
-    // and parse it
+    // setup for writing parsed data to mem_out
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
 
-    ops_memory_init(mem_literal_data,128);
+    // other setup
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+
+    // do it
     rtn=ops_parse(pinfo);
     CU_ASSERT(rtn==1);
-
-    if (debug)
-        {
-        mem=mem_literal_data;
-        data=ops_memory_get_data(mem);
-        len=ops_memory_get_length(mem);
-        fprintf(stderr,"\nliteral_data: (%d)\n",len);
-        for (i=0; i<len; i++)
-            {
-            fprintf(stderr," 0x%02x", data[i]);
-            }
-        fprintf(stderr,"\n");
-        }
 
     /*
      * test it's the same
      */
 
 
-    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_literal_data));
-    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_literal_data),testtext,strlen(testtext))==0);
+    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_out));
+    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_out),testtext,strlen(testtext))==0);
 
     // cleanup
     local_cleanup();
     ops_teardown_memory_read(pinfo,mem_compress);
+    ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
     //    ops_teardown_memory_read(pinfo,mem);
     free (testtext);
     }
@@ -371,29 +352,6 @@ static void test_ops_mdc()
 	rtn=ops_parse(pinfo);
     CU_ASSERT(rtn==1);
 
-	// This duplicates the hash done in ops_write_mdc so that we
-	// can verify it's been written correctly.
-
-#ifdef TODO
-    int x;
-    unsigned char hashed[SHA_DIGEST_LENGTH];
-    unsigned char c[0];
-	ops_hash_any(&hash,OPS_HASH_SHA1);
-	hash.init(&hash);
-	hash.add(&hash,(unsigned char *)plaintext,strlen(plaintext));
-    c[0]=0xD3;
-    hash.add(&hash,&c[0],1);   // MDC packet tag
-    c[0]=0x14;
-    hash.add(&hash,&c[0],1);   // MDC packet len
-    x=hash.finish(&hash,&hashed[0]);
-    assert(x==SHA_DIGEST_LENGTH);
-    //    print_hash("recreated hash",hashed);
-
-    CU_ASSERT(mdc_data!=0);
-    if (mdc_data)
-        CU_ASSERT(memcmp(mdc_data, hashed, OPS_SHA1_HASH_SIZE)==0);
-#endif
-
 	// clean up
     local_cleanup();
     ops_teardown_memory_read(pinfo,mem);
@@ -402,20 +360,21 @@ static void test_ops_mdc()
 static void test_ops_se_ip()
     {
     ops_crypt_t encrypt;
-    //    ops_crypt_t decrypt;
     unsigned char *iv=NULL;
     unsigned char *key=NULL;
 
     // create a simple literal data packet as the encrypted payload
-    ops_memory_t *mem_ldt;
-    ops_create_info_t *cinfo_ldt;
+    ops_memory_t *mem_ldt=NULL;
+    ops_create_info_t *cinfo_ldt=NULL;
     char* ldt_text="Test Data string for test_se_ip";
 
     int rtn=0;
-    ops_create_info_t *cinfo;
-    ops_parse_info_t *pinfo;
-    ops_memory_t *mem;
+    ops_create_info_t *cinfo=NULL;
+    ops_parse_info_t *pinfo=NULL;
+    ops_memory_t *mem=NULL;
+    ops_memory_t *mem_out=NULL;
 
+    // create literal data packet to be encrypted
     ops_setup_memory_write(&cinfo_ldt,&mem_ldt,strlen(ldt_text));
     ops_write_literal_data_from_buf((unsigned char *)ldt_text, strlen(ldt_text),
                            OPS_LDT_TEXT, cinfo_ldt);
@@ -441,7 +400,13 @@ static void test_ops_se_ip()
      * now read it back
      */
 
+    // setup for reading from this mem
     ops_setup_memory_read(&pinfo,mem,callback_se_ip_data);
+
+    // setup for writing parsed data to 2nd mem
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
+
+    // other setup
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 
     // \todo hardcode for now
@@ -451,19 +416,20 @@ static void test_ops_se_ip()
     pinfo->decrypt.set_key(&(pinfo->decrypt), key); 
     ops_encrypt_init(&pinfo->decrypt);
 
-    ops_memory_init(mem_literal_data,0);
-    rtn=ops_parse(pinfo);
+    // do it
+    rtn=ops_parse_and_print_errors(pinfo);
     CU_ASSERT(rtn==1);
 
     /*
-     * Callback should now have literal_data parsed from packet
+     * Test it's the same
      */
 
-    CU_ASSERT(memcmp(ops_memory_get_data(mem_literal_data),ldt_text, strlen(ldt_text))==0);
+    CU_ASSERT(memcmp(ops_memory_get_data(mem_out),ldt_text, strlen(ldt_text))==0);
 
     // cleanup
     local_cleanup();
     ops_teardown_memory_read(pinfo,mem);
+    ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
     ops_memory_free(mem_ldt);
     }
 

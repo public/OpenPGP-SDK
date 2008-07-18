@@ -222,74 +222,6 @@ static void test_cfb_aes256()
     test_cfb(OPS_SA_AES_256);
     }
 
-#ifdef LATER
-static void test_rsa()
-    {
-    unsigned char* in=NULL;
-    unsigned char* encrypted=NULL;
-    unsigned char* decrypted=NULL;
-    const ops_key_data_t *pub_key=NULL;
-    const ops_public_key_t *pkey=NULL;
-    const ops_key_data_t *sec_key=NULL;
-    const ops_secret_key_t *skey=NULL;
-
-    in=ops_mallocz(128);
-    encrypted=ops_mallocz(128);
-    decrypted=ops_mallocz(128);
-
-    ops_random(in,128);
-
-    int n=0;
-    pub_key=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
-    //    ops_print_public_key(pub_key);
-    pkey=ops_get_public_key_from_data(pub_key);
-
-    sec_key=ops_keyring_find_key_by_userid(&sec_keyring, alpha_user_id);
-    //    ops_print_secret_key(sec_key);
-    skey=ops_get_secret_key_from_data(sec_key);
-
-    /*
-    unsigned int i;
-    fprintf(stderr,"in:        ");
-    for (i=0; i<128; i++)
-        fprintf(stderr,"%2x ", in[i]);
-    fprintf(stderr,"\n");
-    */
-
-    n=ops_rsa_public_encrypt(&encrypted[0], (unsigned char *)in, 128, &pkey->key.rsa);
-    CU_ASSERT(n!=-1);
-    if (n==-1)
-        return;
-
-    /*
-    fprintf(stderr,"%d encrypted\n",n);
-    fprintf(stderr,"encrypted: ");
-    for (i=0; i<128; i++)
-        fprintf(stderr,"%2x ", encrypted[i]);
-    fprintf(stderr,"\n");
-    */
-    n=ops_rsa_private_decrypt(&decrypted[0], encrypted, 128,
-                            &skey->key.rsa, &pkey->key.rsa);
-    CU_ASSERT(n!=-1);
-    if (n==-1)
-        return;
-
-    /*
-    fprintf(stderr,"%d decrypted\n",n);
-    fprintf(stderr,"decrypted: ");
-    for (i=0; i<128; i++)
-        fprintf(stderr,"%2x ", decrypted[i]);
-    fprintf(stderr,"\n");
-    */
-    CU_ASSERT(memcmp(in,&decrypted[0],128)==0);
-
-    //    fprintf(stderr,"memcmp returns %d\n",memcmp(in,&decrypted[0],128));
-
-    free(encrypted);
-    free(decrypted);
-    }
-#endif
-
 CU_pSuite suite_crypto()
 {
     CU_pSuite suite = NULL;
@@ -351,13 +283,6 @@ CU_pSuite suite_crypto()
         return NULL;
 
     //    test_one_cfb(OPS_SA_TWOFISH);
-
-    /*
-     */
-#ifdef LATER
-    if (NULL == CU_add_test(suite, "Test RSA", test_rsa))
-	    return NULL;
-#endif
 
     return suite;
 }

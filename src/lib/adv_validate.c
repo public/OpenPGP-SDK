@@ -4,9 +4,11 @@
 #include "keyring_local.h"
 #include "parse_local.h"
 #include <openpgpsdk/util.h>
+#include <openpgpsdk/armour.h>
 #include <openpgpsdk/signature.h>
 #include <openpgpsdk/memory.h>
 #include <openpgpsdk/validate.h>
+#include <openpgpsdk/readerwriter.h>
 #include <assert.h>
 #include <string.h>
 
@@ -235,9 +237,6 @@ ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
 		    arg->rarg->key->packets[arg->rarg->packet].raw);
 	    break;
 
-#ifdef MOVED
-    case OPS_SIG_TEXT:
-#endif
     case OPS_SIG_STANDALONE:
     case OPS_SIG_PRIMARY:
     case OPS_SIG_REV_KEY:
@@ -414,8 +413,12 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
 	break;
 
 	// ignore these
-    case OPS_PARSER_PTAG:
-    case OPS_PTAG_CT_SIGNATURE_HEADER:
+ case OPS_PARSER_PTAG:
+ case OPS_PTAG_CT_SIGNATURE_HEADER:
+ case OPS_PTAG_CT_ARMOUR_HEADER:
+ case OPS_PTAG_CT_ARMOUR_TRAILER:
+ case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
+ case OPS_PARSER_PACKET_END:
         //    case OPS_PTAG_CT_SIGNATURE:
 	break;
 
@@ -505,6 +508,50 @@ void ops_validate_result_free(ops_validate_result_t *result)
         free(result->unknown_keys);
 
     free(result);
+    result=NULL;
+    }
+
+ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filename, const int armoured, const ops_keyring_t* keyring)
+    {
+    ops_parse_info_t *pinfo=NULL;
+    validate_data_cb_arg_t validate_arg;
+
+    int fd=0;
+
+    //
+    fd=ops_setup_file_read(&pinfo, filename, &validate_arg, validate_data_cb, ops_true);
+
+    // Set verification reader and handling options
+
+    memset(&validate_arg,'\0',sizeof validate_arg);
+    validate_arg.result=result;
+    validate_arg.keyring=keyring;
+    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
+
+    if (armoured)
+        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+    
+    // Do the verification
+
+    ops_parse(pinfo);
+
+    if (debug)
+        {
+        printf("valid=%d, invalid=%d, unknown=%d\n",
+               result->valid_count,
+               result->invalid_count,
+               result->unknown_signer_count);
+        }
+
+    // Tidy up
+    if (armoured)
+        ops_reader_pop_dearmour(pinfo);
+    ops_teardown_file_read(pinfo, fd);
+
+    if (result->invalid_count || result->unknown_signer_count || !result->valid_count)
+        return ops_false;
+    else
+        return ops_true;
     }
 
 // eof

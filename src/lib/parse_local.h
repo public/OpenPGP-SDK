@@ -22,6 +22,18 @@ struct ops_reader_info
     ops_parse_info_t *pinfo; /*!< A pointer back to the parent parse_info structure */
     };
 
+
+/* 
+ * ops_crypt_info
+ */
+struct ops_crypt_info
+    {
+    char *passphrase;
+    ops_keyring_t *keyring;
+    const ops_keydata_t *keydata;
+    ops_parse_cb_t *cb_get_passphrase;
+    };
+
 /** ops_parse_cb_info */
 struct ops_parse_cb_info
     {
@@ -30,6 +42,9 @@ struct ops_parse_cb_info
     ops_error_t** errors; /*!< the address of the error stack to use */
 
     ops_parse_cb_info_t *next;
+
+    ops_create_info_t *cinfo; /*!< used if writing out parsed info */
+    ops_crypt_info_t crypt;
     };
 
 /** ops_parse_hash_info_t */

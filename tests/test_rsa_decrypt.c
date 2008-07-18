@@ -7,11 +7,10 @@
 #include <openpgpsdk/armour.h>
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/packet-parse.h"
+#include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/std_print.h"
-
-static char *nopassphrase="";
-static char *current_passphrase=NULL;
+#include "../src/lib/parse_local.h"
 
 static char *compress_algos[]={ "zip", "zlib", "bzip2" };
 static int n_compress_algos=3;
@@ -54,7 +53,7 @@ callback(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
         break;
 
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-        return callback_cmd_get_secret_key_passphrase(content_,cbinfo);
+        return test_cb_get_passphrase(content_,cbinfo);
         break;
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
@@ -105,59 +104,56 @@ int clean_suite_rsa_decrypt(void)
     return 0;
     }
 
-static void test_rsa_decrypt(const int has_armour, const int has_passphrase, const char *filename)
+static void test_rsa_decrypt(const int has_armour, const char *filename)
     {
     char encfile[MAXBUF+1];
-    char* testtext;
+    char* testtext=NULL;
     char *suffix= has_armour ? "asc" : "gpg";
     int fd=0;
-    ops_parse_info_t *pinfo;
+    ops_parse_info_t *pinfo=NULL;
+    ops_memory_t* mem_out=NULL;
     int rtn=0;
     
     // open encrypted file
     snprintf(encfile,sizeof encfile,"%s/%s.%s",dir,
              filename,suffix);
-#ifdef WIN32
-    fd=open(encfile,O_RDONLY | O_BINARY);
-#else
-    fd=open(encfile,O_RDONLY);
-#endif
-    if(fd < 0)
-        {
-        perror(encfile);
-        exit(2);
-        }
-    
-    // Set decryption reader and handling options
 
-    pinfo=ops_parse_info_new();
-    ops_reader_set_fd(pinfo,fd);
-    ops_parse_cb_set(pinfo,callback,NULL);
+    // setup for reading from given input file
+    ops_setup_file_read(&pinfo, encfile,
+                        NULL, /* arg */
+                        callback,
+                        ops_false /* accumulate */
+                        );
+
+    // setup keyring and passphrase callback
+    pinfo->cbinfo.crypt.keyring=&sec_keyring;
+    pinfo->cbinfo.crypt.cb_get_passphrase=test_cb_get_passphrase;
 
     // Set up armour/passphrase options
 
     if (has_armour)
         ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
-    current_passphrase=has_passphrase ? bravo_passphrase : nopassphrase;
+    //    current_passphrase=has_passphrase ? bravo_passphrase : nopassphrase;
     
-    // Do the decryption
+    // setup for writing parsed data to mem_out
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
 
-    ops_memory_init(mem_literal_data,0);
+    // do it
     rtn=ops_parse_and_print_errors(pinfo);
     CU_ASSERT(rtn==1);
 
     // Tidy up
     if (has_armour)
-	ops_reader_pop_dearmour(pinfo);
+        ops_reader_pop_dearmour(pinfo);
 
     close(fd);
     
     // File contents should match
     testtext=create_testtext(filename);
-    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_literal_data));
-    CU_ASSERT(memcmp(ops_memory_get_data(mem_literal_data),
+    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_out));
+    CU_ASSERT(memcmp(ops_memory_get_data(mem_out),
                      testtext,
-                     ops_memory_get_length(mem_literal_data))==0);
+                     ops_memory_get_length(mem_out))==0);
     }
 
 static void create_filename(char* buf, int maxbuf, int armour, int passphrase, char * sym_alg, char * compress_alg, int compress_level)
@@ -217,7 +213,7 @@ static void test_rsa_decrypt_generic(char* sym_alg)
                         }
                     
                     // Decrypt using OPS
-                    test_rsa_decrypt(armour,passphrase,filename);
+                    test_rsa_decrypt(armour,filename);
                     }
                 }
             }
@@ -239,12 +235,10 @@ static void test_rsa_decrypt_aes256(void)
     return test_rsa_decrypt_generic("aes256");
     }
 
-#ifdef FUTURE
 static void test_rsa_decrypt_3des(void)
     {
     return test_rsa_decrypt_generic("3des");
     }
-#endif
 
 //
 
@@ -268,10 +262,8 @@ static int add_tests(CU_pSuite suite)
     if (NULL == CU_add_test(suite, "AES256", test_rsa_decrypt_aes256))
 	    return 0;
 
-#ifdef FUTURE
     if (NULL == CU_add_test(suite, "3DES", test_rsa_decrypt_3des))
 	    return 0;
-#endif
 
     if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))
 	    return 0;

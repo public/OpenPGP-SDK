@@ -26,16 +26,6 @@ int clean_suite_crypt_mpi(void)
 	
     ops_finish();
 
-#ifdef XXX
-    /* Remove test dir and files */
-    snprintf(cmd,sizeof cmd,"rm -rf %s", dir);
-    if (system(cmd))
-	{
-	perror("Can't delete test directory ");
-	return 1;
-	}
-#endif
-    
     reset_vars();
 
     return 0;
@@ -55,19 +45,10 @@ void test_crypt_mpi(void)
 
     encrypted_pk_session_key=ops_create_pk_session_key(pubkey);
 
-    // recreate what was encrypted
-    //    ops_create_m_buf(session_key, in);
-
-    //    CU_ASSERT(session_key);
-
     // the encrypted_mpi is now in session_key->parameters.rsa.encrypted_m
 
     // decrypt it
     rtn=ops_decrypt_and_unencode_mpi(out,BSZ, encrypted_pk_session_key->parameters.rsa.encrypted_m, &seckey->key.skey);
-
-    // [0] is the symmetric algorithm
-    // [body] is the session key
-    // [last two] is the checksum
 
     // is it the same?
     CU_ASSERT(memcmp((char *)in,(char *)out,sizeof(in))==0);

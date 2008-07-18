@@ -76,34 +76,6 @@ static void encrypt_destroyer (ops_writer_info_t *winfo)
     free (arg);
     }
 
-#ifdef TODO // was the original interface
-void ops_writer_push_encrypt_keydata(ops_create_info_t *cinfo,
-                             const ops_key_data_t *pub_key)
-    {
-    // Create arg to be used with this writer
-    // Remember to free this in the destroyer
-
-    crypt_arg_t *arg=ops_mallocz(sizeof *arg);
-
-    // Setup the arg
-
-    ops_crypt_t* encrypt=ops_mallocz(sizeof *encrypt);
-    ops_crypt_any(encrypt, pub_key->symmetric_algorithm);
-    unsigned char *iv=NULL;
-    iv=ops_mallocz(encrypt->blocksize);
-    encrypt->set_iv(encrypt, iv);
-    encrypt->set_key(encrypt, &pub_key->key[0]);
-    ops_encrypt_init(encrypt);
-
-    arg->crypt=encrypt;
-    arg->freecrypt=1;
-
-    // And push writer on stack
-    ops_writer_push(cinfo,encrypt_writer,NULL,encrypt_destroyer,arg);
-
-    }
-#endif
-
 void ops_writer_push_encrypt_crypt(ops_create_info_t *cinfo,
                                    ops_crypt_t *crypt)
     {

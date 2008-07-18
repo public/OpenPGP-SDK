@@ -1072,7 +1072,7 @@ int main(int argc,char **argv)
     setvbuf(stdout,NULL,_IONBF,0);
 
     if(keyring_file)
-	ops_keyring_read(&keyring,keyring_file);
+        ops_keyring_read_from_file(&keyring,ops_false,keyring_file);
 
     fd=open(argv[0],O_RDONLY);
     if(fd < 0)

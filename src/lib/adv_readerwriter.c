@@ -4,8 +4,17 @@
 #else
 #include <direct.h>
 #endif
+#include <assert.h>
+#include <string.h>
+#include <stdio.h>
+
 #include <openpgpsdk/readerwriter.h>
 #include "parse_local.h"
+
+/*! \todo descr for CB macro */
+/*! \todo check other callback functions to check they match this usage */
+#define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if((cbinfo)->cb(pc,(cbinfo)) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
+#define CBP(info,t,pc) CB(&(info)->cbinfo,t,pc)
 
 void ops_setup_memory_write(ops_create_info_t **cinfo, ops_memory_t **mem, size_t bufsz)
     {
@@ -23,6 +32,7 @@ void ops_setup_memory_write(ops_create_info_t **cinfo, ops_memory_t **mem, size_
 
 void ops_teardown_memory_write(ops_create_info_t *cinfo, ops_memory_t *mem)
     {
+    ops_writer_close(cinfo); // new
     ops_create_info_delete(cinfo);
     ops_memory_free(mem);
     }
@@ -48,22 +58,30 @@ void ops_teardown_memory_read(ops_parse_info_t *pinfo, ops_memory_t *mem)
     }
 
 
-int ops_setup_file_write(ops_create_info_t **cinfo, char* filename)
+int ops_setup_file_write(ops_create_info_t **cinfo, const char* filename, ops_boolean_t allow_overwrite)
     {
-    int fd;
+    int fd=0;
+    int flags=0;
+
     /*
      * initialise needed structures for writing to file
      */
 
+    flags=O_WRONLY | O_CREAT;
+    if (allow_overwrite==ops_true)
+        flags |= O_TRUNC;
+    else
+        flags |= O_EXCL;
+
 #ifdef WIN32
-    fd=open(filename,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
-#else
-    fd=open(filename,O_WRONLY | O_CREAT | O_EXCL, 0600);
+    flags |= O_BINARY;
 #endif
+
+    fd=open(filename, flags, 0600);
     if(fd < 0)
         {
         perror(filename);
-        exit(2);
+        return fd;
         }
     
     *cinfo=ops_create_info_new();
@@ -75,11 +93,12 @@ int ops_setup_file_write(ops_create_info_t **cinfo, char* filename)
 
 void ops_teardown_file_write(ops_create_info_t *cinfo, int fd)
     {
+    ops_writer_close(cinfo); // new
     close(fd);
     ops_create_info_delete(cinfo);
     }
 
-int ops_setup_file_append(ops_create_info_t **cinfo, char* filename)
+int ops_setup_file_append(ops_create_info_t **cinfo, const char* filename)
     {
     int fd;
     /*
@@ -110,7 +129,7 @@ void ops_teardown_file_append(ops_create_info_t *cinfo, int fd)
     ops_create_info_delete(cinfo);
     }
 
-int ops_setup_file_read(ops_parse_info_t **pinfo, char *filename,
+int ops_setup_file_read(ops_parse_info_t **pinfo, const char *filename,
                         void* arg,
                         ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *),
                         ops_boolean_t accumulate)
@@ -144,3 +163,158 @@ void ops_teardown_file_read(ops_parse_info_t *pinfo, int fd)
     ops_parse_info_delete(pinfo);
     }
 
+ops_parse_cb_return_t
+callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+
+    OPS_USED(cbinfo);
+
+    //    ops_print_packet(content_);
+
+    // Read data from packet into static buffer
+    switch(content_->tag)
+        {
+    case OPS_PTAG_CT_LITERAL_DATA_BODY:
+        // if writer enabled, use it
+        if (cbinfo->cinfo)
+            {
+            ops_write(content->literal_data_body.data,
+                      content->literal_data_body.length,
+                      cbinfo->cinfo);
+            }
+        /*
+        ops_memory_add(mem_literal_data,
+                       content->literal_data_body.data,
+                       content->literal_data_body.length);
+        */
+        break;
+
+    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
+        // ignore
+        break;
+
+    default:
+        //        return callback_general(content_,cbinfo);
+        break;
+        }
+
+    return OPS_RELEASE_MEMORY;
+    }
+ 
+ops_parse_cb_return_t
+callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+    
+    OPS_USED(cbinfo);
+
+    //    ops_print_packet(content_);
+    
+    // Read data from packet into static buffer
+    switch(content_->tag)
+        {
+    case OPS_PTAG_CT_PK_SESSION_KEY:
+		//	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
+        assert(cbinfo->crypt.keyring);
+        cbinfo->crypt.keydata=ops_keyring_find_key_by_id(cbinfo->crypt.keyring,
+                                             content->pk_session_key.key_id);
+        if(!cbinfo->crypt.keydata)
+            break;
+        break;
+
+    default:
+        //        return callback_general(content_,cbinfo);
+        break;
+        }
+
+    return OPS_RELEASE_MEMORY;
+    }
+
+ops_parse_cb_return_t
+callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+    const ops_secret_key_t *secret;
+    ops_parser_content_t pc;
+
+    OPS_USED(cbinfo);
+
+//    ops_print_packet(content_);
+
+    switch(content_->tag)
+	{
+    case OPS_PARSER_CMD_GET_SECRET_KEY:
+        cbinfo->crypt.keydata=ops_keyring_find_key_by_id(cbinfo->crypt.keyring,content->get_secret_key.pk_session_key->key_id);
+        if (!cbinfo->crypt.keydata || !ops_key_is_secret(cbinfo->crypt.keydata))
+            return 0;
+
+        /* do we need the passphrase and not have it? if so, get it */
+        if (!cbinfo->crypt.passphrase)
+            {
+            memset(&pc,'\0',sizeof pc);
+            pc.content.secret_key_passphrase.passphrase=&cbinfo->crypt.passphrase;
+            CB(cbinfo,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
+            if (!cbinfo->crypt.passphrase)
+                {
+                fprintf(stderr,"can't get passphrase\n");
+                assert(0);
+                }
+            }
+
+        /* now get the key from the data */
+        secret=ops_get_secret_key_from_data(cbinfo->crypt.keydata);
+        while(!secret)
+            {
+            if (!cbinfo->crypt.passphrase)
+                {
+                /* get the passphrase */
+                }
+            /* then it must be encrypted */
+            secret=ops_decrypt_secret_key_from_data(cbinfo->crypt.keydata,cbinfo->crypt.passphrase);
+            }
+        
+        *content->get_secret_key.secret_key=secret;
+        break;
+
+    default:
+        //        return callback_general(content_,cbinfo);
+        break;
+	}
+    
+    return OPS_RELEASE_MEMORY;
+    }
+
+ops_parse_cb_return_t
+callback_cmd_get_passphrase_from_cmdline(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+    {
+    const int max_pp=256;
+    char pp[max_pp+1];
+    //char *pp=NULL;
+
+    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+
+    OPS_USED(cbinfo);
+
+//    ops_print_packet(content_);
+
+    switch(content_->tag)
+        {
+    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
+
+        printf("\nEnter passphrase: ");
+        fgets(&pp[0],max_pp, stdin);
+
+        *(content->secret_key_passphrase.passphrase)=ops_malloc_passphrase(pp);
+        return OPS_KEEP_MEMORY;
+        break;
+        
+    default:
+        //        return callback_general(content_,cbinfo);
+        break;
+	}
+    
+    return OPS_RELEASE_MEMORY;
+    }
+
+// EOF

@@ -148,31 +148,9 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
 /*! set error text in content and run CallBack to handle warning, do not return */
 #define WARN(warn)	do { C.error.error=warn; CB(OPS_PARSER_ERROR,&content);; } while(0)
 #define WARNP(info,warn)	do { C.error.error=warn; CBP(info,OPS_PARSER_ERROR,&content); } while(0)
-#ifdef XXX
-/*! \todo descr ERR1 macro */
-#define ERR1P(info,fmt,x)	do { format_error(&content,(fmt),(x)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
-#define ERR2P(info,fmt,x,y)	do { format_error(&content,(fmt),(x),(y)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
-#define ERR4P(info,fmt,x,y,z,a)	do { format_error(&content,(fmt),(x),(y),(z),(a)); CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
-#endif
 
 /* XXX: replace ops_ptag_t with something more appropriate for limiting
    reads */
-
-#ifdef OLD
-/* Note that this makes the parser non-reentrant, in a limited way */
-/* It is the caller's responsibility to avoid overflow in the buffer */
-static void format_error(ops_parser_content_t *content,
-			 const char *const fmt,...)
-    {
-    va_list va;
-    static char buf[8192];
-
-    va_start(va,fmt);
-    vsnprintf(buf,sizeof buf,fmt,va);
-    va_end(va);
-    content->content.error.error=buf;
-    }
-#endif
 
 /**
  * low-level function to read data from reader function

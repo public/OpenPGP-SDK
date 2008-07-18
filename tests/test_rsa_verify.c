@@ -11,7 +11,6 @@
 #include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/validate.h"
 
-// \todo change this once we know it works
 #include "../src/lib/parse_local.h"
 
 #include "tests.h"
@@ -312,36 +311,6 @@ static void test_rsa_verify_noarmour_passphrase(void)
     assert(pub_keyring.nkeys);
     test_rsa_verify_ok(armour,filename_rsa_noarmour_passphrase);
     }
-
-#ifdef TODO
-static void test_rsa_decrypt_noarmour_compressed(void)
-    {
-    int armour=0;
-    char filename[MAXBUF+1];
-    int level=0;
-    for (level=0; level<=MAX_COMPRESS_LEVEL; level++)
-        {
-        // unarmoured
-        snprintf(filename, sizeof filename, "%s_%d.txt", 
-                 filename_rsa_noarmour_compress_base, level);
-        test_rsa_verify_ok(armour,filename);
-        }
-    }
-
-static void test_rsa_decrypt_armour_compressed(void)
-    {
-    int armour=1;
-    char filename[MAXBUF+1];
-    int level=0;
-    for (level=0; level<=MAX_COMPRESS_LEVEL; level++)
-        {
-        // armoured
-        snprintf(filename, sizeof filename, "%s_%d.txt", 
-                 filename_rsa_armour_compress_base, level);
-        test_rsa_verify_ok(armour,filename);
-        }
-    }
-#endif
 
 static void test_rsa_verify_armour_nopassphrase(void)
     {

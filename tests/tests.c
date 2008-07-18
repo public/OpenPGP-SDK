@@ -15,7 +15,7 @@
 int main()
     {
 
-    mem_literal_data=ops_memory_new();
+    //    mem_literal_data=ops_memory_new();
     setup();
 
     if (CUE_SUCCESS != CU_initialize_registry())
@@ -44,7 +44,6 @@ int main()
         CU_cleanup_registry();
         return CU_get_error();
         }
-
     if (NULL == suite_rsa_decrypt()) 
         {
         fprintf(stderr,"ERROR: initialising suite_decrypt\n");
@@ -69,6 +68,13 @@ int main()
     if (NULL == suite_rsa_keys())
         {
         fprintf(stderr,"ERROR: initialising suite_rsa_keys\n");
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
+    if (NULL == suite_cmdline())
+        {
+        fprintf(stderr,"ERROR: initialising suite_cmdline\n");
         CU_cleanup_registry();
         return CU_get_error();
         }

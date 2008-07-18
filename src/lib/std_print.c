@@ -19,11 +19,6 @@ static int indent=0;
 
 void print_bn( const char *name, 
 		      const BIGNUM *bn);
-#ifdef NOTYETUSED
-static void print_hash(const char *name,
-                       const unsigned char *data,
-                       unsigned int len);
-#endif
 static void print_hex(const unsigned char *src,
 		      size_t length);
 static void print_hexdump(const char *name,
@@ -303,22 +298,6 @@ static void print_tagname(const char *str)
     print_indent();
     printf("%s packet\n", str);
     }
-
-#ifdef NOTYETUSED
-static void print_hash(const char *name,
-			  const unsigned char *data,
-			  unsigned int len)
-    {
-	unsigned int i=0;
-    print_name(name);
-    printf("len=%d, data=0x", len);
-	for (i=0; i<len; i++)
-		{
-		printf("0x%2x ",data[i]);
-		}
-	printf("\n");
-    }
-#endif
 
 static void print_hexdump(const char *name,
 			  const unsigned char *data,
@@ -603,10 +582,6 @@ int ops_print_packet(const ops_parser_content_t *content_)
     const ops_parser_content_union_t *content=&content_->content;
     ops_text_t *text;
     const char *str;
-#ifdef XXX
-    const ops_keydata_t *decrypter;
-    const ops_secret_key_t *secret;
-#endif
     static ops_boolean_t unarmoured;
 
     /*    OPS_USED(cbinfo);*/
@@ -1182,26 +1157,6 @@ int ops_print_packet(const ops_parser_content_t *content_)
     case OPS_PARSER_CMD_GET_SECRET_KEY:
 	ops_print_pk_session_key(OPS_PTAG_CT_ENCRYPTED_PK_SESSION_KEY,
 			     content->get_secret_key.pk_session_key);
-
-#ifdef XXX
-	decrypter=ops_keyring_find_key_by_id(&keyring,
-					     content->get_secret_key.pk_session_key->key_id);
-	if(!decrypter || !ops_key_is_secret(decrypter))
-	    break;
-
-	puts("[Decryption key found in keyring]");
-
-	secret=ops_get_secret_key_from_data(decrypter);
-	while(!secret)
-	    {
-	    /* then it must be encrypted */
-	    char *phrase=ops_get_passphrase();
-	    secret=ops_decrypt_secret_key_from_data(decrypter,phrase);
-	    free(phrase);
-	    }
-
-	*content->get_secret_key.secret_key=secret;
-#endif	
 	break;
 
     default:

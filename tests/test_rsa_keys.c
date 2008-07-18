@@ -84,6 +84,10 @@ static void verify_keypair(ops_boolean_t armoured)
     char *suffix = armoured ? "asc" : "ops";
     char cmd[MAXBUF+1];
     int rtn=0;
+    ops_boolean_t overwrite=ops_true;
+
+    memset(&pub_keyring, '\0', sizeof pub_keyring);
+    memset(&sec_keyring, '\0', sizeof sec_keyring);
 
     uid.user_id=(unsigned char *)"Test User 2<test2@nowhere.com>";
 
@@ -98,7 +102,7 @@ static void verify_keypair(ops_boolean_t armoured)
      */
 
     snprintf(filename,MAXBUF,"%s/%s.%s",dir,"ops_transferable_public_key",suffix);
-    fd=ops_setup_file_write(&cinfo, filename);
+    fd=ops_setup_file_write(&cinfo, filename,overwrite);
     ops_write_transferable_public_key(keydata,armoured,cinfo);
     ops_teardown_file_write(cinfo,fd);
 
@@ -133,7 +137,7 @@ static void verify_keypair(ops_boolean_t armoured)
     result=ops_mallocz(sizeof(*result));
 
     snprintf(filename,MAXBUF,"%s/%s.%s",dir,"ops_transferable_secret_key",suffix);
-    fd=ops_setup_file_write(&cinfo, filename);
+    fd=ops_setup_file_write(&cinfo, filename,overwrite);
     ops_write_transferable_secret_key(keydata,passphrase,pplen,armoured,cinfo);
     ops_teardown_file_write(cinfo,fd);
 
@@ -173,6 +177,8 @@ static void test_rsa_keys_read_from_file(void)
     char filename[MAXBUF+1];
     snprintf(filename,MAXBUF,"%s/%s", dir, "pubring.gpg");
 
+    memset(&keyring, '\0', sizeof keyring);
+
     ops_keyring_read_from_file(&keyring, armoured, filename);
     ops_keyring_free(&keyring);
     }
@@ -204,6 +210,11 @@ static void test_rsa_keys_verify_keypair_fail(void)
     uid2.user_id=(unsigned char *)name2;
     char cmd[MAXBUF+1];
     int rtn=0;
+    ops_boolean_t overwrite=ops_true;
+
+    memset(&keyring1, '\0', sizeof keyring1);
+    memset(&keyring2, '\0', sizeof keyring2);
+    memset(&keyring3, '\0', sizeof keyring3);
 
     /*
      * Create keys and keyrings
@@ -218,7 +229,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
     keydata=ops_rsa_create_selfsigned_keypair(1024,65537,&uid1);
     CU_ASSERT(keydata != NULL);
     snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_1");
-    fd=ops_setup_file_write(&cinfo, filename);
+    fd=ops_setup_file_write(&cinfo, filename,overwrite);
     ops_write_transferable_public_key(keydata,armour,cinfo);
     ops_teardown_file_write(cinfo,fd);
     ops_keyring_read_from_file(&keyring1, armour, filename);
@@ -227,7 +238,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
     keydata=ops_rsa_create_selfsigned_keypair(1024,65537,&uid2);
     CU_ASSERT(keydata2 != NULL);
     snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_2");
-    fd=ops_setup_file_write(&cinfo, filename);
+    fd=ops_setup_file_write(&cinfo, filename,overwrite);
     ops_write_transferable_public_key(keydata,armour,cinfo);
     ops_teardown_file_write(cinfo,fd);
     ops_keyring_read_from_file(&keyring2, armour, filename);
@@ -242,7 +253,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
     assert(orig != sig->packet->raw[target]);
 
     snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_3_bad");
-    fd=ops_setup_file_write(&cinfo, filename);
+    fd=ops_setup_file_write(&cinfo, filename, overwrite);
     ops_write_transferable_public_key(keydata,armour,cinfo);
     ops_teardown_file_write(cinfo,fd);
     ops_keyring_read_from_file(&keyring3, armour, filename);

@@ -418,7 +418,6 @@ static const ops_crypt_t aes256=
 
 // Triple DES
 
-#ifdef TRIPLEDES_TBD
 static void tripledes_init(ops_crypt_t *crypt)
     {
     DES_key_schedule *keys;
@@ -452,7 +451,7 @@ static void tripledes_cfb_encrypt(ops_crypt_t *crypt ATTRIBUTE_UNUSED,void *out 
     { 
     DES_key_schedule *keys=crypt->encrypt_key;
     DES_ede3_cfb64_encrypt(in,out,count,
-                           &keys[0],&keys[1],&keys[2], crypt->iv, (int *)&crypt->num,
+                           &keys[0],&keys[1],&keys[2], (DES_cblock *)crypt->iv, (int *)&crypt->num,
                        DES_ENCRYPT); 
     }
 
@@ -460,7 +459,7 @@ static void tripledes_cfb_decrypt(ops_crypt_t *crypt ATTRIBUTE_UNUSED,void *out 
     { 
     DES_key_schedule *keys=crypt->encrypt_key;
     DES_ede3_cfb64_encrypt(in,out,count,
-                           &keys[0],&keys[1],&keys[2], crypt->iv, (int *)&crypt->num,
+                           &keys[0],&keys[1],&keys[2], (DES_cblock *)crypt->iv, (int *)&crypt->num,
                        DES_DECRYPT); 
     }
 
@@ -480,7 +479,6 @@ static const ops_crypt_t tripledes=
     std_finish,
     TRAILER
     };
-#endif /*TRIPLEDES_TBD*/
 
 static const ops_crypt_t *get_proto(ops_symmetric_algorithm_t alg)
     {
@@ -500,10 +498,8 @@ static const ops_crypt_t *get_proto(ops_symmetric_algorithm_t alg)
     case OPS_SA_AES_256:
 	return &aes256;
 
-#ifdef TRIPLEDES_TBD
     case OPS_SA_TRIPLEDES:
 	return &tripledes;
-#endif /* 3DES_TBD */
 
     default:
         fprintf(stderr,"Unknown algorithm: %d (%s)\n",alg,ops_show_symmetric_algorithm(alg));

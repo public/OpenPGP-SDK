@@ -30,11 +30,13 @@ void ops_keydata_free(ops_keydata_t *key)
 	ops_user_id_free(&key->uids[n]);
     free(key->uids);
     key->uids=NULL;
+    key->nuids=0;
 
     for(n=0 ; n < key->npackets ; ++n)
 	ops_packet_free(&key->packets[n]);
     free(key->packets);
     key->packets=NULL;
+    key->npackets=0;
 
     if(key->type == OPS_PTAG_CT_PUBLIC_KEY)
 	ops_public_key_free(&key->key.pkey);

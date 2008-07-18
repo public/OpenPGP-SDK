@@ -8,6 +8,7 @@
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/std_print.h"
 #include "openpgpsdk/readerwriter.h"
+#include "../src/lib/parse_local.h"
 
 #include "tests.h"
 
@@ -52,7 +53,7 @@ callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *c
         return callback_cmd_get_secret_key(content_,cbinfo);
 
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-        return callback_cmd_get_secret_key_passphrase(content_,cbinfo);
+        return test_cb_get_passphrase(content_,cbinfo);
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
         return callback_literal_data(content_,cbinfo);
@@ -108,34 +109,25 @@ int clean_suite_rsa_encrypt(void)
 static int test_rsa_decrypt(const char *encfile, const char*testtext, const int use_armour)
     {
     int fd=0;
-    ops_parse_info_t *pinfo;
+    ops_parse_info_t *pinfo=NULL;
+    ops_memory_t* mem_out=NULL;
     int rtn=0;
 
-    // open encrypted file
-#ifdef WIN32
-    fd=open(encfile,O_RDONLY | O_BINARY);
-#else
-    fd=open(encfile,O_RDONLY);
-#endif
-    if(fd < 0)
-        {
-        perror(encfile);
-        exit(2);
-        }
-    
-    // Set decryption reader and handling options
+    ops_setup_file_read(&pinfo, encfile,
+                        NULL, /* arg */
+                        callback_ops_decrypt,
+                        ops_false /* accumulate */
+                        );
 
-    pinfo=ops_parse_info_new();
-    ops_reader_set_fd(pinfo,fd);
-    ops_parse_cb_set(pinfo,callback_ops_decrypt,NULL);
+    // setup for writing parsed data to mem_out */
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
 
-    // Do the decryption
-
-    ops_memory_init(mem_literal_data,0);
+    // other setup
     if (use_armour)
         ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
-    rtn=ops_parse(pinfo);
-    ops_print_errors(ops_parse_info_get_errors(pinfo));
+
+    // do it
+    rtn=ops_parse_and_print_errors(pinfo);
     CU_ASSERT(rtn==1);
 
     // Tidy up
@@ -144,7 +136,7 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext, const int 
     
     // File contents should match
 
-    CU_ASSERT(memcmp(ops_memory_get_data(mem_literal_data),testtext,ops_memory_get_length(mem_literal_data))==0);
+    CU_ASSERT(memcmp(ops_memory_get_data(mem_out),testtext,ops_memory_get_length(mem_out))==0);
 
     return rtn;
     }
@@ -159,12 +151,13 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
     char *suffix= use_armour ? "asc" : "ops";
     int rtn=0;
     char pp[MAXBUF];
+    ops_boolean_t allow_overwrite=ops_true;
 
     // filenames
     snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
     snprintf(encrypted_file,sizeof encrypted_file,"%s/%s.%s",dir,filename,suffix);
 
-    ops_encrypt_file(myfile,encrypted_file, pub_key, use_armour);
+    ops_encrypt_file(myfile,encrypted_file, pub_key, use_armour, allow_overwrite);
 
     /*
      * Test results
@@ -178,7 +171,7 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
         snprintf(pp,sizeof pp," --passphrase %s ", bravo_passphrase);
     snprintf(decrypted_file,sizeof decrypted_file,"%s/decrypted_%s",dir,filename);
     snprintf(cmd,sizeof cmd,"%s --decrypt --output=%s %s %s",gpgcmd, decrypted_file, pp, encrypted_file);
-    //    printf("cmd: %s\n", cmd);
+    //printf("cmd: %s\n", cmd);
     rtn=system(cmd);
     CU_ASSERT(rtn==0);
     CU_ASSERT(file_compare(myfile,decrypted_file)==0);
@@ -218,13 +211,15 @@ static void test_rsa_encrypt_armour_passphrase_singlekey(void)
 
 static void test_todo(void)
     {
+    /*
+      FUTURE:
     CU_FAIL("Test TODO: Use AES128");
     CU_FAIL("Test TODO: Use AES256");
-    CU_FAIL("Test TODO: Test large files");
-    CU_FAIL("Test TODO: Test stream encryption");
     CU_FAIL("Test TODO: Encrypt to multiple keys in same keyring");
     CU_FAIL("Test TODO: Encrypt to multiple keys where my keys is (a) first key in list; (b) last key in list; (c) in the middle of the list");
     CU_FAIL("Test TODO: Encrypt to users with different preferences");
+    */
+    CU_FAIL("Test TODO: Test large files");
     }
 
 static int add_tests(CU_pSuite suite)

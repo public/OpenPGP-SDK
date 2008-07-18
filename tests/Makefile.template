@@ -12,6 +12,7 @@ LIBDEPS=../lib/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% $(DM_LIB) $(CUNIT_LIB)
 
 COMMONTESTSRC= test_packet_types.c \
+               test_cmdline.c \
                 test_crypt_mpi.c test_rsa_decrypt.c test_rsa_encrypt.c \
                 test_rsa_signature.c test_rsa_verify.c \
                 test_rsa_keys.c \

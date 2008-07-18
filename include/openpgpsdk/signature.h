@@ -66,8 +66,8 @@ void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 				       ops_boolean_t primary);
 
 // Standard Interface
-void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey);
+void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey, const ops_boolean_t overwrite);
 void ops_sign_buf_as_cleartext(const char* input, const size_t len, ops_memory_t** output, const ops_secret_key_t *skey);
-void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const int use_armour);
+void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t use_armour, const ops_boolean_t overwrite);
 
 #endif

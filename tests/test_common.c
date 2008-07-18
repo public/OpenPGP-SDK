@@ -10,6 +10,7 @@
 #include "CUnit/Basic.h"
 #include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/std_print.h"
+#include "../src/lib/parse_local.h"
 
 #include "tests.h"
 
@@ -17,8 +18,6 @@ char dir[MAXBUF+1];
 char gpgcmd[MAXBUF+1];
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
-static char* no_passphrase="";
-ops_memory_t* mem_literal_data=NULL;
 
 char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
 char *alpha_name="Alpha";
@@ -35,6 +34,8 @@ const ops_secret_key_t *bravo_skey;
 const ops_keydata_t *bravo_pub_keydata;
 const ops_keydata_t *bravo_sec_keydata;
 char* bravo_passphrase="hello";
+
+char *charlie_user_id="Charlie (test user) <charlie@test.com>";
 
 const ops_keydata_t *decrypter=NULL;
 
@@ -312,59 +313,10 @@ callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
     }
 
 ops_parse_cb_return_t
-callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+test_cb_get_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
-    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
-    const ops_keydata_t *keydata=NULL;
-    const ops_secret_key_t *secret;
+    //    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     char *passphrase=NULL;
-
-    OPS_USED(cbinfo);
-
-//    ops_print_packet(content_);
-
-    switch(content_->tag)
-	{
-    case OPS_PARSER_CMD_GET_SECRET_KEY:
-        keydata=ops_keyring_find_key_by_id(&sec_keyring,content->get_secret_key.pk_session_key->key_id);
-        if (!keydata || !ops_key_is_secret(keydata))
-            return 0;
-
-        // Do we need the passphrase and not have it? If so, get it
-        passphrase=NULL;
-
-        /*
-         * Hard-coded to allow automated test
-         */
-        if (keydata==alpha_sec_keydata)
-            passphrase=alpha_passphrase;
-        else if (keydata==bravo_sec_keydata)
-            passphrase=bravo_passphrase;
-        else
-            assert(0);
-
-        /* now get the key from the data */
-        secret=ops_get_secret_key_from_data(keydata);
-        while(!secret)
-            {
-            /* then it must be encrypted */
-            secret=ops_decrypt_secret_key_from_data(keydata,passphrase);
-            }
-        
-        *content->get_secret_key.secret_key=secret;
-        break;
-
-    default:
-        return callback_general(content_,cbinfo);
-	}
-    
-    return OPS_RELEASE_MEMORY;
-    }
-
-ops_parse_cb_return_t
-callback_cmd_get_secret_key_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
-    {
-    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
 
     OPS_USED(cbinfo);
 
@@ -376,43 +328,23 @@ callback_cmd_get_secret_key_passphrase(const ops_parser_content_t *content_,ops_
         /*
           Doing this so the test can be automated.
         */
-        *(content->secret_key_passphrase.passphrase)=ops_malloc_passphrase(no_passphrase);
+        
+        if (cbinfo->crypt.keydata==alpha_sec_keydata)
+            passphrase=alpha_passphrase;
+        else if (cbinfo->crypt.keydata==bravo_sec_keydata)
+            passphrase=bravo_passphrase;
+        else
+            assert(0);
+        //        *(content->secret_key_passphrase.passphrase)=ops_malloc_passphrase(no_passphrase);
+        cbinfo->crypt.passphrase=ops_malloc_passphrase(passphrase);
         return OPS_KEEP_MEMORY;
         break;
         
     default:
-        return callback_general(content_,cbinfo);
+        //        return callback_general(content_,cbinfo);
+        break;
 	}
     
-    return OPS_RELEASE_MEMORY;
-    }
-
-ops_parse_cb_return_t
-callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
-    {
-    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
-
-    OPS_USED(cbinfo);
-
-    //    ops_print_packet(content_);
-
-    // Read data from packet into static buffer
-    switch(content_->tag)
-        {
-    case OPS_PTAG_CT_LITERAL_DATA_BODY:
-        ops_memory_add(mem_literal_data,
-                       content->literal_data_body.data,
-                       content->literal_data_body.length);
-        break;
-
-    case OPS_PTAG_CT_LITERAL_DATA_HEADER:
-        // ignore
-        break;
-
-    default:
-        return callback_general(content_,cbinfo);
-        }
-
     return OPS_RELEASE_MEMORY;
     }
  
@@ -458,12 +390,6 @@ callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t
 ops_parse_cb_return_t
 callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
-    /*
-    int debug=0;
-
-    if (debug)
-        { ops_print_packet(content_); }
-    */
     switch(content_->tag)
         {
     case OPS_PTAG_RAW_SS:
@@ -529,39 +455,9 @@ callback_verify_example(const ops_parser_content_t *content_,ops_parse_cb_info_t
     return rtn;
 	}
 
-ops_parse_cb_return_t
-callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
-    {
-    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
-    
-    OPS_USED(cbinfo);
-
-    //    ops_print_packet(content_);
-    
-    // Read data from packet into static buffer
-    switch(content_->tag)
-        {
-    case OPS_PTAG_CT_PK_SESSION_KEY:
-		//	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
-        if(decrypter)
-            break;
-
-        decrypter=ops_keyring_find_key_by_id(&sec_keyring,
-                                             content->pk_session_key.key_id);
-        if(!decrypter)
-            break;
-        break;
-
-    default:
-        return callback_general(content_,cbinfo);
-        }
-
-    return OPS_RELEASE_MEMORY;
-    }
-
 void reset_vars()
     {
-    ops_memory_init(mem_literal_data,0);
+    //    ops_memory_init(mem_literal_data,0);
 
     if (decrypter)
         {

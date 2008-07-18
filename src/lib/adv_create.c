@@ -1346,8 +1346,8 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
     rtn=ops_write_ptag(OPS_PTAG_CT_LITERAL_DATA, info)
         && ops_write_length(1+1+4+len,info)
         && ops_write_scalar(type, 1, info)
-        && ops_write_scalar(0, 1, info)
-        && ops_write_scalar(0, 4, info)
+        && ops_write_scalar(0, 1, info) // filename
+        && ops_write_scalar(0, 4, info) // date
         && ops_write(ops_memory_get_data(mem), len, info);
 
     ops_memory_free(mem);

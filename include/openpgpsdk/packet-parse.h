@@ -55,6 +55,7 @@ ops_parse_cb_t(const ops_parser_content_t *content,
 
 typedef struct ops_parse_info ops_parse_info_t;
 typedef struct ops_reader_info ops_reader_info_t;
+typedef struct ops_crypt_info ops_crypt_info_t;
 
 /*
 typedef ops_reader_ret_t ops_reader_t(unsigned char *dest,
@@ -152,5 +153,6 @@ ops_reader_t ops_stacked_read;
 
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */
+
 
 #endif

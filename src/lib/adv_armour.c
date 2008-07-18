@@ -9,6 +9,7 @@
 #include <openpgpsdk/create.h>
 #include <openpgpsdk/signature.h>
 #include <openpgpsdk/version.h>
+#include <openpgpsdk/packet-parse.h>
 
 #include <string.h>
 #include <assert.h>

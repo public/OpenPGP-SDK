@@ -18,7 +18,7 @@ static int debug=0;
 
 #define MAXBUF 1024
 
-void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey)
+void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey, const ops_boolean_t overwrite)
     {
     // \todo allow choice of hash algorithams
     // enforce use of SHA1 for now
@@ -32,7 +32,8 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     int fd_out=0;
     ops_create_info_t *cinfo=NULL;
     unsigned char buf[MAXBUF];
-    
+    int flags=0;
+
     // open file to sign
 #ifdef WIN32
     fd_in=open(filename,O_RDONLY | O_BINARY);
@@ -46,11 +47,16 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
         }
     
     snprintf(signed_file,sizeof signed_file,"%s.%s",filename,suffix);
+    flags=O_WRONLY | O_CREAT;
+    if (overwrite==ops_true)
+        flags |= O_TRUNC;
+    else
+        flags |= O_EXCL;
 #ifdef WIN32
-    fd_out=open(signed_file,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
-#else
-    fd_out=open(signed_file,O_WRONLY | O_CREAT | O_EXCL, 0600);
+    flags |= O_BINARY;
 #endif
+
+    fd_out=open(signed_file,flags, 0600);
     if(fd_out < 0)
         {
         perror(signed_file);
@@ -137,11 +143,12 @@ void ops_sign_buf_as_cleartext(const char* cleartext, const size_t len, ops_memo
     ops_writer_close(cinfo);
     }
 
-void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const int use_armour)
+void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t use_armour, const ops_boolean_t overwrite)
     {
     // \todo allow choice of hash algorithams
     // enforce use of SHA1 for now
 
+    char *myfilename=NULL;
     unsigned char keyid[OPS_KEY_ID_SIZE];
     ops_create_signature_t *sig=NULL;
 
@@ -158,26 +165,25 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
 
     mem_buf=ops_write_buf_from_file(input_filename);
 
-    // 
-    // now for output file
-#ifdef WIN32
-    fd_out=open(output_filename,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
-#else
-    fd_out=open(output_filename,O_WRONLY | O_CREAT | O_EXCL, 0600);
-#endif
-    if(fd_out < 0)
+    // setup output filename
+    if (!output_filename)
         {
-        perror(output_filename);
-        exit(2);
+        myfilename=ops_mallocz(strlen(input_filename)+4+1);
+        if (use_armour)
+            sprintf(myfilename,"%s.asc",input_filename);
+        else
+            sprintf(myfilename,"%s.gpg",input_filename);
+        fd_out=ops_setup_file_write(&cinfo, myfilename, overwrite);
+        free(myfilename);
+        } 
+    else
+        {
+        fd_out=ops_setup_file_write(&cinfo, output_filename, overwrite);
         }
-    
+
     // set up signature
     sig=ops_create_signature_new();
     ops_signature_start_message_signature(sig, skey, hash_alg, sig_type);
-
-    // set up output file
-    cinfo=ops_create_info_new();
-    ops_writer_set_fd(cinfo,fd_out); 
 
     //  set armoured/not armoured here
     if (use_armour)
@@ -216,11 +222,10 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
 
     // write out sig
     ops_write_signature(sig,&skey->public_key,skey,cinfo);
-    ops_writer_close(cinfo);
-    close(fd_out);
+
+    ops_teardown_file_write(cinfo, fd_out);
 
     // tidy up
-    ops_create_info_delete(cinfo);
     ops_create_signature_delete(sig);
     ops_memory_free(mem_buf);
     }

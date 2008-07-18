@@ -64,13 +64,15 @@ static void test_rsa_signature_clearsign_file(const char *filename, const ops_se
     char myfile[MAXBUF+1];
     char signed_file[MAXBUF+1];
     int rtn=0;
+    ops_boolean_t overwrite;
 
     // setup filenames
     snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
     snprintf(signed_file,sizeof signed_file,"%s.asc",myfile);
 
     // sign file
-    ops_sign_file_as_cleartext(myfile,skey);
+    overwrite=ops_true;
+    ops_sign_file_as_cleartext(myfile, skey, overwrite);
 
     /*
      * Validate output
@@ -249,14 +251,16 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
     char signed_file[MAXBUF+1];
-    char *suffix= use_armour ? "asc" : "ops";
+    char *suffix= use_armour ? "asc" : "gpg";
     int rtn=0;
+    ops_boolean_t overwrite=ops_true;
 
     // filenames
     snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
     snprintf(signed_file,sizeof signed_file,"%s.%s",myfile,suffix);
 
-    ops_sign_file(myfile, signed_file, skey, use_armour);
+    ops_sign_file(myfile, signed_file, skey, use_armour, overwrite);
+    //ops_sign_file(myfile, NULL, skey, use_armour, overwrite);
 
     /*
      * Validate output

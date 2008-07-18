@@ -24,6 +24,7 @@
 #include "CUnit/Basic.h"
 
 CU_pSuite suite_crypto();
+extern CU_pSuite suite_cmdline();
 extern CU_pSuite suite_packet_types();
 extern CU_pSuite suite_rsa_decrypt();
 extern CU_pSuite suite_rsa_encrypt();
@@ -54,9 +55,7 @@ callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
 ops_parse_cb_return_t
 callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-callback_cmd_get_secret_key_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
-ops_parse_cb_return_t
-callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+test_cb_get_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
 callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
@@ -72,7 +71,7 @@ int file_compare(char* file1, char* file2);
 
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
-ops_memory_t* mem_literal_data;
+//ops_memory_t* mem_literal_data;
 
 // "Alpha" is the user who has NO passphrase on his key
 char* alpha_user_id;
@@ -92,6 +91,11 @@ const ops_keydata_t *bravo_sec_keydata;
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
 //const ops_keydata_t *decrypter;
+
+// "Charlie" is a 3rd user, used to test cmd line generation
+//char* charlie_name;
+//char* charlie_passphrase;
+char* charlie_user_id;
 
 // defs
 #define MAXBUF 1024

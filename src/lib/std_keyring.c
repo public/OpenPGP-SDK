@@ -105,7 +105,7 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boole
     int fd;
     ops_boolean_t res = ops_true;
 
-    memset(keyring,'\0',sizeof *keyring);
+    //memset(keyring,'\0',sizeof *keyring);
 
     pinfo=ops_parse_info_new();
 
@@ -175,7 +175,7 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* me
     ops_boolean_t res = ops_true;
 
     // \todo need to free memory first?
-    memset(keyring,'\0',sizeof *keyring);
+    //memset(keyring,'\0',sizeof *keyring);
 
     pinfo=ops_parse_info_new();
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
@@ -195,7 +195,9 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* me
     ops_print_errors(ops_parse_info_get_errors(pinfo));
 
     ops_reader_pop_dearmour(pinfo);
-    ops_teardown_memory_read(pinfo, mem);
+
+    // don't call teardown_memory_read because memory was passed in
+    ops_parse_info_delete(pinfo);
 
     return res;
     }
@@ -213,6 +215,8 @@ void ops_keyring_free(ops_keyring_t *keyring)
     {
     free(keyring->keys);
     keyring->keys=NULL;
+    keyring->nkeys=0;
+    keyring->nkeys_allocated=0;
     }
 
 /**
@@ -230,6 +234,9 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
 			   const unsigned char keyid[OPS_KEY_ID_SIZE])
     {
     int n;
+
+    if (!keyring)
+        return NULL;
 
     for(n=0 ; n < keyring->nkeys ; ++n)
         {
@@ -257,15 +264,20 @@ ops_keyring_find_key_by_userid(const ops_keyring_t *keyring,
     int n=0;
     unsigned int i=0;
 
-    for(n=0 ; n < keyring->nkeys ; ++n)
-	for(i=0; i<keyring->keys[n].nuids; i++)
-	    {
-        //	    printf("[%d][%d] userid %s\n",n,i,keyring->keys[n].uids[i].user_id);
-	    if(!strcmp((char *)keyring->keys[n].uids[i].user_id,userid))
-	       return &keyring->keys[n];
-	    }
+    if (!keyring)
+        return NULL;
 
-    printf("end: n=%d,i=%d\n",n,i);
+    for(n=0 ; n < keyring->nkeys ; ++n)
+        {
+        for(i=0; i<keyring->keys[n].nuids; i++)
+            {
+            //printf("[%d][%d] userid %s\n",n,i,keyring->keys[n].uids[i].user_id);
+            if(!strncmp((char *)keyring->keys[n].uids[i].user_id,userid,strlen(userid)))
+                return &keyring->keys[n];
+            }
+        }
+
+    //printf("end: n=%d,i=%d\n",n,i);
     return NULL;
     }
 
@@ -312,13 +324,6 @@ static ops_parse_cb_return_t
 cb_keyring_read(const ops_parser_content_t *content_,
 		ops_parse_cb_info_t *cbinfo)
     {
-    const ops_parser_content_union_t *content=&content_->content;
-    char* passphrase="hello";
-    char* pp=ops_mallocz(strlen(passphrase)+1);
-    //    char buffer[1024];
-    //    size_t n;
-
-
     OPS_USED(cbinfo);
 
     switch(content_->tag)
@@ -332,19 +337,6 @@ cb_keyring_read(const ops_parser_content_t *content_,
     case OPS_PARSER_ERRCODE:
         break;
 
-    case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-        strncpy(pp,passphrase,strlen(passphrase));
-        *(content->secret_key_passphrase.passphrase)=pp;
-        return OPS_KEEP_MEMORY;
-        break;
-
-	/*
-    default:
-	fprintf(stderr,"Unexpected packet tag=%d (0x%x)\n",content_->tag,
-		content_->tag);
-	assert(0);
-	exit(1);
-	*/
     default:
 	;
 	}
