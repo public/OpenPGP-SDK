@@ -155,6 +155,7 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     int rtn=0;
     ops_memory_t *input=NULL;
     ops_memory_t *output=NULL;
+    ops_boolean_t overwrite;
 
     // setup filenames 
     // (we are testing the function which signs a buf, but still want
@@ -170,7 +171,8 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     ops_sign_buf_as_cleartext((const char *)ops_memory_get_data(input),ops_memory_get_length(input),&output,skey);
 
     // write to file
-    ops_write_file_from_buf(signed_file, (const char*)ops_memory_get_data(output),ops_memory_get_length(output));
+    overwrite=ops_true;
+    ops_write_file_from_buf(signed_file, (const char*)ops_memory_get_data(output),ops_memory_get_length(output),overwrite);
 
     /*
      * Validate output
@@ -335,32 +337,103 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
     }
     }
 
+static void test_rsa_signature_sign_memory(const int use_armour, const void* input, const int input_len, const ops_secret_key_t *skey)
+    {
+    int rtn=0;
+    ops_memory_t* mem=NULL;
+    ops_parse_info_t *pinfo=NULL;
+    validate_data_cb_arg_t validate_arg;
+    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));
+    
+
+    // filenames
+
+    mem=ops_sign_mem(input, input_len, OPS_SIG_TEXT, skey, use_armour);
+
+    /*
+     * Validate output
+     */
+
+    if (debug)
+        {
+        fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
+        }
+    
+    ops_write_file_from_buf("/tmp/memory.asc", ops_memory_get_data(mem), ops_memory_get_length(mem),ops_true);
+
+    // Set verification reader and handling options
+    
+    ops_setup_memory_read(&pinfo, mem, &validate_arg, callback_verify);
+    
+    memset(&validate_arg,'\0',sizeof validate_arg);
+    validate_arg.result=result;
+    validate_arg.keyring=&pub_keyring;
+    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
+    
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    pinfo->rinfo.accumulate=ops_true;
+    
+    // Set up armour/passphrase options
+    
+    if (use_armour)
+        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+    
+    // Do the verification
+    
+    rtn=ops_parse_and_print_errors(pinfo);
+    CU_ASSERT(rtn==1);
+    
+    // Tidy up
+    if (use_armour)
+        ops_reader_pop_dearmour(pinfo);
+    
+    ops_parse_info_delete(pinfo);
+    ops_memory_free(mem);
+    ops_validate_result_free(result);
+    }
+
 static void test_rsa_signature_noarmour_nopassphrase(void)
     {
+    unsigned char testdata[MAXBUF];
     int armour=0;
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(armour,filename_rsa_noarmour_nopassphrase, alpha_skey);
+    create_testdata("test_rsa_signature_noarmour_nopassphrase",testdata, MAXBUF);
+    test_rsa_signature_sign_memory(armour,testdata,MAXBUF, alpha_skey);
     }
 
 static void test_rsa_signature_noarmour_passphrase(void)
     {
+    unsigned char testdata[MAXBUF];
     int armour=0;
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(armour,filename_rsa_noarmour_passphrase, bravo_skey);
+
+    create_testdata("test_rsa_signature_noarmour_passphrase",testdata, MAXBUF);
+    test_rsa_signature_sign_memory(armour,testdata,MAXBUF, bravo_skey);
     }
 
 static void test_rsa_signature_armour_nopassphrase(void)
     {
+    unsigned char testdata[MAXBUF];
     int armour=1;
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(armour,filename_rsa_armour_nopassphrase, alpha_skey);
+
+    create_testdata("test_rsa_signature_armour_nopassphrase",testdata, MAXBUF);
+    test_rsa_signature_sign_memory(armour,testdata,MAXBUF, alpha_skey);
     }
 
 static void test_rsa_signature_armour_passphrase(void)
     {
+    unsigned char testdata[MAXBUF];
+
     int armour=1;
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(armour,filename_rsa_armour_passphrase, bravo_skey);
+
+    create_testdata("test_rsa_signature_armour_passphrase",testdata, MAXBUF);
+    test_rsa_signature_sign_memory(armour,testdata,MAXBUF, bravo_skey);
     }
 
 static void test_rsa_signature_clearsign_file_nopassphrase(void)

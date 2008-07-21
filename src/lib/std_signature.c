@@ -32,7 +32,7 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     int fd_out=0;
     ops_create_info_t *cinfo=NULL;
     unsigned char buf[MAXBUF];
-    int flags=0;
+    //int flags=0;
 
     // open file to sign
 #ifdef WIN32
@@ -46,30 +46,13 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
         exit(2);
         }
     
+    // set up output file
     snprintf(signed_file,sizeof signed_file,"%s.%s",filename,suffix);
-    flags=O_WRONLY | O_CREAT;
-    if (overwrite==ops_true)
-        flags |= O_TRUNC;
-    else
-        flags |= O_EXCL;
-#ifdef WIN32
-    flags |= O_BINARY;
-#endif
+    fd_out=ops_setup_file_write(&cinfo, signed_file, overwrite);
 
-    fd_out=open(signed_file,flags, 0600);
-    if(fd_out < 0)
-        {
-        perror(signed_file);
-        exit(2);
-        }
-    
     // set up signature
     sig=ops_create_signature_new();
     ops_signature_start_cleartext_signature(sig,skey,OPS_HASH_SHA1,OPS_SIG_BINARY);
-
-    // set up output file
-    cinfo=ops_create_info_new();
-    ops_writer_set_fd(cinfo,fd_out); 
     ops_writer_push_clearsigned(cinfo,sig);
 
     // Do the signing
@@ -91,14 +74,15 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     // - key id
     ops_writer_switch_to_armoured_signature(cinfo);
 
+    // \todo creation time
     ops_signature_add_creation_time(sig,time(NULL));
     ops_keyid(keyid,&skey->public_key);
     ops_signature_add_issuer_key_id(sig,keyid);
     ops_signature_hashed_subpackets_end(sig);
 
     ops_write_signature(sig,&skey->public_key,skey,cinfo);
-    ops_writer_close(cinfo);
-    close(fd_out);
+
+    ops_teardown_file_write(cinfo,fd_out);
     }
 
 
@@ -140,7 +124,10 @@ void ops_sign_buf_as_cleartext(const char* cleartext, const size_t len, ops_memo
     ops_signature_hashed_subpackets_end(sig);
 
     ops_write_signature(sig,&skey->public_key,skey,cinfo);
+
+    // the calling function must free signed_cleartext
     ops_writer_close(cinfo);
+    ops_create_info_delete(cinfo);
     }
 
 void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t use_armour, const ops_boolean_t overwrite)
@@ -228,6 +215,81 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     // tidy up
     ops_create_signature_delete(sig);
     ops_memory_free(mem_buf);
+    }
+
+ops_memory_t* ops_sign_mem(const void* input, const int input_len, const ops_sig_type_t sig_type, const ops_secret_key_t *skey, const ops_boolean_t use_armour)
+    {
+    // \todo allow choice of hash algorithams
+    // enforce use of SHA1 for now
+
+    unsigned char keyid[OPS_KEY_ID_SIZE];
+    ops_create_signature_t *sig=NULL;
+
+    ops_create_info_t *cinfo=NULL;
+    ops_memory_t *mem=ops_memory_new();
+
+    ops_hash_algorithm_t hash_alg=OPS_HASH_SHA1;
+    //    ops_sig_type_t sig_type=OPS_SIG_BINARY;
+    ops_literal_data_type_t ld_type;
+    ops_hash_t* hash=NULL;
+
+    // setup literal data packet type
+    if (sig_type==OPS_SIG_BINARY)
+        ld_type=OPS_LDT_BINARY;
+    else
+        ld_type=OPS_LDT_TEXT;
+
+    // set up signature
+    sig=ops_create_signature_new();
+    ops_signature_start_message_signature(sig, skey, hash_alg, sig_type);
+
+    // setup writer
+    ops_setup_memory_write(&cinfo, &mem, input_len);
+
+    //  set armoured/not armoured here
+    if (use_armour)
+        ops_writer_push_armoured_message(cinfo);
+
+    if (debug)
+        { fprintf(stderr, "** Writing out one pass sig\n"); } 
+
+    // write one_pass_sig
+    ops_write_one_pass_sig(skey, hash_alg, sig_type, cinfo);
+
+    // hash file contents
+    hash=ops_signature_get_hash(sig);
+    hash->add(hash, input, input_len);
+    
+    // output file contents as Literal Data packet
+
+    if (debug)
+        { fprintf(stderr,"** Writing out data now\n"); }
+
+    ops_write_literal_data_from_buf(input, input_len, ld_type, cinfo);
+
+    if (debug)
+        { fprintf(stderr,"** After Writing out data now\n");}
+
+    // add subpackets to signature
+    // - creation time
+    // - key id
+
+    // \todo add creation time
+    ops_signature_add_creation_time(sig,time(NULL));
+
+    ops_keyid(keyid,&skey->public_key);
+    ops_signature_add_issuer_key_id(sig,keyid);
+
+    ops_signature_hashed_subpackets_end(sig);
+
+    // write out sig
+    ops_write_signature(sig,&skey->public_key,skey,cinfo);
+
+    // tidy up
+    ops_writer_close(cinfo);
+    ops_create_signature_delete(sig);
+
+    return mem;
     }
 
 // EOF

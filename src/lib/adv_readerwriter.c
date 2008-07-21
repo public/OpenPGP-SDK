@@ -38,14 +38,15 @@ void ops_teardown_memory_write(ops_create_info_t *cinfo, ops_memory_t *mem)
     }
 
 void ops_setup_memory_read(ops_parse_info_t **pinfo, ops_memory_t *mem,
-                              ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *))
+                           void* arg,
+                           ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *))
     {
     /*
      * initialise needed structures for reading
      */
 
     *pinfo=ops_parse_info_new();
-    ops_parse_cb_set(*pinfo,callback,NULL);
+    ops_parse_cb_set(*pinfo,callback,arg);
     ops_reader_set_memory(*pinfo,
                           ops_memory_get_data(mem),
                           ops_memory_get_length(mem));

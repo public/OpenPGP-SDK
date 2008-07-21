@@ -1383,16 +1383,21 @@ ops_memory_t* ops_write_buf_from_file(const char *filename)
     return mem;
     }
 
-int ops_write_file_from_buf(const char *filename, const char* buf, const size_t len)
+int ops_write_file_from_buf(const char *filename, const char* buf, const size_t len, const ops_boolean_t overwrite)
     {
     int fd=0;
     size_t n=0;
+    int flags=0;
 
+    flags=O_WRONLY | O_CREAT;
+    if (overwrite==ops_true)
+        flags |= O_TRUNC;
+    else
+        flags |= O_EXCL;
 #ifdef WIN32
-    fd=open(filename,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600);
-#else
-    fd=open(filename,O_WRONLY | O_CREAT | O_EXCL, 0600);
+    flags |= O_BINARY;
 #endif
+    fd=open(filename,flags, 0600);
     if (fd < 0)
         {
         perror(NULL); 

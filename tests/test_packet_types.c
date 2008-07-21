@@ -152,7 +152,7 @@ static void test_literal_data_packet_text()
     /* mem now contains the literal data packet with the original text in it. */
 
     // setup for reading from this mem
-    ops_setup_memory_read(&pinfo,mem,callback_literal_data);
+    ops_setup_memory_read(&pinfo,mem,NULL,callback_literal_data);
 
     // setup for writing parsed data to mem_out
     ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
@@ -201,7 +201,7 @@ static void test_literal_data_packet_data()
     /* mem now contains the literal data packet with the original text in it. */
 
     // setup for reading from this mem
-    ops_setup_memory_read(&pinfo,mem,callback_literal_data);
+    ops_setup_memory_read(&pinfo,mem,NULL,callback_literal_data);
 
     // setup for writing parsed data to 2nd mem
     ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
@@ -288,7 +288,7 @@ static void test_compressed_literal_data_packet_text()
         }
 
     // setup for reading from this compressed packet
-    ops_setup_memory_read(&pinfo,mem_compress,callback_literal_data);
+    ops_setup_memory_read(&pinfo,mem_compress,NULL,callback_literal_data);
 
     // setup for writing parsed data to mem_out
     ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
@@ -347,7 +347,7 @@ static void test_ops_mdc()
 	ops_write_mdc(hashed,cinfo);
 
 	// Read back and verify contents
-	ops_setup_memory_read(&pinfo,mem,callback_mdc);
+	ops_setup_memory_read(&pinfo,mem,NULL,callback_mdc);
 	ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 	rtn=ops_parse(pinfo);
     CU_ASSERT(rtn==1);
@@ -401,7 +401,7 @@ static void test_ops_se_ip()
      */
 
     // setup for reading from this mem
-    ops_setup_memory_read(&pinfo,mem,callback_se_ip_data);
+    ops_setup_memory_read(&pinfo,mem,NULL,callback_se_ip_data);
 
     // setup for writing parsed data to 2nd mem
     ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
@@ -454,7 +454,7 @@ static void test_ops_pk_session_key()
     ops_write_pk_session_key(cinfo,encrypted_pk_session_key);
 
     // setup for read
-    ops_setup_memory_read(&pinfo,mem,callback_encrypted_pk_session_key);
+    ops_setup_memory_read(&pinfo,mem,NULL,callback_encrypted_pk_session_key);
 
     // read
     rtn=ops_parse(pinfo);
