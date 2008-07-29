@@ -44,6 +44,7 @@ int main()
         fprintf(stderr,"ERROR: initializing registry\n");
         return CU_get_error();
         }
+
     if (NULL == suite_crypto())
         {
         fprintf(stderr,"ERROR: initialising suite_crypto\n");
@@ -70,12 +71,14 @@ int main()
         CU_cleanup_registry();
         return CU_get_error();
         }
+
     if (NULL == suite_rsa_signature()) 
         {
         fprintf(stderr,"ERROR: initialising suite_signature\n");
         CU_cleanup_registry();
         return CU_get_error();
         }
+
     if (NULL == suite_rsa_verify()) 
         {
         fprintf(stderr,"ERROR: initialising suite_verify\n");

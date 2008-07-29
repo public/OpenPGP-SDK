@@ -1251,8 +1251,10 @@ void ops_writer_push_armoured(ops_create_info_t *info, ops_armor_type_t type)
 
     ops_write(header,sz_hdr,info);
 
-    base64_arg_t *arg=ops_mallocz(sizeof *arg);
+    ops_writer_push(info,linebreak_writer,NULL,ops_writer_generic_destroyer,
+		    ops_mallocz(sizeof(linebreak_arg_t)));
 
+    base64_arg_t *arg=ops_mallocz(sizeof *arg);
     arg->checksum=CRC24_INIT;
     ops_writer_push(info,base64_writer,finaliser,ops_writer_generic_destroyer,arg);
     }

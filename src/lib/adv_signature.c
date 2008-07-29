@@ -160,7 +160,6 @@ static void rsa_sign(ops_hash_t *hash,const ops_rsa_public_key_t *rsa,
     unsigned t;
     BIGNUM *bn;
 
-
     // XXX: we assume hash is sha-1 for now
     hashsize=20+sizeof prefix_sha1;
 
@@ -663,6 +662,8 @@ void ops_write_signature(ops_create_signature_t *sig, const ops_public_key_t *ke
 			 const ops_secret_key_t *skey, ops_create_info_t *info)
     {
     size_t l=ops_memory_get_length(sig->mem);
+
+    assert(skey->key.rsa.d); // key not decrypted
 
     assert(sig->hashed_data_length != (unsigned)-1);
 

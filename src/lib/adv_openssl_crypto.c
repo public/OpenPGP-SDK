@@ -201,6 +201,10 @@ int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
 
     /* debug */
     orsa->e=rsa->e;
+    // If this isn't set, it's very likely that the programmer hasn't
+    // decrypted the secret key. RSA_check_key segfaults in that case.
+    // Use ops_decrypt_secret_key_from_data() to do that.
+    assert(orsa->d);
     assert(RSA_check_key(orsa) == 1);
     orsa->e=NULL;
     /* end debug */

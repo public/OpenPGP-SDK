@@ -148,6 +148,9 @@ int main(int argc, char **argv)
     ops_memory_t* mem=NULL;
     ops_validate_result_t *validate_result=NULL;
     ops_user_id_t uid;
+    //char line[maxbuf+1];
+    //int i=0;
+    ops_secret_key_t* skey=NULL;
 
     memset(opt_keyring,'\0',sizeof(opt_keyring));
     memset(opt_userid,'\0',sizeof(opt_userid));
@@ -507,10 +510,15 @@ int main(int argc, char **argv)
                     opt_userid);
             exit(-1);
             }
+        // now decrypt key
+        // \todo
+        //fprintf(stdout, "Enter passphrase: ");
+        skey=ops_decrypt_secret_key_from_data(keydata,opt_passphrase);
+        assert(skey);
 
         // sign file
         overwrite=ops_true;
-        ops_sign_file(opt_filename, NULL, &keydata->key.skey, armour, overwrite);
+        ops_sign_file(opt_filename, NULL, skey, armour, overwrite);
         break;
 
     case CLEARSIGN:
@@ -528,10 +536,12 @@ int main(int argc, char **argv)
                     opt_userid);
             exit(-1);
             }
+        skey=ops_decrypt_secret_key_from_data(keydata,opt_passphrase);
+        assert(skey);
 
         // sign file
         overwrite=ops_true;
-        ops_sign_file_as_cleartext(opt_filename, &keydata->key.skey, overwrite);
+        ops_sign_file_as_cleartext(opt_filename, skey, overwrite);
         break;
 
     case VERIFY:

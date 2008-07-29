@@ -21,7 +21,7 @@
 
 #define OPS_VERSION_MAJOR	0
 /* Set to the version next to be released */
-#define OPS_VERSION_MINOR	0
+#define OPS_VERSION_MINOR	5
 /* 0 for development version, 1 for release */
 #define OPS_VERSION_RELEASE	0
 
