@@ -214,9 +214,9 @@ int mktmpdir (void)
     exit(1);
     }
 
-char* create_testtext(const char *text)
+char* create_testtext(const char *text, const unsigned int repeats)
     {
-    const unsigned int repeats=10;
+    //const unsigned int repeats=10;
     unsigned int i=0;
 
     const unsigned int maxbuf=1024;
@@ -258,7 +258,19 @@ void create_testdata(const char *text, unsigned char *buf, const int maxlen)
         }
     }
 
-void create_testfile(const char *name)
+void create_small_testfile(const char* name)
+    {
+    const unsigned int repeats=10;
+    create_testfile(name, repeats);
+    }
+
+void create_large_testfile(const char* name)
+    {
+    const unsigned int repeats=10^6;
+    create_testfile(name, repeats);
+    }
+
+void create_testfile(const char *name, const unsigned int repeats)
     {
     char filename[MAXBUF+1];
     char* testtext=NULL;
@@ -272,7 +284,7 @@ void create_testfile(const char *name)
 #endif
 	return;
 
-    testtext=create_testtext(name);
+    testtext=create_testtext(name, repeats);
     write(fd,testtext,strlen(testtext));
     close(fd);
     free(testtext);

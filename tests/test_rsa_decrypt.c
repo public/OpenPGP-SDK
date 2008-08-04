@@ -134,7 +134,8 @@ static void test_rsa_decrypt(const int has_armour, const char *filename)
     ops_parse_info_t *pinfo=NULL;
     ops_memory_t* mem_out=NULL;
     int rtn=0;
-    
+    int repeats=10;
+
     // open encrypted file
     snprintf(encfile,sizeof encfile,"%s/%s.%s",dir,
              filename,suffix);
@@ -170,7 +171,7 @@ static void test_rsa_decrypt(const int has_armour, const char *filename)
     close(fd);
     
     // File contents should match
-    testtext=create_testtext(filename);
+    testtext=create_testtext(filename,repeats);
     CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_out));
     CU_ASSERT(memcmp(ops_memory_get_data(mem_out),
                      testtext,
@@ -215,7 +216,7 @@ static void test_rsa_decrypt_generic(char* sym_alg)
                                     compress_algos[compress_alg], compress_lvl);
                     
                     // Create file with unique text matching this test
-                    create_testfile(filename);
+                    create_small_testfile(filename);
                     
                     // Encrypt file using GPG
                     snprintf(cmd,sizeof cmd,"gpg --quiet --no-tty --homedir=%s --cipher-algo \"%s\" --compress-algo \"%s\" --compress-level %d --output=%s/%s.%s  --force-mdc --encrypt --recipient %s %s %s/%s", 

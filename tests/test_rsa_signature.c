@@ -57,14 +57,14 @@ int init_suite_rsa_signature(void)
     {
     // Create test files
 
-    create_testfile(filename_rsa_noarmour_nopassphrase);
-    create_testfile(filename_rsa_noarmour_passphrase);
-    create_testfile(filename_rsa_armour_nopassphrase);
-    create_testfile(filename_rsa_armour_passphrase);
-    create_testfile(filename_rsa_clearsign_file_nopassphrase);
-    create_testfile(filename_rsa_clearsign_file_passphrase);
-    create_testfile(filename_rsa_clearsign_buf_nopassphrase);
-    create_testfile(filename_rsa_clearsign_buf_passphrase);
+    create_small_testfile(filename_rsa_noarmour_nopassphrase);
+    create_small_testfile(filename_rsa_noarmour_passphrase);
+    create_small_testfile(filename_rsa_armour_nopassphrase);
+    create_small_testfile(filename_rsa_armour_passphrase);
+    create_small_testfile(filename_rsa_clearsign_file_nopassphrase);
+    create_small_testfile(filename_rsa_clearsign_file_passphrase);
+    create_small_testfile(filename_rsa_clearsign_buf_nopassphrase);
+    create_small_testfile(filename_rsa_clearsign_buf_passphrase);
 
     // Return success
     return 0;
@@ -162,7 +162,8 @@ static void test_rsa_signature_clearsign_file(const char *filename, const ops_se
     // Check signature with GPG
     {
 
-    snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
+    //snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
+    snprintf(cmd,sizeof cmd,"cat %s | %s --verify", signed_file, gpgcmd);
     rtn=system(cmd);
     CU_ASSERT(rtn==0);
     }

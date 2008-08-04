@@ -66,9 +66,11 @@ void cleanup();
 
 int mktmpdir();
 extern char dir[];
-char* create_testtext(const char *text);
+char* create_testtext(const char *text, const unsigned int repeats);
 void create_testdata(const char *text, unsigned char *buf, const int maxlen);
-void create_testfile(const char *name);
+void create_small_testfile(const char *name);
+void create_large_testfile(const char *name);
+void create_testfile(const char *name, const unsigned int repeats);
 #define MAXBUF 1024
 
 ops_parse_cb_return_t

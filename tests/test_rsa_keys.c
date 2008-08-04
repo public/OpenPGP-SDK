@@ -147,7 +147,7 @@ static void verify_keypair(ops_boolean_t armoured)
 
     // Validate public key with GPG
 
-    snprintf(cmd, sizeof cmd, "%s --import --no-allow-non-selfsigned-uid %s", gpgcmd, filename);
+    snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
     rtn=system(cmd);
     CU_ASSERT(rtn==0); 
 
@@ -177,7 +177,7 @@ static void verify_keypair(ops_boolean_t armoured)
     ops_validate_result_free(result);
 
     // validate with GPG
-    snprintf(cmd, sizeof cmd, "%s --import --no-allow-non-selfsigned-uid %s", gpgcmd, filename);
+    snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
     rtn=system(cmd);
     CU_ASSERT(rtn==0); 
 
@@ -313,7 +313,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
     ops_validate_result_free(result);
 
     // validate with GPG - should fail
-    snprintf(cmd, sizeof cmd, "%s --import --no-allow-non-selfsigned-uid %s", gpgcmd, filename);
+    snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
     rtn=system(cmd);
     CU_ASSERT(rtn!=0); 
 

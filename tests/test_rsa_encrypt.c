@@ -37,6 +37,8 @@ static char *filename_rsa_noarmour_nopassphrase_singlekey="enc_rsa_noarmour_np_s
 static char *filename_rsa_noarmour_passphrase_singlekey="enc_rsa_noarmour_pp_singlekey.txt";
 static char *filename_rsa_armour_nopassphrase_singlekey="enc_rsa_armour_np_singlekey.txt";
 static char *filename_rsa_armour_passphrase_singlekey="enc_rsa_armour_pp_singlekey.txt";
+static char *filename_rsa_large_noarmour_nopassphrase="enc_rsa_large_noarmour_np.txt";
+static char *filename_rsa_large_armour_nopassphrase="enc_rsa_large_armour_np.txt";
 
 static ops_parse_cb_return_t
 callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
@@ -108,10 +110,12 @@ int init_suite_rsa_encrypt(void)
     {
     // Create RSA test files
 
-    create_testfile(filename_rsa_noarmour_nopassphrase_singlekey);
-    create_testfile(filename_rsa_noarmour_passphrase_singlekey);
-    create_testfile(filename_rsa_armour_nopassphrase_singlekey);
-    create_testfile(filename_rsa_armour_passphrase_singlekey);
+    create_small_testfile(filename_rsa_noarmour_nopassphrase_singlekey);
+    create_small_testfile(filename_rsa_noarmour_passphrase_singlekey);
+    create_small_testfile(filename_rsa_armour_nopassphrase_singlekey);
+    create_small_testfile(filename_rsa_armour_passphrase_singlekey);
+    create_large_testfile(filename_rsa_large_noarmour_nopassphrase);
+    create_large_testfile(filename_rsa_large_armour_nopassphrase);
 
     // Return success
     return 0;
@@ -173,6 +177,7 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
     int rtn=0;
     char pp[MAXBUF];
     ops_boolean_t allow_overwrite=ops_true;
+    int repeats=10;
 
     // filenames
     snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
@@ -191,7 +196,7 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
     else if (pub_key==bravo_pub_keydata)
         snprintf(pp,sizeof pp," --passphrase %s ", bravo_passphrase);
     snprintf(decrypted_file,sizeof decrypted_file,"%s/decrypted_%s",dir,filename);
-    snprintf(cmd,sizeof cmd,"%s --decrypt --output=%s %s %s",gpgcmd, decrypted_file, pp, encrypted_file);
+    snprintf(cmd,sizeof cmd,"cat %s | %s --decrypt --output=%s %s",encrypted_file, gpgcmd, decrypted_file, pp);
     //printf("cmd: %s\n", cmd);
     rtn=system(cmd);
     CU_ASSERT(rtn==0);
@@ -199,7 +204,7 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
 
     // File contents should match - checking with OPS
         
-    testtext=create_testtext(filename);
+    testtext=create_testtext(filename,repeats);
     test_rsa_decrypt(encrypted_file,testtext, use_armour);
 
     // tidy up
@@ -230,6 +235,18 @@ static void test_rsa_encrypt_armour_passphrase_singlekey(void)
     test_rsa_encrypt(armour,filename_rsa_armour_passphrase_singlekey,bravo_pub_keydata);
     }
 
+static void test_rsa_encrypt_large_noarmour_nopassphrase(void)
+    {
+    int armour=0;
+    test_rsa_encrypt(armour,filename_rsa_large_noarmour_nopassphrase, alpha_pub_keydata);
+    }
+
+static void test_rsa_encrypt_large_armour_nopassphrase(void)
+    {
+    int armour=1;
+    test_rsa_encrypt(armour,filename_rsa_large_armour_nopassphrase, alpha_pub_keydata);
+    }
+
 static void test_todo(void)
     {
     /*
@@ -239,8 +256,8 @@ static void test_todo(void)
     CU_FAIL("Test TODO: Encrypt to multiple keys in same keyring");
     CU_FAIL("Test TODO: Encrypt to multiple keys where my keys is (a) first key in list; (b) last key in list; (c) in the middle of the list");
     CU_FAIL("Test TODO: Encrypt to users with different preferences");
-    */
     CU_FAIL("Test TODO: Test large files");
+    */
     }
 
 static int add_tests(CU_pSuite suite)
@@ -257,6 +274,12 @@ static int add_tests(CU_pSuite suite)
 	    return 0;
     
     if (NULL == CU_add_test(suite, "Armoured, single key, passphrase", test_rsa_encrypt_armour_passphrase_singlekey))
+	    return 0;
+
+    if (NULL == CU_add_test(suite, "Large, no armour, no passphrase", test_rsa_encrypt_large_noarmour_nopassphrase))
+	    return 0;
+
+    if (NULL == CU_add_test(suite, "Large, armour, no passphrase", test_rsa_encrypt_large_armour_nopassphrase))
 	    return 0;
 
     if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))

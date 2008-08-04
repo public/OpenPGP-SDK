@@ -162,7 +162,8 @@ static void test_literal_data_packet_text()
     int rtn=0;
 
     // create test string
-    testtext=create_testtext("literal data packet text");
+    int repeats=10;
+    testtext=create_testtext("literal data packet text",repeats);
 
     // initialise needed structures for writing into memory
     ops_setup_memory_write(&cinfo,&mem,strlen(testtext));
@@ -268,7 +269,8 @@ static void test_compressed_literal_data_packet_text()
     unsigned int len;
 
     // create test string
-    testtext=create_testtext("compressed literal data packet text - ");
+    int repeats=10;
+    testtext=create_testtext("compressed literal data packet text - ",repeats);
 
     // initialise
     ops_setup_memory_write(&cinfo_uncompress,&mem_uncompress,strlen(testtext));

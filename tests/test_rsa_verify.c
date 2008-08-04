@@ -67,51 +67,58 @@ int init_suite_rsa_verify(void)
 
     // Create SIGNED test files
 
-    create_testfile(filename_rsa_armour_nopassphrase);
-    create_testfile(filename_rsa_armour_passphrase);
+    create_small_testfile(filename_rsa_armour_nopassphrase);
+    create_small_testfile(filename_rsa_armour_passphrase);
 
-    create_testfile(filename_rsa_v3sig);
-    create_testfile(filename_rsa_hash_md5);
+    create_small_testfile(filename_rsa_v3sig);
+    create_small_testfile(filename_rsa_hash_md5);
 
-    create_testfile(filename_rsa_noarmour_nopassphrase);
-    create_testfile(filename_rsa_noarmour_passphrase);
-    create_testfile(filename_rsa_noarmour_fail_bad_sig);
+    create_small_testfile(filename_rsa_noarmour_nopassphrase);
+    create_small_testfile(filename_rsa_noarmour_passphrase);
+    create_small_testfile(filename_rsa_noarmour_fail_bad_sig);
 
     // Now sign the test files with GPG
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s > %s/%s.gpg",
+             dir, filename_rsa_noarmour_nopassphrase,
              gpgcmd, alpha_name, dir, filename_rsa_noarmour_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s --armor > %s/%s.asc",
+             dir, filename_rsa_armour_nopassphrase,
              gpgcmd, alpha_name, dir, filename_rsa_armour_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s > %s/%s.gpg",
+             dir, filename_rsa_noarmour_passphrase,
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_noarmour_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s --armor > %s/%s.asc",
+             dir, filename_rsa_armour_passphrase,
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_armour_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --sign --local-user %s %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s > %s/%s.gpg",
+             dir, filename_rsa_noarmour_fail_bad_sig,
              gpgcmd, alpha_name, dir, filename_rsa_noarmour_fail_bad_sig);
     if (system(cmd))
         { return 1; }
 
     // V3 signature
-    snprintf(cmd,sizeof cmd,"%s --compress-level 0 --sign --force-v3-sigs --local-user %s %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --compress-level 0 --sign --force-v3-sigs --local-user %s > %s/%s.gpg",
+             dir, filename_rsa_v3sig,
              gpgcmd, alpha_name, dir, filename_rsa_v3sig);
     if (system(cmd))
         { return 1; }
 
     // MD5 hash
-    snprintf(cmd,sizeof cmd,"%s --compress-level 0 --sign --digest-algo \"MD5\" --local-user %s %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --compress-level 0 --sign --digest-algo \"MD5\" --local-user %s > %s/%s.gpg",
+             dir, filename_rsa_hash_md5,
              gpgcmd, alpha_name, dir, filename_rsa_hash_md5);
     if (system(cmd))
         { return 1; }
@@ -120,23 +127,26 @@ int init_suite_rsa_verify(void)
      * Create CLEARSIGNED test files
      */
 
-    create_testfile(filename_rsa_clearsign_nopassphrase);
-    create_testfile(filename_rsa_clearsign_passphrase);
-    create_testfile(filename_rsa_clearsign_fail_bad_sig);
+    create_small_testfile(filename_rsa_clearsign_nopassphrase);
+    create_small_testfile(filename_rsa_clearsign_passphrase);
+    create_small_testfile(filename_rsa_clearsign_fail_bad_sig);
 
     // and sign them
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor > %s/%s.asc",
+             dir, filename_rsa_clearsign_nopassphrase,
              gpgcmd, alpha_name, dir, filename_rsa_clearsign_nopassphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --passphrase %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --passphrase %s --armor > %s/%s.asc",
+             dir, filename_rsa_clearsign_passphrase,
              gpgcmd, bravo_name, bravo_passphrase, dir, filename_rsa_clearsign_passphrase);
     if (system(cmd))
         { return 1; }
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor %s/%s",
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor > %s/%s.asc",
+             dir, filename_rsa_clearsign_fail_bad_sig,
              gpgcmd, alpha_name, dir, filename_rsa_clearsign_fail_bad_sig);
     if (system(cmd))
         { return 1; }
@@ -153,10 +163,11 @@ int init_suite_rsa_verify(void)
         // unarmoured
         snprintf(filename, sizeof filename, "%s_%d.txt", 
                  filename_rsa_noarmour_compress_base, level);
-        create_testfile(filename);
+        create_small_testfile(filename);
 
         // just ZIP for now
-        snprintf(cmd,sizeof cmd,"%s --openpgp --compress-algo \"ZIP\" --compress-level %d --sign --local-user %s %s/%s", 
+        snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-algo \"ZIP\" --compress-level %d --sign --local-user %s > %s/%s.gpg", 
+                 dir, filename, 
                  gpgcmd, level, alpha_name, dir, filename);
         if (system(cmd))
             {
@@ -166,9 +177,10 @@ int init_suite_rsa_verify(void)
         // armoured
         snprintf(filename, sizeof filename, "%s_%d.txt", 
                  filename_rsa_armour_compress_base, level);
-        create_testfile(filename);
+        create_small_testfile(filename);
 
-        snprintf(cmd,sizeof cmd,"%s --openpgp --compress-algo \"ZIP\" --compress-level %d --sign --armour --local-user %s %s/%s", 
+        snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-algo \"ZIP\" --compress-level %d --sign --armour --local-user %s > %s/%s.asc", 
+                 dir, filename, 
                  gpgcmd, level, alpha_name, dir, filename);
         if (system(cmd))
             {

@@ -41,6 +41,7 @@
 
 static const char* usage="%s --list-keys | --encrypt | --decrypt | --sign | --clearsign | --verify [--keyring=<keyring>] [--userid=<userid>] [--filename=<filename>] [--armour] [--homedir=<homedir>]\n";
 static const char* usage_list_keys="%s --list-keys [--keyring=<keyring>]\n";
+// \todo static const char* usage_list_packets="%s --list-packets \n";
 static const char* usage_find_key="%s --find-key --userid=<userid> [--keyring=<keyring>] \n";
 static const char* usage_export_key="%s --export-key --userid=<userid> [--keyring=<keyring>] \n";
 static const char* usage_import_key="%s --import-key --filename=<filename> --keyring=<keyring> \n";
@@ -56,6 +57,7 @@ static const char* pname;
 enum optdefs {
 // commands
 LIST_KEYS=1,
+// \todo LIST_PACKETS,
 FIND_KEY,
 EXPORT_KEY,
 IMPORT_KEY,
@@ -79,6 +81,7 @@ static struct option long_options[]=
     {
     // commands
     { "list-keys", no_argument, NULL, LIST_KEYS },
+    //\todo    { "list-packets", no_argument, NULL, LIST_PACKETS },
     { "find-key", no_argument, NULL, FIND_KEY },
     { "export-key", no_argument, NULL, EXPORT_KEY },
     { "import-key", no_argument, NULL, IMPORT_KEY },
@@ -181,6 +184,12 @@ int main(int argc, char **argv)
             cmd=LIST_KEYS;
             break;
             
+            /* \todo
+        case LIST_PACKETS:
+            cmd=LIST_PACKETS;
+            break;
+            */
+
         case FIND_KEY:
             cmd=FIND_KEY;
             break;
@@ -326,6 +335,8 @@ int main(int argc, char **argv)
         //        ops_keyring_free(&kering);
         break;
         
+        //case LIST_PACKETS:
+
     case FIND_KEY:
         if (!got_userid)
             {

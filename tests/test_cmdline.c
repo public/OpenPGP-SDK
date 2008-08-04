@@ -36,9 +36,9 @@ int init_suite_cmdline(void)
     {
     snprintf(openpgp,MAXBUF,"%s/../../src/app/openpgp", dir);
 
-    create_testfile(testfile_encrypt);
-    create_testfile(testfile_sign);
-    create_testfile(testfile_clearsign);
+    create_small_testfile(testfile_encrypt);
+    create_small_testfile(testfile_sign);
+    create_small_testfile(testfile_clearsign);
 
     // Return success
     return 0;
