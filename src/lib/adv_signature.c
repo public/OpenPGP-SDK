@@ -23,6 +23,7 @@
  */
 
 #include <openpgpsdk/signature.h>
+#include <openpgpsdk/readerwriter.h>
 #include <openpgpsdk/crypto.h>
 #include <openpgpsdk/create.h>
 #include <assert.h>
@@ -634,7 +635,7 @@ void ops_signature_add_data(ops_create_signature_t *sig,const void *buf,
  * \param sig
  */
 
-void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
+ops_boolean_t ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
     {
     sig->hashed_data_length=ops_memory_get_length(sig->mem)
 	-sig->hashed_count_offset-2;
@@ -642,7 +643,7 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
 			 sig->hashed_data_length,2);
     // dummy unhashed subpacket count
     sig->unhashed_count_offset=ops_memory_get_length(sig->mem);
-    ops_write_scalar(0,2,sig->info);
+    return ops_write_scalar(0,2,sig->info);
     }
 
 /**
@@ -658,9 +659,10 @@ void ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
  * \todo get a better description of how/when this is used
  */
 
-void ops_write_signature(ops_create_signature_t *sig, const ops_public_key_t *key,
+ops_boolean_t ops_write_signature(ops_create_signature_t *sig, const ops_public_key_t *key,
 			 const ops_secret_key_t *skey, ops_create_info_t *info)
     {
+    ops_boolean_t rtn=ops_false;
     size_t l=ops_memory_get_length(sig->mem);
 
     assert(skey->key.rsa.d); // key not decrypted
@@ -692,12 +694,21 @@ void ops_write_signature(ops_create_signature_t *sig, const ops_public_key_t *ke
     assert(key->algorithm == OPS_PKA_RSA);
     rsa_sign(&sig->hash,&key->key.rsa,&skey->key.rsa,sig->info);
 
-    ops_write_ptag(OPS_PTAG_CT_SIGNATURE,info);
-    l=ops_memory_get_length(sig->mem);
-    ops_write_length(l,info);
-    ops_write(ops_memory_get_data(sig->mem),l,info);
+    rtn=ops_write_ptag(OPS_PTAG_CT_SIGNATURE,info);
+    if (rtn!=ops_false)
+        {
+        l=ops_memory_get_length(sig->mem);
+        rtn = ops_write_length(l,info)
+            && ops_write(ops_memory_get_data(sig->mem),l,info);
+        }
 
     ops_memory_free(sig->mem);
+
+    if (rtn==ops_false)
+        {
+        OPS_ERROR(&info->errors,OPS_E_W,"Cannot write signature");
+        }
+    return rtn;
     }
 
 /**
@@ -708,10 +719,10 @@ void ops_write_signature(ops_create_signature_t *sig, const ops_public_key_t *ke
  * \param sig
  * \param when
  */
-void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
+ops_boolean_t ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
     {
-    ops_write_ss_header(5,OPS_PTAG_SS_CREATION_TIME,sig->info);
-    ops_write_scalar(when,4,sig->info);
+    return ops_write_ss_header(5,OPS_PTAG_SS_CREATION_TIME,sig->info)
+        && ops_write_scalar(when,4,sig->info);
     }
 
 /**
@@ -723,11 +734,11 @@ void ops_signature_add_creation_time(ops_create_signature_t *sig,time_t when)
  * \param keyid
  */
 
-void ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
+ops_boolean_t ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
 				     const unsigned char keyid[OPS_KEY_ID_SIZE])
     {
-    ops_write_ss_header(OPS_KEY_ID_SIZE+1,OPS_PTAG_SS_ISSUER_KEY_ID,sig->info);
-    ops_write(keyid,OPS_KEY_ID_SIZE,sig->info);
+    return ops_write_ss_header(OPS_KEY_ID_SIZE+1,OPS_PTAG_SS_ISSUER_KEY_ID,sig->info)
+        && ops_write(keyid,OPS_KEY_ID_SIZE,sig->info);
     }
 
 /**

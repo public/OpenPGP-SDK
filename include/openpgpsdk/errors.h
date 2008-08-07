@@ -111,6 +111,7 @@ void ops_print_errors(ops_error_t *errstack);
 void ops_free_errors(ops_error_t *errstack);
 
 #define OPS_SYSTEM_ERROR_1(err,code,syscall,fmt,arg)	do { ops_push_error(err,OPS_E_SYSTEM_ERROR,errno,__FILE__,__LINE__,syscall); ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
+#define OPS_MEMORY_ERROR(err) {fprintf(stderr, "Memory error\n");} // \todo placeholder for better error handling
 #define OPS_ERROR(err,code,fmt)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt); } while(0)
 #define OPS_ERROR_1(err,code,fmt,arg)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg); } while(0)
 #define OPS_ERROR_2(err,code,fmt,arg,arg2)	do { ops_push_error(err,code,0,__FILE__,__LINE__,fmt,arg,arg2); } while(0)

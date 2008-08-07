@@ -39,7 +39,7 @@ static int debug=0;
 
 #define MAXBUF 1024
 
-void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey, const ops_boolean_t overwrite)
+ops_boolean_t ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey, const ops_boolean_t overwrite)
     {
     // \todo allow choice of hash algorithams
     // enforce use of SHA1 for now
@@ -54,6 +54,7 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     ops_create_info_t *cinfo=NULL;
     unsigned char buf[MAXBUF];
     //int flags=0;
+    ops_boolean_t rtn=ops_false;
 
     // open file to sign
 #ifdef WIN32
@@ -63,18 +64,31 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
 #endif
     if(fd_in < 0)
         {
-        perror(filename);
-        exit(2);
+        return ops_false;
         }
     
     // set up output file
     snprintf(signed_file,sizeof signed_file,"%s.%s",filename,suffix);
     fd_out=ops_setup_file_write(&cinfo, signed_file, overwrite);
+    if (fd_out < 0)
+        { 
+        close (fd_in);
+        return ops_false; 
+        }
 
     // set up signature
     sig=ops_create_signature_new();
+    if (!sig)
+        {
+        close (fd_in);
+        ops_teardown_file_write(cinfo,fd_out);
+        return ops_false;
+        }
+
+    // \todo could add more error detection here
     ops_signature_start_cleartext_signature(sig,skey,OPS_HASH_SHA1,OPS_SIG_BINARY);
-    ops_writer_push_clearsigned(cinfo,sig);
+    if (ops_writer_push_clearsigned(cinfo,sig)!=ops_true)
+        { return ops_false; }
 
     // Do the signing
 
@@ -93,24 +107,36 @@ void ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *sk
     // add signature with subpackets:
     // - creation time
     // - key id
-    ops_writer_switch_to_armoured_signature(cinfo);
+    rtn = ops_writer_switch_to_armoured_signature(cinfo)
+        && ops_signature_add_creation_time(sig,time(NULL));
+    if (rtn==ops_false)
+        {
+        ops_teardown_file_write(cinfo,fd_out);
+        return ops_false;
+        }
 
-    // \todo creation time
-    ops_signature_add_creation_time(sig,time(NULL));
     ops_keyid(keyid,&skey->public_key);
-    ops_signature_add_issuer_key_id(sig,keyid);
-    ops_signature_hashed_subpackets_end(sig);
 
-    ops_write_signature(sig,&skey->public_key,skey,cinfo);
+    rtn = ops_signature_add_issuer_key_id(sig,keyid)
+        && ops_signature_hashed_subpackets_end(sig)
+        && ops_write_signature(sig,&skey->public_key,skey,cinfo);
 
     ops_teardown_file_write(cinfo,fd_out);
+
+    if (rtn==ops_false)
+        {
+        OPS_ERROR(&cinfo->errors,OPS_E_W,"Cannot sign file as cleartext");
+        }
+    return rtn;
     }
 
 
 /* It is the calling function's responsibility to free signed_cleartext */
 /* signed_cleartext should be a NULL pointer when passed in */
-void ops_sign_buf_as_cleartext(const char* cleartext, const size_t len, ops_memory_t** signed_cleartext, const ops_secret_key_t *skey)
+ops_boolean_t ops_sign_buf_as_cleartext(const char* cleartext, const size_t len, ops_memory_t** signed_cleartext, const ops_secret_key_t *skey)
     {
+    ops_boolean_t rtn=ops_false;
+
     // \todo allow choice of hash algorithams
     // enforce use of SHA1 for now
 
@@ -123,32 +149,42 @@ void ops_sign_buf_as_cleartext(const char* cleartext, const size_t len, ops_memo
 
     // set up signature
     sig=ops_create_signature_new();
+    if (!sig)
+        { 
+        return ops_false;
+        }
+
+    // \todo could add more error detection here
     ops_signature_start_cleartext_signature(sig,skey,OPS_HASH_SHA1,OPS_SIG_BINARY);
 
     // set up output file
     ops_setup_memory_write(&cinfo, signed_cleartext, len);
 
-    ops_writer_push_clearsigned(cinfo,sig);
-
     // Do the signing
-
-    ops_write(cleartext,len,cinfo);
-
     // add signature with subpackets:
     // - creation time
     // - key id
-    ops_writer_switch_to_armoured_signature(cinfo);
+    rtn = ops_writer_push_clearsigned(cinfo,sig)
+        && ops_write(cleartext,len,cinfo)
+        && ops_writer_switch_to_armoured_signature(cinfo)
+        && ops_signature_add_creation_time(sig,time(NULL));
 
-    ops_signature_add_creation_time(sig,time(NULL));
+    if (rtn==ops_false)
+        {
+        return ops_false;
+        }
+
     ops_keyid(keyid,&skey->public_key);
-    ops_signature_add_issuer_key_id(sig,keyid);
-    ops_signature_hashed_subpackets_end(sig);
 
-    ops_write_signature(sig,&skey->public_key,skey,cinfo);
+    rtn = ops_signature_add_issuer_key_id(sig,keyid)
+        && ops_signature_hashed_subpackets_end(sig)
+        && ops_write_signature(sig,&skey->public_key,skey,cinfo)
+        && ops_writer_close(cinfo);
 
-    // the calling function must free signed_cleartext
-    ops_writer_close(cinfo);
+    // Note: the calling function must free signed_cleartext
     ops_create_info_delete(cinfo);
+
+    return rtn;
     }
 
 void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t use_armour, const ops_boolean_t overwrite)
@@ -295,7 +331,6 @@ ops_memory_t* ops_sign_mem(const void* input, const int input_len, const ops_sig
     // - creation time
     // - key id
 
-    // \todo add creation time
     ops_signature_add_creation_time(sig,time(NULL));
 
     ops_keyid(keyid,&skey->public_key);

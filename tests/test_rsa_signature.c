@@ -39,6 +39,8 @@
 
 static int debug=0;
 
+static char *filename_rsa_large_noarmour_nopassphrase="ops_rsa_signed_large_noarmour_nopassphrase.txt";
+static char *filename_rsa_large_armour_nopassphrase="ops_rsa_signed_large_armour_nopassphrase.txt";
 static char *filename_rsa_noarmour_nopassphrase="ops_rsa_signed_noarmour_nopassphrase.txt";
 static char *filename_rsa_noarmour_passphrase="ops_rsa_signed_noarmour_passphrase.txt";
 static char *filename_rsa_armour_nopassphrase="ops_rsa_signed_armour_nopassphrase.txt";
@@ -65,6 +67,9 @@ int init_suite_rsa_signature(void)
     create_small_testfile(filename_rsa_clearsign_file_passphrase);
     create_small_testfile(filename_rsa_clearsign_buf_nopassphrase);
     create_small_testfile(filename_rsa_clearsign_buf_passphrase);
+
+    create_large_testfile(filename_rsa_large_noarmour_nopassphrase);
+    create_large_testfile(filename_rsa_large_armour_nopassphrase);
 
     // Return success
     return 0;
@@ -414,6 +419,20 @@ static void test_rsa_signature_sign_memory(const int use_armour, const void* inp
     ops_validate_result_free(result);
     }
 
+static void test_rsa_signature_large_noarmour_nopassphrase(void)
+    {
+    int armour=0;
+    assert(pub_keyring.nkeys);
+    test_rsa_signature_sign(armour,filename_rsa_large_noarmour_nopassphrase, alpha_skey);
+    }
+
+static void test_rsa_signature_large_armour_nopassphrase(void)
+    {
+    int armour=1;
+    assert(pub_keyring.nkeys);
+    test_rsa_signature_sign(armour,filename_rsa_large_armour_nopassphrase, alpha_skey);
+    }
+
 static void test_rsa_signature_noarmour_nopassphrase(void)
     {
     unsigned char testdata[MAXBUF];
@@ -482,14 +501,16 @@ static void test_rsa_signature_clearsign_buf_passphrase(void)
     test_rsa_signature_clearsign_buf(filename_rsa_clearsign_buf_passphrase, bravo_skey);
     }
 
+/*
 static void test_todo(void)
     {
-    CU_FAIL("Test TODO: Test large files");
-    CU_FAIL("Test TODO: Sign with V3 signature?");
-    CU_FAIL("Test TODO: Use other hash algorithms?");
-    CU_FAIL("Test TODO: Check for key/signature expiry");
-    CU_FAIL("Test TODO: Check for key/signature revocation");
+    CU_FAIL("Test FUTURE: Use other hash algorithms");
+    CU_FAIL("Test FUTURE: Check for key expiry");
+    CU_FAIL("Test FUTURE: Check for key revocation");
+    CU_FAIL("Test FUTURE: Check for signature expiry");
+    CU_FAIL("Test FUTURE: Check for signature revocation");
     }
+*/
 
 static int add_tests(CU_pSuite suite)
     {
@@ -519,9 +540,16 @@ static int add_tests(CU_pSuite suite)
     if (NULL == CU_add_test(suite, "Armoured, passphrase", test_rsa_signature_armour_passphrase))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))
+    if (NULL == CU_add_test(suite, "Large, no armour, no passphrase", test_rsa_signature_large_noarmour_nopassphrase))
 	    return 0;
     
+    if (NULL == CU_add_test(suite, "Large, armour, no passphrase", test_rsa_signature_large_armour_nopassphrase))
+	    return 0;
+    
+    /*
+    if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))
+	    return 0;
+    */
     return 1;
 }
 

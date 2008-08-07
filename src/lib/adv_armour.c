@@ -28,6 +28,7 @@
 #include <openpgpsdk/util.h>
 #include <openpgpsdk/crypto.h>
 #include <openpgpsdk/create.h>
+#include <openpgpsdk/readerwriter.h>
 #include <openpgpsdk/signature.h>
 #include <openpgpsdk/version.h>
 #include <openpgpsdk/packet-parse.h>
@@ -908,26 +909,34 @@ static void dash_escaped_destroyer(ops_writer_info_t *winfo)
     free(arg);
     }
 
-// XXX: should return errors.
 /**
  * \param info
  * \param sig
- * \todo should return errors
  */
-void ops_writer_push_clearsigned(ops_create_info_t *info,
+ops_boolean_t ops_writer_push_clearsigned(ops_create_info_t *info,
 				  ops_create_signature_t *sig)
     {
     static char header[]="-----BEGIN PGP SIGNED MESSAGE-----\r\nHash: ";
     const char *hash=ops_text_from_hash(ops_signature_get_hash(sig));
     dash_escaped_arg_t *arg=ops_mallocz(sizeof *arg);
 
-    ops_write(header,sizeof header-1,info);
-    ops_write(hash,strlen(hash),info);
-    ops_write("\r\n\r\n",4,info);
+    ops_boolean_t rtn;
+
+    rtn= ( ops_write(header,sizeof header-1,info)
+           && ops_write(hash,strlen(hash),info)
+           && ops_write("\r\n\r\n",4,info));
+      
+    if (rtn==ops_false)
+        {
+        OPS_ERROR(&info->errors, OPS_E_W, "Error pushing clearsigned header");
+        return rtn;
+        }
+
     arg->seen_nl=ops_true;
     arg->sig=sig;
     arg->trailing=ops_memory_new();
     ops_writer_push(info,dash_escaped_writer,NULL,dash_escaped_destroyer,arg);
+    return rtn;
     }
 
 
@@ -1061,26 +1070,35 @@ static ops_boolean_t linebreak_writer(const unsigned char *src,
     return ops_true;
     }
 
-// XXX: should return errors.
 /**
  * \param info
  */
-void ops_writer_switch_to_armoured_signature(ops_create_info_t *info)
+ops_boolean_t ops_writer_switch_to_armoured_signature(ops_create_info_t *info)
     {
     static char header[]="\r\n-----BEGIN PGP SIGNATURE-----\r\nVersion: "
 	OPS_VERSION_STRING "\r\n\r\n";
     base64_arg_t *base64;
 
     ops_writer_pop(info);
-    ops_write(header,sizeof header-1,info);
+    if (ops_write(header,sizeof header-1,info)==ops_false)
+        {
+        OPS_ERROR(&info->errors, OPS_E_W, "Error switching to armoured signature");
+        return ops_false;
+        }
 
     ops_writer_push(info,linebreak_writer,NULL,ops_writer_generic_destroyer,
 		    ops_mallocz(sizeof(linebreak_arg_t)));
 
     base64=ops_mallocz(sizeof *base64);
+    if (!base64)
+        {
+        OPS_MEMORY_ERROR(&info->errors);
+        return ops_false;
+        }
     base64->checksum=CRC24_INIT;
     ops_writer_push(info,base64_writer,signature_finaliser,
 		    ops_writer_generic_destroyer,base64);
+    return ops_true;
     }
 
 static ops_boolean_t armoured_message_finaliser(ops_error_t **errors,
@@ -1195,30 +1213,6 @@ static ops_boolean_t armoured_private_key_finaliser(ops_error_t **errors,
     return armoured_finaliser(OPS_PGP_PRIVATE_KEY_BLOCK,errors,winfo);
     }
 
-// XXX: should return errors.
-/**
- * \param info
- * \todo should return errors
- */
-/*
-void ops_writer_push_armoured_public_key(ops_create_info_t *info)
-    {
-    static char header[]="-----BEGIN PGP PUBLIC KEY BLOCK-----\r\nVersion: "
-        OPS_VERSION_STRING "\r\n\r\n";
-    base64_arg_t *arg=ops_mallocz(sizeof *arg);
-
-    ops_write(header,sizeof header-1,info);
-
-    arg->checksum=CRC24_INIT;
-    ops_writer_push(info,base64_writer,armoured_public_key_finaliser,ops_writer_generic_destroyer,arg);
-    }
-*/
-
-// XXX: should return errors.
-/**
- * \param info
- * \todo should return errors
- */
 // \todo use this for other armoured types
 void ops_writer_push_armoured(ops_create_info_t *info, ops_armor_type_t type)
     {

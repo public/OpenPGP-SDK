@@ -256,7 +256,6 @@ static void test_todo(void)
     CU_FAIL("Test TODO: Encrypt to multiple keys in same keyring");
     CU_FAIL("Test TODO: Encrypt to multiple keys where my keys is (a) first key in list; (b) last key in list; (c) in the middle of the list");
     CU_FAIL("Test TODO: Encrypt to users with different preferences");
-    CU_FAIL("Test TODO: Test large files");
     */
     }
 

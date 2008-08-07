@@ -99,8 +99,6 @@ ops_boolean_t ops_write_scalar(unsigned n,unsigned length,
  * \param bn
  * \param info
  * \return 1 if OK, otherwise 0
- * \todo This statement about the return value is true based on the assumption
- *	that ops_true=1. Tidy this assumption up.
  */
 
 ops_boolean_t ops_write_mpi(const BIGNUM *bn,ops_create_info_t *info)
@@ -160,7 +158,7 @@ ops_boolean_t ops_write_length(unsigned length,ops_create_info_t *info)
  * \param length
  * \param type
  * \param info
- * \return 1 if OK, otherwise 0
+ * \return ops_true if OK, otherwise ops_false
  */
 
 ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
@@ -196,8 +194,7 @@ void ops_fast_create_user_id(ops_user_id_t *id,unsigned char *user_id)
  *
  * \param id
  * \param info
- * \return Return value from ops_write() unless call to ops_write_ptag() or ops_write_length() failed before it was called, in which case returns 0
- * \todo tidy up that return value description!
+ * \return ops_true if OK, otherwise ops_false
  */
 ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
 				       ops_create_info_t *info)
@@ -668,7 +665,7 @@ ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const 
  * \param key
  * \param info
  * \return Return value from write_public_key_body() unless call to ops_write_ptag() or ops_write_length() failed before it was called, in which case returns 0
- * \todo tidy up that return value description!
+ * \return ops_true if OK, otherwise ops_false
  */
 ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
 					  ops_create_info_t *info)
@@ -697,9 +694,7 @@ ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
  * \param e RSA public encryption exponent
  * \param info Writer setup
  *
- * \return result from ops_write_struct_public_key()
- * 
- * \todo get better definition of return values
+ * \return ops_true if OK, otherwise ops_false
  */
 
 ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
@@ -1320,8 +1315,11 @@ ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data,
                                      const ops_literal_data_type_t type,
                                      ops_create_info_t *info)
     {
-    // \todo add filename 
-    // \todo add date
+    /*
+     * RFC4880 does not specify a meaning for filename or date.
+     * It is implementation-dependent.
+     * We will not implement them.
+     */
     // \todo do we need to check text data for <cr><lf> line endings ?
     return ops_write_ptag(OPS_PTAG_CT_LITERAL_DATA, info)
         && ops_write_length(1+1+4+maxlen,info)
@@ -1361,7 +1359,7 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
         ops_memory_add(mem, &buf[0], n);
         }
     close(fd);    
-    // \todo add date
+
     // \todo do we need to check text data for <cr><lf> line endings ?
     len=ops_memory_get_length(mem);
     rtn=ops_write_ptag(OPS_PTAG_CT_LITERAL_DATA, info)

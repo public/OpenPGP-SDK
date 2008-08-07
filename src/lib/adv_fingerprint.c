@@ -115,6 +115,7 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
  *
  * \param keyid Space for the calculated ID to be stored
  * \param key The key for which the ID is calculated
+ * \todo add error return value
  */
 
 void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key)

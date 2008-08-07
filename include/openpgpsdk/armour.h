@@ -28,10 +28,10 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
 			      ops_boolean_t trailing_whitespace);
 
 void ops_reader_pop_dearmour(ops_parse_info_t *parse_info);
-void ops_writer_push_clearsigned(ops_create_info_t *info,
+ops_boolean_t ops_writer_push_clearsigned(ops_create_info_t *info,
 				  ops_create_signature_t *sig);
 void ops_writer_push_armoured_message(ops_create_info_t *info);
-void ops_writer_switch_to_armoured_signature(ops_create_info_t *info);
+ops_boolean_t ops_writer_switch_to_armoured_signature(ops_create_info_t *info);
 
 typedef enum 
     {

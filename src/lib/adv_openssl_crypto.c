@@ -321,7 +321,7 @@ ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e,
     // populate ops key from ssl key
 
     skey->public_key.version=4;
-    //\todo    skey->public_key.creation_time=NULL; // \todo
+    skey->public_key.creation_time=time(NULL);
     skey->public_key.days_valid=0;
     skey->public_key.algorithm= OPS_PKA_RSA;
 
