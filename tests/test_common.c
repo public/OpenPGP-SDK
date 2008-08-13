@@ -362,14 +362,14 @@ test_cb_get_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t 
           Doing this so the test can be automated.
         */
         
-        if (cbinfo->crypt.keydata==alpha_sec_keydata)
+        if (cbinfo->cryptinfo.keydata==alpha_sec_keydata)
             passphrase=alpha_passphrase;
-        else if (cbinfo->crypt.keydata==bravo_sec_keydata)
+        else if (cbinfo->cryptinfo.keydata==bravo_sec_keydata)
             passphrase=bravo_passphrase;
         else
             assert(0);
         //        *(content->secret_key_passphrase.passphrase)=ops_malloc_passphrase(no_passphrase);
-        cbinfo->crypt.passphrase=ops_malloc_passphrase(passphrase);
+        cbinfo->cryptinfo.passphrase=ops_malloc_passphrase(passphrase);
         return OPS_KEEP_MEMORY;
         break;
         

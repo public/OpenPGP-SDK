@@ -65,7 +65,7 @@ struct ops_parse_cb_info
     ops_parse_cb_info_t *next;
 
     ops_create_info_t *cinfo; /*!< used if writing out parsed info */
-    ops_crypt_info_t crypt;
+    ops_crypt_info_t cryptinfo; /*!< used when decrypting */
     };
 
 /** ops_parse_hash_info_t */
@@ -109,6 +109,7 @@ struct ops_parse_info
     ops_parse_cb_info_t cbinfo;
     ops_error_t *errors;
     ops_crypt_t decrypt;
+    ops_crypt_info_t cryptinfo;
     size_t nhashes;
     ops_parse_hash_info_t *hashes;
     ops_boolean_t reading_v3_secret:1;

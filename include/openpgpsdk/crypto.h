@@ -159,8 +159,8 @@ struct ops_key_data;
 void ops_writer_push_encrypt(ops_create_info_t *info,
                              const struct ops_key_data *key);
 
-void ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_keydata_t *pub_key, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite);
-void ops_decrypt_file(const char* input_filename, const char* output_filename, ops_keyring_t *keyring, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite,ops_parse_cb_t* cb_get_passphrase);
+ops_boolean_t ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_keydata_t *pub_key, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite);
+ops_boolean_t ops_decrypt_file(const char* input_filename, const char* output_filename, ops_keyring_t *keyring, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite,ops_parse_cb_t* cb_get_passphrase);
 
 // Keys
 ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e, ops_keydata_t* keydata);

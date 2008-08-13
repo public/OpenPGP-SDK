@@ -34,6 +34,7 @@
 #include "keyring_local.h"
 #include <openpgpsdk/compress.h>
 #include <openpgpsdk/create.h>
+#include <openpgpsdk/hash.h>
 #include <openpgpsdk/keyring.h>
 #include <openpgpsdk/random.h>
 #include <openpgpsdk/readerwriter.h>
@@ -140,56 +141,6 @@ static void encrypt_se_ip_destroyer (ops_writer_info_t *winfo)
 
     free(arg->crypt);
     free(arg);
-    }
-
-void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* plaintext, const unsigned int sz_plaintext, unsigned char *hashed)
-    {
-    int debug=0;
-    ops_hash_t hash;
-    unsigned char c[1];
-
-    if (debug)
-        {
-        unsigned int i=0;
-        fprintf(stderr,"ops_calc_mdc_hash():\n");
-
-        fprintf(stderr,"\npreamble: ");
-        for (i=0; i<sz_preamble;i++)
-            fprintf(stderr," 0x%02x", preamble[i]);
-        fprintf(stderr,"\n");
-
-        fprintf(stderr,"\nplaintext (len=%d): ",sz_plaintext);
-        for (i=0; i<sz_plaintext;i++)
-            fprintf(stderr," 0x%02x", plaintext[i]);
-        fprintf(stderr,"\n");
-        }
-
-    // init
-    ops_hash_any(&hash, OPS_HASH_SHA1);
-    hash.init(&hash);
-
-    // preamble
-    hash.add(&hash,preamble,sz_preamble);
-    // plaintext
-    hash.add(&hash,plaintext,sz_plaintext); 
-    // MDC packet tag
-    c[0]=0xD3;
-    hash.add(&hash,&c[0],1);   
-    // MDC packet len
-    c[0]=0x14;
-    hash.add(&hash,&c[0],1);   
-
-    //finish
-    hash.finish(&hash,hashed);
-
-    if (debug)
-        {
-        unsigned int i=0;
-        fprintf(stderr,"\nhashed (len=%d): ",SHA_DIGEST_LENGTH);
-        for (i=0; i<SHA_DIGEST_LENGTH;i++)
-            fprintf(stderr," 0x%02x", hashed[i]);
-        fprintf(stderr,"\n");
-        }
     }
 
 ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,

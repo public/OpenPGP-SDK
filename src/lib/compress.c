@@ -65,8 +65,6 @@ typedef struct
     unsigned char *dst;
     } compress_arg_t;
 
-#define ERR(err)	do { content.content.error.error=err; content.tag=OPS_PARSER_ERROR; ops_parse_cb(&content,cbinfo); return -1; } while(0)
-
 // \todo remove code duplication between this and bzip2_compressed_data_reader
 static int zlib_compressed_data_reader(void *dest,size_t length,
 				  ops_error_t **errors,
@@ -76,7 +74,7 @@ static int zlib_compressed_data_reader(void *dest,size_t length,
     z_decompress_arg_t *arg=ops_reader_get_arg(rinfo);
     assert(arg->type==OPS_C_ZIP || arg->type==OPS_C_ZLIB);
 
-    ops_parser_content_t content;
+    //ops_parser_content_t content;
     int saved=length;
 
     if(/*arg->region->indeterminate && */ arg->inflate_ret == Z_STREAM_END
@@ -86,7 +84,7 @@ static int zlib_compressed_data_reader(void *dest,size_t length,
     if(arg->region->length_read == arg->region->length)
         {
         if(arg->inflate_ret != Z_STREAM_END)
-            ERR("Compressed data didn't end when region ended.");
+            OPS_ERROR(cbinfo->errors, OPS_E_P_DECOMPRESSION_ERROR,"Compressed data didn't end when region ended.");
         /*
           else
           return 0;
@@ -132,12 +130,12 @@ static int zlib_compressed_data_reader(void *dest,size_t length,
 		{
 		if(!arg->region->indeterminate
 		   && arg->region->length_read != arg->region->length)
-		    ERR("Compressed stream ended before packet end.");
+		    OPS_ERROR(cbinfo->errors,OPS_E_P_DECOMPRESSION_ERROR,"Compressed stream ended before packet end.");
 		}
 	    else if(ret != Z_OK)
 		{
 		fprintf(stderr,"ret=%d\n",ret);
-		ERR(arg->zstream.msg);
+		OPS_ERROR(cbinfo->errors,OPS_E_P_DECOMPRESSION_ERROR, arg->zstream.msg);
 		}
 	    arg->inflate_ret=ret;
 	    }
@@ -162,7 +160,7 @@ static int bzip2_compressed_data_reader(void *dest,size_t length,
     bz_decompress_arg_t *arg=ops_reader_get_arg(rinfo);
     assert(arg->type==OPS_C_BZIP2);
 
-    ops_parser_content_t content;
+    //ops_parser_content_t content;
     int saved=length;
 
     if(arg->inflate_ret == BZ_STREAM_END
@@ -172,7 +170,7 @@ static int bzip2_compressed_data_reader(void *dest,size_t length,
     if(arg->region->length_read == arg->region->length)
         {
         if(arg->inflate_ret != BZ_STREAM_END)
-            ERR("Compressed data didn't end when region ended.");
+            OPS_ERROR(cbinfo->errors, OPS_E_P_DECOMPRESSION_ERROR,"Compressed data didn't end when region ended.");
         }
 
     while(length > 0)
@@ -213,12 +211,11 @@ static int bzip2_compressed_data_reader(void *dest,size_t length,
 		{
 		if(!arg->region->indeterminate
 		   && arg->region->length_read != arg->region->length)
-		    ERR("Compressed stream ended before packet end.");
+		    OPS_ERROR(cbinfo->errors,OPS_E_P_DECOMPRESSION_ERROR,"Compressed stream ended before packet end.");
 		}
 	    else if(ret != BZ_OK)
 		{
-		fprintf(stderr,"ret=%d\n",ret);
-        //		ERR(arg->bzstream.msg); //\todo add error handling
+                OPS_ERROR_1(cbinfo->errors,OPS_E_P_DECOMPRESSION_ERROR,"Invalid return %d from BZ2_bzDecompress", ret);
 		}
 	    arg->inflate_ret=ret;
 	    }

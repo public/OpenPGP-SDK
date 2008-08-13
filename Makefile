@@ -9,7 +9,7 @@ headers:
 
 default:
 	@set -e; for d in $(SUBDIRS); do \
-	(cd $$d; echo "+++ make in $$d"; make; echo "--- $$d"); \
+	(cd $$d; echo "+++ make in $$d"; make -w; echo "** submake returns $$?\n"; echo "--- $$d"); \
 	done
 
 include/openpgpsdk/configure.h: include/openpgpsdk/configure.h.template configure

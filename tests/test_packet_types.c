@@ -22,6 +22,7 @@
 #include "CUnit/Basic.h"
  
 #include <openpgpsdk/types.h>
+#include <openpgpsdk/hash.h>
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/packet-parse.h"
 #include "openpgpsdk/keyring.h"

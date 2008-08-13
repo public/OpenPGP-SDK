@@ -7,14 +7,18 @@ LDFLAGS=-g
 
 all: Makefile headers .depend lib
 
-LIBOBJS = adv_packet-parse.o adv_util.o adv_openssl_crypto.o adv_accumulate.o \
-	adv_memory.o adv_fingerprint.o adv_hash.o adv_keyring.o \
-	adv_signature.o adv_compress.o adv_packet-show.o adv_create.o \
-	adv_validate.o adv_lists.o adv_armour.o adv_errors.o \
-    adv_writer_encrypt_se_ip.o adv_writer_encrypt.o \
-    adv_writer_stream_encrypt_se_ip.o \
-	adv_symmetric.o adv_crypto.o random.o adv_readerwriter.o \
-    std_encrypt.o std_keyring.o std_print.o std_signature.o
+LIBOBJS = packet-parse.o packet-print.o packet-show.o \
+        util.o openssl_crypto.o accumulate.o \
+	memory.o fingerprint.o hash.o keyring.o \
+	signature.o compress.o create.o \
+	validate.o lists.o errors.o \
+	symmetric.o crypto.o random.o readerwriter.o \
+        reader.o reader_fd.o reader_mem.o \
+        reader_armoured.o reader_hashed.o reader_encrypted.o \
+        writer_fd.o writer_memory.o \
+        writer.o writer_skey_checksum.o  writer_armour.o \
+        writer_encrypt_se_ip.o writer_encrypt.o \
+        writer_stream_encrypt_se_ip.o
 
 headers:
 	cd ../../include/openpgpsdk && make headers

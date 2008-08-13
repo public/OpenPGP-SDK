@@ -25,6 +25,7 @@
 
 #include <openssl/cast.h>
 
+#include <openpgpsdk/callback.h>
 #include <openpgpsdk/packet.h>
 #include <openpgpsdk/packet-parse.h>
 #include <openpgpsdk/keyring.h>
@@ -34,6 +35,8 @@
 #include <openpgpsdk/readerwriter.h>
 #include <openpgpsdk/packet-show.h>
 #include <openpgpsdk/std_print.h>
+#include <openpgpsdk/create.h>
+#include <openpgpsdk/hash.h>
 
 #include "parse_local.h"
 
@@ -155,17 +158,16 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
 
 /*! \todo descr for CB macro */
 /*! \todo check other callback functions to check they match this usage */
-#define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if((cbinfo)->cb(pc,(cbinfo)) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
-#define CBP(info,t,pc) CB(&(info)->cbinfo,t,pc)
 /*! macro to save typing */
 #define C		content.content
 
+// \todo replace ERRCODE with OPS_ERROR?
 /*! set error code in content and run CallBack to handle error */
 #define ERRCODE(cbinfo,err)	do { C.errcode.errcode=err; CB(cbinfo,OPS_PARSER_ERRCODE,&content); } while(0)
 #define ERRCODEP(pinfo,err)	do { C.errcode.errcode=err; CBP(pinfo,OPS_PARSER_ERRCODE,&content); } while(0)
 /*! set error text in content and run CallBack to handle error, then return */
-#define ERR(cbinfo,err)	do { C.error.error=err; CB(cbinfo,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
-#define ERRP(info,err)	do { C.error.error=err; CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
+//#define ERR(cbinfo,err)	do { C.error.error=err; CB(cbinfo,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
+//#define ERRP(info,err)	do { C.error.error=err; CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
 /*! set error text in content and run CallBack to handle warning, do not return */
 #define WARN(warn)	do { C.error.error=warn; CB(OPS_PARSER_ERROR,&content);; } while(0)
 #define WARNP(info,warn)	do { C.error.error=warn; CBP(info,OPS_PARSER_ERROR,&content); } while(0)
@@ -3188,57 +3190,6 @@ ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
 ops_parse_cb_return_t ops_parse_stacked_cb(const ops_parser_content_t *content,
 					   ops_parse_cb_info_t *cbinfo)
     { return ops_parse_cb(content,cbinfo->next); }
-
-/**
- * \brief
- * \param pinfo
- * \param reader
- * \param arg
- */
-void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg)
-    {
-    pinfo->rinfo.reader=reader;
-    pinfo->rinfo.destroyer=destroyer;
-    pinfo->rinfo.arg=arg;
-    }
-
-/**
- * \brief 
- * \param pinfo
- * \param reader
- * \param arg
- */
-void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg)
-    {
-    ops_reader_info_t *rinfo=malloc(sizeof *rinfo);
-
-    *rinfo=pinfo->rinfo;
-    memset(&pinfo->rinfo,'\0',sizeof pinfo->rinfo);
-    pinfo->rinfo.next=rinfo;
-    pinfo->rinfo.pinfo=pinfo;
-
-    // should copy accumulate flags from other reader? RW
-    pinfo->rinfo.accumulate=rinfo->accumulate;
-    
-    ops_reader_set(pinfo,reader,destroyer,arg);
-    }
-
-/**
- * \param pinfo
- */
-void ops_reader_pop(ops_parse_info_t *pinfo)
-    { 
-    ops_reader_info_t *next=pinfo->rinfo.next;
-
-    pinfo->rinfo=*next;
-    free(next);
-    }
-
-void *ops_reader_get_arg(ops_reader_info_t *rinfo)
-    { return rinfo->arg; }
-
-void *ops_reader_get_arg_from_pinfo(ops_parse_info_t *pinfo)
-    { return pinfo->rinfo.arg; }
 
 ops_error_t *ops_parse_info_get_errors(ops_parse_info_t *pinfo)
     { return pinfo->errors; }

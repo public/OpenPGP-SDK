@@ -105,69 +105,6 @@ void ops_finish(void)
     ops_crypto_finish();
     }
 
-/** Arguments for reader_fd
- */
-typedef struct
-    {
-    int fd; /*!< file descriptor */
-    } reader_fd_arg_t;
-
-/**
- * \ingroup Parse
- *
- * ops_reader_fd() attempts to read up to "plength" bytes from the file 
- * descriptor in "parse_info" into the buffer starting at "dest" using the
- * rules contained in "flags"
- *
- * \param	dest	Pointer to previously allocated buffer
- * \param	plength Number of bytes to try to read
- * \param	flags	Rules about reading to use
- * \param	parse_info	Gets cast to ops_reader_fd_arg_t
- *
- * \return	OPS_R_EOF 	if no bytes were read
- * \return	OPS_R_PARTIAL_READ	if not enough bytes were read, and OPS_RETURN_LENGTH is set in "flags"
- * \return	OPS_R_EARLY_EOF	if not enough bytes were read, and OPS_RETURN_LENGTH was not set in "flags"
- * \return	OPS_R_OK	if expected length was read
- * \return 	OPS_R_ERROR	if cannot read
- *
- * OPS_R_EARLY_EOF and OPS_R_ERROR push errors on the stack
- *
- * \sa enum opt_reader_ret_t
- *
- * \todo change arg_ to typesafe? 
- */
-static int fd_reader(void *dest,size_t length,ops_error_t **errors,
-		     ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
-    {
-    reader_fd_arg_t *arg=ops_reader_get_arg(rinfo);
-    int n=read(arg->fd,dest,length);
-
-    OPS_USED(cbinfo);
-
-    if(n == 0)
-	return 0;
-
-    if(n < 0)
-	{
-	OPS_SYSTEM_ERROR_1(errors,OPS_E_R_READ_FAILED,"read",
-			   "file descriptor %d",arg->fd);
-	return -1;
-	}
-
-    return n;
-    }
-
-static void fd_destroyer(ops_reader_info_t *rinfo)
-    { free(ops_reader_get_arg(rinfo)); }
-
-void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd)
-    {
-    reader_fd_arg_t *arg=malloc(sizeof *arg);
-
-    arg->fd=fd;
-    ops_reader_set(pinfo,fd_reader,fd_destroyer,arg);
-    }
-
 typedef struct
     {
     const unsigned char *buffer;

@@ -140,3 +140,5 @@ void ops_keyid(unsigned char keyid[8],const ops_public_key_t *key)
 	memcpy(keyid,fingerprint.fingerprint+fingerprint.length-8,8);
 	}
     }
+
+// EOF

@@ -24,6 +24,7 @@
 #include <openpgpsdk/types.h>
 #include "openpgpsdk/keyring.h"
 #include <openpgpsdk/armour.h>
+#include <openpgpsdk/create.h>
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/packet-parse.h"
 #include "openpgpsdk/packet-show.h"

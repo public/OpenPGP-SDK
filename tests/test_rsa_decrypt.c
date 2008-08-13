@@ -148,8 +148,8 @@ static void test_rsa_decrypt(const int has_armour, const char *filename)
                         );
 
     // setup keyring and passphrase callback
-    pinfo->cbinfo.crypt.keyring=&sec_keyring;
-    pinfo->cbinfo.crypt.cb_get_passphrase=test_cb_get_passphrase;
+    pinfo->cbinfo.cryptinfo.keyring=&sec_keyring;
+    pinfo->cbinfo.cryptinfo.cb_get_passphrase=test_cb_get_passphrase;
 
     // Set up armour/passphrase options
 

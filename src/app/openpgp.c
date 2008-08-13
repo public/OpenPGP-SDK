@@ -36,6 +36,7 @@
 #include "openpgpsdk/signature.h"
 #include "openpgpsdk/validate.h"
 #include "openpgpsdk/readerwriter.h"
+#include "openpgpsdk/std_print.h"
 
 #define DEFAULT_NUMBITS 1024
 
@@ -51,6 +52,7 @@ static const char* usage_decrypt="%s --decrypt --filename=<filename> [--armour] 
 static const char* usage_sign="%s --sign --userid=<userid> --filename=<filename> [--armour] [--homedir=<homedir>]\n";
 static const char* usage_clearsign="%s --clearsign --userid=<userid> --filename=<filename> [--homedir=<homedir>]\n";
 static const char* usage_verify="%s --verify --filename=<filename> [--homedir=<homedir>] [--armour]\n";
+static const char* usage_list_packets="%s --list-packets --filename=<filename> [--homedir=<homedir>] [--armour]\n";
 
 static const char* pname;
 
@@ -67,6 +69,8 @@ DECRYPT,
 SIGN,
 CLEARSIGN,
 VERIFY,
+LIST_PACKETS,
+
 // options
 KEYRING,
 USERID,
@@ -92,6 +96,8 @@ static struct option long_options[]=
     { "sign", no_argument, NULL, SIGN },
     { "clearsign", no_argument, NULL, CLEARSIGN },
     { "verify", no_argument, NULL, VERIFY },
+
+    { "list-packets", no_argument, NULL, LIST_PACKETS },
 
     // options
     { "keyring", required_argument, NULL, KEYRING },
@@ -225,6 +231,10 @@ int main(int argc, char **argv)
 
         case VERIFY:
             cmd=VERIFY;
+            break;
+
+        case LIST_PACKETS:
+            cmd=LIST_PACKETS;
             break;
 
             // option
@@ -427,18 +437,6 @@ int main(int argc, char **argv)
             }
 
         // write public key
-#ifdef TMP
-        ops_setup_memory_write(&cinfo, &mem, 128);
-        ops_write_transferable_public_key(mykeydata, ops_true, cinfo);
-        ops_keyring_read_from_mem(pubring, mem);
-        ops_teardown_memory_write(cinfo,mem);
-
-        // write secret key
-        ops_setup_memory_write(&cinfo, &mem, 128);
-        ops_write_transferable_secret_key(mykeydata, NULL, 0, ops_true, cinfo);
-        ops_keyring_read_from_mem(secring, mem);
-        ops_teardown_memory_write(cinfo,mem);
-#else
         // append to keyrings
         fd=ops_setup_file_append(&cinfo, pubring_name);
         ops_write_transferable_public_key(mykeydata, ops_false, cinfo);
@@ -460,7 +458,7 @@ int main(int argc, char **argv)
             fprintf(stderr, "Cannot re-read keyring %s\n", secring_name);
             exit(-1);
             }
-#endif
+
         ops_keydata_free(mykeydata);
         break;
 
@@ -573,6 +571,15 @@ int main(int argc, char **argv)
             fprintf(stdout, "Not verified OK: %d invalid signatures, %d unknown signatures\n", validate_result->invalid_count, validate_result->unknown_signer_count);
             }
         ops_validate_result_free(validate_result);
+        break;
+
+    case LIST_PACKETS:
+        if (!got_filename)
+            {
+            print_usage(usage_list_packets, pname);
+            exit(-1);
+            }
+        ops_list_packets(opt_filename, armour, pubring, callback_cmd_get_passphrase_from_cmdline);
         break;
 
     default:

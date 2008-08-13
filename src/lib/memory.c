@@ -95,31 +95,6 @@ void ops_memory_release(ops_memory_t *mem)
     mem->length=0;
     }
 
-static ops_boolean_t memory_writer(const unsigned char *src,unsigned length,
-				      ops_error_t **errors,
-				      ops_writer_info_t *winfo)
-    {
-    ops_memory_t *mem=ops_writer_get_arg(winfo);
-
-    OPS_USED(errors);
-    ops_memory_add(mem,src,length);
-    return ops_true;
-    }
-
-/**
- * \ingroup Create
- *
- * Set a memory writer. Note that it is the caller's resposibility to
- * release mem.
- *
- * \param info The info structure
- * \param mem The memory structure */
-
-void ops_writer_set_memory(ops_create_info_t *info,ops_memory_t *mem)
-    {
-    ops_writer_set(info,memory_writer,NULL,NULL,mem);
-    }
-
 void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)
     {
     size_t extra;
@@ -169,3 +144,5 @@ size_t ops_memory_get_length(const ops_memory_t *mem)
 
 void *ops_memory_get_data(ops_memory_t *mem)
     { return mem->buf; }
+
+// EOF

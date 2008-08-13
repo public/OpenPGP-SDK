@@ -41,117 +41,10 @@
 #include <unistd.h>
 #endif
 
+#include <openpgpsdk/writer.h>
 #include <openpgpsdk/final.h>
 
 static int debug=0;
-
-static ops_boolean_t writer_info_finalise(ops_error_t **errors,
-                                          ops_writer_info_t *winfo);
-
-/*
- * return true if OK, otherwise false
- */
-static ops_boolean_t base_write(const void *src,unsigned length,
-				ops_create_info_t *info)
-    {
-    return info->winfo.writer(src,length,&info->errors,&info->winfo);
-    }
-
-/**
- * \ingroup Create
- *
- * \param src
- * \param length
- * \param info
- * \return 1 if OK, otherwise 0
- */
-
-ops_boolean_t ops_write(const void *src,unsigned length,
-			ops_create_info_t *info)
-    {
-    return base_write(src,length,info);
-    }
-
-/**
- * \ingroup Create
- * \param n
- * \param length
- * \param info
- * \return ops_true if OK, otherwise ops_false
- */
-
-ops_boolean_t ops_write_scalar(unsigned n,unsigned length,
-			       ops_create_info_t *info)
-    {
-    while(length-- > 0)
-	{
-	unsigned char c[1];
-
-	c[0]=n >> (length*8);
-	if(!base_write(c,1,info))
-	    return ops_false;
-	}
-    return ops_true;
-    }
-
-/** 
- * \ingroup Create
- * \param bn
- * \param info
- * \return 1 if OK, otherwise 0
- */
-
-ops_boolean_t ops_write_mpi(const BIGNUM *bn,ops_create_info_t *info)
-    {
-    unsigned char buf[8192];
-    int bits=BN_num_bits(bn);
-
-    assert(bits <= 65535);
-    BN_bn2bin(bn,buf);
-    return ops_write_scalar(bits,2,info)
-	&& ops_write(buf,(bits+7)/8,info);
-    }
-
-/** 
- * \ingroup Create
- * \param tag
- * \param info
- * \return 1 if OK, otherwise 0
- */
-
-ops_boolean_t ops_write_ptag(ops_content_tag_t tag,ops_create_info_t *info)
-    {
-    unsigned char c[1];
-
-    c[0]=tag|OPS_PTAG_ALWAYS_SET|OPS_PTAG_NEW_FORMAT;
-
-    return base_write(c,1,info);
-    }
-
-/** 
- * \ingroup Create
- * \param length
- * \param info
- * \return 1 if OK, otherwise 0
- */
-
-ops_boolean_t ops_write_length(unsigned length,ops_create_info_t *info)
-    {
-    unsigned char c[2];
-
-    if(length < 192)
-	{
-	c[0]=length;
-	return base_write(c,1,info);
-	}
-    else if(length < 8384)
-	{
-	c[0]=((length-192) >> 8)+192;
-	c[1]=(length-192)%256;
-	return base_write(c,2,info);
-	}
-    return ops_write_scalar(0xff,1,info) && ops_write_scalar(length,4,info);
-    }
 
 /** 
  * \ingroup Create
@@ -320,58 +213,6 @@ static ops_boolean_t write_public_key_body(const ops_public_key_t *key,
     return ops_false;
     }
 
-typedef struct
-    {
-    ops_hash_algorithm_t hash_algorithm;
-    ops_hash_t hash;
-    unsigned char *hashed;
-    } skey_checksum_arg_t;
-
-static ops_boolean_t skey_checksum_writer(const unsigned char *src, const unsigned length, ops_error_t **errors, ops_writer_info_t *winfo)
-    {
-    skey_checksum_arg_t *arg=ops_writer_get_arg(winfo);
-    ops_boolean_t rtn=ops_true;
-
-    // add contents to hash
-    arg->hash.add(&arg->hash, src, length);
-
-    // write to next stacked writer
-    rtn=ops_stacked_write(src,length,errors,winfo);
-
-    // tidy up and return
-    return rtn;
-    }
-
-static ops_boolean_t skey_checksum_finaliser(ops_error_t **errors __attribute__((unused)), ops_writer_info_t *winfo)
-    {
-    skey_checksum_arg_t *arg=ops_writer_get_arg(winfo);
-    arg->hash.finish(&arg->hash, arg->hashed);
-    return ops_true;
-    }
-
-static void skey_checksum_destroyer(ops_writer_info_t* winfo)
-    {
-    skey_checksum_arg_t *arg=ops_writer_get_arg(winfo);
-    free(arg);
-    }
-
-void ops_push_skey_checksum_writer(ops_create_info_t *cinfo, ops_secret_key_t *skey)
-    {
-    //    OPS_USED(info);
-    // XXX: push a SHA-1 checksum writer (and change s2k to 254).
-    skey_checksum_arg_t *arg=ops_mallocz(sizeof *arg);
-
-    // configure the arg
-    arg->hash_algorithm=skey->hash_algorithm;
-    arg->hashed=&skey->checkhash[0];
-
-    // init the hash
-    ops_hash_any(&arg->hash, arg->hash_algorithm);
-    arg->hash.init(&arg->hash);
-
-    ops_writer_push(cinfo, skey_checksum_writer, skey_checksum_finaliser, skey_checksum_destroyer, arg);
-    }
- 
 /* Note that we support v3 keys here because they're needed for
  * for verification - the writer doesn't allow them, though */
 static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
@@ -870,45 +711,6 @@ ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
 ops_create_info_t *ops_create_info_new(void)
     { return ops_mallocz(sizeof(ops_create_info_t)); }
 
-/* Note that we finalise from the top down, so we don't use writers below
- * that have already been finalised
- */
-static ops_boolean_t writer_info_finalise(ops_error_t **errors,
-					  ops_writer_info_t *winfo)
-    {
-    ops_boolean_t ret=ops_true;
-
-    if(winfo->finaliser)
-	{
-	ret=winfo->finaliser(errors,winfo);
-	winfo->finaliser=NULL;
-	}
-    if(winfo->next && !writer_info_finalise(errors,winfo->next))
-	{
-	winfo->finaliser=NULL;
-	return ops_false;
-	}
-    return ret;
-    }
-
-static void writer_info_delete(ops_writer_info_t *winfo)
-    {
-    // we should have finalised before deleting
-    assert(!winfo->finaliser);
-    if(winfo->next)
-	{
-	writer_info_delete(winfo->next);
-	free(winfo->next);
-	winfo->next=NULL;
-	}
-    if(winfo->destroyer)
-	{
-	winfo->destroyer(winfo);
-	winfo->destroyer=NULL;
-	}
-    winfo->writer=NULL;
-    }
-
 /**
  * \ingroup Create
  *
@@ -922,197 +724,6 @@ void ops_create_info_delete(ops_create_info_t *info)
     writer_info_delete(&info->winfo);
     free(info);
     }
-
-typedef struct
-    {
-    int fd;
-    } writer_fd_arg_t;
-
-static ops_boolean_t fd_writer(const unsigned char *src,unsigned length,
-			       ops_error_t **errors,
-			       ops_writer_info_t *winfo)
-    {
-    writer_fd_arg_t *arg=ops_writer_get_arg(winfo);
-    int n=write(arg->fd,src,length);
-
-    if(n == -1)
-	{
-	OPS_SYSTEM_ERROR_1(errors,OPS_E_W_WRITE_FAILED,"write",
-			   "file descriptor %d",arg->fd);
-	return ops_false;
-	}
-
-    if((unsigned)n != length)
-	{
-	OPS_ERROR_1(errors,OPS_E_W_WRITE_TOO_SHORT,
-		    "file descriptor %d",arg->fd);
-	return ops_false;
-	}
-
-    return ops_true;
-    }
-
-static void fd_destroyer(ops_writer_info_t *winfo)
-    {
-    free(ops_writer_get_arg(winfo));
-    }
-
-/**
- * \ingroup Create
- *
- * Set the writer in info to be a stock writer that writes to a file
- * descriptor. If another writer has already been set, then that is
- * first destroyed.
- * 
- * \param info The info structure
- * \param fd The file descriptor
- *
- */
-
-void ops_writer_set_fd(ops_create_info_t *info,int fd)
-    {
-    writer_fd_arg_t *arg=malloc(sizeof *arg);
-
-    arg->fd=fd;
-    ops_writer_set(info,fd_writer,NULL,fd_destroyer,arg);
-    }
-
-/**
- * \ingroup Create
- *
- * Set a writer in info. There should not be another writer set.
- *
- * \param info The info structure
- * \param writer The writer
- * \param destroyer The destroyer
- * \param arg The argument for the writer and destroyer
- */
-void ops_writer_set(ops_create_info_t *info,
-		    ops_writer_t *writer,
-		    ops_writer_finaliser_t *finaliser,
-		    ops_writer_destroyer_t *destroyer,
-		    void *arg)
-    {
-    assert(!info->winfo.writer);
-    info->winfo.writer=writer;
-    info->winfo.finaliser=finaliser;
-    info->winfo.destroyer=destroyer;
-    info->winfo.arg=arg;
-    }
-
-/**
- * \ingroup Create
- *
- * Push a writer in info. There must already be another writer set.
- *
- * \param info The info structure
- * \param writer The writer
- * \param destroyer The destroyer
- * \param arg The argument for the writer and destroyer
- */
-void ops_writer_push(ops_create_info_t *info,
-		     ops_writer_t *writer,
-		     ops_writer_finaliser_t *finaliser,
-		     ops_writer_destroyer_t *destroyer,
-		     void *arg)
-    {
-    ops_writer_info_t *copy=ops_mallocz(sizeof *copy);
-
-    assert(info->winfo.writer);
-    *copy=info->winfo;
-    info->winfo.next=copy;
-
-    info->winfo.writer=writer;
-    info->winfo.finaliser=finaliser;
-    info->winfo.destroyer=destroyer;
-    info->winfo.arg=arg;
-    }
-
-void ops_writer_pop(ops_create_info_t *info)
-    { 
-    ops_writer_info_t *next;
-
-    // Make sure the finaliser has been called.
-    assert(!info->winfo.finaliser);
-    // Make sure this is a stacked writer
-    assert(info->winfo.next);
-    if(info->winfo.destroyer)
-	info->winfo.destroyer(&info->winfo);
-
-    next=info->winfo.next;
-    info->winfo=*next;
-
-    free(next);
-    }
-
-/**
- * \ingroup Create
- *
- * Close the writer currently set in info.
- *
- * \param info The info structure
- */
-ops_boolean_t ops_writer_close(ops_create_info_t *info)
-    {
-    ops_boolean_t ret=writer_info_finalise(&info->errors,&info->winfo);
-
-    writer_info_delete(&info->winfo);
-
-    return ret;
-    }
-
-/**
- * \ingroup Create
- *
- * Get the arg supplied to ops_create_info_set_writer().
- *
- * \param winfo The writer_info structure
- * \return The arg
- */
-void *ops_writer_get_arg(ops_writer_info_t *winfo)
-    { return winfo->arg; }
-
-/**
- * \ingroup Create
- *
- * Write to the next writer down in the stack.
- *
- * \param src The data to write.
- * \param length The length of src.
- * \param flags The writer flags.
- * \param errors A place to store errors.
- * \param info The writer_info structure.
- * \return Success - if ops_false, then errors should contain the error.
- */
-ops_boolean_t ops_stacked_write(const void *src,unsigned length,
-				ops_error_t **errors,ops_writer_info_t *winfo)
-    {
-    return winfo->next->writer(src,length,errors,winfo->next);
-    }
-
-/**
- * \ingroup Create
- *
- * Free the arg. Many writers just have a malloc()ed lump of storage, this
- * function releases it.
- *
- * \param winfo the info structure.
- */
-void ops_writer_generic_destroyer(ops_writer_info_t *winfo)
-    { free(ops_writer_get_arg(winfo)); }
-
-/**
- * \ingroup Create
- *
- * A writer that just writes to the next one down. Useful for when you
- * want to insert just a finaliser into the stack.
- */
-ops_boolean_t ops_writer_passthrough(const unsigned char *src,
-				     unsigned length,
-				     ops_error_t **errors,
-				     ops_writer_info_t *winfo)
-    { return ops_stacked_write(src,length,errors,winfo); }
-
 
 ops_boolean_t ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char *cs)
     {
@@ -1309,7 +920,6 @@ ops_boolean_t ops_write_mdc(const unsigned char *hashed,
         && ops_write(hashed, OPS_SHA1_HASH_SIZE, info);
     }
 
-// RENAMED from ops_boolean_t ops_write_literal_data(const unsigned char *data, 
 ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data, 
                                      const int maxlen, 
                                      const ops_literal_data_type_t type,
@@ -1477,7 +1087,5 @@ ops_boolean_t ops_write_one_pass_sig(const ops_secret_key_t* skey,
         && ops_write(keyid, 8, info)
         && ops_write_scalar (1, 1, info);
     }
-
-
 
 // EOF

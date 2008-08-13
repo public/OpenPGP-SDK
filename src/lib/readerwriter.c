@@ -25,17 +25,15 @@
 #else
 #include <direct.h>
 #endif
+#include <termios.h>
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
 #include <openpgpsdk/readerwriter.h>
-#include "parse_local.h"
+#include <openpgpsdk/callback.h>
 
-/*! \todo descr for CB macro */
-/*! \todo check other callback functions to check they match this usage */
-#define CB(cbinfo,t,pc)	do { (pc)->tag=(t); if((cbinfo)->cb(pc,(cbinfo)) == OPS_RELEASE_MEMORY) ops_parser_content_free(pc); } while(0)
-#define CBP(info,t,pc) CB(&(info)->cbinfo,t,pc)
+#include "parse_local.h"
 
 void ops_setup_memory_write(ops_create_info_t **cinfo, ops_memory_t **mem, size_t bufsz)
     {
@@ -115,7 +113,7 @@ int ops_setup_file_write(ops_create_info_t **cinfo, const char* filename, ops_bo
 
 void ops_teardown_file_write(ops_create_info_t *cinfo, int fd)
     {
-    ops_writer_close(cinfo); // new
+    ops_writer_close(cinfo);
     close(fd);
     ops_create_info_delete(cinfo);
     }
@@ -238,10 +236,10 @@ callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t
         {
     case OPS_PTAG_CT_PK_SESSION_KEY:
 		//	printf ("OPS_PTAG_CT_PK_SESSION_KEY\n");
-        assert(cbinfo->crypt.keyring);
-        cbinfo->crypt.keydata=ops_keyring_find_key_by_id(cbinfo->crypt.keyring,
+        assert(cbinfo->cryptinfo.keyring);
+        cbinfo->cryptinfo.keydata=ops_keyring_find_key_by_id(cbinfo->cryptinfo.keyring,
                                              content->pk_session_key.key_id);
-        if(!cbinfo->crypt.keydata)
+        if(!cbinfo->cryptinfo.keydata)
             break;
         break;
 
@@ -267,17 +265,17 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
     switch(content_->tag)
 	{
     case OPS_PARSER_CMD_GET_SECRET_KEY:
-        cbinfo->crypt.keydata=ops_keyring_find_key_by_id(cbinfo->crypt.keyring,content->get_secret_key.pk_session_key->key_id);
-        if (!cbinfo->crypt.keydata || !ops_key_is_secret(cbinfo->crypt.keydata))
+        cbinfo->cryptinfo.keydata=ops_keyring_find_key_by_id(cbinfo->cryptinfo.keyring,content->get_secret_key.pk_session_key->key_id);
+        if (!cbinfo->cryptinfo.keydata || !ops_key_is_secret(cbinfo->cryptinfo.keydata))
             return 0;
 
         /* do we need the passphrase and not have it? if so, get it */
-        if (!cbinfo->crypt.passphrase)
+        if (!cbinfo->cryptinfo.passphrase)
             {
             memset(&pc,'\0',sizeof pc);
-            pc.content.secret_key_passphrase.passphrase=&cbinfo->crypt.passphrase;
+            pc.content.secret_key_passphrase.passphrase=&cbinfo->cryptinfo.passphrase;
             CB(cbinfo,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
-            if (!cbinfo->crypt.passphrase)
+            if (!cbinfo->cryptinfo.passphrase)
                 {
                 fprintf(stderr,"can't get passphrase\n");
                 assert(0);
@@ -285,15 +283,15 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
             }
 
         /* now get the key from the data */
-        secret=ops_get_secret_key_from_data(cbinfo->crypt.keydata);
+        secret=ops_get_secret_key_from_data(cbinfo->cryptinfo.keydata);
         while(!secret)
             {
-            if (!cbinfo->crypt.passphrase)
+            if (!cbinfo->cryptinfo.passphrase)
                 {
-                /* get the passphrase */
+                /* get the passphrase again?*/
                 }
             /* then it must be encrypted */
-            secret=ops_decrypt_secret_key_from_data(cbinfo->crypt.keydata,cbinfo->crypt.passphrase);
+            secret=ops_decrypt_secret_key_from_data(cbinfo->cryptinfo.keydata,cbinfo->cryptinfo.passphrase);
             }
         
         *content->get_secret_key.secret_key=secret;
@@ -307,13 +305,76 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
     return OPS_RELEASE_MEMORY;
     }
 
+static void echo_off()
+    {
+#ifndef WIN32
+    struct termios term;
+    int r;
+
+    r=tcgetattr(0,&term);
+    if(r < 0 && errno == ENOTTY)
+	return;
+    assert(r >= 0);
+
+    term.c_lflag &= ~ECHO;
+
+    r=tcsetattr(0,TCSANOW,&term);
+    assert(r >= 0);
+#endif
+    }
+	
+static void echo_on()
+    {
+#ifndef WIN32
+    struct termios term;
+    int r;
+
+    r=tcgetattr(0,&term);
+    if(r < 0 && errno == ENOTTY)
+	return;
+    assert(r >= 0);
+
+    term.c_lflag |= ECHO;
+
+    r=tcsetattr(0,TCSANOW,&term);
+    assert(r >= 0);
+#endif
+    }
+
+char *ops_get_passphrase(void)
+    {
+    char buffer[1024];
+    size_t n;
+
+    printf("Passphrase: ");
+    
+    echo_off();
+    fgets(buffer,sizeof buffer,stdin);
+    echo_on();
+
+    putchar('\n');
+
+    n=strlen(buffer);
+    if(n && buffer[n-1] == '\n')
+	buffer[--n]='\0';
+    return ops_malloc_passphrase(buffer);
+    }
+
+char *ops_malloc_passphrase(char *pp)
+    {
+    char *passphrase;
+    size_t n;
+
+    n=strlen(pp);
+    passphrase=malloc(n+1);
+    strcpy(passphrase,pp);
+
+    return passphrase;
+    }
+
 ops_parse_cb_return_t
 callback_cmd_get_passphrase_from_cmdline(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
-    const int max_pp=256;
-    char pp[max_pp+1];
-    //char *pp=NULL;
-
     ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
 
     OPS_USED(cbinfo);
@@ -323,11 +384,7 @@ callback_cmd_get_passphrase_from_cmdline(const ops_parser_content_t *content_,op
     switch(content_->tag)
         {
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-
-        printf("\nEnter passphrase: ");
-        fgets(&pp[0],max_pp, stdin);
-
-        *(content->secret_key_passphrase.passphrase)=ops_malloc_passphrase(pp);
+        *(content->secret_key_passphrase.passphrase)=ops_get_passphrase();
         return OPS_KEEP_MEMORY;
         break;
         

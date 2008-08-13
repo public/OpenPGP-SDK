@@ -25,29 +25,6 @@
 #include <openpgpsdk/memory.h>
 #include <openpgpsdk/create.h>
 
-/**
- * \ingroup Create
- * This struct contains the required information about one writer
- */
-struct ops_writer_info
-    {
-    ops_writer_t *writer;
-    ops_writer_finaliser_t *finaliser;
-    ops_writer_destroyer_t *destroyer;
-    void *arg;
-    ops_writer_info_t *next;
-    };
-
-/**
- * \ingroup Create
- * This struct contains the required information about how to write this stream
- */
-struct ops_create_info
-    {
-    ops_writer_info_t winfo;
-    ops_error_t *errors;	/*!< an error stack */
-    };
-
 //
 ops_boolean_t ops_write_mdc(const unsigned char *hashed,
                                    ops_create_info_t* info);

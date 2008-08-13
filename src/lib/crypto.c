@@ -19,34 +19,130 @@
  * limitations under the License.
  */
 
-/** \file
- */
-
-#include <assert.h>
-#include <fcntl.h>
-#ifndef WIN32
-#include <unistd.h>
-#endif
-#include <string.h>
-
-#include "openpgpsdk/armour.h"
-#include "openpgpsdk/crypto.h"
-#include "openpgpsdk/packet.h"
-#include "openpgpsdk/readerwriter.h"
+#include <openpgpsdk/crypto.h>
+#include <openpgpsdk/random.h>
+#include <openpgpsdk/readerwriter.h>
+#include <openpgpsdk/writer_armoured.h>
 #include "parse_local.h"
 
-//static int debug=0;
+#include <assert.h>
+#include <string.h>
+#include <fcntl.h>
+
+#include <openpgpsdk/final.h>
+
+int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
+		    const ops_secret_key_t *skey)
+    {
+    unsigned char encmpibuf[8192];
+    unsigned char mpibuf[8192];
+    unsigned mpisize;
+    int n;
+    int i;
+
+    mpisize=BN_num_bytes(encmpi);
+    /* MPI can't be more than 65,536 */
+    assert(mpisize <= sizeof encmpibuf);
+    BN_bn2bin(encmpi,encmpibuf);
+
+    assert(skey->public_key.algorithm == OPS_PKA_RSA);
+
+    /*
+    fprintf(stderr,"\nDECRYPTING\n");
+    fprintf(stderr,"encrypted data     : ");
+    for (i=0; i<16; i++)
+        fprintf(stderr,"%2x ", encmpibuf[i]);
+    fprintf(stderr,"\n");
+    */
+
+    n=ops_rsa_private_decrypt(mpibuf,encmpibuf,(BN_num_bits(encmpi)+7)/8,
+			      &skey->key.rsa,&skey->public_key.key.rsa);
+    assert(n!=-1);
+
+    /*
+    fprintf(stderr,"decrypted encoded m buf     : ");
+    for (i=0; i<16; i++)
+        fprintf(stderr,"%2x ", mpibuf[i]);
+    fprintf(stderr,"\n");
+    */
+
+    if(n <= 0)
+	return -1;
+
+    /*
+    printf(" decrypted=%d ",n);
+    hexdump(mpibuf,n);
+    printf("\n");
+    */
+
+    // Decode EME-PKCS1_V1_5 (RFC 2437).
+
+    if(mpibuf[0] != 0 || mpibuf[1] != 2)
+        return ops_false;
+
+    // Skip the random bytes.
+    for(i=2 ; i < n && mpibuf[i] ; ++i)
+        ;
+
+    if(i == n || i < 10)
+        return ops_false;
+
+    // Skip the zero
+    ++i;
+
+    // this is the unencoded m buf
+    if((unsigned)(n-i) <= buflen)
+        memcpy(buf,mpibuf+i,n-i);
+
+    /*
+    printf("decoded m buf:\n");
+    int j;
+    for (j=0; j<n-i; j++)
+        printf("%2x ",buf[j]);
+    printf("\n");
+    */
+
+    return n-i;
+    }
+
+ops_boolean_t ops_rsa_encrypt_mpi(const unsigned char *encoded_m_buf,
+                              const size_t sz_encoded_m_buf,
+			      const ops_public_key_t *pkey,
+			      ops_pk_session_key_parameters_t *skp)
+    {
+    assert(sz_encoded_m_buf==(size_t) BN_num_bytes(pkey->key.rsa.n));
+
+    unsigned char encmpibuf[8192];
+    int n=0;
+
+    n=ops_rsa_public_encrypt(encmpibuf, encoded_m_buf, sz_encoded_m_buf, &pkey->key.rsa);
+    assert(n!=-1);
+
+    if(n <= 0)
+	return ops_false;
+
+    skp->rsa.encrypted_m=BN_bin2bn(encmpibuf, n, NULL);
+
+    /*
+    fprintf(stderr,"encrypted mpi buf     : ");
+    int i;
+    for (i=0; i<16; i++)
+        fprintf(stderr,"%2x ", encmpibuf[i]);
+    fprintf(stderr,"\n");
+    */
+
+    return ops_true;
+    }
 
 #define MAXBUF 1024
 
 static ops_parse_cb_return_t
 callback_write_parsed(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
-void ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_keydata_t *pub_key, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite)
+ops_boolean_t ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_keydata_t *pub_key, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite)
     {
     int fd_in=0;
     int fd_out=0;
-    int flags=0;
 
     ops_create_info_t *cinfo;
 
@@ -58,29 +154,12 @@ void ops_encrypt_file(const char* input_filename, const char* output_filename, c
     if(fd_in < 0)
         {
         perror(input_filename);
-        exit(2);
+        return ops_false;
         }
     
-    flags=O_WRONLY | O_CREAT;
-    if (allow_overwrite==ops_true)
-        flags |= O_TRUNC;
-    else
-        flags |= O_EXCL;
-
-#ifdef WIN32
-    flags |= O_BINARY;
-#endif
-    fd_out=open(output_filename, flags, 0600);
-    if(fd_out < 0)
-        {
-        perror(output_filename);
-        exit(2);
-        }
-    
-    // setup for encrypted writing
-
-    cinfo=ops_create_info_new();
-    ops_writer_set_fd(cinfo,fd_out); 
+    fd_out=ops_setup_file_write(&cinfo, output_filename, allow_overwrite);
+    if (fd_out < 0)
+        return ops_false;
 
     // set armoured/not armoured here
     if (use_armour)
@@ -110,14 +189,12 @@ void ops_encrypt_file(const char* input_filename, const char* output_filename, c
     // This does the writing
     ops_write(buf,done,cinfo);
 
-    // Pop the encrypted writer from the stack
-    ops_writer_close(cinfo);
-
     // tidy up
     close(fd_in);
-    close(fd_out);
-    ops_create_info_delete(cinfo);
     free(buf);
+    ops_teardown_file_write(cinfo,fd_out);
+
+    return ops_true;
     }
 
 /* 
@@ -128,7 +205,7 @@ and an armoured file will be called <origfile.asc>
 If neither is true, then we add a .decrypted suffix.
 */
 
-void ops_decrypt_file(const char* input_filename, const char* output_filename, ops_keyring_t* keyring, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite, ops_parse_cb_t* cb_get_passphrase)
+ops_boolean_t ops_decrypt_file(const char* input_filename, const char* output_filename, ops_keyring_t* keyring, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite, ops_parse_cb_t* cb_get_passphrase)
     {
     int fd_in=0;
     int fd_out=0;
@@ -142,6 +219,11 @@ void ops_decrypt_file(const char* input_filename, const char* output_filename, o
                         NULL,
                         callback_write_parsed,
                         ops_false);
+    if (fd_in < 0)
+        {
+        perror(input_filename);
+        return ops_false;
+        }
 
     // setup output filename
 
@@ -149,9 +231,12 @@ void ops_decrypt_file(const char* input_filename, const char* output_filename, o
         {
         fd_out=ops_setup_file_write(&pinfo->cbinfo.cinfo, output_filename, allow_overwrite);
 
-        // \todo better error handling
         if (fd_out < 0)
-            { perror(output_filename); }
+            { 
+            perror(output_filename); 
+            ops_teardown_file_read(pinfo,fd_in);
+            return ops_false;
+            }
         }
     else
         {
@@ -171,17 +256,15 @@ void ops_decrypt_file(const char* input_filename, const char* output_filename, o
 
         fd_out=ops_setup_file_write(&pinfo->cbinfo.cinfo, myfilename, allow_overwrite);
         
-        // \todo better error handling
         if (fd_out < 0)
-            { perror(myfilename); }
+            { 
+            perror(myfilename); 
+            free(myfilename);
+            ops_teardown_file_read(pinfo,fd_in);
+            return ops_false;
+            }
 
         free (myfilename);
-        }
-
-    if (fd_out < 0)
-        {
-        // \todo error handling
-        exit(2);
         }
 
     // \todo check for suffix matching armour param
@@ -189,8 +272,8 @@ void ops_decrypt_file(const char* input_filename, const char* output_filename, o
     // setup for writing decrypted contents to given output file
 
     // setup keyring and passphrase callback
-    pinfo->cbinfo.crypt.keyring=keyring;
-    pinfo->cbinfo.crypt.cb_get_passphrase=cb_get_passphrase;
+    pinfo->cbinfo.cryptinfo.keyring=keyring;
+    pinfo->cbinfo.cryptinfo.cb_get_passphrase=cb_get_passphrase;
 
     // Set up armour/passphrase options
 
@@ -206,13 +289,11 @@ void ops_decrypt_file(const char* input_filename, const char* output_filename, o
     if (use_armour)
         ops_reader_pop_dearmour(pinfo);
 
-    //    close(fd_in);
-//    close(fd_out);
-ops_teardown_file_write(pinfo->cbinfo.cinfo, fd_out);
+    ops_teardown_file_write(pinfo->cbinfo.cinfo, fd_out);
     ops_teardown_file_read(pinfo, fd_in);
-// \todo cleardown crypt
-//    ops_parse_info_delete(pinfo);
-    //    free(buf);
+    // \todo cleardown crypt
+
+    return ops_true;
     }
 
 static ops_parse_cb_return_t
@@ -255,7 +336,7 @@ callback_write_parsed(const ops_parser_content_t *content_,ops_parse_cb_info_t *
 
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
         //        return callback_cmd_get_secret_key_passphrase(content_,cbinfo);
-        return cbinfo->crypt.cb_get_passphrase(content_,cbinfo);
+        return cbinfo->cryptinfo.cb_get_passphrase(content_,cbinfo);
         break;
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:

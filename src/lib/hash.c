@@ -94,25 +94,54 @@ unsigned ops_hash(unsigned char *out,ops_hash_algorithm_t alg,const void *in,
     return hash.finish(&hash,out);
     }
 
-static int hash_reader(void *dest,size_t length,ops_error_t **errors,
-		       ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
+void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* plaintext, const unsigned int sz_plaintext, unsigned char *hashed)
     {
-    ops_hash_t *hash=ops_reader_get_arg(rinfo);
-    int r=ops_stacked_read(dest,length,errors,rinfo,cbinfo);
+    int debug=0;
+    ops_hash_t hash;
+    unsigned char c[1];
 
-    if(r <= 0)
-	return r;
-	
-    hash->add(hash,dest,r);
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"ops_calc_mdc_hash():\n");
 
-    return r;
+        fprintf(stderr,"\npreamble: ");
+        for (i=0; i<sz_preamble;i++)
+            fprintf(stderr," 0x%02x", preamble[i]);
+        fprintf(stderr,"\n");
+
+        fprintf(stderr,"\nplaintext (len=%d): ",sz_plaintext);
+        for (i=0; i<sz_plaintext;i++)
+            fprintf(stderr," 0x%02x", plaintext[i]);
+        fprintf(stderr,"\n");
+        }
+
+    // init
+    ops_hash_any(&hash, OPS_HASH_SHA1);
+    hash.init(&hash);
+
+    // preamble
+    hash.add(&hash,preamble,sz_preamble);
+    // plaintext
+    hash.add(&hash,plaintext,sz_plaintext); 
+    // MDC packet tag
+    c[0]=0xD3;
+    hash.add(&hash,&c[0],1);   
+    // MDC packet len
+    c[0]=0x14;
+    hash.add(&hash,&c[0],1);   
+
+    //finish
+    hash.finish(&hash,hashed);
+
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"\nhashed (len=%d): ",SHA_DIGEST_LENGTH);
+        for (i=0; i<SHA_DIGEST_LENGTH;i++)
+            fprintf(stderr," 0x%02x", hashed[i]);
+        fprintf(stderr,"\n");
+        }
     }
 
-void ops_reader_push_hash(ops_parse_info_t *pinfo,ops_hash_t *hash)
-    {
-    hash->init(hash);
-    ops_reader_push(pinfo,hash_reader,NULL,hash);
-    }
-
-void ops_reader_pop_hash(ops_parse_info_t *pinfo)
-    { ops_reader_pop(pinfo); }
+// EOF
