@@ -234,7 +234,7 @@ static ops_map_t compression_algorithm_map[] =
 static ops_bit_map_t ss_notation_data_map_byte0[] =
     {
     { 0x80,	"Human-readable" },
-    { (unsigned char) NULL,	(char *) NULL },
+    { 0x00,	(char *) NULL },
     };
 
 static ops_bit_map_t *ss_notation_data_map[] =
@@ -245,7 +245,7 @@ static ops_bit_map_t *ss_notation_data_map[] =
 static ops_bit_map_t ss_feature_map_byte0[] =
     {
     { 0x01,	"Modification Detection" },
-    { (unsigned char) NULL,	(char *) NULL },
+    { 0x00,	(char *) NULL },
     };
 
 static ops_bit_map_t *ss_feature_map[] =
