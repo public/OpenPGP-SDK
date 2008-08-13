@@ -128,13 +128,11 @@ chomp $path;
 
 create('src/lib/.depend');
 create('src/app/.depend');
-create('examples/.depend');
 create('tests/.depend');
 
 fileSubst('src/Makefile','#','');
 fileSubst('src/lib/Makefile','#','');
 fileSubst('src/app/Makefile','#','');
-fileSubst('examples/Makefile','#','');
 fileSubst('tests/Makefile','#','');
 fileSubst('util/Makefile.oink','#','');
 fileSubst('include/openpgpsdk/configure.h','/*','*/');
