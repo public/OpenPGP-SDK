@@ -1,6 +1,6 @@
 # order of build of subdirs is important
 #
-SUBDIRS=src examples tests
+SUBDIRS=src tests
 
 all: Makefiles include/openpgpsdk/configure.h headers default
 
@@ -40,7 +40,7 @@ tags:
 	find . -name '*.[ch]' | xargs etags
 
 test::
-	cd examples && make test
+	cd tests && make 
 
 doc::
 	cd doc && make
