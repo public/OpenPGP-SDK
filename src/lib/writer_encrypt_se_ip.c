@@ -212,10 +212,12 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
 
     ops_writer_push_encrypt_crypt(cinfo, crypt);
 
+#ifdef DEBUG
     if (debug)
         {
         fprintf(stderr,"writing %ld + %d + %ld\n", sz_preamble, len, ops_memory_get_length(mem_mdc));
         }
+#endif /*DEBUG*/
 
     if (!ops_write(preamble, sz_preamble,cinfo)
         || !ops_write(data, len, cinfo)

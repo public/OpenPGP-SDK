@@ -2565,6 +2565,7 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
         mdc=plaintext+sz_plaintext;
         mdc_hash=mdc+2;
     
+#ifdef DEBUG
         if (debug)
             {
             unsigned int i=0;
@@ -2579,19 +2580,9 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
                 fprintf(stderr," 0x%02x", mdc[i]);
             fprintf(stderr,"\n");
             }
+#endif /*DEBUG*/
 
         ops_calc_mdc_hash(preamble,sz_preamble,plaintext,sz_plaintext,&hashed[0]);
-        /*
-        unsigned char c[0];
-
-        hash.add(&hash, plaintext, sz_plaintext);
-        c[0]=0xD3;
-        hash.add(&hash,&c[0],1);   // MDC packet tag
-        c[0]=0x14;
-        hash.add(&hash,&c[0],1);   // MDC packet len
-        
-        hash.finish(&hash,&hashed[0]);
-        */
 
         if (memcmp(mdc_hash,hashed,OPS_SHA1_HASH_SIZE))
             {
