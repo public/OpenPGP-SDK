@@ -31,10 +31,9 @@ our %Subst=(
 
 my %Args=(
 	  '--help' => \&usage,
-	  '--with-dmalloc=' => sub {
-          my $loc=shift;
-	      $Subst{DM_FLAGS}="-I $loc/include -DDMALLOC";
-	      $Subst{DM_LIB}="$loc/lib/libdmalloc.a";
+	  '--use-dmalloc' => sub {
+	      $Subst{DM_FLAGS}='-I/usr/local/include -DDMALLOC';
+	      $Subst{DM_LIB}='/usr/local/lib/libdmalloc.a';
 	  },
 	  '--with-openssl=' => sub {
 	      my $loc=shift;
@@ -371,7 +370,7 @@ sub findLibraries {
 sub baseCFlags {
     my $flags='';
     if(getKnowledge('is_gcc')) {
-	$flags='-Wall -Wno-always-true -Werror -W -g ';
+	$flags='-Wall -Werror -W -g';
 #	my $v=getKnowledge('gcc_major');
 #	$flags.=' -Wdeclaration-after-statement' if $v >= 3;
     }
