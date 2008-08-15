@@ -1,7 +1,7 @@
 all: top
 
 top:
-	cd ../.. && make
+	$(MAKE) -C ../.. 
 
 headers: packet-show-cast.h
 

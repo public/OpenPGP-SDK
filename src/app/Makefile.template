@@ -14,10 +14,10 @@ EXES=openpgp
 all: Makefile headers .depend $(LIBDEPS) $(EXES)
 
 headers:
-	cd ../../include/openpgpsdk && make headers
+	$(MAKE) -w -S -C ../../include/openpgpsdk headers
 
 $(LIBDEPS):
-	cd ../ && make lib
+	$(MAKE) -w -S -C ../ lib
 
 openpgp: openpgp.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o openpgp openpgp.o $(LIBS)

@@ -21,7 +21,7 @@ LIBOBJS = packet-parse.o packet-print.o packet-show.o \
         writer_stream_encrypt_se_ip.o
 
 headers:
-	cd ../../include/openpgpsdk && make headers
+	cd ../../include/openpgpsdk && $(MAKE) headers
 
 lib: $(LIBOBJS)
 	ar rc ../../lib/libops.a $(LIBOBJS)

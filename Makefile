@@ -5,11 +5,13 @@ SUBDIRS=src tests
 all: Makefiles include/openpgpsdk/configure.h headers default
 
 headers:
-	cd include/openpgpsdk && make headers
+	cd include/openpgpsdk && $(MAKE) -wS headers
+
+#(cd $$d; echo "+++ make in $$d"; $(MAKE) -wS; echo "--- $$d"); \
 
 default:
 	@set -e; for d in $(SUBDIRS); do \
-	(cd $$d; echo "+++ make in $$d"; make -w; echo "** submake returns $$?\n"; echo "--- $$d"); \
+	$(MAKE) -w -S -C $$d; \
 	done
 
 include/openpgpsdk/configure.h: include/openpgpsdk/configure.h.template configure
@@ -17,12 +19,12 @@ include/openpgpsdk/configure.h: include/openpgpsdk/configure.h.template configur
 
 force_depend:
 	@set -e; for d in $(SUBDIRS); do \
-	(cd $$d; echo "+++ make force_depend in $$d"; make force_depend ; echo "--- $$d"); \
+	(cd $$d; echo "+++ make force_depend in $$d"; $(MAKE) force_depend ; echo "--- $$d"); \
 	done
 
 clean:
 	@set -e; for d in $(SUBDIRS); do \
-	(cd $$d; echo "+++ make clean in $$d"; make clean; echo "--- $$d"); \
+	(cd $$d; echo "+++ make clean in $$d"; $(MAKE) clean; echo "--- $$d"); \
 	done
 	find . -name '*.core' | xargs rm -f
 	rm -rf oink-links
@@ -32,7 +34,7 @@ clean:
 
 Makefiles:
 	@set -e; for d in $(SUBDIRS); do \
-	(cd $$d; echo "+++ make Makefile in $$d"; make Makefile; echo "--- $$d"); \
+	(cd $$d; echo "+++ make Makefile in $$d"; $(MAKE) Makefile; echo "--- $$d"); \
 	done
 
 tags:
@@ -40,10 +42,10 @@ tags:
 	find . -name '*.[ch]' | xargs etags
 
 test::
-	cd tests && make 
+	cd tests && $(MAKE) 
 
 doc::
-	cd doc && make
+	cd doc && $(MAKE)
 
 cunit:
 	if [ ! -d CUnit-2.1-0 ]; then \
