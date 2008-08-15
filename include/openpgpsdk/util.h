@@ -39,6 +39,7 @@ void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
 			   size_t length);
 
 /* typesafe deconstification */
+#ifdef OBSOLETE
 #ifdef WIN32
 static void *_deconst(const void *p)
     { return (void *)p; }
@@ -46,7 +47,15 @@ static void *_deconst(const void *p)
 static inline void *_deconst(const void *p)
     { return (void *)p; }
 #endif
-#define DECONST(type,p) (((type *(*)(const type *))ops_fcast(_deconst))(p))
+#endif /*OBSOLETE*/
+
+/*
+ * These macros code ensures that you are casting what you intend to cast.
+ * It works because in "a ? b : c", b and c must have the same type.
+ */
+#define CHECKED_PTR_OF(type, p) \
+    ((void*) (1 ? p : (type *)0)) 
+#define DECONST(type,p) ((type *)CHECKED_PTR_OF(const type, p))
 
 char *ops_str_from_map(int code, ops_map_t *map);
 
