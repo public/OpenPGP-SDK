@@ -193,6 +193,8 @@ enum ops_content_tag_t
     OPS_PTAG_SS_SIGNERS_USER_ID		=0x200+28, /*!< Signer's User ID */
     OPS_PTAG_SS_REVOCATION_REASON	=0x200+29, /*!< reason for revocation */
     OPS_PTAG_SS_FEATURES		=0x200+30, /*!< features */
+    OPS_PTAG_SS_SIGNATURE_TARGET =0x200+31, /*!< signature target */
+    OPS_PTAG_SS_EMBEDDED_SIGNATURE=0x200+32, /*!< embedded signature */
 
     OPS_PTAG_SS_USERDEFINED00	=0x200+100, /*!< internal or user-defined */
     OPS_PTAG_SS_USERDEFINED01	=0x200+101, 
@@ -679,6 +681,20 @@ typedef struct
     ops_data_t data;
     } ops_ss_features_t;
 
+/** Signature Subpacket : Signature Target */
+typedef struct
+    {
+    ops_public_key_algorithm_t pka_alg;
+    ops_hash_algorithm_t hash_alg;
+    ops_data_t hash;
+    } ops_ss_signature_target_t;
+    
+/** Signature Subpacket : Embedded Signature */
+typedef struct
+    {
+    ops_data_t sig;
+    } ops_ss_embedded_signature_t;
+
 /** ops_packet_t */
 
 typedef struct
@@ -951,6 +967,8 @@ typedef union
     ops_literal_data_body_t	literal_data_body;
 	ops_mdc_t				mdc;
     ops_ss_features_t		ss_features;
+    ops_ss_signature_target_t ss_signature_target;
+    ops_ss_embedded_signature_t ss_embedded_signature;
     ops_ss_revocation_reason_t	ss_revocation_reason;
     ops_secret_key_t		secret_key;
     ops_user_id_t		ss_signers_user_id;
@@ -1006,6 +1024,9 @@ void ops_ss_regexp_free(ops_ss_regexp_t *ss_regexp);
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined);
 void ops_ss_reserved_free(ops_ss_unknown_t *ss_unknown);
 void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason);
+void ops_ss_signature_target_free(ops_ss_signature_target_t *ss_signature_target);
+void ops_ss_embedded_signature_free(ops_ss_embedded_signature_t *ss_embedded_signature);
+
 void ops_packet_free(ops_packet_t *packet);
 void ops_parser_content_free(ops_parser_content_t *c);
 void ops_secret_key_free(ops_secret_key_t *key);

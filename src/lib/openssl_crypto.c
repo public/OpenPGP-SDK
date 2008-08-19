@@ -22,12 +22,6 @@
 /** \file
  */
 
-#include <openpgpsdk/configure.h>
-#include <openpgpsdk/crypto.h>
-#include <openpgpsdk/keyring.h>
-#include <openpgpsdk/readerwriter.h>
-#include "keyring_local.h"
-#include <openpgpsdk/std_print.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/dsa.h>
@@ -35,6 +29,13 @@
 #include <openssl/err.h>
 #include <assert.h>
 #include <stdlib.h>
+
+#include <openpgpsdk/configure.h>
+#include <openpgpsdk/crypto.h>
+#include <openpgpsdk/keyring.h>
+#include <openpgpsdk/readerwriter.h>
+#include "keyring_local.h"
+#include <openpgpsdk/std_print.h>
 
 #include <openpgpsdk/final.h>
 
