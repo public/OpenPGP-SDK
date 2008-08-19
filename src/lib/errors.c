@@ -85,7 +85,7 @@ static ops_errcode_name_map_t errcode_name_map[] =
     ERRNAME(OPS_E_PROTO_DECRYPTED_MSG_WRONG_LEN),
     ERRNAME(OPS_E_PROTO_BAD_SK_CHECKSUM),
 
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
 /**
