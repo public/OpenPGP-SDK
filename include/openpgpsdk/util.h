@@ -54,10 +54,10 @@ static inline void *_deconst(const void *p)
  * It works because in "a ? b : c", b and c must have the same type.
  * This is a copy of the macro defined in openssl/asn1.h.
  */
-#ifndef CHECKED_PTR_OF(type, p)
-#define CHECKED_PTR_OF(type, p) \
-    ((void*) (1 ? p : (type *)0)) 
+#ifndef CHECKED_PTR_OF
+#define CHECKED_PTR_OF(type, p) ((void*) (1 ? p : (type *)0))
 #endif 
+#define CHECKED_INSTANCE_OF(type, p) (1 ? p : (type)0) 
 #define DECONST(type,p) ((type *)CHECKED_PTR_OF(const type, p))
 
 char *ops_str_from_map(int code, ops_map_t *map);

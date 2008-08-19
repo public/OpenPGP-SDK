@@ -36,12 +36,11 @@ while(my $line=<I>) {
 #    print O "#line $lineno \"$infile\"\n";
     print O "/* (line $lineno) $line */\n";
     print O "$from;\n";
+
     print O "#define $tname(";
     print_list($targs,1,1);
-    print O ") (($ttype(*)(";
-    print_list($targs,0);
-    print O "))ops_fcast($fname))(";
-    print_list($fargs,1);
+    print O ") $fname(";
+    print_checked_list($targs, $fargs);
     print O ")\n";
 
     print O "typedef $ttype ${tname}_t(";
@@ -89,5 +88,19 @@ sub print_list {
 	$str =~ s/^\+//;
 	print O $str;
 	$first=undef;
+    }
+}
+
+sub print_checked_list {
+    my $types=shift;
+    my $args=shift;
+
+    for(my $n=0 ; $n <= $#$types ; ++$n) {
+	print O ',' if $n;
+	my $type=$types->[$n]->[0];
+	$type =~ s/^\+//;
+	my $arg=$args->[$n]->[1];
+	$arg =~ s/^\+//;
+	print O "CHECKED_INSTANCE_OF($type, $arg)";
     }
 }
