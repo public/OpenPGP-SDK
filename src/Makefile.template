@@ -2,8 +2,8 @@ LIBSUBDIRS=lib
 SUBDIRS=$(LIBSUBDIRS) app
 
 default: Makefile
-	@set -e; for d in $(SUBDIRS); do \
-	(cd $$d; echo "+++ make in $$d"; $(MAKE); echo "--- $$d"); \
+	set -e; for d in $(SUBDIRS); do \
+	(cd $$d; echo "+++ make in $$d"; $(MAKE) || exit 1; echo "--- $$d") || exit 1; \
 	done
 
 lib: Makefile

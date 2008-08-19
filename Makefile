@@ -10,8 +10,8 @@ headers:
 #(cd $$d; echo "+++ make in $$d"; $(MAKE) -wS; echo "--- $$d"); \
 
 default:
-	@set -e; for d in $(SUBDIRS); do \
-	$(MAKE) -w -S -C $$d; \
+	set -e; for d in $(SUBDIRS); do \
+	$(MAKE) -w -C $$d || exit 1; \
 	done
 
 include/openpgpsdk/configure.h: include/openpgpsdk/configure.h.template configure
