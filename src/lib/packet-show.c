@@ -109,7 +109,7 @@ static ops_map_t packet_tag_map[] =
     { OPS_PARSER_ERROR,			"OPS_PARSER_ERROR" },
     { OPS_PARSER_ERRCODE,		"OPS_PARSER_ERRCODE" },
 
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 typedef ops_map_t packet_tag_map_t;
 
@@ -134,7 +134,7 @@ static ops_map_t ss_type_map[] =
     { OPS_PTAG_SS_KEY_FLAGS, 		"Key Flags" },
     { OPS_PTAG_SS_REVOCATION_REASON,	"Reason for Revocation" },
     { OPS_PTAG_SS_FEATURES,		"Features" },
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 typedef ops_map_t ss_type_map_t;
 
@@ -146,7 +146,7 @@ static ops_map_t ss_rr_code_map[] =
     { 0x02,	"Key material has been compromised" },
     { 0x03,	"Key is retired and no longer used" },
     { 0x20,	"User ID information is no longer valid" },
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 typedef ops_map_t ss_rr_code_map_t;
 
@@ -167,7 +167,7 @@ static ops_map_t sig_type_map[] =
     { OPS_SIG_REV_CERT,		"Certification revocation signature" },
     { OPS_SIG_TIMESTAMP,	"Timestamp signature" },
     { OPS_SIG_3RD_PARTY,	"Third-Party Confirmation signature" },
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 typedef ops_map_t sig_type_map_t;
 
@@ -193,7 +193,7 @@ static ops_map_t public_key_algorithm_map[] =
     { OPS_PKA_PRIVATE08,		"Private/Experimental" },
     { OPS_PKA_PRIVATE09,		"Private/Experimental" },
     { OPS_PKA_PRIVATE10,		"Private/Experimental" },
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 typedef ops_map_t public_key_algorithm_map_t;
 
@@ -208,7 +208,7 @@ static ops_map_t symmetric_algorithm_map[] =
     { OPS_SA_AES_192,		"AES (192-bit key)" },
     { OPS_SA_AES_256, 		"AES (256-bit key)" },
     { OPS_SA_TWOFISH, 		"Twofish(256-bit key)" },
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
 static ops_map_t hash_algorithm_map[] =
@@ -219,7 +219,7 @@ static ops_map_t hash_algorithm_map[] =
     { OPS_HASH_SHA256,	"SHA256" },
     { OPS_HASH_SHA384,	"SHA384" },
     { OPS_HASH_SHA512,	"SHA512" },
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
 static ops_map_t compression_algorithm_map[] =
@@ -228,7 +228,7 @@ static ops_map_t compression_algorithm_map[] =
     { OPS_C_ZIP,	"ZIP(RFC1951)" },
     { OPS_C_ZLIB,	"ZLIB(RFC1950)" },
     { OPS_C_BZIP2,	"Bzip2(BZ2)" },
-    { (int) NULL,		(char *)NULL }, /* this is the end-of-array marker */
+    { 0x00,		(char *)NULL }, /* this is the end-of-array marker */
     };
 
 static ops_bit_map_t ss_notation_data_map_byte0[] =
@@ -261,11 +261,13 @@ static ops_bit_map_t ss_key_flags_map[] =
     { 0x08, "May be used to encrypt storage" },
     { 0x10, "Private component may have been split by a secret-sharing mechanism"},
     { 0x80, "Private component may be in possession of more than one person"},
+    { 0x00, (char *)NULL },
     };
 
 static ops_bit_map_t ss_key_server_prefs_map[] = 
     {
     { 0x80, "Key holder requests that this key only be modified or updated by the key holder or an administrator of the key server" },
+    { 0x00, (char *)NULL },
     };
 
 #include <openpgpsdk/packet-show-cast.h>
