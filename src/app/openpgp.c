@@ -54,7 +54,7 @@ static const char* usage_clearsign="%s --clearsign --userid=<userid> --filename=
 static const char* usage_verify="%s --verify --filename=<filename> [--homedir=<homedir>] [--armour]\n";
 static const char* usage_list_packets="%s --list-packets --filename=<filename> [--homedir=<homedir>] [--armour]\n";
 
-static const char* pname;
+static char* pname;
 
 enum optdefs {
 // commands
@@ -110,7 +110,7 @@ static struct option long_options[]=
     { 0,0,0,0},
     };
 
-void print_usage(const char* usage, const char* pname)
+void print_usage(const char* usage, char* pname)
     {
     fprintf(stderr, "\nUsage: ");
     fprintf(stderr, usage, basename(pname));
