@@ -269,26 +269,20 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
         if (!cbinfo->cryptinfo.keydata || !ops_key_is_secret(cbinfo->cryptinfo.keydata))
             return 0;
 
-        /* do we need the passphrase and not have it? if so, get it */
-        if (!cbinfo->cryptinfo.passphrase)
-            {
-            memset(&pc,'\0',sizeof pc);
-            pc.content.secret_key_passphrase.passphrase=&cbinfo->cryptinfo.passphrase;
-            CB(cbinfo,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
-            if (!cbinfo->cryptinfo.passphrase)
-                {
-                fprintf(stderr,"can't get passphrase\n");
-                assert(0);
-                }
-            }
-
         /* now get the key from the data */
         secret=ops_get_secret_key_from_data(cbinfo->cryptinfo.keydata);
         while(!secret)
             {
             if (!cbinfo->cryptinfo.passphrase)
                 {
-                /* get the passphrase again?*/
+                memset(&pc,'\0',sizeof pc);
+                pc.content.secret_key_passphrase.passphrase=&cbinfo->cryptinfo.passphrase;
+                CB(cbinfo,OPS_PARSER_CMD_GET_SK_PASSPHRASE,&pc);
+                if (!cbinfo->cryptinfo.passphrase)
+                    {
+                    fprintf(stderr,"can't get passphrase\n");
+                    assert(0);
+                    }
                 }
             /* then it must be encrypted */
             secret=ops_decrypt_secret_key_from_data(cbinfo->cryptinfo.keydata,cbinfo->cryptinfo.passphrase);
@@ -305,59 +299,9 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
     return OPS_RELEASE_MEMORY;
     }
 
-static void echo_off()
-    {
-#ifndef WIN32
-    struct termios term;
-    int r;
-
-    r=tcgetattr(0,&term);
-    if(r < 0 && errno == ENOTTY)
-	return;
-    assert(r >= 0);
-
-    term.c_lflag &= ~ECHO;
-
-    r=tcsetattr(0,TCSANOW,&term);
-    assert(r >= 0);
-#endif
-    }
-	
-static void echo_on()
-    {
-#ifndef WIN32
-    struct termios term;
-    int r;
-
-    r=tcgetattr(0,&term);
-    if(r < 0 && errno == ENOTTY)
-	return;
-    assert(r >= 0);
-
-    term.c_lflag |= ECHO;
-
-    r=tcsetattr(0,TCSANOW,&term);
-    assert(r >= 0);
-#endif
-    }
-
 char *ops_get_passphrase(void)
     {
-    char buffer[1024];
-    size_t n;
-
-    printf("Passphrase: ");
-    
-    echo_off();
-    fgets(buffer,sizeof buffer,stdin);
-    echo_on();
-
-    putchar('\n');
-
-    n=strlen(buffer);
-    if(n && buffer[n-1] == '\n')
-	buffer[--n]='\0';
-    return ops_malloc_passphrase(buffer);
+    return ops_malloc_passphrase(getpass("Passphrase: "));
     }
 
 char *ops_malloc_passphrase(char *pp)
