@@ -49,7 +49,7 @@ doc::
 
 cunit:
 	if [ ! -d CUnit-2.1-0 ]; then \
-		gunzip CUnit-2.1.0-src.tar.gz; \
+		gunzip CUnit-2.1-0-src.tar.gz; \
 		tar xvf CUnit-2.1-0-src.tar; \
 		(cd CUnit-2.1-0 && ./configure --prefix $(PWD) && make && make install); \
 	fi
