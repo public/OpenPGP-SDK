@@ -110,15 +110,15 @@ static void add_key_to_valid_list(ops_validate_result_t * result, const ops_keyd
     ++result->valid_count;
 
     // increase size of array
-    newsize=sizeof signer * result->valid_count;
+    newsize=(sizeof *signer) * result->valid_count;
     if (!result->valid_keys)
         result->valid_keys=malloc(newsize);
     else
         result->valid_keys=realloc(result->valid_keys, newsize);
 
     // copy key ptr to array
-    start=(sizeof signer) * (result->valid_count-1);
-    memcpy(result->valid_keys+start,signer,sizeof signer);
+    start=(sizeof *signer) * (result->valid_count-1);
+    memcpy(result->valid_keys+start,signer,sizeof *signer);
     }
 
 static void add_key_to_invalid_list(ops_validate_result_t * result, const ops_keydata_t *signer)
@@ -130,15 +130,15 @@ static void add_key_to_invalid_list(ops_validate_result_t * result, const ops_ke
     ++result->invalid_count;
 
     // increase size of array
-    newsize=sizeof signer * result->invalid_count;
+    newsize=(sizeof *signer) * result->invalid_count;
     if (!result->invalid_keys)
         result->invalid_keys=malloc(newsize);
     else
         result->invalid_keys=realloc(result->invalid_keys, newsize);
 
     // copy key ptr to array
-    start=(sizeof signer) * (result->invalid_count-1);
-    memcpy(result->invalid_keys+start,signer,sizeof signer);
+    start=(sizeof *signer) * (result->invalid_count-1);
+    memcpy(result->invalid_keys+start,signer,(sizeof *signer));
     }
 
 static void add_key_to_unknown_list(ops_validate_result_t * result, const unsigned char signer_id[OPS_KEY_ID_SIZE])
@@ -150,7 +150,7 @@ static void add_key_to_unknown_list(ops_validate_result_t * result, const unsign
     ++result->unknown_signer_count;
 
     // increase size of array
-    newsize=sizeof signer_id * result->unknown_signer_count;
+    newsize=(sizeof *signer_id) * result->unknown_signer_count;
     if (!result->unknown_keys)
         result->unknown_keys=malloc(newsize);
     else

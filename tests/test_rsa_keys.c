@@ -106,17 +106,20 @@ static void verify_keypair(ops_boolean_t armoured)
     char cmd[MAXBUF+1];
     int rtn=0;
     ops_boolean_t overwrite=ops_true;
+    char* userid="Test User 2<test2@nowhere.com>";
+    const unsigned char* keyid;
 
     memset(&pub_keyring, '\0', sizeof pub_keyring);
     memset(&sec_keyring, '\0', sizeof sec_keyring);
 
-    uid.user_id=(unsigned char *)"Test User 2<test2@nowhere.com>";
+
+    uid.user_id=(unsigned char *) userid;
 
     keydata=ops_rsa_create_selfsigned_keypair(1024,65537,&uid);
+    CU_ASSERT(keydata != NULL);
     pub_key=ops_get_public_key_from_data(keydata);
     sec_key=ops_get_secret_key_from_data(keydata);
-
-    CU_ASSERT(keydata != NULL);
+    keyid=ops_get_key_id(keydata);
 
     /*
      * pub key
@@ -140,6 +143,8 @@ static void verify_keypair(ops_boolean_t armoured)
 
     ops_validate_all_signatures(result, &pub_keyring, NULL);
     CU_ASSERT(result->valid_count==1);
+    CU_ASSERT(strncmp((char *)ops_get_key_id(&result->valid_keys[0]),(char *)keyid,strlen((char *)keyid))==0);
+    CU_ASSERT(strncmp((char *)ops_get_user_id(&result->valid_keys[0],0),userid,strlen(userid))==0);
     CU_ASSERT(result->invalid_count==0);
     CU_ASSERT(result->unknown_signer_count==0);
 
