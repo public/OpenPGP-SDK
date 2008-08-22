@@ -139,6 +139,8 @@ fileSubst('include/openpgpsdk/configure.h','/*','*/');
 
 print "make cunit\n";
 system('make cunit') == 0 || exit;
+print "make packet-show-cast.h\n";
+system('cd include/openpgpsdk; make packet-show-cast.h') == 0 || exit;
 print "make clean\n";
 system('make clean') == 0 || exit;
 print "make force_depend\n";
