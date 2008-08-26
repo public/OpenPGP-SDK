@@ -1607,7 +1607,7 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 	printf("  literal data header format=%c filename='%s'\n",
 	       content->literal_data_header.format,
 	       content->literal_data_header.filename);
-	showtime("    modification time",
+	print_time("    modification time",
 		 content->literal_data_header.modification_time);
 	printf("\n");
 	break;

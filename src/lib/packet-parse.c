@@ -534,7 +534,28 @@ static int limited_read_size_t_scalar(size_t *dest,unsigned length,
 static int limited_read_time(time_t *dest,ops_region_t *region,
 			     ops_parse_info_t *pinfo)
     {
-    return limited_read_scalar((unsigned *)dest,4,region,pinfo);
+    /*
+     * Cannot assume that time_t is 4 octets long - 
+     * there is at least one architecture (SunOS 5.10) where it is 8.
+     */
+    if (sizeof(*dest)==4)
+        {
+        return limited_read_scalar((unsigned *)dest,4,region,pinfo);
+        }
+    else
+        {
+        time_t mytime=0;
+        int i=0;
+        unsigned char c[1];
+        for (i=0; i<4; i++)
+            {
+            if (!limited_read(c,1,region,pinfo))
+                return 0;
+            mytime=(mytime << 8) + c[0];
+            }
+        *dest=mytime;
+        return 1;
+        }
     }
 
 /** Read a multiprecision integer.
