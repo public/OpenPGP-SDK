@@ -11,7 +11,7 @@ headers:
 
 default:
 	set -e; for d in $(SUBDIRS); do \
-	$(MAKE) -w -C $$d || exit 1; \
+	cd $$d; $(MAKE) -w || exit 1; cd ..;\
 	done
 
 include/openpgpsdk/configure.h: include/openpgpsdk/configure.h.template configure
@@ -29,8 +29,6 @@ clean:
 	find . -name '*.core' | xargs rm -f
 	rm -rf oink-links
 	-rm lib/*
-	# reinstall the CUnit libs
-	(cd CUnit-2.1-0; make install)
 
 Makefiles:
 	@set -e; for d in $(SUBDIRS); do \
@@ -47,12 +45,12 @@ test::
 doc::
 	cd doc && $(MAKE)
 
-cunit:
-	if [ ! -d CUnit-2.1-0 ]; then \
-		gunzip CUnit-2.1-0-src.tar.gz; \
-		tar xvf CUnit-2.1-0-src.tar; \
-		(cd CUnit-2.1-0 && ./configure --prefix $(PWD) && make && make install); \
-	fi
+#cunit:
+#	if [ ! -d CUnit-2.1-0 ]; then \
+#		gunzip CUnit-2.1-0-src.tar.gz; \
+#		tar xvf CUnit-2.1-0-src.tar; \
+#		(cd CUnit-2.1-0 && ./configure --prefix $(PWD) && make && make install); \
+#	fi
 
 
 coverity::

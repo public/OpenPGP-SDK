@@ -3,21 +3,19 @@ DM_LIB=%DM_LIB%
 CC=%CC%
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../../include %INCLUDES% %CFLAGS% -fPIC
-# pickup _local.h headers from advanced directory
-CFLAGS+=-I../advanced
 
-LDFLAGS=-g
+LDFLAGS=-g 
 LIBDEPS=../../lib/libops.a
-LIBS=$(LIBDEPS) %CRYPTO_LIBS% -lz -lbz2 $(DM_LIB)
+LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% %OTHERLIBS% $(DM_LIB)
 EXES=openpgp
 
 all: Makefile headers .depend $(LIBDEPS) $(EXES)
 
 headers:
-	$(MAKE) -w -S -C ../../include/openpgpsdk headers
+	(cd ../../include/openpgpsdk; $(MAKE) -w headers)
 
 $(LIBDEPS):
-	$(MAKE) -w -S -C ../ lib
+	(cd ..; $(MAKE) -w lib)
 
 openpgp: openpgp.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o openpgp openpgp.o $(LIBS)

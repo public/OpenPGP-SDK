@@ -48,6 +48,15 @@ my %Args=(
 	      $Subst{INCLUDES}.=" -I $loc";
 	      $Subst{ZLIB}="$loc/libz.a";
 	  },
+	  '--with-cunit=' => sub {
+	      my $loc=shift;
+	      $Subst{INCLUDES}.=" -I $loc/include";
+	      $Subst{CUNITLIB}="$loc/lib/libcunit.a";
+	  },
+	  '--with-otherlibs=' => sub {
+	      my $loc=shift;
+	      $Subst{OTHERLIBS}="$loc";
+	  },
 	  '--log=' => sub {
 	      $LogFile=shift;
 	      $Log=new IO::File(">$LogFile");
@@ -137,8 +146,6 @@ fileSubst('tests/Makefile','#','');
 fileSubst('util/Makefile.oink','#','');
 fileSubst('include/openpgpsdk/configure.h','/*','*/');
 
-print "make cunit\n";
-system('make cunit') == 0 || exit;
 print "make packet-show-cast.h\n";
 system('cd include/openpgpsdk; make packet-show-cast.h') == 0 || exit;
 print "make clean\n";
