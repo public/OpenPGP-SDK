@@ -958,7 +958,7 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
     if (fd < 0)
         return ops_false;
 
-    mem=ops_mallocz(sizeof *mem);
+    mem=ops_mallocz(sizeof (*mem));
     ops_memory_init(mem,initial_size);
     for (;;)
         {
@@ -998,7 +998,7 @@ ops_memory_t* ops_write_buf_from_file(const char *filename)
     if (fd < 0)
         return ops_false;
 
-    mem=ops_mallocz(sizeof *mem);
+    mem=ops_mallocz(sizeof (*mem));
     ops_memory_init(mem,initial_size);
     for (;;)
         {
