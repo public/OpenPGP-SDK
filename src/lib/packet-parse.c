@@ -456,7 +456,7 @@ static int limited_skip(unsigned length,ops_region_t *region,
  * \param *cb		The callback
  * \return		1 on success, 0 on error (calls the cb with OPS_PARSER_ERROR in limited_read()).
  *
- * \see RFC2440bis-12 3.1
+ * \see RFC4880 3.1
  */
 static int limited_read_scalar(unsigned *dest,unsigned length,
 			       ops_region_t *region,
@@ -495,7 +495,7 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
  * \param *cb		The callback
  * \return		1 on success, 0 on error (calls the cb with OPS_PARSER_ERROR in limited_read()).
  *
- * \see RFC2440bis-12 3.1
+ * \see RFC4880 3.1
  */
 static int limited_read_size_t_scalar(size_t *dest,unsigned length,
 				      ops_region_t *region,
@@ -529,7 +529,7 @@ static int limited_read_size_t_scalar(size_t *dest,unsigned length,
  * \param *cb		The callback
  * \return		see limited_read_scalar()
  *
- * \see RFC2440bis-12 3.5
+ * \see RFC4880 3.5
  */
 static int limited_read_time(time_t *dest,ops_region_t *region,
 			     ops_parse_info_t *pinfo)
@@ -578,7 +578,7 @@ static int limited_read_time(time_t *dest,ops_region_t *region,
  * \return		1 on success, 0 on error (by limited_read_scalar() or limited_read() or if the MPI is not properly formed (XXX
  * 				 see comment below - the callback is called with a OPS_PARSER_ERROR in case of an error)
  *
- * \see RFC2440bis-12 3.2
+ * \see RFC4880 3.2
  */
 static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
 			    ops_parse_info_t *pinfo)
@@ -619,7 +619,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
 
 /** Read some data with a New-Format length from reader.
  *
- * \sa Internet-Draft RFC2440bis-13.txt Section 4.2.2
+ * \sa Internet-Draft RFC4880.txt Section 4.2.2
  *
  * \param *length	Where the decoded length will be put
  * \param *pinfo	How to parse
@@ -681,7 +681,7 @@ static ops_boolean_t read_new_length(unsigned *length,ops_parse_info_t *pinfo)
  * \return		1 on success, 0 on error (by limited_read_scalar() or limited_read() or if the MPI is not properly formed (XXX
  * 				 see comment below)
  *
- * \see RFC2440bis-12 4.2.2
+ * \see RFC4880 4.2.2
  * \see ops_ptag_t
  */
 static int limited_read_new_length(unsigned *length,ops_region_t *region,
@@ -1048,7 +1048,7 @@ static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
  * \param *cb		The callback
  * \return		1 on success, 0 on error
  *
- * \see RFC2440bis-12 5.5.2
+ * \see RFC4880 5.5.2
  */
 static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
 			    ops_parse_info_t *pinfo)
@@ -1142,7 +1142,7 @@ void ops_user_id_free(ops_user_id_t *id)
  * \param *cb		The callback
  * \return		1 on success, 0 on error
  *
- * \see RFC2440bis-12 5.11
+ * \see RFC4880 5.11
  */
 static int parse_user_id(ops_region_t *region,ops_parse_info_t *pinfo)
     {
@@ -1231,7 +1231,7 @@ void ops_signature_free(ops_signature_t *sig)
  * \param *cb		The callback
  * \return		1 on success, 0 on error
  *
- * \see RFC2440bis-12 5.2.2
+ * \see RFC4880 5.2.2
  */
 static int parse_v3_signature(ops_region_t *region,
 			      ops_parse_info_t *pinfo)
@@ -1328,7 +1328,7 @@ static int parse_v3_signature(ops_region_t *region,
  * \param *cb		The callback
  * \return		1 on success, 0 on error
  *
- * \see RFC2440bis-12 5.2.3
+ * \see RFC4880 5.2.3
  */
 static int parse_one_signature_subpacket(ops_signature_t *sig,
 					 ops_region_t *region,
@@ -1612,7 +1612,7 @@ void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t *ss_key_server_prefs
  * \param *cb		The callback
  * \return		1 on success, 0 on error
  *
- * \see RFC2440bis-12 5.2.3
+ * \see RFC4880 5.2.3
  */
 static int parse_signature_subpackets(ops_signature_t *sig,
 				      ops_region_t *region,
@@ -1654,7 +1654,7 @@ static int parse_signature_subpackets(ops_signature_t *sig,
  * \param *cb		The callback
  * \return		1 on success, 0 on error
  *
- * \see RFC2440bis-12 5.2.3
+ * \see RFC4880 5.2.3
  */
 static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     {

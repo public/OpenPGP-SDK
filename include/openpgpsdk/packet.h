@@ -44,14 +44,14 @@ typedef struct
     } ops_data_t;
 
 /************************************/
-/* Packet Tags - RFC2440bis-12, 4.2 */
+/* Packet Tags - RFC4880, 4.2 */
 /************************************/
 
 /** Packet Tag - Bit 7 Mask (this bit is always set).
  * The first byte of a packet is the "Packet Tag".  It always
  * has bit 7 set.  This is the mask for it.
  *
- * \see RFC2440bis-12 4.2
+ * \see RFC4880 4.2
  */
 #define OPS_PTAG_ALWAYS_SET		0x80
 
@@ -60,7 +60,7 @@ typedef struct
  * If it is set, the new format is used, if cleared the
  * old format is used.
  *
- * \see RFC2440bis-12 4.2
+ * \see RFC4880 4.2
  */
 #define OPS_PTAG_NEW_FORMAT		0x40
 
@@ -71,7 +71,7 @@ typedef struct
  * to the packet tag.  Note that you need to
  * shift by #OPS_PTAG_OF_CONTENT_TAG_SHIFT bits.
  *
- * \see RFC2440bis-12 4.2
+ * \see RFC4880 4.2
  */
 #define OPS_PTAG_OF_CONTENT_TAG_MASK	0x3c
 /** Old Packet Format: Offset for the content tag.
@@ -79,7 +79,7 @@ typedef struct
  * content tag needs to be shifted after being masked
  * out from the Packet Tag.
  *
- * \see RFC2440bis-12 4.2
+ * \see RFC4880 4.2
  */
 #define OPS_PTAG_OF_CONTENT_TAG_SHIFT	2
 /** Old Packet Format: Mask for length type.
@@ -88,7 +88,7 @@ typedef struct
  *
  * See #ops_ptag_of_lt_t for the meaning of the values.
  *
- * \see RFC2440bis-12 4.2
+ * \see RFC4880 4.2
  */
 #define OPS_PTAG_OF_LENGTH_TYPE_MASK	0x03
 
@@ -97,7 +97,7 @@ typedef struct
  * Defines the meanings of the 2 bits for length type in the
  * old packet format.
  *
- * \see RFC2440bis-12 4.2.1
+ * \see RFC4880 4.2.1
  */
 typedef enum
     {
@@ -114,7 +114,7 @@ typedef enum
  * to the packet tag.  Note that you need to
  * shift by #OPS_PTAG_NF_CONTENT_TAG_SHIFT bits.
  *
- * \see RFC2440bis-12 4.2
+ * \see RFC4880 4.2
  */
 #define OPS_PTAG_NF_CONTENT_TAG_MASK	0x3f
 /** New Packet Format: Offset for the content tag.
@@ -122,7 +122,7 @@ typedef enum
  * content tag needs to be shifted after being masked
  * out from the Packet Tag.
  *
- * \see RFC2440bis-12 4.2
+ * \see RFC4880 4.2
  */
 #define OPS_PTAG_NF_CONTENT_TAG_SHIFT	0
 
@@ -135,8 +135,8 @@ typedef enum
  * This enumerates all rfc-defined packet tag values and the
  * signature subpacket type values that we understand.
  *
- * \see RFC2440bis-12 4.3
- * \see RFC2440bis-12 5.2.3.1
+ * \see RFC4880 4.3
+ * \see RFC4880 5.2.3.1
  */
 enum ops_content_tag_t
     {
@@ -250,7 +250,7 @@ typedef struct
     } ops_parser_errcode_t;
 
 /** Structure to hold one packet tag.
- * \see RFC2440bis-12 4.2
+ * \see RFC4880 4.2
  */
 typedef struct
     {
@@ -268,13 +268,13 @@ typedef struct
  *
  * This lists algorithm numbers for public key algorithms.
  * 
- * \see RFC2440bis-12 9.1
+ * \see RFC4880 9.1
  */
 typedef enum
     {
     OPS_PKA_RSA			=1,	/*!< RSA (Encrypt or Sign) */
-    OPS_PKA_RSA_ENCRYPT_ONLY	=2,	/*!< RSA Encrypt-Only (deprecated - \see RFC2440bis-12 12.4) */
-    OPS_PKA_RSA_SIGN_ONLY	=3,	/*!< RSA Sign-Only (deprecated - \see RFC2440bis-12 12.4) */
+    OPS_PKA_RSA_ENCRYPT_ONLY	=2,	/*!< RSA Encrypt-Only (deprecated - \see RFC4880 13.5) */
+    OPS_PKA_RSA_SIGN_ONLY	=3,	/*!< RSA Sign-Only (deprecated - \see RFC4880 13.5) */
     OPS_PKA_ELGAMAL		=16,	/*!< Elgamal (Encrypt-Only) */
     OPS_PKA_DSA			=17,	/*!< DSA (Digital Signature Algorithm) */
     OPS_PKA_RESERVED_ELLIPTIC_CURVE	=18,	/*!< Reserved for Elliptic Curve */
@@ -296,7 +296,7 @@ typedef enum
 
 /** Structure to hold one DSA public key parameters.
  *
- * \see RFC2440bis-12 5.5.2
+ * \see RFC4880 5.5.2
  */
 typedef struct
     {
@@ -308,7 +308,7 @@ typedef struct
 
 /** Structure to hold on RSA public key.
  *
- * \see RFC2440bis-12 5.5.2
+ * \see RFC4880 5.5.2
  */
 typedef struct
     {
@@ -318,7 +318,7 @@ typedef struct
 
 /** Structure to hold on ElGamal public key parameters.
  *
- * \see RFC2440bis-12 5.5.2
+ * \see RFC4880 5.5.2
  */
 typedef struct
     {
@@ -338,7 +338,7 @@ typedef union
 /** Version.
  * OpenPGP has two different protocol versions: version 3 and version 4.
  *
- * \see RFC2440bis-12 5.2
+ * \see RFC4880 5.2
  */
 typedef enum
     {
@@ -406,7 +406,7 @@ typedef enum
  *
  * This lists algorithm numbers for symmetric key algorithms.
  * 
- * \see RFC2440bis-12 9.2
+ * \see RFC4880 9.2
  */
 typedef enum
     {
@@ -426,7 +426,7 @@ typedef enum
  * 
  * This lists algorithm numbers for hash algorithms.
  *
- * \see RFC2440bis-12 9.4
+ * \see RFC4880 9.4
  */
 typedef enum
     {
@@ -502,7 +502,7 @@ typedef struct
  * Different types are used in different places, and most make only sense in their intended location (for instance a
  * subkey binding has no place on a UserID).
  *
- * \see RFC2440bis-12 5.2.1
+ * \see RFC4880 5.2.1
  */
 typedef enum
     {
@@ -567,8 +567,8 @@ typedef union
 
 /** Struct to hold a signature packet.
  *
- * \see RFC2440bis-12 5.2.2
- * \see RFC2440bis-12 5.2.3
+ * \see RFC4880 5.2.2
+ * \see RFC4880 5.2.3
  */
 typedef struct
     {
