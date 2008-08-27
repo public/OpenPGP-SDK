@@ -23,11 +23,11 @@
 typedef struct
     {
     unsigned int valid_count;
-    ops_keydata_t * valid_keys;
+    ops_signature_info_t * valid_sigs;
     unsigned int invalid_count;
-    ops_keydata_t * invalid_keys;
+    ops_signature_info_t * invalid_sigs;
     unsigned int unknown_signer_count;
-    unsigned char * unknown_keys;
+    ops_signature_info_t * unknown_sigs;
     } ops_validate_result_t;
 
 void ops_validate_result_free(ops_validate_result_t *result);

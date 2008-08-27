@@ -51,14 +51,14 @@ static ops_boolean_t check_binary_signature(const unsigned len,
     unsigned int hashedlen;
 
     //common_init_signature(&hash,sig);
-    ops_hash_any(&hash,sig->hash_algorithm);
+    ops_hash_any(&hash,sig->info.hash_algorithm);
     hash.init(&hash);
     hash.add(&hash,data,len);
-    hash.add(&hash,sig->v4_hashed_data,sig->v4_hashed_data_length);
+    hash.add(&hash,sig->info.v4_hashed_data,sig->info.v4_hashed_data_length);
 
     trailer[0]=0x04; // version
     trailer[1]=0xFF;
-    hashedlen=sig->v4_hashed_data_length;
+    hashedlen=sig->info.v4_hashed_data_length;
     trailer[2]=hashedlen >> 24;
     trailer[3]=hashedlen >> 16;
     trailer[4]=hashedlen >> 8;
@@ -101,7 +101,20 @@ static int keydata_reader(void *dest,size_t length,ops_error_t **errors,
  * \ingroup Callbacks
  */
 
-static void add_key_to_valid_list(ops_validate_result_t * result, const ops_keydata_t *signer)
+static void free_signature_info(ops_signature_info_t *sig)
+    {
+    free (sig->v4_hashed_data);
+    free (sig);
+    }
+
+static void copy_signature_info(ops_signature_info_t* dst, const ops_signature_info_t* src)
+    {
+    memcpy(dst,src,sizeof *src);
+    dst->v4_hashed_data=ops_mallocz(src->v4_hashed_data_length);
+    memcpy(dst->v4_hashed_data,src->v4_hashed_data,src->v4_hashed_data_length);
+    }
+
+static void add_sig_to_valid_list(ops_validate_result_t * result, const ops_signature_info_t* sig)
     {
     size_t newsize;
     size_t start;
@@ -110,18 +123,18 @@ static void add_key_to_valid_list(ops_validate_result_t * result, const ops_keyd
     ++result->valid_count;
 
     // increase size of array
-    newsize=(sizeof *signer) * result->valid_count;
-    if (!result->valid_keys)
-        result->valid_keys=malloc(newsize);
+    newsize=(sizeof *sig) * result->valid_count;
+    if (!result->valid_sigs)
+        result->valid_sigs=malloc(newsize);
     else
-        result->valid_keys=realloc(result->valid_keys, newsize);
+        result->valid_sigs=realloc(result->valid_sigs, newsize);
 
     // copy key ptr to array
-    start=(sizeof *signer) * (result->valid_count-1);
-    memcpy(result->valid_keys+start,signer,sizeof *signer);
+    start=(sizeof *sig) * (result->valid_count-1);
+    copy_signature_info(result->valid_sigs+start,sig);
     }
 
-static void add_key_to_invalid_list(ops_validate_result_t * result, const ops_keydata_t *signer)
+static void add_sig_to_invalid_list(ops_validate_result_t * result, const ops_signature_info_t *sig)
     {
     size_t newsize;
     size_t start;
@@ -130,18 +143,18 @@ static void add_key_to_invalid_list(ops_validate_result_t * result, const ops_ke
     ++result->invalid_count;
 
     // increase size of array
-    newsize=(sizeof *signer) * result->invalid_count;
-    if (!result->invalid_keys)
-        result->invalid_keys=malloc(newsize);
+    newsize=(sizeof *sig) * result->invalid_count;
+    if (!result->invalid_sigs)
+        result->invalid_sigs=malloc(newsize);
     else
-        result->invalid_keys=realloc(result->invalid_keys, newsize);
+        result->invalid_sigs=realloc(result->invalid_sigs, newsize);
 
     // copy key ptr to array
-    start=(sizeof *signer) * (result->invalid_count-1);
-    memcpy(result->invalid_keys+start,signer,(sizeof *signer));
+    start=(sizeof *sig) * (result->invalid_count-1);
+    copy_signature_info(result->invalid_sigs+start, sig);
     }
 
-static void add_key_to_unknown_list(ops_validate_result_t * result, const unsigned char signer_id[OPS_KEY_ID_SIZE])
+static void add_sig_to_unknown_list(ops_validate_result_t * result, const ops_signature_info_t *sig)
     {
     size_t newsize;
     size_t start;
@@ -150,15 +163,15 @@ static void add_key_to_unknown_list(ops_validate_result_t * result, const unsign
     ++result->unknown_signer_count;
 
     // increase size of array
-    newsize=(sizeof *signer_id) * result->unknown_signer_count;
-    if (!result->unknown_keys)
-        result->unknown_keys=malloc(newsize);
+    newsize=(sizeof *sig) * result->unknown_signer_count;
+    if (!result->unknown_sigs)
+        result->unknown_sigs=malloc(newsize);
     else
-        result->unknown_keys=realloc(result->unknown_keys, newsize);
+        result->unknown_sigs=realloc(result->unknown_sigs, newsize);
 
     // copy key id to array
     start=OPS_KEY_ID_SIZE * (result->unknown_signer_count-1);
-    memcpy(result->unknown_keys+start, signer_id, OPS_KEY_ID_SIZE);
+    copy_signature_info(result->unknown_sigs+start, sig);
     }
 
 ops_parse_cb_return_t
@@ -215,14 +228,14 @@ ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
         */
 
 	signer=ops_keyring_find_key_by_id(arg->keyring,
-					   content->signature.signer_id);
+					   content->signature.info.signer_id);
 	if(!signer)
 	    {
-        add_key_to_unknown_list(arg->result, content->signature.signer_id);
+        add_sig_to_unknown_list(arg->result, &content->signature.info);
 	    break;
 	    }
 
-	switch(content->signature.type)
+	switch(content->signature.info.type)
 	    {
 	case OPS_CERT_GENERIC:
 	case OPS_CERT_PERSONA:
@@ -265,26 +278,26 @@ ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
     case OPS_SIG_TIMESTAMP:
     case OPS_SIG_3RD_PARTY:
         OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
-                    "Verification of signature type 0x%02x not yet implemented\n", content->signature.type);
+                    "Verification of signature type 0x%02x not yet implemented\n", content->signature.info.type);
                     break;
 
 	default:
             OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
-                    "Unexpected signature type 0x%02x\n", content->signature.type);
+                    "Unexpected signature type 0x%02x\n", content->signature.info.type);
 	    }
 
 	if(valid)
 	    {
         //	    printf(" validated\n");
 	    //++arg->result->valid_count;
-        add_key_to_valid_list(arg->result, signer);
+        add_sig_to_valid_list(arg->result, &content->signature.info);
 	    }
 	else
 	    {
         OPS_ERROR(errors,OPS_E_V_BAD_SIGNATURE,"Bad Signature");
         //	    printf(" BAD SIGNATURE\n");
         //	    ++arg->result->invalid_count;
-        add_key_to_invalid_list(arg->result, signer);
+        add_sig_to_invalid_list(arg->result, &content->signature.info);
 	    }
 	break;
 
@@ -361,27 +374,27 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
             {
             printf("\n*** hashed data:\n");
             unsigned int zzz=0;
-            for (zzz=0; zzz<content->signature.v4_hashed_data_length; zzz++)
-                printf("0x%02x ", content->signature.v4_hashed_data[zzz]);
+            for (zzz=0; zzz<content->signature.info.v4_hashed_data_length; zzz++)
+                printf("0x%02x ", content->signature.info.v4_hashed_data[zzz]);
             printf("\n");
-            printf("  type=%02x signer_id=",content->signature.type);
-            hexdump(content->signature.signer_id,
-                    sizeof content->signature.signer_id);
+            printf("  type=%02x signer_id=",content->signature.info.type);
+            hexdump(content->signature.info.signer_id,
+                    sizeof content->signature.info.signer_id);
             }
 
         signer=ops_keyring_find_key_by_id(arg->keyring,
-                                          content->signature.signer_id);
+                                          content->signature.info.signer_id);
         if(!signer)
             {
             OPS_ERROR(errors,OPS_E_V_UNKNOWN_SIGNER,"Unknown Signer");
-            add_key_to_unknown_list(arg->result, content->signature.signer_id);
+            add_sig_to_unknown_list(arg->result, &content->signature.info);
             break;
             }
         
         mem=ops_memory_new();
         ops_memory_init(mem,128);
         
-        switch(content->signature.type)
+        switch(content->signature.info.type)
             {
         case OPS_SIG_BINARY:
         case OPS_SIG_TEXT:
@@ -413,7 +426,7 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
 
         default:
             OPS_ERROR_1(errors, OPS_E_UNIMPLEMENTED,
-                        "Verification of signature type 0x%02x not yet implemented\n", content->signature.type);
+                        "Verification of signature type 0x%02x not yet implemented\n", content->signature.info.type);
             break;
             
 	    }
@@ -421,7 +434,7 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
 
 	if(valid)
 	    {
-        add_key_to_valid_list(arg->result, signer);
+        add_sig_to_valid_list(arg->result, &content->signature.info);
         //	    ++arg->result->valid_count;
 	    }
 	else
@@ -429,7 +442,7 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
         OPS_ERROR(errors,OPS_E_V_BAD_SIGNATURE,"Bad Signature");
         //	    printf(" BAD SIGNATURE\n");
         //	    ++arg->result->invalid_count;
-        add_key_to_invalid_list(arg->result, signer);
+        add_sig_to_invalid_list(arg->result, &content->signature.info);
 	    }
 	break;
 
@@ -521,12 +534,12 @@ void ops_validate_result_free(ops_validate_result_t *result)
     if (!result)
         return;
 
-    if (result->valid_keys)
-        free(result->valid_keys);
-    if (result->invalid_keys)
-        free(result->invalid_keys);
-    if (result->unknown_keys)
-        free(result->unknown_keys);
+    if (result->valid_sigs)
+        free_signature_info(result->valid_sigs);
+    if (result->invalid_sigs)
+        free_signature_info(result->invalid_sigs);
+    if (result->unknown_sigs)
+        free_signature_info(result->unknown_sigs);
 
     free(result);
     result=NULL;

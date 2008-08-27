@@ -474,10 +474,10 @@ callback_verify_example(const ops_parser_content_t *content_,ops_parse_cb_info_t
         // with everything known about the signature.
 
         // example: print out the signature creation time
-        if (content_->content.signature.creation_time_set)
+        if (content_->content.signature.info.creation_time_set)
             {
             printf("\nsignature creation time : %s", 
-                   ctime(&content_->content.signature.creation_time));
+                   ctime(&content_->content.signature.info.creation_time));
             }
         break;
 

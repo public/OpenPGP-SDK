@@ -701,45 +701,45 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	print_tagname("SIGNATURE");
 	print_indent(indent);
 	print_unsigned_int("Signature Version",
-	       content->signature.version);
-	if (content->signature.creation_time_set) 
+	       content->signature.info.version);
+	if (content->signature.info.creation_time_set) 
 	    print_time("Signature Creation Time",
-		       content->signature.creation_time);
+		       content->signature.info.creation_time);
 
 	print_string_and_value("Signature Type",
-			       ops_show_sig_type(content->signature.type),
-			       content->signature.type);
+			       ops_show_sig_type(content->signature.info.type),
+			       content->signature.info.type);
 
-	if(content->signature.signer_id_set)
+	if(content->signature.info.signer_id_set)
 	    print_hexdump_data("Signer ID",
-			       content->signature.signer_id,
-			       sizeof content->signature.signer_id);
+			       content->signature.info.signer_id,
+			       sizeof content->signature.info.signer_id);
 
 	print_string_and_value("Public Key Algorithm",
-			       ops_show_pka(content->signature.key_algorithm),
-			       content->signature.key_algorithm);
+			       ops_show_pka(content->signature.info.key_algorithm),
+			       content->signature.info.key_algorithm);
 	print_string_and_value("Hash Algorithm",
-			       ops_show_hash_algorithm(content->signature.hash_algorithm),
-			       content->signature.hash_algorithm);
+			       ops_show_hash_algorithm(content->signature.info.hash_algorithm),
+			       content->signature.info.hash_algorithm);
 
 	print_indent();
 	print_hexdump_data("hash2",&content->signature.hash2[0],2);
 
-	switch(content->signature.key_algorithm)
+	switch(content->signature.info.key_algorithm)
 	    {
 	case OPS_PKA_RSA:
 	case OPS_PKA_RSA_SIGN_ONLY:
-	    print_bn("sig",content->signature.signature.rsa.sig);
+	    print_bn("sig",content->signature.info.signature.rsa.sig);
 	    break;
 
 	case OPS_PKA_DSA:
-	    print_bn("r",content->signature.signature.dsa.r);
-	    print_bn("s",content->signature.signature.dsa.s);
+	    print_bn("r",content->signature.info.signature.dsa.r);
+	    print_bn("s",content->signature.info.signature.dsa.s);
 	    break;
 
 	case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	    print_bn("r",content->signature.signature.elgamal.r);
-	    print_bn("s",content->signature.signature.elgamal.s);
+	    print_bn("r",content->signature.info.signature.elgamal.r);
+	    print_bn("s",content->signature.info.signature.elgamal.s);
 	    break;
 
 	default:
@@ -1042,25 +1042,25 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	print_tagname("SIGNATURE");
 	print_indent(indent);
 	print_unsigned_int("Signature Version",
-	       content->signature.version);
-	if(content->signature.creation_time_set) 
-	    print_time("Signature Creation Time", content->signature.creation_time);
+	       content->signature.info.version);
+	if(content->signature.info.creation_time_set) 
+	    print_time("Signature Creation Time", content->signature.info.creation_time);
 
 	print_string_and_value("Signature Type",
-			       ops_show_sig_type(content->signature.type),
-			       content->signature.type);
+			       ops_show_sig_type(content->signature.info.type),
+			       content->signature.info.type);
 
-	if(content->signature.signer_id_set)
+	if(content->signature.info.signer_id_set)
 	    print_hexdump_data("Signer ID",
-			       content->signature.signer_id,
-			       sizeof content->signature.signer_id);
+			       content->signature.info.signer_id,
+			       sizeof content->signature.info.signer_id);
 
 	print_string_and_value("Public Key Algorithm",
-			       ops_show_pka(content->signature.key_algorithm),
-			       content->signature.key_algorithm);
+			       ops_show_pka(content->signature.info.key_algorithm),
+			       content->signature.info.key_algorithm);
 	print_string_and_value("Hash Algorithm",
-			       ops_show_hash_algorithm(content->signature.hash_algorithm),
-			       content->signature.hash_algorithm);
+			       ops_show_hash_algorithm(content->signature.info.hash_algorithm),
+			       content->signature.info.hash_algorithm);
 
 	break;
 
@@ -1068,20 +1068,20 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	print_indent();
 	print_hexdump_data("hash2",&content->signature.hash2[0],2);
 
-	switch(content->signature.key_algorithm)
+	switch(content->signature.info.key_algorithm)
 	    {
 	case OPS_PKA_RSA:
-	    print_bn("sig",content->signature.signature.rsa.sig);
+	    print_bn("sig",content->signature.info.signature.rsa.sig);
 	    break;
 
 	case OPS_PKA_DSA:
-	    print_bn("r",content->signature.signature.dsa.r);
-	    print_bn("s",content->signature.signature.dsa.s);
+	    print_bn("r",content->signature.info.signature.dsa.r);
+	    print_bn("s",content->signature.info.signature.dsa.s);
 	    break;
 
 	case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	    print_bn("r",content->signature.signature.elgamal.r);
-	    print_bn("s",content->signature.signature.elgamal.s);
+	    print_bn("r",content->signature.info.signature.elgamal.r);
+	    print_bn("s",content->signature.info.signature.elgamal.s);
 	    break;
 
 	case OPS_PKA_PRIVATE00:
@@ -1096,7 +1096,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	case OPS_PKA_PRIVATE09:
 	case OPS_PKA_PRIVATE10:
 	    print_data("Private/Experimental",
-		       &content->signature.signature.unknown.data);
+		       &content->signature.info.signature.unknown.data);
 	    break;
 
 	default:
@@ -1285,45 +1285,45 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 	print_tagname("SIGNATURE");
 	print_indent(indent);
 	print_unsigned_int("Signature Version",
-	       content->signature.version);
-	if (content->signature.creation_time_set) 
+	       content->signature.info.version);
+	if (content->signature.info.creation_time_set) 
 	    print_time("Signature Creation Time",
-		       content->signature.creation_time);
+		       content->signature.info.creation_time);
 
 	print_string_and_value("Signature Type",
-			       ops_show_sig_type(content->signature.type),
-			       content->signature.type);
+			       ops_show_sig_type(content->signature.info.type),
+			       content->signature.info.type);
 
-	if(content->signature.signer_id_set)
+	if(content->signature.info.signer_id_set)
 	    print_hexdump_data("Signer ID",
-			       content->signature.signer_id,
-			       sizeof content->signature.signer_id);
+			       content->signature.info.signer_id,
+			       sizeof content->signature.info.signer_id);
 
 	print_string_and_value("Public Key Algorithm",
-			       ops_show_pka(content->signature.key_algorithm),
-			       content->signature.key_algorithm);
+			       ops_show_pka(content->signature.info.key_algorithm),
+			       content->signature.info.key_algorithm);
 	print_string_and_value("Hash Algorithm",
-			       ops_show_hash_algorithm(content->signature.hash_algorithm),
-			       content->signature.hash_algorithm);
+			       ops_show_hash_algorithm(content->signature.info.hash_algorithm),
+			       content->signature.info.hash_algorithm);
 
 	print_indent();
 	print_hexdump_data("hash2",&content->signature.hash2[0],2);
 
-	switch(content->signature.key_algorithm)
+	switch(content->signature.info.key_algorithm)
 	    {
 	case OPS_PKA_RSA:
 	case OPS_PKA_RSA_SIGN_ONLY:
-	    print_bn("sig",content->signature.signature.rsa.sig);
+	    print_bn("sig",content->signature.info.signature.rsa.sig);
 	    break;
 
 	case OPS_PKA_DSA:
-	    print_bn("r",content->signature.signature.dsa.r);
-	    print_bn("s",content->signature.signature.dsa.s);
+	    print_bn("r",content->signature.info.signature.dsa.r);
+	    print_bn("s",content->signature.info.signature.dsa.s);
 	    break;
 
 	case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	    print_bn("r",content->signature.signature.elgamal.r);
-	    print_bn("s",content->signature.signature.elgamal.s);
+	    print_bn("r",content->signature.info.signature.elgamal.r);
+	    print_bn("s",content->signature.info.signature.elgamal.s);
 	    break;
 
 	default:
@@ -1626,25 +1626,25 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 	print_tagname("SIGNATURE");
 	print_indent(indent);
 	print_unsigned_int("Signature Version",
-	       content->signature.version);
-	if(content->signature.creation_time_set) 
-	    print_time("Signature Creation Time", content->signature.creation_time);
+	       content->signature.info.version);
+	if(content->signature.info.creation_time_set) 
+	    print_time("Signature Creation Time", content->signature.info.creation_time);
 
 	print_string_and_value("Signature Type",
-			       ops_show_sig_type(content->signature.type),
-			       content->signature.type);
+			       ops_show_sig_type(content->signature.info.type),
+			       content->signature.info.type);
 
-	if(content->signature.signer_id_set)
+	if(content->signature.info.signer_id_set)
 	    print_hexdump_data("Signer ID",
-			       content->signature.signer_id,
-			       sizeof content->signature.signer_id);
+			       content->signature.info.signer_id,
+			       sizeof content->signature.info.signer_id);
 
 	print_string_and_value("Public Key Algorithm",
-			       ops_show_pka(content->signature.key_algorithm),
-			       content->signature.key_algorithm);
+			       ops_show_pka(content->signature.info.key_algorithm),
+			       content->signature.info.key_algorithm);
 	print_string_and_value("Hash Algorithm",
-			       ops_show_hash_algorithm(content->signature.hash_algorithm),
-			       content->signature.hash_algorithm);
+			       ops_show_hash_algorithm(content->signature.info.hash_algorithm),
+			       content->signature.info.hash_algorithm);
 
 	break;
 
@@ -1652,20 +1652,20 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 	print_indent();
 	print_hexdump_data("hash2",&content->signature.hash2[0],2);
 
-	switch(content->signature.key_algorithm)
+	switch(content->signature.info.key_algorithm)
 	    {
 	case OPS_PKA_RSA:
-	    print_bn("sig",content->signature.signature.rsa.sig);
+	    print_bn("sig",content->signature.info.signature.rsa.sig);
 	    break;
 
 	case OPS_PKA_DSA:
-	    print_bn("r",content->signature.signature.dsa.r);
-	    print_bn("s",content->signature.signature.dsa.s);
+	    print_bn("r",content->signature.info.signature.dsa.r);
+	    print_bn("s",content->signature.info.signature.dsa.s);
 	    break;
 
 	case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	    print_bn("r",content->signature.signature.elgamal.r);
-	    print_bn("s",content->signature.signature.elgamal.s);
+	    print_bn("r",content->signature.info.signature.elgamal.r);
+	    print_bn("s",content->signature.info.signature.elgamal.s);
 	    break;
 
 	case OPS_PKA_PRIVATE00:
@@ -1680,7 +1680,7 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 	case OPS_PKA_PRIVATE09:
 	case OPS_PKA_PRIVATE10:
 	    print_data("Private/Experimental",
-		       &content->signature.signature.unknown.data);
+		       &content->signature.info.signature.unknown.data);
 	    break;
 
 	default:

@@ -143,8 +143,8 @@ static void verify_keypair(ops_boolean_t armoured)
 
     ops_validate_all_signatures(result, &pub_keyring, NULL);
     CU_ASSERT(result->valid_count==1);
-    CU_ASSERT(strncmp((char *)ops_get_key_id(&result->valid_keys[0]),(char *)keyid,strlen((char *)keyid))==0);
-    CU_ASSERT(strncmp((char *)ops_get_user_id(&result->valid_keys[0],0),userid,strlen(userid))==0);
+
+    CU_ASSERT(memcmp(result->valid_sigs[0].signer_id,keyid,OPS_KEY_ID_SIZE)==0);
     CU_ASSERT(result->invalid_count==0);
     CU_ASSERT(result->unknown_signer_count==0);
 

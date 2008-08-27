@@ -578,14 +578,20 @@ typedef struct
     unsigned char		signer_id[OPS_KEY_ID_SIZE];	/*!< Eight-octet key ID of signer*/
     ops_public_key_algorithm_t	key_algorithm;	/*!< public key algorithm number */
     ops_hash_algorithm_t	hash_algorithm;	/*!< hashing algorithm number */
-    unsigned char		hash2[2];	/*!< high 2 bytes of hashed value - for quick test */
     ops_signature_union_t	signature;	/*!< signature parameters */
-    size_t			v4_hashed_data_start; /* only valid if accumulate is set */
     size_t			v4_hashed_data_length;
-    unsigned char* v4_hashed_data;
-    ops_hash_t			*hash;		/*!< if set, the hash filled in for the data so far */
+    unsigned char* 		v4_hashed_data;
     ops_boolean_t		creation_time_set:1;
     ops_boolean_t		signer_id_set:1;
+    } ops_signature_info_t;
+
+typedef struct
+    {
+    ops_signature_info_t	info;
+    /* The following fields are only used while parsing the signature */
+    unsigned char		hash2[2];	/*!< high 2 bytes of hashed value - for quick test */
+    size_t			v4_hashed_data_start; /* only valid if accumulate is set */
+    ops_hash_t			*hash;		/*!< if set, the hash filled in for the data so far */
     } ops_signature_t;
 
 /** The raw bytes of a signature subpacket */

@@ -1184,21 +1184,21 @@ void free_unknown_sig_pka(ops_unknown_signature_t *unknown_sig)
  */
 void ops_signature_free(ops_signature_t *sig)
     {
-    switch(sig->key_algorithm)
+    switch(sig->info.key_algorithm)
 	{
     case OPS_PKA_RSA:
     case OPS_PKA_RSA_SIGN_ONLY:
-	free_BN(&sig->signature.rsa.sig);
+	free_BN(&sig->info.signature.rsa.sig);
 	break;
 
     case OPS_PKA_DSA:
-	free_BN(&sig->signature.dsa.r);
-	free_BN(&sig->signature.dsa.s);
+	free_BN(&sig->info.signature.dsa.r);
+	free_BN(&sig->info.signature.dsa.s);
 	break;
 
     case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	free_BN(&sig->signature.elgamal.r);
-	free_BN(&sig->signature.elgamal.s);
+	free_BN(&sig->info.signature.elgamal.r);
+	free_BN(&sig->info.signature.elgamal.s);
 	break;
 
     case OPS_PKA_PRIVATE00:
@@ -1212,7 +1212,7 @@ void ops_signature_free(ops_signature_t *sig)
     case OPS_PKA_PRIVATE08:
     case OPS_PKA_PRIVATE09:
     case OPS_PKA_PRIVATE10:
-	free_unknown_sig_pka(&sig->signature.unknown);
+	free_unknown_sig_pka(&sig->info.signature.unknown);
 	break;
 
     default:
@@ -1239,7 +1239,7 @@ static int parse_v3_signature(ops_region_t *region,
     unsigned char c[1];
     ops_parser_content_t content;
 
-    C.signature.version=OPS_V3;
+    C.signature.info.version=OPS_V3;
 
     /* hash info length */
     if(!limited_read(c,1,region,pinfo))
@@ -1249,54 +1249,54 @@ static int parse_v3_signature(ops_region_t *region,
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
-    C.signature.type=c[0];
+    C.signature.info.type=c[0];
     /* XXX: check signature type */
 
-    if(!limited_read_time(&C.signature.creation_time,region,pinfo))
+    if(!limited_read_time(&C.signature.info.creation_time,region,pinfo))
 	return 0;
-    C.signature.creation_time_set=ops_true;
+    C.signature.info.creation_time_set=ops_true;
 
-    if(!limited_read(C.signature.signer_id,OPS_KEY_ID_SIZE,region,pinfo))
+    if(!limited_read(C.signature.info.signer_id,OPS_KEY_ID_SIZE,region,pinfo))
 	return 0;
-    C.signature.signer_id_set=ops_true;
+    C.signature.info.signer_id_set=ops_true;
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
-    C.signature.key_algorithm=c[0];
+    C.signature.info.key_algorithm=c[0];
     /* XXX: check algorithm */
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
-    C.signature.hash_algorithm=c[0];
+    C.signature.info.hash_algorithm=c[0];
     /* XXX: check algorithm */
     
     if(!limited_read(C.signature.hash2,2,region,pinfo))
 	return 0;
 
-    switch(C.signature.key_algorithm)
+    switch(C.signature.info.key_algorithm)
 	{
     case OPS_PKA_RSA:
     case OPS_PKA_RSA_SIGN_ONLY:
-	if(!limited_read_mpi(&C.signature.signature.rsa.sig,region,pinfo))
+	if(!limited_read_mpi(&C.signature.info.signature.rsa.sig,region,pinfo))
 	    return 0;
 	break;
 
     case OPS_PKA_DSA:
-	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,pinfo)
-	   || !limited_read_mpi(&C.signature.signature.dsa.s,region,pinfo))
+	if(!limited_read_mpi(&C.signature.info.signature.dsa.r,region,pinfo)
+	   || !limited_read_mpi(&C.signature.info.signature.dsa.s,region,pinfo))
 	    return 0;
 	break;
 
     case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	if(!limited_read_mpi(&C.signature.signature.elgamal.r,region,pinfo)
-	   || !limited_read_mpi(&C.signature.signature.elgamal.s,region,pinfo))
+	if(!limited_read_mpi(&C.signature.info.signature.elgamal.r,region,pinfo)
+	   || !limited_read_mpi(&C.signature.info.signature.elgamal.s,region,pinfo))
 	    return 0;
 	break;
 
     default:
         OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SIGNATURE_ALG,
                     "Unsupported signature key algorithm (%s)",
-                    ops_show_pka(C.signature.key_algorithm));
+                    ops_show_pka(C.signature.info.key_algorithm));
         return 0;
 	}
 
@@ -1306,8 +1306,8 @@ static int parse_v3_signature(ops_region_t *region,
         return 0;
         }
 
-    if(C.signature.signer_id_set)
-	C.signature.hash=ops_parse_hash_find(pinfo,C.signature.signer_id);
+    if(C.signature.info.signer_id_set)
+	C.signature.hash=ops_parse_hash_find(pinfo,C.signature.info.signer_id);
 
     CBP(pinfo,OPS_PTAG_CT_SIGNATURE,&content);
 
@@ -1378,8 +1378,8 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	if(content.tag == OPS_PTAG_SS_CREATION_TIME)
 	    {
-	    sig->creation_time=C.ss_time.time;
-	    sig->creation_time_set=ops_true;
+	    sig->info.creation_time=C.ss_time.time;
+	    sig->info.creation_time_set=ops_true;
 	    }
 	break;
 
@@ -1399,8 +1399,8 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	if(!limited_read(C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE,
 			     &subregion,pinfo))
 	    return 0;
-	memcpy(sig->signer_id,C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE);
-	sig->signer_id_set=ops_true;
+	memcpy(sig->info.signer_id,C.ss_issuer_key_id.key_id,OPS_KEY_ID_SIZE);
+	sig->info.signer_id_set=ops_true;
 	break;
 
     case OPS_PTAG_SS_PREFERRED_SKA:
@@ -1670,21 +1670,21 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
 
     /* Set version,type,algorithms */
 
-    C.signature.version=OPS_V4;
+    C.signature.info.version=OPS_V4;
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
-    C.signature.type=c[0];
+    C.signature.info.type=c[0];
     /* XXX: check signature type */
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
-    C.signature.key_algorithm=c[0];
+    C.signature.info.key_algorithm=c[0];
     /* XXX: check algorithm */
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
-    C.signature.hash_algorithm=c[0];
+    C.signature.info.hash_algorithm=c[0];
     /* XXX: check algorithm */
 
     CBP(pinfo,OPS_PTAG_CT_SIGNATURE_HEADER,&content);
@@ -1692,13 +1692,13 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     if(!parse_signature_subpackets(&C.signature,region,pinfo))
 	return 0;
 
-    C.signature.v4_hashed_data_length=pinfo->rinfo.alength
+    C.signature.info.v4_hashed_data_length=pinfo->rinfo.alength
         -C.signature.v4_hashed_data_start;
 
     // copy hashed subpackets
-    if (C.signature.v4_hashed_data)
-        free(C.signature.v4_hashed_data);
-    C.signature.v4_hashed_data=ops_mallocz(C.signature.v4_hashed_data_length);
+    if (C.signature.info.v4_hashed_data)
+        free(C.signature.info.v4_hashed_data);
+    C.signature.info.v4_hashed_data=ops_mallocz(C.signature.info.v4_hashed_data_length);
 
     if (!pinfo->rinfo.accumulate)
         {
@@ -1707,9 +1707,9 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
         assert(0);
         }
 
-    memcpy(C.signature.v4_hashed_data,
+    memcpy(C.signature.info.v4_hashed_data,
            pinfo->rinfo.accumulated+C.signature.v4_hashed_data_start,
-           C.signature.v4_hashed_data_length);
+           C.signature.info.v4_hashed_data_length);
 
     if(!parse_signature_subpackets(&C.signature,region,pinfo))
 	return 0;
@@ -1717,23 +1717,23 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     if(!limited_read(C.signature.hash2,2,region,pinfo))
 	return 0;
 
-    switch(C.signature.key_algorithm)
+    switch(C.signature.info.key_algorithm)
 	{
     case OPS_PKA_RSA:
-	if(!limited_read_mpi(&C.signature.signature.rsa.sig,region,pinfo))
+	if(!limited_read_mpi(&C.signature.info.signature.rsa.sig,region,pinfo))
 	    return 0;
 	break;
 
     case OPS_PKA_DSA:
-	if(!limited_read_mpi(&C.signature.signature.dsa.r,region,pinfo)) 
+	if(!limited_read_mpi(&C.signature.info.signature.dsa.r,region,pinfo)) 
 	    ERRP(pinfo,"Error reading DSA r field in signature");
-	if (!limited_read_mpi(&C.signature.signature.dsa.s,region,pinfo))
+	if (!limited_read_mpi(&C.signature.info.signature.dsa.s,region,pinfo))
 	    ERRP(pinfo,"Error reading DSA s field in signature");
 	break;
 
     case OPS_PKA_ELGAMAL_ENCRYPT_OR_SIGN:
-	if(!limited_read_mpi(&C.signature.signature.elgamal.r,region,pinfo)
-	   || !limited_read_mpi(&C.signature.signature.elgamal.s,region,pinfo))
+	if(!limited_read_mpi(&C.signature.info.signature.elgamal.r,region,pinfo)
+	   || !limited_read_mpi(&C.signature.info.signature.elgamal.s,region,pinfo))
 	    return 0;
 	break;
 
@@ -1748,14 +1748,14 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     case OPS_PKA_PRIVATE08:
     case OPS_PKA_PRIVATE09:
     case OPS_PKA_PRIVATE10:
-	if (!read_data(&C.signature.signature.unknown.data,region,pinfo))
+	if (!read_data(&C.signature.info.signature.unknown.data,region,pinfo))
 	    return 0;
 	break;
 
     default:
 	OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_SIGNATURE_ALG,
                     "Bad v4 signature key algorithm (%s)",
-                    ops_show_pka(C.signature.key_algorithm));
+                    ops_show_pka(C.signature.info.key_algorithm));
         return 0;
 	}
 

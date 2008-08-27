@@ -293,7 +293,7 @@ static void hash_add_key(ops_hash_t *hash,const ops_public_key_t *key)
 
 static void initialise_hash(ops_hash_t *hash,const ops_signature_t *sig)
     {
-    ops_hash_any(hash,sig->hash_algorithm);
+    ops_hash_any(hash,sig->info.hash_algorithm);
     hash->init(hash);
     }
 
@@ -307,19 +307,19 @@ static void init_key_signature(ops_hash_t *hash,const ops_signature_t *sig,
 static void hash_add_trailer(ops_hash_t *hash,const ops_signature_t *sig,
 			     const unsigned char *raw_packet)
     {
-    if(sig->version == OPS_V4)
+    if(sig->info.version == OPS_V4)
 	{
 	if(raw_packet)
 	    hash->add(hash,raw_packet+sig->v4_hashed_data_start,
-		      sig->v4_hashed_data_length);
-	ops_hash_add_int(hash,sig->version,1);
+		      sig->info.v4_hashed_data_length);
+	ops_hash_add_int(hash,sig->info.version,1);
 	ops_hash_add_int(hash,0xff,1);
-	ops_hash_add_int(hash,sig->v4_hashed_data_length,4);
+	ops_hash_add_int(hash,sig->info.v4_hashed_data_length,4);
 	}
     else
 	{
-	ops_hash_add_int(hash,sig->type,1);
-	ops_hash_add_int(hash,sig->creation_time,4);
+	ops_hash_add_int(hash,sig->info.type,1);
+	ops_hash_add_int(hash,sig->info.creation_time,4);
 	}
     }
 
@@ -335,14 +335,14 @@ ops_boolean_t ops_check_signature(const unsigned char *hash,unsigned length,
     hexdump(hash,length);
     */
 
-    switch(sig->key_algorithm)
+    switch(sig->info.key_algorithm)
 	{
     case OPS_PKA_DSA:
-	ret=ops_dsa_verify(hash,length,&sig->signature.dsa,&signer->key.dsa);
+	ret=ops_dsa_verify(hash,length,&sig->info.signature.dsa,&signer->key.dsa);
 	break;
 
     case OPS_PKA_RSA:
-	ret=rsa_verify(sig->hash_algorithm,hash,length,&sig->signature.rsa,
+	ret=rsa_verify(sig->info.hash_algorithm,hash,length,&sig->info.signature.rsa,
 		       &signer->key.rsa);
 	break;
 
@@ -397,7 +397,7 @@ ops_check_user_id_certification_signature(const ops_public_key_t *key,
 
     init_key_signature(&hash,sig,key);
 
-    if(sig->version == OPS_V4)
+    if(sig->info.version == OPS_V4)
 	{
 	ops_hash_add_int(&hash,0xb4,1);
 	ops_hash_add_int(&hash,user_id_len,4);
@@ -429,7 +429,7 @@ ops_check_user_attribute_certification_signature(const ops_public_key_t *key,
 
     init_key_signature(&hash,sig,key);
 
-    if(sig->version == OPS_V4)
+    if(sig->info.version == OPS_V4)
 	{
 	ops_hash_add_int(&hash,0xd1,1);
 	ops_hash_add_int(&hash,attribute->data.len,4);
@@ -503,7 +503,7 @@ ops_check_hash_signature(ops_hash_t *hash,
 			 const ops_signature_t *sig,
 			 const ops_public_key_t *signer)
     {
-    if(sig->hash_algorithm != hash->algorithm)
+    if(sig->info.hash_algorithm != hash->algorithm)
 	return ops_false;
 
     return finalise_signature(hash,sig,signer,NULL);
@@ -518,10 +518,10 @@ static void start_signature_in_mem(ops_create_signature_t *sig)
     ops_writer_set_memory(sig->info,sig->mem);
 
     // write nearly up to the first subpacket
-    ops_write_scalar(sig->sig.version,1,sig->info);
-    ops_write_scalar(sig->sig.type,1,sig->info);
-    ops_write_scalar(sig->sig.key_algorithm,1,sig->info);
-    ops_write_scalar(sig->sig.hash_algorithm,1,sig->info);
+    ops_write_scalar(sig->sig.info.version,1,sig->info);
+    ops_write_scalar(sig->sig.info.type,1,sig->info);
+    ops_write_scalar(sig->sig.info.key_algorithm,1,sig->info);
+    ops_write_scalar(sig->sig.info.hash_algorithm,1,sig->info);
 
     // dummy hashed subpacket count
     sig->hashed_count_offset=ops_memory_get_length(sig->mem);
@@ -549,10 +549,10 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
     // XXX: refactor with check (in several ways - check should probably
     // use the buffered writer to construct packets (done), and also should
     // share code for hash calculation)
-    sig->sig.version=OPS_V4;
-    sig->sig.hash_algorithm=OPS_HASH_SHA1;
-    sig->sig.key_algorithm=key->algorithm;
-    sig->sig.type=type;
+    sig->sig.info.version=OPS_V4;
+    sig->sig.info.hash_algorithm=OPS_HASH_SHA1;
+    sig->sig.info.key_algorithm=key->algorithm;
+    sig->sig.info.type=type;
 
     sig->hashed_data_length=-1;
 
@@ -586,10 +586,10 @@ static void ops_signature_start_signature(ops_create_signature_t *sig,
     // XXX: refactor with check (in several ways - check should probably
     // use the buffered writer to construct packets (done), and also should
     // share code for hash calculation)
-    sig->sig.version=OPS_V4;
-    sig->sig.key_algorithm=key->public_key.algorithm;
-    sig->sig.hash_algorithm=hash;
-    sig->sig.type=type;
+    sig->sig.info.version=OPS_V4;
+    sig->sig.info.key_algorithm=key->public_key.algorithm;
+    sig->sig.info.hash_algorithm=hash;
+    sig->sig.info.type=type;
 
     sig->hashed_data_length=-1;
 
@@ -686,7 +686,7 @@ ops_boolean_t ops_write_signature(ops_create_signature_t *sig, const ops_public_
 		  sig->unhashed_count_offset);
 
     // add final trailer
-    ops_hash_add_int(&sig->hash,sig->sig.version,1);
+    ops_hash_add_int(&sig->hash,sig->sig.info.version,1);
     ops_hash_add_int(&sig->hash,0xff,1);
     // +6 for version, type, pk alg, hash alg, hashed subpacket length
     ops_hash_add_int(&sig->hash,sig->hashed_data_length+6,4);
