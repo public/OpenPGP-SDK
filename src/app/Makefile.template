@@ -19,6 +19,7 @@ $(LIBDEPS):
 
 openpgp: openpgp.o $(LIBDEPS)
 	$(CC) $(LDFLAGS) -o openpgp openpgp.o $(LIBS)
+	cp openpgp ../../bin
 
 tags:
 	rm -f TAGS
