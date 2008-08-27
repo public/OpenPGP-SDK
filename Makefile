@@ -40,7 +40,7 @@ tags:
 	find . -name '*.[ch]' | xargs etags
 
 test::
-	cd tests && $(MAKE) 
+	cd tests && $(MAKE) && ./tests 
 
 doc::
 	cd doc && $(MAKE)
