@@ -4,7 +4,7 @@ CC=%CC%
 
 CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../../include %INCLUDES% %CFLAGS% -fPIC
 
-LDFLAGS=-g 
+LDFLAGS=-g %LDFLAGS%
 LIBDEPS=../../lib/libops.a
 LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% %OTHERLIBS% $(DM_LIB)
 EXES=openpgp

@@ -64,6 +64,7 @@ my %Args=(
 	  },
 	  '--64' => sub {
 	      $Subst{CFLAGS}.=' -m64';
+	      $Subst{LDFLAGS}.=' -m64';
 	  },
 	  '--maintainer' => sub {
 	      $Subst{CFLAGS}.=' -fno-builtin';
