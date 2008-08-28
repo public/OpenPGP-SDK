@@ -23,6 +23,7 @@
  * \brief Code for dealing with ASCII-armoured packets
  */
 
+#include <openpgpsdk/errors.h>
 #include <openpgpsdk/callback.h>
 #include <openpgpsdk/configure.h>
 #include <openpgpsdk/armour.h>
@@ -250,7 +251,7 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 	if(alg == OPS_HASH_UNKNOWN)
 	    {
 	    free(hash);
-	    ERR(cbinfo,"Unknown hash algorithm",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR_1(errors,OPS_E_R_BAD_FORMAT,"Unknown hash algorithm '%s'",hashstr);
 	    }
 	ops_hash_any(hash,alg);
 	}
@@ -276,13 +277,13 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 		{
 		/* then this had better be a trailer! */
 		if(c != '-')
-		    ERR(cbinfo,"Bad dash-escaping",OPS_E_R_BAD_FORMAT);
+		    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad dash-escaping");
 		for(count=2 ; count < 5 ; ++count)
 		    {
 		    if((c=read_char(arg,errors,rinfo,cbinfo,ops_false)) < 0)
 			return -1;
 		    if(c != '-')
-			ERR(cbinfo,"Bad dash-escaping (2)",OPS_E_R_BAD_FORMAT);
+                OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad dash-escaping (2)");
 		    }
 		arg->state=AT_TRAILER_NAME;
 		break;
@@ -331,14 +332,16 @@ static void add_header(dearmour_arg_t *arg,const char *key,const char
     ++arg->headers.nheaders;
     }
 
+/* \todo what does a return value of 0 indicate? 1 is good, -1 is bad */
 static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 			 ops_reader_info_t *rinfo,ops_parse_cb_info_t *cbinfo)
     {
+    int rtn=1;
     char *buf;
     unsigned nbuf;
     unsigned size;
     ops_boolean_t first=ops_true;
-    ops_parser_content_t content;
+    //ops_parser_content_t content;
 
     buf=NULL;
     nbuf=size=0;
@@ -348,7 +351,11 @@ static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 	int c;
 
 	if((c=read_char(arg,errors,rinfo,cbinfo,ops_true)) < 0)
-	    return -1;
+        {
+        OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Unexpected EOF");
+        rtn=-1;
+        break;
+        }
 
 	if(c == '\n')
 	    {
@@ -363,25 +370,31 @@ static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 	    s=strchr(buf,':');
 	    if(!s)
 		if(!first && !arg->allow_headers_without_gap)
+            {
 		    // then we have seriously malformed armour
-		    ERR(cbinfo,"No colon in armour header",OPS_E_R_BAD_FORMAT);
+		    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"No colon in armour header");
+            rtn=-1;
+            break;
+            }
 		else
 		    {
 		    if(first &&
 		       !(arg->allow_headers_without_gap || arg->allow_no_gap))
-			ERR(cbinfo,"No colon in armour header (2)",
-			    OPS_E_R_BAD_FORMAT);
-		    // then we have a nasty armoured block with no
-		    // headers, not even a blank line.
-		    buf[nbuf]='\n';
-		    push_back(arg,(unsigned char *)buf,nbuf+1);
-		    break;
+                {
+                OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"No colon in armour header (2)");
+                // then we have a nasty armoured block with no
+                // headers, not even a blank line.
+                buf[nbuf]='\n';
+                push_back(arg,(unsigned char *)buf,nbuf+1);
+                rtn=-1;
+                break;
+                }
 		    }
 	    else
 		{
 		*s='\0';
 		if(s[1] != ' ')
-		    ERR(cbinfo,"No space in armour header",OPS_E_R_BAD_FORMAT);
+		    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"No space in armour header");
 		add_header(arg,buf,s+2);
 		nbuf=0;
 		}
@@ -400,7 +413,7 @@ static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 
     free(buf);
 
-    return 1;
+    return rtn;
     }
 
 static int read4(dearmour_arg_t *arg,ops_error_t **errors,
@@ -467,7 +480,7 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
     unsigned n;
     int n2;
     unsigned long l;
-    ops_parser_content_t content;
+    //ops_parser_content_t content;
     int c;
     int ret;
 
@@ -475,12 +488,12 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 
     ret=read4(arg,errors,rinfo,cbinfo,&c,&n,&l);
     if(ret < 0)
-	ERR(cbinfo,"Badly formed base64",OPS_E_R_BAD_FORMAT);
+	OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly formed base64");
 
     if(n == 3)
 	{
 	if(c != '=')
-	    ERR(cbinfo,"Badly terminated base64 (2)",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated base64 (2)");
 	arg->buffered=2;
 	arg->eof64=ops_true;
 	l >>= 2;
@@ -488,18 +501,18 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
     else if(n == 2)
 	{
 	if(c != '=')
-	    ERR(cbinfo,"Badly terminated base64 (3)",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated base64 (3)");
 	arg->buffered=1;
 	arg->eof64=ops_true;
 	l >>= 4;
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '=')
-	    ERR(cbinfo,"Badly terminated base64",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated base64");
 	}
     else if(n == 0)
 	{
 	if(!arg->prev_nl || c != '=')
-	    ERR(cbinfo,"Badly terminated base64 (4)",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated base64 (4)");
 	arg->buffered=0;
 	}
     else
@@ -515,10 +528,10 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	assert(c == '=');
 	c=read_and_eat_whitespace(arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
-	    ERR(cbinfo,"No newline at base64 end",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"No newline at base64 end");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '=')
-	    ERR(cbinfo,"No checksum at base64 end",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"No checksum at base64 end");
 	}
 
     if(c == '=')
@@ -526,22 +539,22 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	// now we are at the checksum
 	ret=read4(arg,errors,rinfo,cbinfo,&c,&n,&arg->read_checksum);
 	if(ret < 0 || n != 4)
-	    ERR(cbinfo,"Error in checksum",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Error in checksum");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_true);
 	if(arg->allow_trailing_whitespace)
 	    c=eat_whitespace(c,arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
-	    ERR(cbinfo,"Badly terminated checksum",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated checksum");
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '-')
-	    ERR(cbinfo,"Bad base64 trailer (2)",OPS_E_R_BAD_FORMAT);
+	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad base64 trailer (2)");
 	}
 
     if(c == '-')
 	{
 	for(n=0 ; n < 4 ; ++n)
 	    if(read_char(arg,errors,rinfo,cbinfo,ops_false) != '-')
-		ERR(cbinfo,"Bad base64 trailer",OPS_E_R_BAD_FORMAT);
+		OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad base64 trailer");
 	arg->eof64=ops_true;
 	}
     else
@@ -557,7 +570,7 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	arg->checksum=ops_crc24(arg->checksum,arg->buffer[n2]);
 
     if(arg->eof64 && arg->read_checksum != arg->checksum)
-	ERR(cbinfo,"Checksum mismatch",OPS_E_R_BAD_FORMAT);
+        OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Checksum mismatch");
 
     return 1;
     }
@@ -725,7 +738,7 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 		 buf[n++]=c;
 		 }
 	     /* then I guess this wasn't a proper trailer */
-	     ERR(cbinfo,"Bad ASCII armour trailer",OPS_E_R_BAD_FORMAT);
+	     OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad ASCII armour trailer");
 	     break;
 
 	 got_minus2:
@@ -738,8 +751,7 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 		     return -1;
 		 if(c != '-')
 		     /* wasn't a trailer after all */
-		     ERR(cbinfo,"Bad ASCII armour trailer (2)",
-			 OPS_E_R_BAD_FORMAT);
+		     OPS_ERROR(errors, OPS_E_R_BAD_FORMAT,"Bad ASCII armour trailer (2)");
 		 }
 
 	     /* Consume final NL */
@@ -751,7 +763,7 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 		    return 0;
 	     if(c != '\n')
 		 /* wasn't a trailer line after all */
-		 ERR(cbinfo,"Bad ASCII armour trailer (3)",OPS_E_R_BAD_FORMAT);
+		 OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad ASCII armour trailer (3)");
 
 	     if(!strncmp(buf,"BEGIN ",6))
 		 {

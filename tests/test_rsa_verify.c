@@ -48,6 +48,7 @@ static char *filename_rsa_noarmour_fail_bad_sig="gpg_rsa_sign_noarmour_fail_bad_
 static char *filename_rsa_clearsign_nopassphrase="gpg_rsa_clearsign_nopassphrase.txt";
 static char *filename_rsa_clearsign_passphrase="gpg_rsa_clearsign_passphrase.txt";
 static char *filename_rsa_clearsign_fail_bad_sig="gpg_rsa_clearsign_fail_bad_sig.txt";
+
 static char *filename_rsa_noarmour_compress_base="gpg_rsa_sign_noarmour_compress";
 static char *filename_rsa_armour_compress_base="gpg_rsa_sign_armour_compress";
 
@@ -55,11 +56,49 @@ static char *filename_rsa_v3sig="gpg_rsa_sign_v3sig.txt";
 
 static char *filename_rsa_hash_md5="gpg_rsa_hash_md5.txt";
 
+static int num_malformed=0;
+
 typedef ops_parse_cb_return_t (*ops_callback)(const ops_parser_content_t *, ops_parse_cb_info_t *);
 
 /* Signature verification suite initialization.
  * Create temporary test files.
  */
+
+static void make_filename_malformed(char* filename, int maxlen, const int i)
+    {
+    snprintf(filename,maxlen,"malformed_%d.txt",i);
+    }
+
+static void create_malformed_testfiles()
+    {
+    int i=0;
+    int fd=0;
+    char * malformed[]={
+                        // no signature
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\n-----END PGP SIGNATURE-----\n",
+                        // no signature and early EOF
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\n-----END PGP SIGNATURE-----",
+                        // early EOF
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n",
+                        // no signature
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: -----END PGP SIGNATURE-----GnuPG v1.4.6 (GNU/Linux)\n"
+    };
+    num_malformed=sizeof (malformed)/sizeof(char *);
+    for (i=0; i<num_malformed; i++)
+        {
+        char fullname[MAXBUF];
+        char filename[MAXBUF];
+        make_filename_malformed(filename,MAXBUF,i);
+        snprintf(fullname,MAXBUF,"%s/%s.asc",dir,filename);
+        if ((fd=open(fullname,O_WRONLY | O_CREAT, 0600)) < 0)
+            {
+            fprintf(stderr,"create_malformed_testfiles: cannot open file %s for writing\n", fullname);
+            return;
+            }
+        write(fd,malformed[i],strlen(malformed[i]));
+        close(fd);
+        }
+    }
 
 int init_suite_rsa_verify(void)
     {
@@ -76,6 +115,8 @@ int init_suite_rsa_verify(void)
     create_small_testfile(filename_rsa_noarmour_nopassphrase);
     create_small_testfile(filename_rsa_noarmour_passphrase);
     create_small_testfile(filename_rsa_noarmour_fail_bad_sig);
+
+    create_malformed_testfiles();
 
     // Now sign the test files with GPG
 
@@ -440,6 +481,20 @@ static void test_rsa_verify_clearsign_fail_bad_sig(void)
     test_rsa_verify_fail(armour,filename_rsa_clearsign_fail_bad_sig,callback_bad_sig,OPS_E_V_BAD_SIGNATURE);
     }
 
+static void test_rsa_verify_clearsign_fail_malformed_msg(void)
+    {
+    int i=0;
+    int armour=1;
+    assert(pub_keyring.nkeys);
+
+    for (i=0; i<num_malformed; i++)
+        {
+        char filename[MAXBUF];
+        make_filename_malformed(filename,MAXBUF,i);
+        test_rsa_verify_fail(armour,filename,NULL,OPS_E_R_BAD_FORMAT);
+        }
+    }
+
 CU_pSuite suite_rsa_verify()
 {
     CU_pSuite suite = NULL;
@@ -477,6 +532,9 @@ CU_pSuite suite_rsa_verify()
     if (NULL == CU_add_test(suite, "Unarmoured: should fail on bad sig", test_rsa_verify_noarmour_fail_bad_sig))
 	    return NULL;
     if (NULL == CU_add_test(suite, "Clearsign: should fail on bad sig", test_rsa_verify_clearsign_fail_bad_sig))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Clearsign: should fail on malformed message", test_rsa_verify_clearsign_fail_malformed_msg))
 	    return NULL;
 
     return suite;

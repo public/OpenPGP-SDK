@@ -198,8 +198,11 @@ static void test_rsa_decrypt_generic(char* sym_alg)
 
     for (compress_alg=0; compress_alg<n_compress_algos; compress_alg++)
         {
-        for (compress_lvl=0; compress_lvl<MAX_COMPRESS_LEVEL; compress_lvl++)
+        for (compress_lvl=0; compress_lvl<=MAX_COMPRESS_LEVEL; compress_lvl++)
             {
+            /* only need to check every compression level if we're debugging */
+            if (compress_lvl>0 && compress_lvl < MAX_COMPRESS_LEVEL)
+                continue;
             for (armour=0; armour<=1; armour++)
                 {
                 char *armour_cmd= armour ? "--armor " : "";
