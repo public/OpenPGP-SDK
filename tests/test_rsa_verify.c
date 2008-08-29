@@ -53,6 +53,7 @@ static char *filename_rsa_noarmour_compress_base="gpg_rsa_sign_noarmour_compress
 static char *filename_rsa_armour_compress_base="gpg_rsa_sign_armour_compress";
 
 static char *filename_rsa_v3sig="gpg_rsa_sign_v3sig.txt";
+static char *filename_rsa_v3sig_fail_bad_sig="gpg_rsa_sign_v3sig_fail_bad_sig.txt";
 
 static char *filename_rsa_hash_md5="gpg_rsa_hash_md5.txt";
 
@@ -110,6 +111,7 @@ int init_suite_rsa_verify(void)
     create_small_testfile(filename_rsa_armour_passphrase);
 
     create_small_testfile(filename_rsa_v3sig);
+    create_small_testfile(filename_rsa_v3sig_fail_bad_sig);
     create_small_testfile(filename_rsa_hash_md5);
 
     create_small_testfile(filename_rsa_noarmour_nopassphrase);
@@ -154,6 +156,13 @@ int init_suite_rsa_verify(void)
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --compress-level 0 --sign --force-v3-sigs --local-user %s > %s/%s.gpg",
              dir, filename_rsa_v3sig,
              gpgcmd, alpha_name, dir, filename_rsa_v3sig);
+    if (system(cmd))
+        { return 1; }
+
+    // V3 signature to fail
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --compress-level 0 --sign --force-v3-sigs --local-user %s > %s/%s.gpg",
+             dir, filename_rsa_v3sig_fail_bad_sig,
+             gpgcmd, alpha_name, dir, filename_rsa_v3sig_fail_bad_sig);
     if (system(cmd))
         { return 1; }
 
@@ -473,6 +482,14 @@ static void test_rsa_verify_noarmour_fail_bad_sig(void)
     test_rsa_verify_fail(armour,filename_rsa_noarmour_fail_bad_sig,callback_bad_sig,OPS_E_V_BAD_SIGNATURE);
     }
 
+static void test_rsa_verify_v3sig_fail_bad_sig(void)
+    {
+    int armour=0;
+    assert(pub_keyring.nkeys);
+
+    test_rsa_verify_fail(armour,filename_rsa_v3sig_fail_bad_sig, callback_bad_sig, OPS_E_V_BAD_SIGNATURE);
+    }
+
 static void test_rsa_verify_clearsign_fail_bad_sig(void)
     {
     int armour=1;
@@ -524,6 +541,9 @@ CU_pSuite suite_rsa_verify()
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "V3 signature verification", test_rsa_verify_v3sig))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "V3 signature: should fail on bad sig", test_rsa_verify_v3sig_fail_bad_sig))
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "MD5 Hash", test_rsa_verify_hash_md5))

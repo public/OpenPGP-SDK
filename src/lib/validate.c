@@ -54,16 +54,35 @@ static ops_boolean_t check_binary_signature(const unsigned len,
     ops_hash_any(&hash,sig->info.hash_algorithm);
     hash.init(&hash);
     hash.add(&hash,data,len);
-    hash.add(&hash,sig->info.v4_hashed_data,sig->info.v4_hashed_data_length);
+    switch (sig->info.version)
+        {
+    case OPS_V3:
+        trailer[0]=sig->info.type;
+        trailer[1]=sig->info.creation_time >> 24;
+        trailer[2]=sig->info.creation_time >> 16;
+        trailer[3]=sig->info.creation_time >> 8;
+        trailer[4]=sig->info.creation_time;
+        hash.add(&hash,&trailer[0],5);
+        break;
 
-    trailer[0]=0x04; // version
-    trailer[1]=0xFF;
-    hashedlen=sig->info.v4_hashed_data_length;
-    trailer[2]=hashedlen >> 24;
-    trailer[3]=hashedlen >> 16;
-    trailer[4]=hashedlen >> 8;
-    trailer[5]=hashedlen;
-    hash.add(&hash,&trailer[0],6);
+    case OPS_V4:
+        hash.add(&hash,sig->info.v4_hashed_data,sig->info.v4_hashed_data_length);
+
+        trailer[0]=0x04; // version
+        trailer[1]=0xFF;
+        hashedlen=sig->info.v4_hashed_data_length;
+        trailer[2]=hashedlen >> 24;
+        trailer[3]=hashedlen >> 16;
+        trailer[4]=hashedlen >> 8;
+        trailer[5]=hashedlen;
+        hash.add(&hash,&trailer[0],6);
+        
+        break;
+
+    default:
+        fprintf(stderr,"Invalid signature version %d\n", sig->info.version);
+        return ops_false;
+        }
 
     n=hash.finish(&hash,hashout);
 
@@ -220,7 +239,8 @@ ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
 	arg->last_seen=ATTRIBUTE;
 	return OPS_KEEP_MEMORY;
 
-    case OPS_PTAG_CT_SIGNATURE_FOOTER:
+    case OPS_PTAG_CT_SIGNATURE: // V3 sigs
+    case OPS_PTAG_CT_SIGNATURE_FOOTER: // V4 sigs
         /*
         printf("  type=%02x signer_id=",content->signature.type);
         hexdump(content->signature.signer_id,
@@ -304,8 +324,7 @@ ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
 	// ignore these
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_SIGNATURE_HEADER:
-    case OPS_PTAG_CT_SIGNATURE:
- case OPS_PARSER_PACKET_END:
+    case OPS_PARSER_PACKET_END:
 	break;
 
  case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
@@ -365,9 +384,6 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
         break;
 
     case OPS_PTAG_CT_SIGNATURE: // V3 sigs
-        // this gives us a signature struct with all info about hash alg, etc from the packet
-        break;
-
     case OPS_PTAG_CT_SIGNATURE_FOOTER: // V4 sigs
         
         if (debug)
@@ -435,13 +451,10 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
 	if(valid)
 	    {
         add_sig_to_valid_list(arg->result, &content->signature.info);
-        //	    ++arg->result->valid_count;
 	    }
 	else
 	    {
         OPS_ERROR(errors,OPS_E_V_BAD_SIGNATURE,"Bad Signature");
-        //	    printf(" BAD SIGNATURE\n");
-        //	    ++arg->result->invalid_count;
         add_sig_to_invalid_list(arg->result, &content->signature.info);
 	    }
 	break;
@@ -453,7 +466,6 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
  case OPS_PTAG_CT_ARMOUR_TRAILER:
  case OPS_PTAG_CT_ONE_PASS_SIGNATURE:
  case OPS_PARSER_PACKET_END:
-        //    case OPS_PTAG_CT_SIGNATURE:
 	break;
 
     default:

@@ -1239,6 +1239,9 @@ static int parse_v3_signature(ops_region_t *region,
     unsigned char c[1];
     ops_parser_content_t content;
 
+    // clear signature
+    memset(&C.signature,'\0',sizeof C.signature);
+
     C.signature.info.version=OPS_V3;
 
     /* hash info length */
