@@ -33,6 +33,7 @@
 #include <openpgpsdk/readerwriter.h>
 #include <openpgpsdk/signature.h>
 #include <openpgpsdk/version.h>
+#include <openpgpsdk/hash.h>
 #include <openpgpsdk/packet-parse.h>
 
 #include <string.h>
@@ -248,10 +249,18 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 	ops_hash_algorithm_t alg;
 
 	alg=ops_hash_algorithm_from_text(hashstr);
+    
+	if(!ops_is_hash_alg_supported(&alg))
+	    {
+	    free(hash);
+	    OPS_ERROR_1(errors,OPS_E_R_BAD_FORMAT,"Unsupported hash algorithm '%s'",hashstr);
+        return -1;
+	    }
 	if(alg == OPS_HASH_UNKNOWN)
 	    {
 	    free(hash);
 	    OPS_ERROR_1(errors,OPS_E_R_BAD_FORMAT,"Unknown hash algorithm '%s'",hashstr);
+        return -1;
 	    }
 	ops_hash_any(hash,alg);
 	}

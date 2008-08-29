@@ -144,4 +144,17 @@ void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, 
         }
     }
 
+ops_boolean_t ops_is_hash_alg_supported(const ops_hash_algorithm_t *hash_alg)
+    {
+    switch (*hash_alg)
+        {
+    case OPS_HASH_MD5:
+    case OPS_HASH_SHA1:
+        return ops_true;
+
+    default:
+        return ops_false;
+        }
+    }
+
 // EOF
