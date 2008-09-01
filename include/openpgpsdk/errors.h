@@ -29,7 +29,7 @@
 #include <errno.h> 
 
 /** error codes */
-// Remember to add names to map in adv_errors.c
+// Remember to add names to map in errors.c
 typedef enum 
     {
     OPS_E_OK=0x0000,	/* no error */
@@ -42,7 +42,8 @@ typedef enum
     OPS_E_R_READ_FAILED		=OPS_E_R+1,
     OPS_E_R_EARLY_EOF		=OPS_E_R+2,
     OPS_E_R_BAD_FORMAT		=OPS_E_R+3, // For example, malformed armour
-    OPS_E_R_UNCONSUMED_DATA	=OPS_E_R+4,
+    OPS_E_R_UNSUPPORTED		=OPS_E_R+4,
+    OPS_E_R_UNCONSUMED_DATA	=OPS_E_R+5,
 
     /* writer errors */
     OPS_E_W=0x2000,	/* general writer error */
@@ -65,7 +66,8 @@ typedef enum
     /* validation errors */
     OPS_E_V=0x5000, /* general validation error */
     OPS_E_V_BAD_SIGNATURE	=OPS_E_V+1,
-    OPS_E_V_UNKNOWN_SIGNER	=OPS_E_V+2,
+    OPS_E_V_NO_SIGNATURE	=OPS_E_V+2,
+    OPS_E_V_UNKNOWN_SIGNER	=OPS_E_V+3,
 
     /* Algorithm support errors */
     OPS_E_ALG=0x6000,			/* general algorithm error */

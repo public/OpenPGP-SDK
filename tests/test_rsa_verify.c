@@ -82,7 +82,16 @@ static void create_malformed_testfiles()
                         // early EOF
                         "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n",
                         // no signature
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: -----END PGP SIGNATURE-----GnuPG v1.4.6 (GNU/Linux)\n"
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: -----END PGP SIGNATURE-----GnuPG v1.4.6 (GNU/Linux)\n",
+                        // no gap after armour headers in message
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+                        // no gap after armour headers in signature
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+                        // unsupported hash
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+                        // missing BEGIN SIG
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----END PGP SIGNATURE-----",
+
     };
     num_malformed=sizeof (malformed)/sizeof(char *);
     for (i=0; i<num_malformed; i++)
@@ -295,6 +304,7 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
     // Do the verification
 
     rtn=ops_parse(pinfo);
+    
 
     if (debug)
         {
@@ -350,6 +360,7 @@ static void test_rsa_verify_fail(const int has_armour, const char *filename, ops
 
     // handle result - should fail
     errstack=ops_parse_info_get_errors(pinfo);
+
     // we are expecting one and only one error
     // print out errors if we have actually got a different error
     CU_ASSERT(errstack!=NULL);

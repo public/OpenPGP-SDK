@@ -350,8 +350,6 @@ validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
     ops_error_t **errors=ops_parse_cb_get_errors(cbinfo);
     const ops_keydata_t *signer;
     ops_boolean_t valid=ops_false;
-    //    unsigned len=0;
-    //    unsigned char *data=NULL;
     ops_memory_t* mem=NULL;
 
     if (debug)

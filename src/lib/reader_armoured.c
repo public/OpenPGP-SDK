@@ -35,13 +35,14 @@
 #include <openpgpsdk/version.h>
 #include <openpgpsdk/hash.h>
 #include <openpgpsdk/packet-parse.h>
+#include "parse_local.h"
 
 #include <string.h>
 #include <assert.h>
 
 #include <openpgpsdk/final.h>
 
-//static int debug=0;
+static int debug=0;
 
 #define CRC24_POLY 0x1864cfbL
 
@@ -56,6 +57,25 @@ typedef struct
 	BASE64,
 	AT_TRAILER_NAME,
 	} state;
+
+    enum
+        {
+        NONE=0,
+        BEGIN_PGP_MESSAGE,
+        BEGIN_PGP_PUBLIC_KEY_BLOCK,
+        BEGIN_PGP_PRIVATE_KEY_BLOCK,
+        BEGIN_PGP_MULTI,
+        BEGIN_PGP_SIGNATURE,
+
+        END_PGP_MESSAGE,
+        END_PGP_PUBLIC_KEY_BLOCK,
+        END_PGP_PRIVATE_KEY_BLOCK,
+        END_PGP_MULTI,
+        END_PGP_SIGNATURE,
+
+        BEGIN_PGP_SIGNED_MESSAGE
+        } lastseen;
+
     ops_parse_info_t *parse_info;
     ops_boolean_t seen_nl:1;
     ops_boolean_t prev_nl:1;
@@ -71,6 +91,10 @@ typedef struct
 						 trailing whitespace
 						 where we wouldn't
 						 strictly expect it */
+
+    // it is an error to get a cleartext message without a sig
+    ops_boolean_t expect_sig:1;
+    ops_boolean_t got_sig:1;
 
     // base64 stuff
     unsigned buffered;
@@ -100,6 +124,92 @@ static void push_back(dearmour_arg_t *arg,const unsigned char *buf,
     arg->npushed_back=length;
     }
     
+static void set_lastseen_headerline(dearmour_arg_t* arg, char* buf, ops_error_t **errors)
+    {
+    char* begin_msg="BEGIN PGP MESSAGE";
+    char* begin_public="BEGIN PGP PUBLIC KEY BLOCK";
+    char* begin_private="BEGIN PGP PRIVATE KEY BLOCK";
+    char* begin_multi="BEGIN PGP MESSAGE, PART ";
+    char* begin_sig="BEGIN PGP SIGNATURE";
+
+    char* end_msg="END PGP MESSAGE";
+    char* end_public="END PGP PUBLIC KEY BLOCK";
+    char* end_private="END PGP PRIVATE KEY BLOCK";
+    char* end_multi="END PGP MESSAGE, PART ";
+    char* end_sig="END PGP SIGNATURE";
+
+    char* begin_signed_msg="BEGIN PGP SIGNED MESSAGE";
+
+    int prev=arg->lastseen;
+
+    if (!strncmp(buf,begin_msg,strlen(begin_msg)))
+        arg->lastseen=BEGIN_PGP_MESSAGE;
+    if (!strncmp(buf,begin_public,strlen(begin_public)))
+        arg->lastseen=BEGIN_PGP_PUBLIC_KEY_BLOCK;
+    if (!strncmp(buf,begin_private,strlen(begin_private)))
+        arg->lastseen=BEGIN_PGP_PRIVATE_KEY_BLOCK;
+    if (!strncmp(buf,begin_multi,strlen(begin_multi)))
+        arg->lastseen=BEGIN_PGP_MULTI;
+    if (!strncmp(buf,begin_sig,strlen(begin_sig)))
+        arg->lastseen=BEGIN_PGP_SIGNATURE;
+
+    if (!strncmp(buf,end_msg,strlen(end_msg)))
+        arg->lastseen=END_PGP_MESSAGE;
+    if (!strncmp(buf,end_public,strlen(end_public)))
+        arg->lastseen=END_PGP_PUBLIC_KEY_BLOCK;
+    if (!strncmp(buf,end_private,strlen(end_private)))
+        arg->lastseen=END_PGP_PRIVATE_KEY_BLOCK;
+    if (!strncmp(buf,end_multi,strlen(end_multi)))
+        arg->lastseen=END_PGP_MULTI;
+    if (!strncmp(buf,end_sig,strlen(end_sig)))
+        arg->lastseen=END_PGP_SIGNATURE;
+
+    if (!strncmp(buf,begin_signed_msg,strlen(begin_signed_msg)))
+        arg->lastseen=BEGIN_PGP_SIGNED_MESSAGE;
+
+    if (debug)
+        printf("set header: buf=%s, arg->lastseen=%d, prev=%d\n", buf, arg->lastseen, prev);
+
+    switch (arg->lastseen) 
+        {
+    case NONE:
+        OPS_ERROR_1(errors,OPS_E_R_BAD_FORMAT,"Unrecognised Header Line %s", buf);
+        break;
+
+    case END_PGP_MESSAGE:
+        if (prev!=BEGIN_PGP_MESSAGE)
+            OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Got END PGP MESSAGE, but not after BEGIN");
+        break;
+
+    case END_PGP_PUBLIC_KEY_BLOCK:
+        if (prev!=BEGIN_PGP_PUBLIC_KEY_BLOCK)
+            OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Got END PGP PUBLIC KEY BLOCK, but not after BEGIN");
+        break;
+
+    case END_PGP_PRIVATE_KEY_BLOCK:
+        if (prev!=BEGIN_PGP_PRIVATE_KEY_BLOCK)
+            OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Got END PGP PRIVATE KEY BLOCK, but not after BEGIN");
+        break;
+
+    case BEGIN_PGP_MULTI:
+    case END_PGP_MULTI:
+            OPS_ERROR(errors,OPS_E_R_UNSUPPORTED,"Multi-part messages are not yet supported");
+        break;
+
+    case END_PGP_SIGNATURE:
+        if (prev!=BEGIN_PGP_SIGNATURE)
+            OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Got END PGP SIGNATURE, but not after BEGIN");
+        break;
+
+    case BEGIN_PGP_MESSAGE:
+    case BEGIN_PGP_PUBLIC_KEY_BLOCK:
+    case BEGIN_PGP_PRIVATE_KEY_BLOCK:
+    case BEGIN_PGP_SIGNATURE:
+    case BEGIN_PGP_SIGNED_MESSAGE:
+        break;
+        }
+    }
+
 static int read_char(dearmour_arg_t *arg,ops_error_t **errors,
 		     ops_reader_info_t *rinfo,
 		     ops_parse_cb_info_t *cbinfo,
@@ -307,6 +417,8 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 	    if(body->data[0] == '\n')
 		hash->add(hash,(unsigned char *)"\r",1);
 	    hash->add(hash,body->data,body->length);
+            if (debug)
+                { fprintf(stderr,"Got body:\n%s\n",body->data); }
 	    CB(cbinfo,OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY,&content);
 	    body->length=0;
 	    }
@@ -315,6 +427,8 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
 	++total;
 	if(body->length == sizeof body->data)
 	    {
+            if (debug)
+                { fprintf(stderr,"Got body (2):\n%s\n",body->data); }
 	    CB(cbinfo,OPS_PTAG_CT_SIGNED_CLEARTEXT_BODY,&content);
 	    body->length=0;
 	    }
@@ -684,11 +798,12 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 	     if((ret=parse_headers(arg,errors,rinfo,cbinfo)) <= 0)
 		 return -1;
 
+             set_lastseen_headerline(arg,buf,errors);
+
 	     if(!strcmp(buf,"BEGIN PGP SIGNED MESSAGE"))
 		 {
 		 ops_dup_headers(&content.content.signed_cleartext_header.headers,&arg->headers);
 		 CB(cbinfo,OPS_PTAG_CT_SIGNED_CLEARTEXT_HEADER,&content);
-
 		 ret=process_dash_escaped(arg,errors,rinfo,cbinfo);
 		 if(ret <= 0)
 		     return ret;
@@ -753,6 +868,8 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 	 got_minus2:
 	     buf[n]='\0';
 
+             set_lastseen_headerline(arg,buf,errors);
+
 	     /* Consume trailing '-' */
 	     for(count=1 ; count < 5 ; ++count)
 		 {
@@ -776,6 +893,7 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 
 	     if(!strncmp(buf,"BEGIN ",6))
 		 {
+                 set_lastseen_headerline(arg,buf,errors);
 		 if((ret=parse_headers(arg,errors,rinfo,cbinfo)) <= 0)
 		     return ret;
 		 content.content.armour_header.type=buf;
@@ -822,6 +940,9 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
     arg->allow_no_gap=no_gap;
     arg->allow_trailing_whitespace=trailing_whitespace;
 
+    arg->expect_sig=ops_false;
+    arg->got_sig=ops_false;
+
     ops_reader_push(parse_info,armoured_data_reader,armoured_data_destroyer,arg);
     }
 
@@ -830,8 +951,8 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
  */
 void ops_reader_pop_dearmour(ops_parse_info_t *pinfo)
     {
-    //    dearmour_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(parse_info));
-    //    free(arg);
+    dearmour_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(pinfo));
+    free(arg);
     ops_reader_pop(pinfo);
     }
 

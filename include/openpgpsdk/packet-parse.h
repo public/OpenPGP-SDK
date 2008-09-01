@@ -79,15 +79,6 @@ typedef struct ops_reader_info ops_reader_info_t;
 typedef struct ops_crypt_info ops_crypt_info_t;
 
 /*
-typedef ops_reader_ret_t ops_reader_t(unsigned char *dest,
-				      unsigned *plength,
-				      ops_reader_flags_t flags,
-				      ops_error_t **errors,
-				      ops_reader_info_t *rinfo,
-				      ops_parse_cb_info_t *cbinfo);
-*/
-
-/*
    A reader MUST read at least one byte if it can, and should read up
    to the number asked for. Whether it reads more for efficiency is
    its own decision, but if it is a stacked reader it should never

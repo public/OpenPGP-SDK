@@ -66,6 +66,7 @@ static ops_errcode_name_map_t errcode_name_map[] =
 
     ERRNAME(OPS_E_V),
     ERRNAME(OPS_E_V_BAD_SIGNATURE),
+    ERRNAME(OPS_E_V_NO_SIGNATURE),
     ERRNAME(OPS_E_V_UNKNOWN_SIGNER),
 
     ERRNAME(OPS_E_ALG),
