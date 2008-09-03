@@ -2,41 +2,104 @@
  *
  * The OpenPGP::SDK library has 2 APIs, which can be used interchangeably by a developer.
 
-\section section_std_api The Standard API
+\section section_highlevel_api The High-Level API
 
-The Standard API provides easy access to common crypto tasks. 
+The High-Level API provides easy access to common crypto tasks. 
 
 Examples are:
 
 - "find the key in the keyring corresponding to this id"
 - "sign this text with that key".
 
-It is built on functions offered by the Advanced API.
+It is built on functions offered by the Core API.
 
-Developers should initially consider using the Standard API, unless they need the additional control available in the Advanced API.
+Developers should initially consider using the High-Level API, unless they need the additional control available in the Core API.
 
-- \ref StandardAPI : follow this link for more details
+- \ref HighLevelAPI : follow this link for more details
 
-\section section_adv_api The Advanced API
+\section section_core_api The Core API
 
-The Advanced API offers detailed control over all aspects of the SDK.
+The Core API offers detailed control over all aspects of the SDK.
 
-- \ref AdvancedAPI : follow this link for more details
+- \ref CoreAPI : follow this link for more details
 
 */
 
-/** @defgroup StandardAPI Standard API
-This API provides basic high-level functionality, which should be
-suitable for most users.
+/** @defgroup HighLevelAPI High Level API
+\brief This API provides basic high-level functionality, which should be
+suitable for most users. 
 
-If you want more fine-grained control, consider using the Advanced API.
+If you want more fine-grained control, consider using the Core API.
+
+Expected modules:
+encrypt, decrypt, sign, verify, keys, print
 */
 
-/** @defgroup AdvancedAPI Advanced API
+/** @defgroup CoreAPI Core API
 This API provides detailed control over all aspects of the SDK.
 
-You may find that the easier-to-use Standard API meets your needs.
+You may find that the easier-to-use High Level API meets your needs.
 */
+
+/** \defgroup HighLevel_Misc Miscellaneous
+    \ingroup HighLevelAPI
+ */
+    
+/**
+    \defgroup HighLevel_Keyring Keyring
+    \ingroup HighLevelAPI
+*/
+
+/**
+    \defgroup HighLevel_KeyringRead Read Keyring
+    \ingroup HighLevel_Keyring
+*/
+
+/**
+    \defgroup HighLevel_KeyringList List Keyring
+    \ingroup HighLevel_Keyring
+*/
+
+/**
+    \defgroup HighLevel_KeyringFind Find Key
+    \ingroup HighLevel_Keyring
+*/
+
+/**
+    \defgroup HighLevel_KeyringMemory Memory Ops
+    \ingroup HighLevel_Keyring
+*/
+
+/**
+    \defgroup HighLevel_Key Key
+    \ingroup HighLevel_Keyring
+*/
+
+/**
+   \defgroup HighLevel_Parse Parse
+   \ingroup HighLevelAPI
+*/
+
+/**
+   \defgroup HighLevel_Readers Readers
+*/
+
+/**
+   \defgroup HighLevel_Writers Writers
+*/
+
+/**
+   \defgroup Core_Callbacks Callbacks
+   \ingroup CoreAPI
+*/
+
+/*
+   \defgroup Create
+   \ingroup CoreAPI
+*/
+
+/* 
+ */
 
 /**
  * @defgroup Parse Parse

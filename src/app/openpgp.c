@@ -341,7 +341,7 @@ int main(int argc, char **argv)
             exit(-1);
             }
         
-        ops_keyring_list(myring,(char *)NULL);
+        ops_keyring_list(myring);
         //        ops_keyring_free(&kering);
         break;
         
@@ -405,7 +405,7 @@ int main(int argc, char **argv)
             exit(-1);
             }
         fprintf(stderr,"before:\n");
-        ops_keyring_list(myring,NULL);
+        ops_keyring_list(myring);
 
         // read new key
         if (!ops_keyring_read_from_file(myring, armour, opt_filename))
@@ -415,7 +415,7 @@ int main(int argc, char **argv)
             }
 
         fprintf(stderr,"after:\n");
-        ops_keyring_list(myring,NULL);
+        ops_keyring_list(myring);
         
         break;
 
@@ -426,8 +426,6 @@ int main(int argc, char **argv)
             exit(-1);
             }
         
-        //        mykeydata=ops_keydata_new();
-        //        if (ops_rsa_generate_keypair(1024,65537,mykeydata)!=ops_true)
         uid.user_id=(unsigned char *)opt_userid;
         mykeydata=ops_rsa_create_selfsigned_keypair(numbits,65537,&uid);
         if (!mykeydata)
@@ -452,7 +450,7 @@ int main(int argc, char **argv)
         fd=ops_setup_file_append(&cinfo, secring_name);
         ops_write_transferable_secret_key(mykeydata, NULL, 0, ops_false, cinfo);
         ops_teardown_file_write(cinfo,fd);
-        ops_keyring_free(pubring);
+        ops_keyring_free(secring);
         if (!ops_keyring_read_from_file(secring,ops_false,secring_name))
             {
             fprintf(stderr, "Cannot re-read keyring %s\n", secring_name);
@@ -489,7 +487,6 @@ int main(int argc, char **argv)
 
         overwrite=ops_true;
         ops_encrypt_file(opt_filename, outputfilename, keydata, armour,overwrite);
-        //ops_keyring_free(&keyring);
         break;
 
     case DECRYPT:
@@ -501,7 +498,6 @@ int main(int argc, char **argv)
 
         overwrite=ops_true;
         ops_decrypt_file(opt_filename, NULL, secring, armour,overwrite,callback_cmd_get_passphrase_from_cmdline);
-        //ops_keyring_free(&keyring);
         break;
 
     case SIGN:
