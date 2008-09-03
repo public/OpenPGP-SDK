@@ -396,7 +396,34 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
  }
 
 
-ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_boolean_t armoured, ops_create_info_t *info)
+/**
+   \ingroup HighLevel_Key
+
+   \brief Writes a transferable PGP public key to the given output stream.
+
+   \param keydata Key to be written
+   \param armoured Flag is set for armoured output
+   \param info Output stream
+
+   Example code:
+   \code
+   void example(const ops_keydata_t* keydata)
+   {
+   ops_boolean_t armoured=ops_true;
+   char* filename="/tmp/testkey.asc";
+
+   int fd;
+   ops_boolean_t overwrite=ops_true;
+   ops_create_info_t* cinfo;
+
+   fd=ops_setup_file_write(&cinfo, filename, overwrite);
+   ops_write_transferable_public_key(keydata,armoured,cinfo);
+   ops_teardown_file_write(cinfo,fd);
+   }
+   \endcode
+*/
+
+ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *keydata, ops_boolean_t armoured, ops_create_info_t *info)
     {
     ops_boolean_t rtn;
     unsigned int i=0,j=0;
@@ -405,16 +432,16 @@ ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_bo
         { ops_writer_push_armoured(info, OPS_PGP_PUBLIC_KEY_BLOCK); }
 
     // public key
-    rtn=ops_write_struct_public_key(&key->key.skey.public_key,info);
+    rtn=ops_write_struct_public_key(&keydata->key.skey.public_key,info);
     if (rtn!=ops_true)
         return rtn;
 
     // TODO: revocation signatures go here
 
     // user ids and corresponding signatures
-    for (i=0; i<key->nuids; i++)
+    for (i=0; i<keydata->nuids; i++)
         {
-        ops_user_id_t* uid=&key->uids[i];
+        ops_user_id_t* uid=&keydata->uids[i];
 
         rtn=ops_write_struct_user_id(uid, info);
 
@@ -422,9 +449,9 @@ ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_bo
             return rtn;
 
         // find signature for this packet if it exists
-        for (j=0; j<key->nsigs; j++)
+        for (j=0; j<keydata->nsigs; j++)
             {
-            sigpacket_t* sig=&key->sigs[i];
+            sigpacket_t* sig=&keydata->sigs[i];
             if (!strcmp((char *)sig->userid->user_id, (char *)uid->user_id))
                 {
                 rtn=ops_write(sig->packet->raw, sig->packet->length, info);
@@ -447,7 +474,36 @@ ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *key, ops_bo
     return rtn;
     }
 
-ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const unsigned char* passphrase, const size_t pplen, ops_boolean_t armoured, ops_create_info_t *info)
+/**
+   \ingroup HighLevel_Key
+
+   \brief Writes a transferable PGP secret key to the given output stream.
+
+   \param keydata Key to be written
+   \param armoured Flag is set for armoured output
+   \param info Output stream
+
+   Example code:
+   \code
+   void example(const ops_keydata_t* keydata)
+   {
+   const unsigned char* passphrase=NULL;
+   const size_t passphraselen=0;
+   ops_boolean_t armoured=ops_true;
+
+   int fd;
+   char* filename="/tmp/testkey.asc";
+   ops_boolean_t overwrite=ops_true;
+   ops_create_info_t* cinfo;
+
+   fd=ops_setup_file_write(&cinfo, filename, overwrite);
+   ops_write_transferable_secret_key(keydata,passphrase,pplen,armoured,cinfo);
+   ops_teardown_file_write(cinfo,fd);
+   }
+   \endcode
+*/
+
+ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *keydata, const unsigned char* passphrase, const size_t pplen, ops_boolean_t armoured, ops_create_info_t *info)
     {
     ops_boolean_t rtn;
     unsigned int i=0,j=0;
@@ -456,16 +512,16 @@ ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const 
         { ops_writer_push_armoured(info,OPS_PGP_PRIVATE_KEY_BLOCK); }
 
     // public key
-    rtn=ops_write_struct_secret_key(&key->key.skey,passphrase,pplen,info);
+    rtn=ops_write_struct_secret_key(&keydata->key.skey,passphrase,pplen,info);
     if (rtn!=ops_true)
         return rtn;
 
     // TODO: revocation signatures go here
 
     // user ids and corresponding signatures
-    for (i=0; i<key->nuids; i++)
+    for (i=0; i<keydata->nuids; i++)
         {
-        ops_user_id_t* uid=&key->uids[i];
+        ops_user_id_t* uid=&keydata->uids[i];
 
         rtn=ops_write_struct_user_id(uid, info);
 
@@ -473,9 +529,9 @@ ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *key, const 
             return rtn;
 
         // find signature for this packet if it exists
-        for (j=0; j<key->nsigs; j++)
+        for (j=0; j<keydata->nsigs; j++)
             {
-            sigpacket_t* sig=&key->sigs[i];
+            sigpacket_t* sig=&keydata->sigs[i];
             if (!strcmp((char *)sig->userid->user_id, (char *)uid->user_id))
                 {
                 rtn=ops_write(sig->packet->raw, sig->packet->length, info);

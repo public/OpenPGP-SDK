@@ -251,6 +251,20 @@ callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t
     return OPS_RELEASE_MEMORY;
     }
 
+/**
+ \ingroup Core_Callbacks
+
+\brief Callback to get secret key, decrypting if necessary.
+
+@verbatim
+ This callback does the following:
+ * finds the session key in the keyring
+ * gets a passphrase if required
+ * decrypts the secret key, if necessary
+ * sets the secret_key in the content struct
+@endverbatim
+*/
+
 ops_parse_cb_return_t
 callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {
@@ -266,7 +280,7 @@ callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_in
 	{
     case OPS_PARSER_CMD_GET_SECRET_KEY:
         cbinfo->cryptinfo.keydata=ops_keyring_find_key_by_id(cbinfo->cryptinfo.keyring,content->get_secret_key.pk_session_key->key_id);
-        if (!cbinfo->cryptinfo.keydata || !ops_key_is_secret(cbinfo->cryptinfo.keydata))
+        if (!cbinfo->cryptinfo.keydata || !ops_is_key_secret(cbinfo->cryptinfo.keydata))
             return 0;
 
         /* now get the key from the data */

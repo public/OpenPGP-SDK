@@ -81,10 +81,8 @@ void hexdump(const unsigned char *src,size_t length)
     }
 
 /**
- * \ingroup Utils
- *
- * Initialise OpenPGP:SDK. This <b>must</b> be called before any other
- * OpenPGP:SDK function is used.
+ * \ingroup HighLevel_Misc
+ * \brief Initialises OpenPGP::SDK. To be called before any other OPS function.
  */
 
 void ops_init(void)
@@ -93,7 +91,8 @@ void ops_init(void)
     }
 
 /**
- * \ingroup Utils
+ * \ingroup HighLevel_Misc
+ * \brief Closes down OpenPGP::SDK.
  *
  * Close down OpenPGP:SDK, release any resources under the control of
  * the library. No OpenPGP:SDK function other than ops_init() should
@@ -151,6 +150,13 @@ void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
     ops_reader_set(pinfo,mem_reader,mem_destroyer,arg);
     }
 
+/**
+   \ingroup HighLevel_Misc
+   \brief mallocs and zeros memory
+   \param n Number of bytes to be alloc-ed.
+   \return Pointer to new memory.
+   \note Should be freed after use with free().
+*/
 void *ops_mallocz(size_t n)
     {
     void *m=malloc(n);

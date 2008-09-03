@@ -45,40 +45,90 @@
 
 #include <openpgpsdk/final.h>
 
-void ops_keydata_free(ops_keydata_t *key)
+/**
+   \ingroup HighLevel_KeyringMemory
+   
+   \brief Creates a new ops_keydata_t struct
+
+   \return A new ops_keydata_t struct, initialised to zero.
+
+   \note The returned ops_keydata_t struct must be freed after use with ops_keydata_free.
+*/
+
+ops_keydata_t *ops_keydata_new(void)
+    { return ops_mallocz(sizeof(ops_keydata_t)); }
+
+
+/**
+ \ingroup HighLevel_KeyringMemory
+
+ \brief Frees keydata and its memory
+
+ \param key Key to be freed.
+
+ \note This frees the keydata itself, as well as any other memory alloc-ed by it. 
+*/
+void ops_keydata_free(ops_keydata_t *keydata)
     {
     unsigned n;
 
-    for(n=0 ; n < key->nuids ; ++n)
-	ops_user_id_free(&key->uids[n]);
-    free(key->uids);
-    key->uids=NULL;
-    key->nuids=0;
+    for(n=0 ; n < keydata->nuids ; ++n)
+	ops_user_id_free(&keydata->uids[n]);
+    free(keydata->uids);
+    keydata->uids=NULL;
+    keydata->nuids=0;
 
-    for(n=0 ; n < key->npackets ; ++n)
-	ops_packet_free(&key->packets[n]);
-    free(key->packets);
-    key->packets=NULL;
-    key->npackets=0;
+    for(n=0 ; n < keydata->npackets ; ++n)
+	ops_packet_free(&keydata->packets[n]);
+    free(keydata->packets);
+    keydata->packets=NULL;
+    keydata->npackets=0;
 
-    if(key->type == OPS_PTAG_CT_PUBLIC_KEY)
-	ops_public_key_free(&key->key.pkey);
+    if(keydata->type == OPS_PTAG_CT_PUBLIC_KEY)
+	ops_public_key_free(&keydata->key.pkey);
     else
-	ops_secret_key_free(&key->key.skey);
+	ops_secret_key_free(&keydata->key.skey);
 
-    free(key);
+    free(keydata);
     }
+
+/**
+ \ingroup HighLevel_Key
+
+ \brief Returns the public key in the given keydata.
+ \param keydata
+
+  \return Pointer to public key
+
+  \note This is not a copy, do not free it after use.
+*/
 
 const ops_public_key_t *
-ops_get_public_key_from_data(const ops_keydata_t *data)
+ops_get_public_key_from_data(const ops_keydata_t *keydata)
     {
-    if(data->type == OPS_PTAG_CT_PUBLIC_KEY)
-	return &data->key.pkey;
-    return &data->key.skey.public_key;
+    if(keydata->type == OPS_PTAG_CT_PUBLIC_KEY)
+	return &keydata->key.pkey;
+    return &keydata->key.skey.public_key;
     }
 
-ops_boolean_t ops_key_is_secret(const ops_keydata_t *data)
+/**
+\ingroup HighLevel_Key
+
+\brief Check whether this is a secret key or not.
+*/
+
+ops_boolean_t ops_is_key_secret(const ops_keydata_t *data)
     { return data->type != OPS_PTAG_CT_PUBLIC_KEY; }
+
+/**
+ \ingroup HighLevel_Key
+
+ \brief Returns the secret key in the given keydata.
+
+ \note This is not a copy, do not free it after use.
+
+ \note This returns a const. If you need to be able to write to this pointer, use ops_get_writable_secret_key_from_data
+*/
 
 const ops_secret_key_t *
 ops_get_secret_key_from_data(const ops_keydata_t *data)
@@ -88,6 +138,16 @@ ops_get_secret_key_from_data(const ops_keydata_t *data)
 
     return &data->key.skey;
     }
+
+/**
+ \ingroup HighLevel_Key
+
+  \brief Returns the secret key in the given keydata.
+
+  \note This is not a copy, do not free it after use.
+
+  \note If you do not need to be able to modify this key, there is an equivalent read-only function ops_get_secret_key_from_data.
+*/
 
 ops_secret_key_t *
 ops_get_writable_secret_key_from_data(ops_keydata_t *data)
@@ -213,14 +273,24 @@ const unsigned char* ops_get_user_id(const ops_keydata_t *key, unsigned index)
     return key->uids[index].user_id;
     }
 
-ops_boolean_t ops_key_is_supported(const ops_keydata_t *key)
+/**
+   \ingroup HighLevel_Key
+
+   \brief Checks whether key's algorithm and type are supported by OpenPGP::SDK
+
+   \param keydata Key to be checked
+
+   \return ops_true if key algorithm and type are supported by OpenPGP::SDK; ops_false if not
+*/
+
+ops_boolean_t ops_is_key_supported(const ops_keydata_t *keydata)
     {
-    if ( key->type == OPS_PTAG_CT_PUBLIC_KEY ) {
-        if ( key->key.pkey.algorithm == OPS_PKA_RSA ) {
+    if ( keydata->type == OPS_PTAG_CT_PUBLIC_KEY ) {
+        if ( keydata->key.pkey.algorithm == OPS_PKA_RSA ) {
             return ops_true;
         }
-    } else if ( key->type == OPS_PTAG_CT_PUBLIC_KEY ) {
-        if ( key->key.skey.algorithm == OPS_PKA_RSA ) {
+    } else if ( keydata->type == OPS_PTAG_CT_PUBLIC_KEY ) {
+        if ( keydata->key.skey.algorithm == OPS_PKA_RSA ) {
             return ops_true;
         }
     }
@@ -228,8 +298,35 @@ ops_boolean_t ops_key_is_supported(const ops_keydata_t *key)
     }
 
 
-const ops_keydata_t* ops_keyring_get_key(const ops_keyring_t *keyring, int index)
+/** 
+    \ingroup HighLevel_KeyringFind
+
+    \brief Returns key inside a keyring, chosen by index
+
+    \param keyring Pointer to existing keyring
+    \param index Index of required key
+
+    \note Index starts at 0
+
+    \note This returns a pointer to the original key, not a copy. You do not need to free the key after use.
+
+    \return Pointer to the required key; or NULL if index too large.
+
+    Example code:
+    \code
+    void example(const ops_keyring_t* keyring)
     {
+    ops_keydata_t* keydata=NULL;
+    keydata=ops_keyring_get_key_by_index(keyring, 0);
+    ...
+    }
+    \endcode
+*/
+
+const ops_keydata_t* ops_keyring_get_key_by_index(const ops_keyring_t *keyring, int index)
+    {
+    if (index >= keyring->nkeys)
+        return NULL;
     return &keyring->keys[index]; 
     }
 
@@ -372,9 +469,6 @@ ops_boolean_t ops_add_selfsigned_userid_to_keydata(ops_keydata_t* keydata, ops_u
     return ops_true;
     }
 
-ops_keydata_t *ops_keydata_new(void)
-    { return ops_mallocz(sizeof(ops_keydata_t)); }
-
 void ops_keydata_init(ops_keydata_t* keydata, const ops_content_tag_t type)
     {
     assert(keydata->type==OPS_PTAG_CT_RESERVED);
@@ -383,18 +477,7 @@ void ops_keydata_init(ops_keydata_t* keydata, const ops_content_tag_t type)
     keydata->type=type;
     }
 
-/*! \file
-  \brief Standard API keyring functions
-
-*/
-
-/** @defgroup StdKeyring Keyring
-    \ingroup StandardAPI
-
-    @defgroup StdKeyringFile Keyring File Operations
-    \ingroup StdKeyring
-    \brief Keyring Open/Read/Write/Close
-
+/** 
     Example Usage:
     \code
 
@@ -413,50 +496,21 @@ void ops_keydata_init(ops_keydata_t* keydata, const ops_content_tag_t type)
     \endcode
 */
 
-/**
-    @defgroup StdKeyringFind Keyfind Find Operations
-    \ingroup StdKeyring
-    Find Key or its info within keyring
-
-    Example Usage:
-    \code
-
-    // definition of variables
-    ops_keyring_t keyring;
-    unsigned char* keyid;
-    ops_key_data_t *key;
-
-    // Read keyring from file
-    ops_keyring_read_from_file(&keyring,"~/.gnupg/pubring.gpg");
-
-    // Search for keys
-
-    // - get Key ID from given userid
-    keyid=ops_keyring_find_keyid_by_userid (keyring, "user@domain.com")
-
-    // - now get key from Key ID
-    key=ops_keyring_find_key_by_id(keyring, keyid);
-
-    // do something with key
-    ...
-    
-    // Free memory alloc-ed in ops_keyring_read_from_file()
-    ops_keyring_free();
-    \endcode
- */
-
 static ops_parse_cb_return_t
 cb_keyring_read(const ops_parser_content_t *content_,
 		ops_parse_cb_info_t *cbinfo);
 
 /**
-   \ingroup StdKeyringFile
+   \ingroup HighLevel_KeyringRead
    
-   Reads a keyring from a file
+   \brief Reads a keyring from a file
    
-   \param keyring Ptr to existing keyring
-   \param file Filename of keyring
-   
+   \param keyring Pointer to an existing ops_keyring_t struct
+   \param armour ops_true if file is armoured; else ops_false
+   \param filename Filename of keyring to be read
+
+   \return ops true if OK; ops_false on error
+
    \note Keyring struct must already exist.
 
    \note Can be used with either a public or secret keyring.
@@ -465,14 +519,24 @@ cb_keyring_read(const ops_parser_content_t *content_,
 
    \note If you call this twice on the same keyring struct, without calling
    ops_keyring_free() between these calls, you will introduce a memory leak.
+
+   Example code:
+   \code
+   ops_keyring_t* keyring=ops_mallocz(sizeof *keyring);
+   ops_boolean_t armoured=ops_false;
+   ops_keyring_read_from_file(keyring, armoured, "~/.gnupg/pubring.gpg");
+   ...
+   ops_keyring_free(keyring);
+   free (keyring);
+   
+   \endcode
 */
+
 ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boolean_t armour, const char *filename)
     {
     ops_parse_info_t *pinfo;
     int fd;
     ops_boolean_t res = ops_true;
-
-    //memset(keyring,'\0',sizeof *keyring);
 
     pinfo=ops_parse_info_new();
 
@@ -510,6 +574,9 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boole
         }
     ops_print_errors(ops_parse_info_get_errors(pinfo));
 
+    if (armour)
+        ops_reader_pop_dearmour(pinfo);
+
     close(fd);
 
     ops_parse_info_delete(pinfo);
@@ -518,13 +585,16 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boole
     }
 
 /**
-   \ingroup StdKeyring
+   \ingroup HighLevel_KeyringRead
    
-   Reads a keyring from memory
+   \brief Reads a keyring from memory
    
-   \param keyring Ptr to existing keyring
-   \param mem ptr to memory struct containing keyring info
+   \param keyring Pointer to existing ops_keyring_t struct
+   \param armour ops_true if file is armoured; else ops_false
+   \param mem Pointer to a ops_memory_t struct containing keyring to be read
    
+   \return ops true if OK; ops_false on error
+
    \note Keyring struct must already exist.
 
    \note Can be used with either a public or secret keyring.
@@ -533,23 +603,31 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boole
 
    \note If you call this twice on the same keyring struct, without calling
    ops_keyring_free() between these calls, you will introduce a memory leak.
+   Example code:
+   \code
+   ops_memory_t* mem; // Filled with keyring packets
+   ops_keyring_t* keyring=ops_mallocz(sizeof *keyring);
+   ops_boolean_t armoured=ops_false;
+   ops_keyring_read_from_mem(keyring, armoured, mem);
+   ...
+   ops_keyring_free(keyring);
+   free (keyring);
+   \endcode
 */
-ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* mem)
+ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, const ops_boolean_t armour, ops_memory_t* mem)
     {
-    // \todo currently assuming this is an armoured key.
-
     ops_parse_info_t *pinfo=NULL;
     ops_boolean_t res = ops_true;
-
-    // \todo need to free memory first?
-    //memset(keyring,'\0',sizeof *keyring);
 
     pinfo=ops_parse_info_new();
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 
     ops_setup_memory_read(&pinfo, mem, NULL, cb_keyring_read);
 
-    ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_true);
+    //    ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_true);
+
+    if (armour)
+        { ops_reader_push_dearmour(pinfo, ops_false, ops_false, ops_false); }
 
     if ( ops_parse_and_accumulate(keyring,pinfo) == 0 ) 
         {
@@ -561,7 +639,8 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* me
         }
     ops_print_errors(ops_parse_info_get_errors(pinfo));
 
-    ops_reader_pop_dearmour(pinfo);
+    if (armour)
+        ops_reader_pop_dearmour(pinfo);
 
     // don't call teardown_memory_read because memory was passed in
     ops_parse_info_delete(pinfo);
@@ -570,9 +649,9 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, ops_memory_t* me
     }
 
 /**
-   \ingroup StdKeyringFile
+   \ingroup HighLevel_KeyringMemory
  
-   Frees alloc-ed memory
+   \brief Frees keyring's contents (but not keyring itself)
  
    \param keyring Keyring whose data is to be freed
    
@@ -587,14 +666,27 @@ void ops_keyring_free(ops_keyring_t *keyring)
     }
 
 /**
-   \ingroup StdKeyringFind
+   \ingroup HighLevel_KeyringFind
 
-   Finds key in keyring from its Key ID
+   \brief Finds key in keyring from its Key ID
 
    \param keyring Keyring to be searched
    \param keyid ID of required key
 
-   \return Ptr to key, if found; NULL, if not found
+   \return Pointer to key, if found; NULL, if not found
+
+   \note This returns a pointer to the key inside the given keyring, not a copy. Do not free it after use.
+   
+   Example code:
+   \code
+   void example(ops_keyring_t* keyring)
+   {
+   ops_keydata_t* keydata=NULL;
+   unsigned char keyid[OPS_KEY_ID_SIZE]; // value set elsewhere
+   keydata=ops_keyring_find_key_by_id(keyring,keyid);
+   ...
+   }
+   \endcode
 */
 const ops_keydata_t *
 ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
@@ -615,14 +707,26 @@ ops_keyring_find_key_by_id(const ops_keyring_t *keyring,
     }
 
 /**
-   \ingroup StdKeyringFind
+   \ingroup HighLevel_KeyringFind
 
-   Finds key from its User ID
+   \brief Finds key from its User ID
 
    \param keyring Keyring to be searched
    \param userid User ID of required key
 
-   \return Ptr to Key, if found; NULL, if not found
+   \return Pointer to Key, if found; NULL, if not found
+
+   \note This returns a pointer to the key inside the keyring, not a copy. Do not free it.
+
+   Example code:
+   \code
+   void example(ops_keyring_t* keyring)
+   {
+   ops_keydata_t* keydata=NULL;
+   keydata=ops_keyring_find_key_by_userid(keyring,"user@domain.com");
+   ...
+   }
+   \endcode
 */
 const ops_keydata_t *
 ops_keyring_find_key_by_userid(const ops_keyring_t *keyring,
@@ -649,18 +753,32 @@ ops_keyring_find_key_by_userid(const ops_keyring_t *keyring,
     }
 
 /**
-   \ingroup StdKeyringList
+   \ingroup HighLevel_KeyringList
 
-   List keys in keyring
+   \brief Prints all keys in keyring to stdout.
 
    \param keyring Keyring to use
-   \param match optional string to match
 
+   \return none
+
+   Example code:
+   \code
+   void example()
+   {
+   ops_keyring_t* keyring=ops_mallocz(sizeof *keyring);
+   ops_boolean_t armoured=ops_false;
+   ops_keyring_read_from_file(keyring, armoured, "~/.gnupg/pubring.gpg");
+   
+   ops_keyring_list(keyring);
+   
+   ops_keyring_free(keyring);
+   free (keyring);
+   }
+   \endcode
 */
 
 void
-ops_keyring_list(const ops_keyring_t* keyring,
-		 const char* match)
+ops_keyring_list(const ops_keyring_t* keyring)
     {
     int n;
     unsigned int i;
@@ -671,12 +789,7 @@ ops_keyring_list(const ops_keyring_t* keyring,
 	{
 	for(i=0; i<key->nuids; i++)
 	    {
-	    if (match)
-		printf ("*** match %s\n", match);
-	    // if match, compare
-	    //	    if(!strcmp((char *)keyring->keys[n].uids[i].user_id,userid))
-	    //	       return &keyring->keys[n].keyid[0];
-	    if (ops_key_is_secret(key))
+	    if (ops_is_key_secret(key))
 		ops_print_secret_keydata(key);
 	    else
 		ops_print_public_keydata(key);

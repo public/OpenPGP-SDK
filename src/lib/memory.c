@@ -130,8 +130,21 @@ void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)
     out->length+=extra+1;
     }
 
+/**
+   \ingroup HighLevel_Misc
+   \brief Create a new zeroed ops_memory_t
+   \return Pointer to new ops_memory_t
+   \note Free using ops_memory_free() after use.
+*/
+
 ops_memory_t *ops_memory_new()
     { return ops_mallocz(sizeof(ops_memory_t)); }
+
+/**
+   \ingroup HighLevel_Misc
+   \brief Free memory
+   \param mem Memory to be freed
+*/
 
 void ops_memory_free(ops_memory_t *mem)
     {
@@ -139,9 +152,19 @@ void ops_memory_free(ops_memory_t *mem)
     free(mem);
     }
 
+/**
+   \ingroup HighLevel_Misc
+   \brief Get length of data stored in ops_memory_t struct
+   \return Number of bytes in data
+*/
 size_t ops_memory_get_length(const ops_memory_t *mem)
     { return mem->length; }
 
+/**
+   \ingroup HighLevel_Misc
+   \brief Get data stored in ops_memory_t struct
+   \return Pointer to data
+*/
 void *ops_memory_get_data(ops_memory_t *mem)
     { return mem->buf; }
 
