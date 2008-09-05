@@ -26,6 +26,11 @@
 #include <openpgpsdk/create.h>
 
 //
+void ops_reader_push_se_ip_data(ops_parse_info_t *pinfo, ops_crypt_t *decrypt,
+                                ops_region_t *region);
+void ops_reader_pop_se_ip_data(ops_parse_info_t* pinfo);
+
+//
 ops_boolean_t ops_write_mdc(const unsigned char *hashed,
                                    ops_create_info_t* info);
 ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,

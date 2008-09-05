@@ -54,18 +54,6 @@
 
 static int debug=0;
 
-typedef struct
-    {
-    // boolean: false once we've done the preamble/MDC checks
-    // and are reading from the plaintext
-    int passed_checks; 
-    unsigned char *plaintext;
-    size_t plaintext_available;
-    size_t plaintext_offset;
-    ops_region_t *region;
-    ops_crypt_t *decrypt;
-    } decrypt_se_ip_arg_t;
-
 /**
  * limited_read_data reads the specified amount of the subregion's data 
  * into a data_t structure
