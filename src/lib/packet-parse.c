@@ -440,7 +440,7 @@ static int limited_read_scalar(unsigned *dest,unsigned length,
 			       ops_region_t *region,
 			       ops_parse_info_t *pinfo)
     {
-    unsigned char c[4];
+    unsigned char c[4]="";
     unsigned t;
     unsigned n;
 
@@ -563,7 +563,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
     {
     unsigned length;
     unsigned nonzero;
-    unsigned char buf[8192]; /* an MPI has a 2 byte length part.  Length
+    unsigned char buf[8192]=""; /* an MPI has a 2 byte length part.  Length
                                 is given in bits, so the largest we should
                                 ever need for the buffer is 8192 bytes. */
     ops_boolean_t ret;
@@ -664,7 +664,7 @@ static ops_boolean_t read_new_length(unsigned *length,ops_parse_info_t *pinfo)
 static int limited_read_new_length(unsigned *length,ops_region_t *region,
 				   ops_parse_info_t *pinfo)
     {
-    unsigned char c[1];
+    unsigned char c[1]="";
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -726,10 +726,11 @@ void ops_signed_cleartext_trailer_free(ops_signed_cleartext_trailer_t *trailer)
 
 void ops_cmd_get_passphrase_free(ops_secret_key_passphrase_t *skp)
     {
-    // \todo check whether skp->passphrase should be static/dynamic
     if (skp->passphrase && *skp->passphrase)
-        free(*(skp->passphrase));
-    *(skp->passphrase)=NULL;
+        {
+        free(*skp->passphrase);
+        *skp->passphrase=NULL;
+        }
     }
 
 /*! Free any memory allocated when parsing the packet content */
@@ -951,8 +952,7 @@ void ops_public_key_free(ops_public_key_t *p)
 static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
 				 ops_parse_info_t *pinfo)
     {
-    //    ops_parser_content_t content;
-    unsigned char c[1];
+    unsigned char c[1]="";
 
     assert (region->length_read == 0);  /* We should not have read anything so far */
 
@@ -1213,7 +1213,7 @@ void ops_signature_free(ops_signature_t *sig)
 static int parse_v3_signature(ops_region_t *region,
 			      ops_parse_info_t *pinfo)
     {
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_parser_content_t content;
 
     // clear signature
@@ -1315,11 +1315,11 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 					 ops_parse_info_t *pinfo)
     {
     ops_region_t subregion;
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_parser_content_t content;
     unsigned t8,t7;
     ops_boolean_t read=ops_true;
-    unsigned char bool[1];
+    unsigned char bool[1]="";
 
     ops_init_subregion(&subregion,region);
     if(!limited_read_new_length(&subregion.length,region,pinfo))
@@ -1638,7 +1638,7 @@ static int parse_signature_subpackets(ops_signature_t *sig,
  */
 static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     {
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_parser_content_t content;
     
     // clear signature
@@ -1765,7 +1765,7 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
  */
 static int parse_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     {
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_parser_content_t content;
 
     assert(region->length_read == 0);  /* We should not have read anything so far */
@@ -1787,7 +1787,7 @@ static int parse_signature(ops_region_t *region,ops_parse_info_t *pinfo)
 
 static int parse_compressed(ops_region_t *region,ops_parse_info_t *pinfo)
     {
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_parser_content_t content;
 
     if(!limited_read(c,1,region,pinfo))
@@ -1805,7 +1805,7 @@ static int parse_compressed(ops_region_t *region,ops_parse_info_t *pinfo)
 
 static int parse_one_pass(ops_region_t *region,ops_parse_info_t *pinfo)
     {
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_parser_content_t content;
 
     if(!limited_read(&C.one_pass_signature.version,1,region,pinfo))
@@ -1894,7 +1894,7 @@ parse_trust (ops_region_t *region, ops_parse_info_t *pinfo)
 static int parse_literal_data(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     ops_parser_content_t content;
-    unsigned char c[1];
+    unsigned char c[1]="";
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
@@ -1996,7 +1996,7 @@ static int consume_packet(ops_region_t *region,ops_parse_info_t *pinfo,
 static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     ops_parser_content_t content;
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_crypt_t decrypt;
     int ret=1;
     ops_region_t encregion;
@@ -2316,7 +2316,7 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 static int parse_pk_session_key(ops_region_t *region,
                                 ops_parse_info_t *pinfo)
     {
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_parser_content_t content;
     ops_parser_content_t pc;
 
@@ -2592,7 +2592,7 @@ static int parse_se_data(ops_region_t *region,ops_parse_info_t *pinfo)
 
 static int parse_se_ip_data(ops_region_t *region,ops_parse_info_t *pinfo)
     {
-    unsigned char c[1];
+    unsigned char c[1]="";
     ops_parser_content_t content;
 
     if(!limited_read(c,1,region,pinfo))

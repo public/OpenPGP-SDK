@@ -699,7 +699,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
 
     case OPS_PTAG_CT_SIGNATURE:
 	print_tagname("SIGNATURE");
-	print_indent(indent);
+	print_indent();
 	print_unsigned_int("Signature Version",
 	       content->signature.info.version);
 	if (content->signature.info.creation_time_set) 
@@ -1040,7 +1040,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
 
     case OPS_PTAG_CT_SIGNATURE_HEADER:
 	print_tagname("SIGNATURE");
-	print_indent(indent);
+	print_indent();
 	print_unsigned_int("Signature Version",
 	       content->signature.info.version);
 	if(content->signature.info.creation_time_set) 
@@ -1283,7 +1283,7 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 
     case OPS_PTAG_CT_SIGNATURE:
 	print_tagname("SIGNATURE");
-	print_indent(indent);
+	print_indent();
 	print_unsigned_int("Signature Version",
 	       content->signature.info.version);
 	if (content->signature.info.creation_time_set) 
@@ -1624,7 +1624,7 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 
     case OPS_PTAG_CT_SIGNATURE_HEADER:
 	print_tagname("SIGNATURE");
-	print_indent(indent);
+	print_indent();
 	print_unsigned_int("Signature Version",
 	       content->signature.info.version);
 	if(content->signature.info.creation_time_set) 

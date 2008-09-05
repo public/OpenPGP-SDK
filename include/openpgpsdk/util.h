@@ -34,20 +34,6 @@
 #define ops_true	1
 
 void hexdump(const unsigned char *src,size_t length);
-void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd);
-void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
-			   size_t length);
-
-/* typesafe deconstification */
-#ifdef OBSOLETE
-#ifdef WIN32
-static void *_deconst(const void *p)
-    { return (void *)p; }
-#else 
-static inline void *_deconst(const void *p)
-    { return (void *)p; }
-#endif
-#endif /*OBSOLETE*/
 
 /*
  * These macros code ensures that you are casting what you intend to cast.
@@ -60,16 +46,10 @@ static inline void *_deconst(const void *p)
 #define CHECKED_INSTANCE_OF(type, p) (1 ? p : (type)0) 
 #define DECONST(type,p) ((type *)CHECKED_PTR_OF(const type, p))
 
-char *ops_str_from_map(int code, ops_map_t *map);
-
 /* number of elements in an array */
 #define OPS_ARRAY_SIZE(a)	(sizeof(a)/sizeof(*(a)))
 
 /** Allocate zeroed memory */
 void *ops_mallocz(size_t n);
-
-// Do a sum mod 65536 of all bytes read (as needed for secret keys)
-void ops_reader_push_sum16(ops_parse_info_t *pinfo);
-unsigned short ops_reader_pop_sum16(ops_parse_info_t *pinfo);
 
 #endif

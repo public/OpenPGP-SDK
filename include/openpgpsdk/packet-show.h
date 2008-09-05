@@ -86,6 +86,8 @@ const char *ops_show_ss_key_server_prefs(unsigned char octet,
 
 ops_text_t *ops_showall_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data);
 
+char *ops_str_from_map(int code, ops_map_t *map);
+
 /* vim:set textwidth=120: */
 /* vim:set ts=8: */
 

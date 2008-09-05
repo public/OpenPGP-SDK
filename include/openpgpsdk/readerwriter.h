@@ -25,7 +25,15 @@
 #include <openpgpsdk/memory.h>
 #include <openpgpsdk/create.h>
 
-//
+
+void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd);
+void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
+			   size_t length);
+
+// Do a sum mod 65536 of all bytes read (as needed for secret keys)
+void ops_reader_push_sum16(ops_parse_info_t *pinfo);
+unsigned short ops_reader_pop_sum16(ops_parse_info_t *pinfo);
+
 void ops_reader_push_se_ip_data(ops_parse_info_t *pinfo, ops_crypt_t *decrypt,
                                 ops_region_t *region);
 void ops_reader_pop_se_ip_data(ops_parse_info_t* pinfo);

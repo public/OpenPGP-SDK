@@ -325,7 +325,7 @@ char *ops_malloc_passphrase(char *pp)
 
     n=strlen(pp);
     passphrase=malloc(n+1);
-    strcpy(passphrase,pp);
+    strncpy(passphrase,pp,n+1);
 
     return passphrase;
     }

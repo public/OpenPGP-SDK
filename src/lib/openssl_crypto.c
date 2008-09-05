@@ -274,9 +274,9 @@ int ops_rsa_public_encrypt(unsigned char *out,const unsigned char *in,
 
     if (n==-1)
         {
-        BIO *out;
-        out=BIO_new_fd(fileno(stderr), BIO_NOCLOSE);
-        ERR_print_errors(out);
+        BIO *fd_out;
+        fd_out=BIO_new_fd(fileno(stderr), BIO_NOCLOSE);
+        ERR_print_errors(fd_out);
         }
 
     orsa->n=orsa->e=NULL;

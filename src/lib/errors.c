@@ -35,6 +35,7 @@
 #define vsnprintf _vsnprintf
 #endif
 
+#include <openpgpsdk/packet-show.h>
 #include <openpgpsdk/final.h>
 
 #define ERRNAME(code)	{ code, #code }

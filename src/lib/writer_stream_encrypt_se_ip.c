@@ -38,7 +38,6 @@
 #include <openpgpsdk/readerwriter.h>
 
 #define MAX_PARTIAL_DATA_LENGTH 1073741824
-#define SE_IP_DATA_VERSION      1 
 
 typedef struct 
     {

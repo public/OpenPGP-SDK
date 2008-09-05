@@ -945,11 +945,12 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     // setup output filename
     if (!output_filename)
         {
-        myfilename=ops_mallocz(strlen(input_filename)+4+1);
+        unsigned filenamelen=strlen(input_filename)+4+1;
+        myfilename=ops_mallocz(filenamelen);
         if (use_armour)
-            sprintf(myfilename,"%s.asc",input_filename);
+            snprintf(myfilename,filenamelen,"%s.asc",input_filename);
         else
-            sprintf(myfilename,"%s.gpg",input_filename);
+            snprintf(myfilename,filenamelen,"%s.gpg",input_filename);
         fd_out=ops_setup_file_write(&cinfo, myfilename, overwrite);
         free(myfilename);
         } 

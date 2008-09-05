@@ -514,6 +514,8 @@ void ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata
     pinfo->rinfo.accumulate=ops_true;
     ops_keydata_reader_set(pinfo,key);
 
+    // Note: Coverity incorrectly reports an error that carg.rarg
+    // is never used.
     carg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
 
     ops_parse(pinfo);
@@ -570,6 +572,8 @@ ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filen
     memset(&validate_arg,'\0',sizeof validate_arg);
     validate_arg.result=result;
     validate_arg.keyring=keyring;
+    // Note: Coverity incorrectly reports an error that carg.rarg
+    // is never used.
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
 
     if (armoured)

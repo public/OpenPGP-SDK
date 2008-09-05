@@ -250,8 +250,9 @@ ops_boolean_t ops_decrypt_file(const char* input_filename, const char* output_fi
             }
         else
             {
-            myfilename=ops_mallocz(strlen(input_filename)+strlen(defaultsuffix)+1);
-            sprintf(myfilename,"%s%s",input_filename,defaultsuffix);
+            unsigned filenamelen=strlen(input_filename)+strlen(defaultsuffix)+1;
+            myfilename=ops_mallocz(filenamelen);
+            snprintf(myfilename,filenamelen,"%s%s",input_filename,defaultsuffix);
             }
 
         fd_out=ops_setup_file_write(&pinfo->cbinfo.cinfo, myfilename, allow_overwrite);

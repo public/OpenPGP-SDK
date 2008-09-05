@@ -161,6 +161,7 @@ int main(int argc, char **argv)
     //int i=0;
     ops_secret_key_t* skey=NULL;
 
+
     memset(opt_keyring,'\0',sizeof(opt_keyring));
     memset(opt_userid,'\0',sizeof(opt_userid));
     memset(opt_passphrase,'\0',sizeof(opt_passphrase));

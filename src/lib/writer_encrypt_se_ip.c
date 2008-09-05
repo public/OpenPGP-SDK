@@ -39,6 +39,8 @@
 #include <openpgpsdk/random.h>
 #include <openpgpsdk/readerwriter.h>
 
+static int debug=0;
+
 typedef struct 
     {
     ops_crypt_t* crypt;
@@ -148,10 +150,8 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
                                    ops_crypt_t *crypt,
                                    ops_create_info_t *cinfo)
     {
-    int debug=0;
     unsigned char hashed[SHA_DIGEST_LENGTH];
     const size_t sz_mdc=1+1+SHA_DIGEST_LENGTH;
-    //    encrypt_se_ip_arg_t *arg=ops_mallocz(sizeof *arg);
 
     size_t sz_preamble=crypt->blocksize+2;
     unsigned char* preamble=ops_mallocz(sz_preamble);
@@ -161,12 +161,13 @@ ops_boolean_t ops_write_se_ip_pktset(const unsigned char *data,
     ops_memory_t *mem_mdc;
     ops_create_info_t *cinfo_mdc;
 
-#define SE_IP_DATA_VERSION 1 //\todo move this
-
     if (!ops_write_ptag(OPS_PTAG_CT_SE_IP_DATA,cinfo)
         || !ops_write_length(1+sz_buf,cinfo)
         || !ops_write_scalar(SE_IP_DATA_VERSION,1,cinfo))
+        {
+        free (preamble);
         return 0;
+        }
 
     ops_random(preamble, crypt->blocksize);
     preamble[crypt->blocksize]=preamble[crypt->blocksize-2];

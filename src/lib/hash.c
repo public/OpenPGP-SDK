@@ -28,6 +28,8 @@
 
 #include <openpgpsdk/final.h>
 
+static int debug=0;
+
 void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length)
     {
     while(length--)
@@ -96,7 +98,6 @@ unsigned ops_hash(unsigned char *out,ops_hash_algorithm_t alg,const void *in,
 
 void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* plaintext, const unsigned int sz_plaintext, unsigned char *hashed)
     {
-    int debug=0;
     ops_hash_t hash;
     unsigned char c[1];
 

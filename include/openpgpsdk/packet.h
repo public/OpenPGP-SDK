@@ -862,6 +862,11 @@ typedef struct
 
 typedef enum
     {
+    SE_IP_DATA_VERSION=1
+    } ops_se_ip_data_version_t;
+
+typedef enum
+    {
     OPS_PKSK_V3=3
     } ops_pk_session_key_version_t;
 

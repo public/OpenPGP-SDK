@@ -298,6 +298,13 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
             // preload if iterating 
             for (j=0; j<i; j++)
                 {
+                /* 
+                   Coverity shows a DEADCODE error on this line.
+                   This is expected since the hardcoded use of
+                   SHA1 and CAST5 means that it will not used.
+                   This will change however when other algorithms are
+                   supported.
+                */
                 hash.add(&hash, &zero, 1);
                 }
 
@@ -1018,7 +1025,7 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
     ops_memory_init(mem,initial_size);
     for (;;)
         {
-        int n=0;
+        ssize_t n=0;
         n=read(fd,buf,1024);
         if (!n)
             break;
@@ -1058,7 +1065,7 @@ ops_memory_t* ops_write_buf_from_file(const char *filename)
     ops_memory_init(mem,initial_size);
     for (;;)
         {
-        int n=0;
+        ssize_t n=0;
         n=read(fd,buf,1024);
         if (!n)
             break;

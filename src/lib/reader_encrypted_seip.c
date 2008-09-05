@@ -112,7 +112,10 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
         // read entire SE IP packet
         
         if (!ops_stacked_limited_read(buf,decrypted_region.length, &decrypted_region,errors,rinfo,cbinfo))
+            {
+            free (buf);
             return -1;
+            }
 
         if (debug)
             {

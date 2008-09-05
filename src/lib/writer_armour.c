@@ -145,6 +145,7 @@ ops_boolean_t ops_writer_push_clearsigned(ops_create_info_t *info,
     if (rtn==ops_false)
         {
         OPS_ERROR(&info->errors, OPS_E_W, "Error pushing clearsigned header");
+        free(arg);
         return rtn;
         }
 
