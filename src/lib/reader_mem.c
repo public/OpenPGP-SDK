@@ -71,8 +71,11 @@ static int mem_reader(void *dest,size_t length,ops_error_t **errors,
 static void mem_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
-// Note that its the caller's responsibility to ensure buffer continues to
-// exist
+/**
+   \ingroup Core_Readers_Memory
+   \brief Starts stack with memory reader
+*/
+
 void ops_reader_set_memory(ops_parse_info_t *pinfo,const void *buffer,
 			   size_t length)
     {

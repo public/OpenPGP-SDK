@@ -1810,6 +1810,4 @@ void ops_list_packets(char* filename, ops_boolean_t armour, ops_keyring_t* keyri
     ops_parse_and_print_errors(pinfo);
 
     ops_teardown_file_read(pinfo,fd);
-
-    ops_finish();
     }

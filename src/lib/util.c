@@ -191,6 +191,10 @@ static int sum16_reader(void *dest_,size_t length,ops_error_t **errors,
 static void sum16_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
+/**
+   \ingroup Internal_Readers_Sum16
+*/
+
 void ops_reader_push_sum16(ops_parse_info_t *pinfo)
     {
     sum16_arg_t *arg=ops_mallocz(sizeof *arg);
@@ -198,6 +202,9 @@ void ops_reader_push_sum16(ops_parse_info_t *pinfo)
     ops_reader_push(pinfo,sum16_reader,sum16_destroyer,arg);
     }
 
+/**
+   \ingroup Internal_Readers_Sum16
+*/
 unsigned short ops_reader_pop_sum16(ops_parse_info_t *pinfo)
     {
     sum16_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(pinfo));

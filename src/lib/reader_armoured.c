@@ -921,11 +921,13 @@ static void armoured_data_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
 /**
- * \brief 
+ * \ingroup Core_Readers_Armour
+ * \brief Pushes dearmouring reader onto stack
  * \param parse_info Usual structure containing information about to how to do the parse
  * \param without_gap Allow headers in armoured data that are not separated from the data by a blank line
  * \param no_gap Allow no blank line at the start of armoured data
  * \param trailing_whitespace Allow armoured data to have trailing whitespace where we strictly would not expect it
+ * \sa ops_reader_pop_dearmour()
  */
 void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
 			      ops_boolean_t without_gap,
@@ -947,7 +949,10 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
     }
 
 /**
+ * \ingroup Core_Readers_Armour
+ * \brief Pops dearmour reader from stock
  * \param parse_info
+ * \sa ops_reader_push_dearmour()
  */
 void ops_reader_pop_dearmour(ops_parse_info_t *pinfo)
     {

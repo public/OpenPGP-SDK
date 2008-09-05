@@ -42,12 +42,20 @@ static int hash_reader(void *dest,size_t length,ops_error_t **errors,
     return r;
     }
 
+/**
+   \ingroup Internal_Readers_Hash
+   \brief Push hashed data reader on stack
+*/
 void ops_reader_push_hash(ops_parse_info_t *pinfo,ops_hash_t *hash)
     {
     hash->init(hash);
     ops_reader_push(pinfo,hash_reader,NULL,hash);
     }
 
+/**
+   \ingroup Internal_Readers_Hash
+   \brief Pop hashed data reader from stack
+*/
 void ops_reader_pop_hash(ops_parse_info_t *pinfo)
     { ops_reader_pop(pinfo); }
 

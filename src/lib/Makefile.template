@@ -14,7 +14,8 @@ LIBOBJS = packet-parse.o packet-print.o packet-show.o \
 	validate.o lists.o errors.o \
 	symmetric.o crypto.o random.o readerwriter.o \
         reader.o reader_fd.o reader_mem.o \
-        reader_armoured.o reader_hashed.o reader_encrypted.o \
+        reader_armoured.o reader_hashed.o \
+        reader_encrypted_se.o reader_encrypted_seip.o \
         writer_fd.o writer_memory.o \
         writer.o writer_skey_checksum.o  writer_armour.o \
         writer_encrypt_se_ip.o writer_encrypt.o \

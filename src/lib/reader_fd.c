@@ -93,6 +93,11 @@ static int fd_reader(void *dest,size_t length,ops_error_t **errors,
 static void fd_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
+/**
+   \ingroup Core_Readers_File
+   \brief Starts stack with file reader
+*/
+
 void ops_reader_set_fd(ops_parse_info_t *pinfo,int fd)
     {
     reader_fd_arg_t *arg=malloc(sizeof *arg);

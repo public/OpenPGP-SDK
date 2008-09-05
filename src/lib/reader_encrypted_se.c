@@ -181,6 +181,11 @@ static int encrypted_data_reader(void *dest,size_t length,ops_error_t **errors,
 static void encrypted_data_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
+/**
+ * \ingroup Core_Readers_SE
+ * \brief Pushes decryption reader onto stack
+ * \sa ops_reader_pop_decrypt()
+ */
 void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_crypt_t *decrypt,
 			     ops_region_t *region)
     {
@@ -194,6 +199,11 @@ void ops_reader_push_decrypt(ops_parse_info_t *pinfo,ops_crypt_t *decrypt,
     ops_reader_push(pinfo,encrypted_data_reader,encrypted_data_destroyer,arg);
     }
 
+/**
+ * \ingroup Core_Readers_Encrypted
+ * \brief Pops decryption reader from stack
+ * \sa ops_reader_push_decrypt()
+ */
 void ops_reader_pop_decrypt(ops_parse_info_t *pinfo)
     {
     encrypted_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(pinfo));

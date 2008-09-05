@@ -23,6 +23,12 @@ The Core API offers detailed control over all aspects of the SDK.
 
 - \ref CoreAPI : follow this link for more details
 
+\section section_internal_api The Internal API
+
+The Internal API contains functions for use by SDK developers.
+
+- \ref InternalAPI: follow this link for more details
+
 */
 
 /** @defgroup HighLevelAPI High Level API
@@ -39,6 +45,10 @@ encrypt, decrypt, sign, verify, keys, print
 This API provides detailed control over all aspects of the SDK.
 
 You may find that the easier-to-use High Level API meets your needs.
+*/
+
+/** @defgroup InternalAPI Internal API
+This API provides code used by SDK developers.
 */
 
 /** \defgroup HighLevel_Misc Miscellaneous
@@ -76,16 +86,56 @@ You may find that the easier-to-use High Level API meets your needs.
 */
 
 /**
-   \defgroup HighLevel_Parse Parse
-   \ingroup HighLevelAPI
+   \defgroup Core_Readers Readers
+   \ingroup CoreAPI
 */
 
 /**
-   \defgroup HighLevel_Readers Readers
+   \defgroup Core_Readers_First First (stacks start with one of these)
+   \ingroup Core_Readers
+*/
+
+/**
+   \defgroup Core_Readers_File File Input
+   \ingroup Core_Readers_First
+*/
+
+/**
+   \defgroup Core_Readers_Memory Memory Input
+   \ingroup Core_Readers_First
+*/
+
+/**
+   \defgroup Core_Readers_Additional Additional (stacks may use these)
+   \ingroup Core_Readers
+*/
+
+/**
+   \defgroup Core_Readers_Armour Armoured Data
+   \ingroup Core_Readers_Additional
+*/
+
+/**
+   \defgroup Core_Readers_SE Symmetrically-Encrypted Data
+   \ingroup Core_Readers_Additional
+*/
+
+/**
+  \defgroup Core_Readers_SEIP Symmetrically-Encrypted-Integrity-Protected Data
+  \ingroup Core_Readers_Additional
 */
 
 /**
    \defgroup HighLevel_Writers Writers
+*/
+
+/** \defgroup Core_Misc Miscellaneous
+    \ingroup CoreAPI
+ */
+    
+/**
+   \defgroup Core_Parse Parse
+   \ingroup CoreAPI
 */
 
 /**
@@ -93,13 +143,30 @@ You may find that the easier-to-use High Level API meets your needs.
    \ingroup CoreAPI
 */
 
-/*
+/**
    \defgroup Create
    \ingroup CoreAPI
 */
 
-/* 
- */
+/** 
+   \defgroup Internal_Readers Readers
+   \ingroup InternalAPI
+*/
+
+/**
+   \defgroup Internal_Readers_Generic Generic
+   \ingroup Internal_Readers
+*/
+
+/**
+  \defgroup Internal_Readers_Hash Hashed Data
+  \ingroup Internal_Readers
+*/
+
+/**
+  \defgroup Internal_Readers_Sum16 Sum16
+  \ingroup Internal_Readers
+*/
 
 /**
  * @defgroup Parse Parse

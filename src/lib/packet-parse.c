@@ -156,21 +156,8 @@ void ops_init_subregion(ops_region_t *subregion,ops_region_t *region)
     subregion->parent=region;
     }
 
-/*! \todo descr for CB macro */
-/*! \todo check other callback functions to check they match this usage */
 /*! macro to save typing */
 #define C		content.content
-
-// \todo replace ERRCODE with OPS_ERROR?
-/*! set error code in content and run CallBack to handle error */
-#define ERRCODE(cbinfo,err)	do { C.errcode.errcode=err; CB(cbinfo,OPS_PARSER_ERRCODE,&content); } while(0)
-#define ERRCODEP(pinfo,err)	do { C.errcode.errcode=err; CBP(pinfo,OPS_PARSER_ERRCODE,&content); } while(0)
-/*! set error text in content and run CallBack to handle error, then return */
-//#define ERR(cbinfo,err)	do { C.error.error=err; CB(cbinfo,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
-//#define ERRP(info,err)	do { C.error.error=err; CBP(info,OPS_PARSER_ERROR,&content); return ops_false; } while(0)
-/*! set error text in content and run CallBack to handle warning, do not return */
-#define WARN(warn)	do { C.error.error=warn; CB(OPS_PARSER_ERROR,&content);; } while(0)
-#define WARNP(info,warn)	do { C.error.error=warn; CBP(info,OPS_PARSER_ERROR,&content); } while(0)
 
 /* XXX: replace ops_ptag_t with something more appropriate for limiting
    reads */
@@ -327,11 +314,13 @@ static ops_boolean_t _read_scalar(unsigned *result,unsigned length,
     return ops_true;
     }
 
-/** Read bytes from a region within the packet.
+/** 
+ * \ingroup Core_Parse
+ * \brief Read bytes from a region within the packet.
  *
- * Read length bytes into the buffer pointed to by *dest.  Make sure
- * we do not read over the packet boundary.  Updates the Packet Tag's
- * ops_ptag_t::length_read.
+ * Read length bytes into the buffer pointed to by *dest.  
+ * Make sure we do not read over the packet boundary.  
+ * Updates the Packet Tag's ops_ptag_t::length_read.
  *
  * If length would make us read over the packet boundary, or if
  * reading fails, we call the callback with an error.
@@ -343,10 +332,12 @@ static ops_boolean_t _read_scalar(unsigned *result,unsigned length,
  *
  * This function makes sure to respect packet boundaries.
  *
- * \param *dest		The destination buffer
+ * \param dest		The destination buffer
  * \param length	How many bytes to read
- * \param *region	Pointer to packet region
- * \param *pinfo	How to parse, including callback function
+ * \param region	Pointer to packet region
+ * \param errors    Error stack
+ * \param rinfo		Reader info
+ * \param cbinfo	Callback info
  * \return		ops_true on success, ops_false on error
  */
 ops_boolean_t ops_limited_read(unsigned char *dest,size_t length,
@@ -354,27 +345,26 @@ ops_boolean_t ops_limited_read(unsigned char *dest,size_t length,
 			       ops_reader_info_t *rinfo,
 			       ops_parse_cb_info_t *cbinfo)
     {
-    ops_parser_content_t content;
     size_t r;
     int lr;
 
     if(!region->indeterminate && region->length_read+length > region->length)
 	{
-	ERRCODE(cbinfo,OPS_E_P_NOT_ENOUGH_DATA);
-	return 0;
+	OPS_ERROR(errors,OPS_E_P_NOT_ENOUGH_DATA,"Not enough data");
+	return ops_false;
 	}
 
     r=full_read(dest,length,&lr,errors,rinfo,cbinfo);
 
     if(lr < 0)
 	{
-	ERRCODE(cbinfo,OPS_E_R_READ_FAILED);
+	OPS_ERROR(errors,OPS_E_R_READ_FAILED,"Read failed");
 	return ops_false;
 	}
 
     if(!region->indeterminate && r != length)
 	{
-	ERRCODE(cbinfo,OPS_E_R_READ_FAILED);
+	OPS_ERROR(errors,OPS_E_R_READ_FAILED,"Read failed");
 	return ops_false;
 	}
 
@@ -588,7 +578,6 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
     unsigned char buf[8192]; /* an MPI has a 2 byte length part.  Length
                                 is given in bits, so the largest we should
                                 ever need for the buffer is 8192 bytes. */
-    ops_parser_content_t content;
     ops_boolean_t ret;
 
     pinfo->reading_mpi_length=ops_true;
@@ -609,7 +598,7 @@ static int limited_read_mpi(BIGNUM **pbn,ops_region_t *region,
 
     if((buf[0] >> nonzero) != 0 || !(buf[0]&(1 << (nonzero-1))))
 	{
-	ERRCODEP(pinfo,OPS_E_P_MPI_FORMAT_ERROR);  /* XXX: Ben, one part of this constraint does not apply to encrypted MPIs the draft says. -- peter */
+	OPS_ERROR(&pinfo->errors,OPS_E_P_MPI_FORMAT_ERROR,"MPI Format error");  /* XXX: Ben, one part of this constraint does not apply to encrypted MPIs the draft says. -- peter */
 	return 0;
 	}
 
@@ -2003,13 +1992,13 @@ static int consume_packet(ops_region_t *region,ops_parse_info_t *pinfo,
 	/* now throw it away */
 	data_free(&remainder);
 	if(warn)
-	    ERRCODEP(pinfo,OPS_E_P_PACKET_CONSUMED);
+	    OPS_ERROR(&pinfo->errors,OPS_E_P_PACKET_CONSUMED,"Warning: packet consumer");
 	}
     else if(warn)
-	WARNP(pinfo,"Problem consuming remainder of error packet.");
+        OPS_ERROR(&pinfo->errors,OPS_E_P_PACKET_NOT_CONSUMED,"Warning: Packet was not consumed");
     else
 	{
-	ERRCODEP(pinfo,OPS_E_P_PACKET_NOT_CONSUMED);
+	OPS_ERROR(&pinfo->errors,OPS_E_P_PACKET_NOT_CONSUMED,"Packet was not consumed");
 	return 0;
 	}
 
@@ -2495,177 +2484,6 @@ static int parse_pk_session_key(ops_region_t *region,
     return 1;
     }
 
-static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
-                             ops_reader_info_t *rinfo,
-                             ops_parse_cb_info_t *cbinfo)
-    {
-
-    /*
-      Gets entire SE_IP data packet.
-      Verifies leading preamble
-      Verifies trailing MDC packet
-      Then passes up plaintext as requested
-    */
-
-    unsigned int n=0;
-
-    ops_region_t decrypted_region;
-
-    decrypt_se_ip_arg_t *arg=ops_reader_get_arg(rinfo);
-
-    if (!arg->passed_checks)
-        {
-        unsigned char*buf=NULL;
-
-        ops_hash_t hash;
-        unsigned char hashed[SHA_DIGEST_LENGTH];
-
-        size_t b;
-        size_t sz_preamble;
-        size_t sz_mdc_hash;
-        size_t sz_mdc;
-        size_t sz_plaintext;
-
-        unsigned char* preamble;
-        unsigned char* plaintext;
-        unsigned char* mdc;
-        unsigned char* mdc_hash;
-
-        ops_hash_any(&hash,OPS_HASH_SHA1);
-        hash.init(&hash);
-
-        ops_init_subregion(&decrypted_region,NULL);
-        decrypted_region.length = arg->region->length - arg->region->length_read;
-        buf=ops_mallocz(decrypted_region.length);
-
-        // read entire SE IP packet
-        
-        if (!ops_stacked_limited_read(buf,decrypted_region.length, &decrypted_region,errors,rinfo,cbinfo))
-            return -1;
-
-        if (debug)
-            {
-            unsigned int i=0;
-            fprintf(stderr,"\n\nentire SE IP packet (len=%d):\n",decrypted_region.length);
-            for (i=0; i<decrypted_region.length; i++)
-                {
-                fprintf(stderr,"0x%02x ", buf[i]);
-                if (!((i+1)%8))
-                    fprintf(stderr,"\n");
-                }
-            fprintf(stderr,"\n");
-            fprintf(stderr,"\n");
-            }
-
-        // verify leading preamble
-
-        if (debug)
-            {
-            unsigned int i=0;
-            fprintf(stderr,"\npreamble: ");
-            for (i=0; i<arg->decrypt->blocksize+2;i++)
-                fprintf(stderr," 0x%02x", buf[i]);
-            fprintf(stderr,"\n");
-            }
-
-        b=arg->decrypt->blocksize;
-        if(buf[b-2] != buf[b] || buf[b-1] != buf[b+1])
-            {
-            fprintf(stderr,"Bad symmetric decrypt (%02x%02x vs %02x%02x)\n",
-                    buf[b-2],buf[b-1],buf[b],buf[b+1]);
-            OPS_ERROR(errors, OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT,"Bad symmetric decrypt when parsing SE IP packet");
-            return -1;
-            }
-
-        // Verify trailing MDC hash
-
-        sz_preamble=arg->decrypt->blocksize+2;
-        sz_mdc_hash=OPS_SHA1_HASH_SIZE;
-        sz_mdc=1+1+sz_mdc_hash;
-        sz_plaintext=decrypted_region.length-sz_preamble-sz_mdc;
-
-        preamble=buf;
-        plaintext=buf+sz_preamble;
-        mdc=plaintext+sz_plaintext;
-        mdc_hash=mdc+2;
-    
-#ifdef DEBUG
-        if (debug)
-            {
-            unsigned int i=0;
-
-            fprintf(stderr,"\nplaintext (len=%ld): ",sz_plaintext);
-            for (i=0; i<sz_plaintext;i++)
-                fprintf(stderr," 0x%02x", plaintext[i]);
-            fprintf(stderr,"\n");
-
-            fprintf(stderr,"\nmdc (len=%ld): ",sz_mdc);
-            for (i=0; i<sz_mdc;i++)
-                fprintf(stderr," 0x%02x", mdc[i]);
-            fprintf(stderr,"\n");
-            }
-#endif /*DEBUG*/
-
-        ops_calc_mdc_hash(preamble,sz_preamble,plaintext,sz_plaintext,&hashed[0]);
-
-        if (memcmp(mdc_hash,hashed,OPS_SHA1_HASH_SIZE))
-            {
-            fprintf(stderr,"Hash is bad\n");
-            //            ERRP(pinfo,"Bad hash in MDC");
-            return 0;
-            }
-
-        // all done with the checks
-        // now can start reading from the plaintext
-        assert(!arg->plaintext);
-        arg->plaintext=ops_mallocz(sz_plaintext);
-        memcpy(arg->plaintext, plaintext, sz_plaintext);
-        arg->plaintext_available=sz_plaintext;
-
-        arg->passed_checks=1;
-
-        free(buf);
-        }
-
-    n=len;
-    if (n > arg->plaintext_available)
-        n=arg->plaintext_available;
-
-    memcpy(dest_, arg->plaintext+arg->plaintext_offset, n);
-    arg->plaintext_available-=n;
-    arg->plaintext_offset+=n;
-    len-=n;
-
-    return n;
-    }
-
-static void se_ip_data_destroyer(ops_reader_info_t *rinfo)
-    {
-    decrypt_se_ip_arg_t* arg=ops_reader_get_arg(rinfo);
-    free (arg->plaintext);
-    free (arg);
-    //    free(ops_reader_get_arg(rinfo));
-    }
-
-//void ops_reader_push_se_ip_data(ops_parse_info_t *pinfo __attribute__((__unused__)), ops_crypt_t *decrypt __attribute__((__unused__)),
-//                                ops_region_t *region __attribute__((__unused__)))
-void ops_reader_push_se_ip_data(ops_parse_info_t *pinfo, ops_crypt_t *decrypt,
-                                ops_region_t *region)
-    {
-    decrypt_se_ip_arg_t *arg=ops_mallocz(sizeof *arg);
-    arg->region=region;
-    arg->decrypt=decrypt;
-
-    ops_reader_push(pinfo, se_ip_data_reader, se_ip_data_destroyer,arg);
-    }
-
-void ops_reader_pop_se_ip_data(ops_parse_info_t* pinfo)
-    {
-    //    decrypt_se_ip_arg_t *arg=ops_reader_get_arg(ops_parse_get_rinfo(pinfo));
-    //    free(arg);
-    ops_reader_pop(pinfo);
-    }
-
 // XXX: make this static?
 int ops_decrypt_se_data(ops_content_tag_t tag,ops_region_t *region,
 		     ops_parse_info_t *pinfo)
@@ -2993,12 +2811,11 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
     }
 
 /**
- * \ingroup Parse
+ * \ingroup Core_Parse
  * 
- * ops_parse() parses packets from an input stream until EOF or error.
+ * \brief Parse packets from an input stream until EOF or error.
  *
- * All the necessary information for parsing should have been set up by the
- * calling function in "*pinfo" beforehand.
+ * \details Setup the necessary parsing configuration in "pinfo" before calling ops_parse().
  *
  * That information includes :
  *
@@ -3009,11 +2826,36 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
  *
  * - whether the calling function wants the signature subpackets returned raw, parsed or not at all.
  *
- * \sa See Detailed Description for usage.
+ * After returning, pinfo->errors holds any errors encountered while parsing.
  *
- * \param *pinfo	How to parse
+ * \param pinfo	Parsing configuration
  * \return		1 on success in all packets, 0 on error in any packet
- * \todo Add some error checking to make sure *pinfo contains a sensible setup?
+ *
+ * \sa CoreAPI Overview
+ *
+ * \sa ops_print_errors(), ops_parse_and_print_errors()
+ *
+ * Example code
+ * \code
+ops_parse_cb_t* example_callback();
+void example()
+ {
+ int fd=0;
+ ops_parse_info_t *pinfo=NULL;
+ char *filename="pubring.gpg";
+
+ // setup pinfo to read from file with example callback
+ fd=ops_setup_file_read(&pinfo, filename, NULL, example_callback, ops_false);
+
+ // specify how we handle signature subpackets
+ ops_parse_options(pinfo, OPS_PTAG_SS_ALL, OPS_PARSE_PARSED);
+ 
+ if (!ops_parse(pinfo))
+   ops_print_errors(pinfo->errors);
+
+ ops_teardown_file_read(pinfo,fd);
+ }
+ * \endcode
  */
 
 int ops_parse(ops_parse_info_t *pinfo)
@@ -3029,6 +2871,15 @@ int ops_parse(ops_parse_info_t *pinfo)
     return pinfo->errors ? 0 : 1;
     }
 
+/**
+\ingroup Core_Parse
+\brief Parse packets and print any errors
+ * \param pinfo	Parsing configuration
+ * \return		1 on success in all packets, 0 on error in any packet
+ * \sa CoreAPI Overview
+ * \sa ops_parse()
+*/
+
 int ops_parse_and_print_errors(ops_parse_info_t *pinfo)
     {
     int r;
@@ -3037,78 +2888,16 @@ int ops_parse_and_print_errors(ops_parse_info_t *pinfo)
     return pinfo->errors ? 0 : 1;
     }
 
-#if 0
 /**
+ * \ingroup Core_Parse
  *
- * \return 1 if success, 0 otherwise
- * XXX may not now be needed? RW
- */
-
-int ops_parse_errs(ops_parse_info_t *pinfo, ops_ulong_list_t *errs)
-    {
-    unsigned err;
-    int r;
-    unsigned long pktlen;
-    ops_reader_fd_arg_t *arg;
-    int orig_acc;
-
-    /* can only handle ops_reader_fd for now */
-
-    if (pinfo->rinfo.reader != ops_reader_fd)
-	{
-	fprintf(stderr,"ops_parse_errs: can only handle ops_reader_fd\n");
-	return 0;
-	}
-
-    arg=pinfo->rinfo.arg;
-
-    /* store current state of accumulate flag */
-
-    orig_acc=pinfo->rinfo.accumulate;
-
-    /* set accumulate flag */
-
-    pinfo->rinfo.accumulate=1;
-
-    /* now parse each error in turn. */
-
-    for(err=0; err < errs->used ; err++)
-	{
-
-	//	printf("\n***\n*** Error at offset %lu \n***\n",errs->ulongs[err]);
-
-	/* move stream to offset of error */
-
-	r=lseek(arg->fd,errs->ulongs[err],SEEK_SET);
-	if (r==-1)
-	    {
-	    printf("error %d in first lseek to offset\n", errno);
-	    return 0;
-	    }
-
-	/* parse packet */
-
-	ops_parse_one_packet(pinfo,&pktlen);
-
-	}
-
-    /* restore accumulate flag original value */
-    pinfo->rinfo.accumulate=orig_acc;
-
-    return 1;
-    }
-#endif
-
-/**
- * \ingroup Parse
- *
- * ops_parse_options() specifies whether one or more signature
- * subpacket types should be returned parsed or raw or ignored.
+ * \brief Specifies whether one or more signature
+ * subpacket types should be returned parsed; or raw; or ignored.
  *
  * \param	pinfo	Pointer to previously allocated structure
  * \param	tag	Packet tag. OPS_PTAG_SS_ALL for all SS tags; or one individual signature subpacket tag
  * \param	type	Parse type
- * \todo XXX: Make all packet types optional, not just subpackets */
+ * \todo Make all packet types optional, not just subpackets */
 void ops_parse_options(ops_parse_info_t *pinfo,
 		       ops_content_tag_t tag,
 		       ops_parse_type_t type)
@@ -3148,9 +2937,19 @@ void ops_parse_options(ops_parse_info_t *pinfo,
 	}
     }
 
+/**
+\ingroup Core_Parse
+\brief Creates a new zero-ed ops_parse_info_t struct
+\sa ops_parse_info_delete()
+*/
 ops_parse_info_t *ops_parse_info_new(void)
     { return ops_mallocz(sizeof(ops_parse_info_t)); }
 
+/**
+\ingroup Core_Parse
+\brief Free ops_parse_info_t struct and its contents
+\sa ops_parse_info_new()
+*/
 void ops_parse_info_delete(ops_parse_info_t *pinfo)
     {
     ops_parse_cb_info_t *cbinfo,*next;
@@ -3168,8 +2967,20 @@ void ops_parse_info_delete(ops_parse_info_t *pinfo)
     free(pinfo);
     }
 
+/**
+\ingroup Core_Parse
+\brief Returns the parse_info's reader_info
+\return Pointer to the reader_info inside the parse_info
+*/
 ops_reader_info_t *ops_parse_get_rinfo(ops_parse_info_t *pinfo)
     { return &pinfo->rinfo; }
+
+/**
+\ingroup Core_Parse
+\brief Sets the parse_info's callback
+This is used when adding the first callback in a stack of callbacks.
+\sa ops_parse_cb_push()
+*/
 
 void ops_parse_cb_set(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
     {
@@ -3178,6 +2989,11 @@ void ops_parse_cb_set(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
     pinfo->cbinfo.errors=&pinfo->errors;
     }
 
+/**
+\ingroup Core_Parse
+\brief Adds a further callback to a stack of callbacks
+\sa ops_parse_cb_set()
+*/
 void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
     {
     ops_parse_cb_info_t *cbinfo=malloc(sizeof *cbinfo);
@@ -3187,12 +3003,25 @@ void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
     ops_parse_cb_set(pinfo,cb,arg);
     }
 
+/**
+\ingroup Core_Parse
+\brief Returns callback's arg
+*/
 void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo)
     { return cbinfo->arg; }
 
+/**
+\ingroup Core_Parse
+\brief Returns callback's errors
+*/
 void *ops_parse_cb_get_errors(ops_parse_cb_info_t *cbinfo)
     { return cbinfo->errors; }
 
+/**
+\ingroup Core_Parse
+\brief Calls the parse_cb_info's callback if present
+\return Return value from callback, if present; else OPS_FINISHED
+*/
 ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
 				   ops_parse_cb_info_t *cbinfo)
     { 
@@ -3202,10 +3031,20 @@ ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
 	return OPS_FINISHED;
     }
 
+/**
+\ingroup Core_Parse
+\brief Calls the next callback  in the stack
+\return Return value from callback
+*/
 ops_parse_cb_return_t ops_parse_stacked_cb(const ops_parser_content_t *content,
 					   ops_parse_cb_info_t *cbinfo)
     { return ops_parse_cb(content,cbinfo->next); }
 
+/**
+\ingroup Core_Parse
+\brief Returns the parse_info's errors
+\return parse_info's errors
+*/
 ops_error_t *ops_parse_info_get_errors(ops_parse_info_t *pinfo)
     { return pinfo->errors; }
 
