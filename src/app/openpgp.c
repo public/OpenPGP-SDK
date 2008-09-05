@@ -40,6 +40,8 @@
 
 #define DEFAULT_NUMBITS 1024
 
+#define MAXBUF 1024
+
 static const char* usage="%s --list-keys | --encrypt | --decrypt | --sign | --clearsign | --verify [--keyring=<keyring>] [--userid=<userid>] [--filename=<filename>] [--armour] [--homedir=<homedir>]\n";
 static const char* usage_list_keys="%s --list-keys [--keyring=<keyring>]\n";
 // \todo static const char* usage_list_packets="%s --list-packets \n";
@@ -125,13 +127,12 @@ int main(int argc, char **argv)
     int fd=0;
 
     pname=argv[0];
-    const int maxbuf=1024;
-    char opt_keyring[maxbuf+1];
-    char opt_userid[maxbuf+1];
-    char opt_passphrase[maxbuf+1];
-    char opt_filename[maxbuf+1];
-    char opt_homedir[maxbuf+1];
-    //    char opt_numbits[maxbuf+1];
+    char opt_keyring[MAXBUF+1]="";
+    char opt_userid[MAXBUF+1]="";
+    char opt_passphrase[MAXBUF+1]="";
+    char opt_filename[MAXBUF+1]="";
+    char opt_homedir[MAXBUF+1]="";
+
     int got_homedir=0;
     int got_keyring=0;
     int got_userid=0;
@@ -139,36 +140,25 @@ int main(int argc, char **argv)
     int got_filename=0;
     int got_numbits=0;
     int numbits=DEFAULT_NUMBITS;
-    char outputfilename[maxbuf+1];
+    char outputfilename[MAXBUF+1]="";
     ops_keyring_t* myring=NULL;
-    char myring_name[maxbuf+1];
+    char myring_name[MAXBUF+1]="";
     ops_keyring_t* pubring=NULL;
-    char pubring_name[maxbuf+1];
+    char pubring_name[MAXBUF+1]="";
     ops_keyring_t* secring=NULL;
-    char secring_name[maxbuf+1];
+    char secring_name[MAXBUF+1]="";
     const ops_keydata_t* keydata=NULL;
     char *suffix=NULL;
     char *dir=NULL;
-    char default_homedir[maxbuf+1];
-    //    char full_keyringname[maxbuf+1];
+    char default_homedir[MAXBUF+1]="";
     ops_boolean_t overwrite=ops_true;
     ops_keydata_t* mykeydata=NULL;
     ops_create_info_t * cinfo=NULL;
     ops_memory_t* mem=NULL;
     ops_validate_result_t *validate_result=NULL;
     ops_user_id_t uid;
-    //char line[maxbuf+1];
-    //int i=0;
     ops_secret_key_t* skey=NULL;
 
-
-    memset(opt_keyring,'\0',sizeof(opt_keyring));
-    memset(opt_userid,'\0',sizeof(opt_userid));
-    memset(opt_passphrase,'\0',sizeof(opt_passphrase));
-    memset(opt_filename,'\0',sizeof(opt_filename));
-    memset(opt_homedir,'\0',sizeof(opt_homedir));
-
-    memset(outputfilename,'\0',sizeof(outputfilename));
 
     if (argc<2)
         {
@@ -242,25 +232,25 @@ int main(int argc, char **argv)
 
         case KEYRING:
             assert(optarg);
-            snprintf(opt_keyring,maxbuf,"%s",optarg);
+            snprintf(opt_keyring,MAXBUF,"%s",optarg);
             got_keyring=1;
             break;
             
         case USERID:
             assert(optarg);
-            snprintf(opt_userid,maxbuf,"%s",optarg);
+            snprintf(opt_userid,MAXBUF,"%s",optarg);
             got_userid=1;
             break;
             
         case PASSPHRASE:
             assert(optarg);
-            snprintf(opt_passphrase,maxbuf,"%s",optarg);
+            snprintf(opt_passphrase,MAXBUF,"%s",optarg);
             got_passphrase=1;
             break;
             
         case FILENAME:
             assert(optarg);
-            snprintf(opt_filename,maxbuf,"%s",optarg);
+            snprintf(opt_filename,MAXBUF,"%s",optarg);
             got_filename=1;
             break;
             
@@ -270,14 +260,14 @@ int main(int argc, char **argv)
             
         case HOMEDIR:
             assert(optarg);
-            snprintf(opt_homedir, maxbuf, "%s", optarg);
+            snprintf(opt_homedir, MAXBUF, "%s", optarg);
             got_homedir=1;
             break;
 
 
         case NUMBITS:
             assert(optarg);
-            sscanf(optarg, "%d", &numbits);
+            numbits=atoi(optarg);
             got_numbits=1;
             break;
 
@@ -300,19 +290,19 @@ int main(int argc, char **argv)
         dir=opt_homedir;
     else
         {
-        snprintf(default_homedir,maxbuf,"%s/.gnupg",getenv("HOME"));
+        snprintf(default_homedir,MAXBUF,"%s/.gnupg",getenv("HOME"));
         printf("dir: %s\n", default_homedir);
         dir=default_homedir;
         }
 
-    snprintf(pubring_name, maxbuf, "%s/pubring.gpg", dir);
+    snprintf(pubring_name, MAXBUF, "%s/pubring.gpg", dir);
     pubring=ops_mallocz(sizeof *pubring);
     if (!ops_keyring_read_from_file(pubring,ops_false,pubring_name))
         {
         fprintf(stderr, "Cannot read keyring %s\n", pubring_name);
         exit(-1);
         }
-    snprintf(secring_name, maxbuf, "%s/secring.gpg", dir);
+    snprintf(secring_name, MAXBUF, "%s/secring.gpg", dir);
     secring=ops_mallocz(sizeof *secring);
     if (!ops_keyring_read_from_file(secring,ops_false,secring_name))
         {
@@ -322,7 +312,7 @@ int main(int argc, char **argv)
 
     if (got_keyring)
         {
-        snprintf(myring_name, maxbuf, "%s/%s", opt_homedir, opt_keyring);
+        snprintf(myring_name, MAXBUF, "%s/%s", opt_homedir, opt_keyring);
         myring=ops_mallocz(sizeof *myring);
         if (!ops_keyring_read_from_file(myring,ops_false,myring_name))
             {
@@ -484,7 +474,7 @@ int main(int argc, char **argv)
             }
 
         // outputfilename
-        snprintf(outputfilename,maxbuf,"%s%s", opt_filename,suffix);
+        snprintf(outputfilename,MAXBUF,"%s%s", opt_filename,suffix);
 
         overwrite=ops_true;
         ops_encrypt_file(opt_filename, outputfilename, keydata, armour,overwrite);

@@ -68,6 +68,7 @@ typedef enum
     OPS_E_V_BAD_SIGNATURE	=OPS_E_V+1,
     OPS_E_V_NO_SIGNATURE	=OPS_E_V+2,
     OPS_E_V_UNKNOWN_SIGNER	=OPS_E_V+3,
+    OPS_E_V_BAD_HASH		=OPS_E_V+4,
 
     /* Algorithm support errors */
     OPS_E_ALG=0x6000,			/* general algorithm error */

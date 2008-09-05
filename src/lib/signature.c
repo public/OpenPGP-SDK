@@ -920,7 +920,7 @@ ops_boolean_t ops_sign_buf_as_cleartext(const char* cleartext, const size_t len,
     return rtn;
     }
 
-void ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t use_armour, const ops_boolean_t overwrite)
+ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t use_armour, const ops_boolean_t overwrite)
     {
     // \todo allow choice of hash algorithams
     // enforce use of SHA1 for now
@@ -940,7 +940,10 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
 
     // read input file into buf
 
-    mem_buf=ops_write_buf_from_file(input_filename);
+    int errnum;
+    mem_buf=ops_write_buf_from_file(input_filename,&errnum);
+    if (errnum)
+        return ops_false;
 
     // setup output filename
     if (!output_filename)
@@ -1006,6 +1009,8 @@ void ops_sign_file(const char* input_filename, const char* output_filename, cons
     // tidy up
     ops_create_signature_delete(sig);
     ops_memory_free(mem_buf);
+
+    return ops_true;
     }
 
 ops_memory_t* ops_sign_mem(const void* input, const int input_len, const ops_sig_type_t sig_type, const ops_secret_key_t *skey, const ops_boolean_t use_armour)

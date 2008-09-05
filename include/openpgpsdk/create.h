@@ -46,7 +46,7 @@ struct ops_create_info
 ops_create_info_t *ops_create_info_new(void);
 void ops_create_info_delete(ops_create_info_t *info);
 
-ops_memory_t* ops_write_buf_from_file(const char *filename);
+ops_memory_t* ops_write_buf_from_file(const char *filename, int* errnum);
 int ops_write_file_from_buf(const char *filename, const char* buf, const size_t len, const ops_boolean_t overwrite);
 
 ops_boolean_t ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char *cs);

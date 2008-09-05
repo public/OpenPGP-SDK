@@ -148,6 +148,7 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
             fprintf(stderr,"Bad symmetric decrypt (%02x%02x vs %02x%02x)\n",
                     buf[b-2],buf[b-1],buf[b],buf[b+1]);
             OPS_ERROR(errors, OPS_E_PROTO_BAD_SYMMETRIC_DECRYPT,"Bad symmetric decrypt when parsing SE IP packet");
+            free(buf);
             return -1;
             }
 
@@ -184,8 +185,8 @@ static int se_ip_data_reader(void *dest_, size_t len, ops_error_t **errors,
 
         if (memcmp(mdc_hash,hashed,OPS_SHA1_HASH_SIZE))
             {
-            fprintf(stderr,"Hash is bad\n");
-            //            ERRP(pinfo,"Bad hash in MDC");
+            OPS_ERROR(errors, OPS_E_V_BAD_HASH, "Bad hash in MDC packet");
+            free(buf);
             return 0;
             }
 

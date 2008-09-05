@@ -184,6 +184,7 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     ops_memory_t *input=NULL;
     ops_memory_t *output=NULL;
     ops_boolean_t overwrite;
+    int errnum=0;
 
     // setup filenames 
     // (we are testing the function which signs a buf, but still want
@@ -193,7 +194,8 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     snprintf(signed_file,sizeof signed_file,"%s.asc",myfile);
 
     // read file contents
-    input=ops_write_buf_from_file(myfile);
+    input=ops_write_buf_from_file(myfile,&errnum);
+    CU_ASSERT(errnum==0);
 
     // sign file
     ops_sign_buf_as_cleartext((const char *)ops_memory_get_data(input),ops_memory_get_length(input),&output,skey);

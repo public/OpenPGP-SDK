@@ -1046,12 +1046,20 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
     return rtn;
     }
 
-ops_memory_t* ops_write_buf_from_file(const char *filename)
+/**
+   \ingroup HighLevelAPI
+   
+   \return allocated memory. If there was an error opening the file or reading from it, errnum is set to the cause
+*/
+
+ops_memory_t* ops_write_buf_from_file(const char *filename, int* errnum)
     {
     size_t initial_size=1024;
     int fd=0;
     unsigned char buf[1024];
     ops_memory_t* mem=NULL;
+
+    *errnum=0;
 
 #ifdef WIN32
     fd=open(filename,O_RDONLY | O_BINARY);
@@ -1059,7 +1067,10 @@ ops_memory_t* ops_write_buf_from_file(const char *filename)
     fd=open(filename,O_RDONLY);
 #endif
     if (fd < 0)
+        {
+        *errnum=errno;
         return ops_false;
+        }
 
     mem=ops_memory_new();
     ops_memory_init(mem,initial_size);
@@ -1067,6 +1078,11 @@ ops_memory_t* ops_write_buf_from_file(const char *filename)
         {
         ssize_t n=0;
         n=read(fd,buf,1024);
+        if (n<0)
+            {
+            *errnum=errno;
+            break;
+            }
         if (!n)
             break;
         ops_memory_add(mem, &buf[0], n);

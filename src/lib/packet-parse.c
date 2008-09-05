@@ -2481,7 +2481,7 @@ int ops_decrypt_se_data(ops_content_tag_t tag,ops_region_t *region,
 
     if(decrypt)
 	{
-	unsigned char buf[OPS_MAX_BLOCK_SIZE+2];
+	unsigned char buf[OPS_MAX_BLOCK_SIZE+2]="";
 	size_t b=decrypt->blocksize;
         //	ops_parser_content_t content;
 	ops_region_t encregion;
