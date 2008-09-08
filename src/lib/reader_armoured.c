@@ -124,7 +124,7 @@ static void push_back(dearmour_arg_t *arg,const unsigned char *buf,
     arg->npushed_back=length;
     }
     
-static void set_lastseen_headerline(dearmour_arg_t* arg, char* buf, ops_error_t **errors)
+static int set_lastseen_headerline(dearmour_arg_t* arg, char* buf, ops_error_t **errors)
     {
     char* begin_msg="BEGIN PGP MESSAGE";
     char* begin_public="BEGIN PGP PUBLIC KEY BLOCK";
@@ -144,28 +144,34 @@ static void set_lastseen_headerline(dearmour_arg_t* arg, char* buf, ops_error_t 
 
     if (!strncmp(buf,begin_msg,strlen(begin_msg)))
         arg->lastseen=BEGIN_PGP_MESSAGE;
-    if (!strncmp(buf,begin_public,strlen(begin_public)))
+    else if (!strncmp(buf,begin_public,strlen(begin_public)))
         arg->lastseen=BEGIN_PGP_PUBLIC_KEY_BLOCK;
-    if (!strncmp(buf,begin_private,strlen(begin_private)))
+    else if (!strncmp(buf,begin_private,strlen(begin_private)))
         arg->lastseen=BEGIN_PGP_PRIVATE_KEY_BLOCK;
-    if (!strncmp(buf,begin_multi,strlen(begin_multi)))
+    else if (!strncmp(buf,begin_multi,strlen(begin_multi)))
         arg->lastseen=BEGIN_PGP_MULTI;
-    if (!strncmp(buf,begin_sig,strlen(begin_sig)))
+    else if (!strncmp(buf,begin_sig,strlen(begin_sig)))
         arg->lastseen=BEGIN_PGP_SIGNATURE;
 
-    if (!strncmp(buf,end_msg,strlen(end_msg)))
+    else if (!strncmp(buf,end_msg,strlen(end_msg)))
         arg->lastseen=END_PGP_MESSAGE;
-    if (!strncmp(buf,end_public,strlen(end_public)))
+    else if (!strncmp(buf,end_public,strlen(end_public)))
         arg->lastseen=END_PGP_PUBLIC_KEY_BLOCK;
-    if (!strncmp(buf,end_private,strlen(end_private)))
+    else if (!strncmp(buf,end_private,strlen(end_private)))
         arg->lastseen=END_PGP_PRIVATE_KEY_BLOCK;
-    if (!strncmp(buf,end_multi,strlen(end_multi)))
+    else if (!strncmp(buf,end_multi,strlen(end_multi)))
         arg->lastseen=END_PGP_MULTI;
-    if (!strncmp(buf,end_sig,strlen(end_sig)))
+    else if (!strncmp(buf,end_sig,strlen(end_sig)))
         arg->lastseen=END_PGP_SIGNATURE;
 
-    if (!strncmp(buf,begin_signed_msg,strlen(begin_signed_msg)))
+    else if (!strncmp(buf,begin_signed_msg,strlen(begin_signed_msg)))
         arg->lastseen=BEGIN_PGP_SIGNED_MESSAGE;
+
+    else
+        {
+        OPS_ERROR_1(errors,OPS_E_R_BAD_FORMAT,"Unrecognised Header Line %s", buf);
+        return 0;
+        }
 
     if (debug)
         printf("set header: buf=%s, arg->lastseen=%d, prev=%d\n", buf, arg->lastseen, prev);
@@ -173,7 +179,7 @@ static void set_lastseen_headerline(dearmour_arg_t* arg, char* buf, ops_error_t 
     switch (arg->lastseen) 
         {
     case NONE:
-        OPS_ERROR_1(errors,OPS_E_R_BAD_FORMAT,"Unrecognised Header Line %s", buf);
+        OPS_ERROR_1(errors,OPS_E_R_BAD_FORMAT,"Unrecognised last seen Header Line %s", buf);
         break;
 
     case END_PGP_MESSAGE:
@@ -208,6 +214,8 @@ static void set_lastseen_headerline(dearmour_arg_t* arg, char* buf, ops_error_t 
     case BEGIN_PGP_SIGNED_MESSAGE:
         break;
         }
+
+    return 1;
     }
 
 static int read_char(dearmour_arg_t *arg,ops_error_t **errors,
@@ -444,15 +452,28 @@ static int process_dash_escaped(dearmour_arg_t *arg,ops_error_t **errors,
     return total;
     }
 
-static void add_header(dearmour_arg_t *arg,const char *key,const char
+static int add_header(dearmour_arg_t *arg,const char *key,const char
 		       *value)
     {
-    arg->headers.headers=realloc(arg->headers.headers,
-				 (arg->headers.nheaders+1)
-				 *sizeof *arg->headers.headers);
-    arg->headers.headers[arg->headers.nheaders].key=strdup(key);
-    arg->headers.headers[arg->headers.nheaders].value=strdup(value);
-    ++arg->headers.nheaders;
+    /*
+     * Check that the header is valid
+     */
+    if ( !strcmp(key,"Version") || !strcmp(key,"Comment") 
+         || !strcmp(key,"MessageID") || !strcmp(key,"Hash")
+         || !strcmp(key,"Charset"))
+        {
+        arg->headers.headers=realloc(arg->headers.headers,
+                                     (arg->headers.nheaders+1)
+                                     *sizeof *arg->headers.headers);
+        arg->headers.headers[arg->headers.nheaders].key=strdup(key);
+        arg->headers.headers[arg->headers.nheaders].value=strdup(value);
+        ++arg->headers.nheaders;
+        return 1;
+        }
+    else
+        {
+        return 0;
+        }
     }
 
 /* \todo what does a return value of 0 indicate? 1 is good, -1 is bad */
@@ -517,8 +538,17 @@ static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 		{
 		*s='\0';
 		if(s[1] != ' ')
+            {
 		    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"No space in armour header");
-		add_header(arg,buf,s+2);
+            rtn=-1;
+            goto end;
+            }
+        if (!add_header(arg,buf,s+2))
+            {
+            OPS_ERROR_1(errors,OPS_E_R_BAD_FORMAT,"Invalid header %s", buf);
+            rtn=-1;
+            goto end;
+            }
 		nbuf=0;
 		}
 	    first=ops_false;
@@ -534,6 +564,7 @@ static int parse_headers(dearmour_arg_t *arg,ops_error_t **errors,
 	    }
 	}
 
+ end:
     free(buf);
 
     return rtn;
@@ -603,7 +634,6 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
     unsigned n;
     int n2;
     unsigned long l;
-    //ops_parser_content_t content;
     int c;
     int ret;
 
@@ -611,12 +641,18 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 
     ret=read4(arg,errors,rinfo,cbinfo,&c,&n,&l);
     if(ret < 0)
-	OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly formed base64");
+        {
+        OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly formed base64");
+        return 0;
+        }
 
     if(n == 3)
 	{
 	if(c != '=')
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated base64 (2)");
+        return 0;
+        }
 	arg->buffered=2;
 	arg->eof64=ops_true;
 	l >>= 2;
@@ -624,18 +660,27 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
     else if(n == 2)
 	{
 	if(c != '=')
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated base64 (3)");
+        return 0;
+        }
 	arg->buffered=1;
 	arg->eof64=ops_true;
 	l >>= 4;
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '=')
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated base64");
+        return 0;
+        }
 	}
     else if(n == 0)
 	{
 	if(!arg->prev_nl || c != '=')
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated base64 (4)");
+        return 0;
+        }
 	arg->buffered=0;
 	}
     else
@@ -651,10 +696,16 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	assert(c == '=');
 	c=read_and_eat_whitespace(arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"No newline at base64 end");
+        return 0;
+        }
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '=')
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"No checksum at base64 end");
+        return 0;
+        }
 	}
 
     if(c == '=')
@@ -662,22 +713,34 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	// now we are at the checksum
 	ret=read4(arg,errors,rinfo,cbinfo,&c,&n,&arg->read_checksum);
 	if(ret < 0 || n != 4)
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Error in checksum");
+        return 0;
+        }
 	c=read_char(arg,errors,rinfo,cbinfo,ops_true);
 	if(arg->allow_trailing_whitespace)
 	    c=eat_whitespace(c,arg,errors,rinfo,cbinfo,ops_true);
 	if(c != '\n')
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Badly terminated checksum");
+        return 0;
+        }
 	c=read_char(arg,errors,rinfo,cbinfo,ops_false);
 	if(c != '-')
+        {
 	    OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad base64 trailer (2)");
+        return 0;
+        }
 	}
 
     if(c == '-')
 	{
 	for(n=0 ; n < 4 ; ++n)
 	    if(read_char(arg,errors,rinfo,cbinfo,ops_false) != '-')
-		OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad base64 trailer");
+            {
+            OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Bad base64 trailer");
+            return 0;
+            }
 	arg->eof64=ops_true;
 	}
     else
@@ -693,7 +756,10 @@ static int decode64(dearmour_arg_t *arg,ops_error_t **errors,
 	arg->checksum=ops_crc24(arg->checksum,arg->buffer[n2]);
 
     if(arg->eof64 && arg->read_checksum != arg->checksum)
+        {
         OPS_ERROR(errors,OPS_E_R_BAD_FORMAT,"Checksum mismatch");
+        return 0;
+        }
 
     return 1;
     }
@@ -798,7 +864,8 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 	     if((ret=parse_headers(arg,errors,rinfo,cbinfo)) <= 0)
 		 return -1;
 
-             set_lastseen_headerline(arg,buf,errors);
+         if (!set_lastseen_headerline(arg,buf,errors))
+             return -1;
 
 	     if(!strcmp(buf,"BEGIN PGP SIGNED MESSAGE"))
 		 {
@@ -868,7 +935,8 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 	 got_minus2:
 	     buf[n]='\0';
 
-             set_lastseen_headerline(arg,buf,errors);
+         if (!set_lastseen_headerline(arg,buf,errors))
+             return -1;
 
 	     /* Consume trailing '-' */
 	     for(count=1 ; count < 5 ; ++count)
@@ -893,7 +961,8 @@ static int armoured_data_reader(void *dest_,size_t length,ops_error_t **errors,
 
 	     if(!strncmp(buf,"BEGIN ",6))
 		 {
-                 set_lastseen_headerline(arg,buf,errors);
+         if (!set_lastseen_headerline(arg,buf,errors))
+             return -1;
 		 if((ret=parse_headers(arg,errors,rinfo,cbinfo)) <= 0)
 		     return ret;
 		 content.content.armour_header.type=buf;

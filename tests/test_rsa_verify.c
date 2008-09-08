@@ -74,24 +74,34 @@ static void create_malformed_testfiles()
     {
     int i=0;
     int fd=0;
-    char * malformed[]={
-                        // no signature
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\n-----END PGP SIGNATURE-----\n",
-                        // no signature and early EOF
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\n-----END PGP SIGNATURE-----",
-                        // early EOF
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n",
-                        // no signature
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: -----END PGP SIGNATURE-----GnuPG v1.4.6 (GNU/Linux)\n",
-                        // no gap after armour headers in message
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
-                        // no gap after armour headers in signature
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
-                        // unsupported hash
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
-                        // missing BEGIN SIG
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----END PGP SIGNATURE-----",
-
+    char* malformed[]=
+        {
+        // no signature
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\n-----END PGP SIGNATURE-----\n", 
+        // no signature and early EOF
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\n-----END PGP SIGNATURE-----", 
+        // early EOF
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n",
+        // no signature
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: -----END PGP SIGNATURE-----GnuPG v1.4.6 (GNU/Linux)\n", 
+        // no gap after armour headers in message
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        // no gap after armour headers in signature
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        // unsupported hash
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        // missing BEGIN SIG
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----END PGP SIGNATURE-----",
+        // missing END SIG
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n",
+        // bad header line
+        "-----BEGIN MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        // bad header : no colon
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        // bad header : invalid header
+        "-----BEGIN PGP SIGNED MESSAGE-----\nUnknown: Header\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        // bad armour trailer
+                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PPP SIGNATURE-----\n-----END PGP SIGNATURE-----",
     };
     num_malformed=sizeof (malformed)/sizeof(char *);
     for (i=0; i<num_malformed; i++)
@@ -361,13 +371,17 @@ static void test_rsa_verify_fail(const int has_armour, const char *filename, ops
     // handle result - should fail
     errstack=ops_parse_info_get_errors(pinfo);
 
-    // we are expecting one and only one error
-    // print out errors if we have actually got a different error
     CU_ASSERT(errstack!=NULL);
 
-    if (errstack && errstack->errcode!=expected_errcode)
+    // print out errors if we have actually got a different error
+    // to the one expected
+    if (errstack)
         {
-        ops_print_errors(errstack);
+        if  (!ops_has_error(errstack,expected_errcode))
+            {
+            printf("\nfilename=%s: errstack->errcode=0x%2x\n", filename, errstack->errcode);
+            ops_print_errors(errstack);
+            }
         }
     CU_ASSERT(rtn==0);
 

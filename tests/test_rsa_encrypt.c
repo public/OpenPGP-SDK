@@ -247,17 +247,17 @@ static void test_rsa_encrypt_large_armour_nopassphrase(void)
     test_rsa_encrypt(armour,filename_rsa_large_armour_nopassphrase, alpha_pub_keydata);
     }
 
+/*
+  FUTURE:
 static void test_todo(void)
     {
-    /*
-      FUTURE:
     CU_FAIL("Test TODO: Use AES128");
     CU_FAIL("Test TODO: Use AES256");
     CU_FAIL("Test TODO: Encrypt to multiple keys in same keyring");
     CU_FAIL("Test TODO: Encrypt to multiple keys where my keys is (a) first key in list; (b) last key in list; (c) in the middle of the list");
     CU_FAIL("Test TODO: Encrypt to users with different preferences");
-    */
     }
+*/
 
 static int add_tests(CU_pSuite suite)
     {
@@ -281,9 +281,11 @@ static int add_tests(CU_pSuite suite)
     if (NULL == CU_add_test(suite, "Large, armour, no passphrase", test_rsa_encrypt_large_armour_nopassphrase))
 	    return 0;
 
+    /*
     if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))
 	    return 0;
-    
+    */
+
     return 1;
     }
     

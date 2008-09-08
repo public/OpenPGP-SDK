@@ -165,6 +165,17 @@ void ops_print_errors(ops_error_t *errstack)
 	ops_print_error(err);
     }
 
+int ops_has_error(ops_error_t *errstack, ops_errcode_t errcode)
+    {
+    ops_error_t *err;
+    for (err=errstack; err!=NULL; err=err->next)
+        {
+        if (err->errcode==errcode)
+            return 1;
+        }
+    return 0;
+    }
+
 void ops_free_errors(ops_error_t *errstack)
 {
     ops_error_t *next;
