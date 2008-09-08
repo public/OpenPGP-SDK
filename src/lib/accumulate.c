@@ -125,14 +125,14 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     }
 
 /**
- * \ingroup Parse
+ * \ingroup Core_Parse
  *
  * Parse packets from an input stream until EOF or error.
  *
  * Key data found in the parsed data is added to #keyring.
  *
  * \param keyring Pointer to an existing keyring
- * \param opt Options to use when parsing
+ * \param parse_info Options to use when parsing
 */
 
 int ops_parse_and_accumulate(ops_keyring_t *keyring,

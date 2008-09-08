@@ -49,13 +49,14 @@ typedef ops_boolean_t ops_writer_t(const unsigned char *src,
 typedef ops_boolean_t ops_writer_finaliser_t(ops_error_t **errors,
 					     ops_writer_info_t *winfo);
 typedef void ops_writer_destroyer_t(ops_writer_info_t *winfo);
+/** Writer settings */
 struct ops_writer_info
     {
-    ops_writer_t *writer;
-    ops_writer_finaliser_t *finaliser;
-    ops_writer_destroyer_t *destroyer;
-    void *arg;
-    ops_writer_info_t *next;
+    ops_writer_t *writer; /*!< the writer itself */
+    ops_writer_finaliser_t *finaliser; /*!< the writer's finaliser */
+    ops_writer_destroyer_t *destroyer; /*!< the writer's destroyer */
+    void *arg; /* writer-specific argument */
+    ops_writer_info_t *next; /*!< next writer in the stack */
     };
 
 

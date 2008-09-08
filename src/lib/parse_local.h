@@ -44,15 +44,15 @@ struct ops_reader_info
     };
 
 
-/* 
- * ops_crypt_info
- */
+/** ops_crypt_info
+ Encrypt/decrypt settings
+*/
 struct ops_crypt_info
     {
-    char *passphrase;
-    ops_keyring_t *keyring;
-    const ops_keydata_t *keydata;
-    ops_parse_cb_t *cb_get_passphrase;
+    char *passphrase; /*<! passphrase to use, this is set by cb_get_passphrase */
+    ops_keyring_t *keyring; /*<! keyring to use */
+    const ops_keydata_t *keydata; /*<! keydata to use */
+    ops_parse_cb_t *cb_get_passphrase; /*<! callback to use to get the passphrase */
     };
 
 /** ops_parse_cb_info */

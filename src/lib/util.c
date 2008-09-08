@@ -193,6 +193,7 @@ static void sum16_destroyer(ops_reader_info_t *rinfo)
 
 /**
    \ingroup Internal_Readers_Sum16
+   \param pinfo Parse settings
 */
 
 void ops_reader_push_sum16(ops_parse_info_t *pinfo)
@@ -204,6 +205,8 @@ void ops_reader_push_sum16(ops_parse_info_t *pinfo)
 
 /**
    \ingroup Internal_Readers_Sum16
+   \param pinfo Parse settings
+   \return sum
 */
 unsigned short ops_reader_pop_sum16(ops_parse_info_t *pinfo)
     {

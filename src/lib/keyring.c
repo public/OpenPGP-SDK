@@ -93,7 +93,7 @@ void ops_keydata_free(ops_keydata_t *keydata)
     }
 
 /**
- \ingroup HighLevel_Key
+ \ingroup HighLevel_KeyGeneral
 
  \brief Returns the public key in the given keydata.
  \param keydata
@@ -112,7 +112,7 @@ ops_get_public_key_from_data(const ops_keydata_t *keydata)
     }
 
 /**
-\ingroup HighLevel_Key
+\ingroup HighLevel_KeyGeneral
 
 \brief Check whether this is a secret key or not.
 */
@@ -121,7 +121,7 @@ ops_boolean_t ops_is_key_secret(const ops_keydata_t *data)
     { return data->type != OPS_PTAG_CT_PUBLIC_KEY; }
 
 /**
- \ingroup HighLevel_Key
+ \ingroup HighLevel_KeyGeneral
 
  \brief Returns the secret key in the given keydata.
 
@@ -140,7 +140,7 @@ ops_get_secret_key_from_data(const ops_keydata_t *data)
     }
 
 /**
- \ingroup HighLevel_Key
+ \ingroup HighLevel_KeyGeneral
 
   \brief Returns the secret key in the given keydata.
 
@@ -274,7 +274,7 @@ const unsigned char* ops_get_user_id(const ops_keydata_t *key, unsigned index)
     }
 
 /**
-   \ingroup HighLevel_Key
+   \ingroup HighLevel_KeyGeneral
 
    \brief Checks whether key's algorithm and type are supported by OpenPGP::SDK
 

@@ -36,9 +36,9 @@
 #include <openpgpsdk/final.h>
 
 static int debug=0;
-#define MAXBUF 1024
+#define MAXBUF 1024 /*<! Standard buffer size to use */
 
-/** \ingroup Create
+/** \ingroup Core_Create
  * needed for signature creation
  */
 struct ops_create_signature
@@ -52,9 +52,22 @@ struct ops_create_signature
     unsigned unhashed_count_offset;
     };
 
+/**
+   \ingroup Core_Signature
+   Creates new ops_create_signature_t
+   \return new ops_create_signature_t
+   \note It is the caller's responsibility to call ops_create_signature_delete()
+   \sa ops_create_signature_delete()
+*/
 ops_create_signature_t *ops_create_signature_new()
     { return ops_mallocz(sizeof(ops_create_signature_t)); }
 
+/**
+   \ingroup Core_Signature
+   Free signature and memory associated with it
+   \param sig struct to free
+   \sa ops_create_signature_new()
+*/
 void ops_create_signature_delete(ops_create_signature_t *sig)
     {
     ops_create_info_delete(sig->info);
@@ -69,6 +82,15 @@ static unsigned char prefix_md5[]={ 0x30,0x20,0x30,0x0C,0x06,0x08,0x2A,0x86,
 static unsigned char prefix_sha1[]={ 0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0E,
 				     0x03,0x02,0x1A,0x05,0x00,0x04,0x14 };
 
+/**
+   \ingroup Core_Create
+   implementation of EMSA-PKCS1-v1_5, as defined in OpenPGP RFC
+   \param M
+   \param mLen
+   \param hash_alg Hash algorithm to use
+   \param EM
+   \return ops_true if OK; else ops_false
+*/
 ops_boolean_t encode_hash_buf(const unsigned char *M, size_t mLen,
                            const ops_hash_algorithm_t hash_alg,
                            unsigned char* EM
@@ -80,7 +102,6 @@ ops_boolean_t encode_hash_buf(const unsigned char *M, size_t mLen,
 
     int n=0;
     ops_hash_t hash;
-    //    unsigned char hashout[OPS_MAX_HASH_SIZE];
     int hash_sz=0;
     int encoded_hash_sz=0;
     int prefix_sz=0;
@@ -323,6 +344,15 @@ static void hash_add_trailer(ops_hash_t *hash,const ops_signature_t *sig,
 	}
     }
 
+/**
+   \ingroup Core_Signature
+   \brief Checks a signature
+   \param hash Signature Hash to be checked
+   \param length Signature Length
+   \param sig The Signature to be checked
+   \param signer The signer's public key
+   \return ops_true if good; else ops_false
+*/
 ops_boolean_t ops_check_signature(const unsigned char *hash,unsigned length,
 				     const ops_signature_t *sig,
 				     const ops_public_key_t *signer)
@@ -375,15 +405,16 @@ static ops_boolean_t finalise_signature(ops_hash_t *hash,
     }
 
 /**
- * \ingroup Verify
+ * \ingroup HighLevel_SignatureDetails
  *
- * Verify a certification signature.
+ * \brief Verify a certification signature.
  *
  * \param key The public key that was signed.
  * \param id The user ID that was signed
  * \param sig The signature.
  * \param signer The public key of the signer.
  * \param raw_packet The raw signature packet.
+ * \return ops_true if OK; else ops_false
  */
 ops_boolean_t
 ops_check_user_id_certification_signature(const ops_public_key_t *key,
@@ -408,7 +439,7 @@ ops_check_user_id_certification_signature(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup Verify
+ * \ingroup HighLevel_SignatureDetails
  *
  * Verify a certification signature.
  *
@@ -417,6 +448,7 @@ ops_check_user_id_certification_signature(const ops_public_key_t *key,
  * \param sig The signature.
  * \param signer The public key of the signer.
  * \param raw_packet The raw signature packet.
+ * \return ops_true if OK; else ops_false
  */
 ops_boolean_t
 ops_check_user_attribute_certification_signature(const ops_public_key_t *key,
@@ -440,7 +472,7 @@ ops_check_user_attribute_certification_signature(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup Verify
+ * \ingroup HighLevel_SignatureDetails
  *
  * Verify a subkey signature.
  *
@@ -449,6 +481,7 @@ ops_check_user_attribute_certification_signature(const ops_public_key_t *key,
  * \param sig The signature.
  * \param signer The public key of the signer.
  * \param raw_packet The raw signature packet.
+ * \return ops_true if OK; else ops_false
  */
 ops_boolean_t
 ops_check_subkey_signature(const ops_public_key_t *key,
@@ -466,7 +499,7 @@ ops_check_subkey_signature(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup Verify
+ * \ingroup HighLevel_SignatureDetails
  *
  * Verify a direct signature.
  *
@@ -474,6 +507,7 @@ ops_check_subkey_signature(const ops_public_key_t *key,
  * \param sig The signature.
  * \param signer The public key of the signer.
  * \param raw_packet The raw signature packet.
+ * \return ops_true if OK; else ops_false
  */
 ops_boolean_t
 ops_check_direct_signature(const ops_public_key_t *key,
@@ -488,7 +522,7 @@ ops_check_direct_signature(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup Verify
+ * \ingroup Core_Signature
  *
  * Verify a signature on a hash (the hash will have already been fed
  * the material that was being signed, for example signed cleartext).
@@ -497,6 +531,7 @@ ops_check_direct_signature(const ops_public_key_t *key,
  * the material to be signed. This MUST NOT have been finalised.
  * \param sig The signature to be verified.
  * \param signer The public key of the signer.
+ * \return ops_true if OK; else ops_false
  */
 ops_boolean_t
 ops_check_hash_signature(ops_hash_t *hash,
@@ -529,7 +564,7 @@ static void start_signature_in_mem(ops_create_signature_t *sig)
     }    
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  *
  * ops_signature_start() creates a V4 public key signature with a SHA1 hash.
  * 
@@ -566,7 +601,7 @@ void ops_signature_start_key_signature(ops_create_signature_t *sig,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  *
  * Create a V4 public key signature over some cleartext.
  * 
@@ -599,6 +634,9 @@ static void ops_signature_start_signature(ops_create_signature_t *sig,
     start_signature_in_mem(sig);
     }
 
+/**
+ * \ingroup Core_Signature
+ */
 void ops_signature_start_cleartext_signature(ops_create_signature_t *sig,
                                    const ops_secret_key_t *key,
                                    const ops_hash_algorithm_t hash,
@@ -607,6 +645,9 @@ void ops_signature_start_cleartext_signature(ops_create_signature_t *sig,
     ops_signature_start_signature(sig,key,hash,type);
     }
 
+/**
+ * \ingroup Core_Signature
+ */
 void ops_signature_start_message_signature(ops_create_signature_t *sig,
                                    const ops_secret_key_t *key,
                                    const ops_hash_algorithm_t hash,
@@ -616,7 +657,7 @@ void ops_signature_start_message_signature(ops_create_signature_t *sig,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  *
  * Add plaintext data to a signature-to-be.
  *
@@ -633,7 +674,7 @@ void ops_signature_add_data(ops_create_signature_t *sig,const void *buf,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  *
  * Mark the end of the hashed subpackets in the signature
  *
@@ -652,7 +693,7 @@ ops_boolean_t ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  *
  * Write out a signature
  *
@@ -717,7 +758,7 @@ ops_boolean_t ops_write_signature(ops_create_signature_t *sig, const ops_public_
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  * 
  * ops_signature_add_creation_time() adds a creation time to the signature.
  * 
@@ -731,7 +772,7 @@ ops_boolean_t ops_signature_add_creation_time(ops_create_signature_t *sig,time_t
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  *
  * Adds issuer's key ID to the signature
  *
@@ -747,7 +788,7 @@ ops_boolean_t ops_signature_add_issuer_key_id(ops_create_signature_t *sig,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  *
  * Adds primary user ID to the signature
  *
@@ -762,7 +803,7 @@ void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Signature
  *
  * Get the hash structure in use for the signature.
  *
@@ -772,6 +813,13 @@ void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 ops_hash_t *ops_signature_get_hash(ops_create_signature_t *sig)
     { return &sig->hash; }
 
+/**
+   \ingroup HighLevel_SignatureSign
+   Sign a file with a Cleartext Signature
+   \param filename Filename to be signed
+   \param skey Secret Key to sign with
+   \param overwrite Allow output file to be overwritten, if set
+*/
 ops_boolean_t ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey, const ops_boolean_t overwrite)
     {
     // \todo allow choice of hash algorithams
@@ -864,8 +912,16 @@ ops_boolean_t ops_sign_file_as_cleartext(const char* filename, const ops_secret_
     }
 
 
-/* It is the calling function's responsibility to free signed_cleartext */
-/* signed_cleartext should be a NULL pointer when passed in */
+/** 
+ * \ingroup HighLevel_SignatureSign
+ * \param cleartext Text to be signed
+ * \param len Length of text
+ * \param signed_cleartext ops_memory_t struct in which to write the signed cleartext
+ * \param skey Secret key with which to sign the cleartext
+ * \return ops_true if OK; else ops_false
+ * \note It is the calling function's responsibility to free signed_cleartext
+ * \note signed_cleartext should be a NULL pointer when passed in 
+ */
 ops_boolean_t ops_sign_buf_as_cleartext(const char* cleartext, const size_t len, ops_memory_t** signed_cleartext, const ops_secret_key_t *skey)
     {
     ops_boolean_t rtn=ops_false;
@@ -920,6 +976,16 @@ ops_boolean_t ops_sign_buf_as_cleartext(const char* cleartext, const size_t len,
     return rtn;
     }
 
+/**
+\ingroup HighLevel_SignatureSign
+\brief Sign a file
+\param input_filename Input filename
+\param output_filename Output filename. If NULL, a name is constructed from the input filename.
+\param skey Secret Key to use for signing
+\param use_armour Write armoured text, if set.
+\param overwrite May overwrite existing file, if set.
+\return ops_true if OK; else ops_false;
+*/
 ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t use_armour, const ops_boolean_t overwrite)
     {
     // \todo allow choice of hash algorithams
@@ -1013,6 +1079,17 @@ ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filen
     return ops_true;
     }
 
+/**
+\ingroup HighLevel_SignatureSign
+\brief Signs input text; returns ops_memory_t struct containing signed input text.
+\param input Input text to be signed
+\param input_len Length of input text
+\param sig_type Signature type
+\param skey Secret Key
+\param use_armour Write armoured text, if set
+\return New ops_memory_t struct containing signed text
+\note It is the caller's responsibility to call ops_memory_free(me)
+*/
 ops_memory_t* ops_sign_mem(const void* input, const int input_len, const ops_sig_type_t sig_type, const ops_secret_key_t *skey, const ops_boolean_t use_armour)
     {
     // \todo allow choice of hash algorithams
@@ -1025,7 +1102,6 @@ ops_memory_t* ops_sign_mem(const void* input, const int input_len, const ops_sig
     ops_memory_t *mem=ops_memory_new();
 
     ops_hash_algorithm_t hash_alg=OPS_HASH_SHA1;
-    //    ops_sig_type_t sig_type=OPS_SIG_BINARY;
     ops_literal_data_type_t ld_type;
     ops_hash_t* hash=NULL;
 

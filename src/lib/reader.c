@@ -38,9 +38,10 @@
 /**
  * \ingroup Internal_Readers_Generic
  * \brief Starts reader stack
- * \param pinfo
- * \param reader
- * \param arg
+ * \param pinfo Parse settings
+ * \param reader Reader to use
+ * \param destroyer Destroyer to use
+ * \param arg Reader-specific arg
  */
 void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg)
     {
@@ -52,9 +53,9 @@ void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_dest
 /**
  * \ingroup Internal_Readers_Generic
  * \brief Adds to reader stack
- * \param pinfo
- * \param reader
- * \param arg
+ * \param pinfo Parse settings
+ * \param reader Reader to use
+ * \param arg Reader-specific arg
  */
 void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg)
     {
@@ -74,7 +75,7 @@ void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_des
 /**
  * \ingroup Internal_Readers_Generic
  * \brief Removes from reader stack
- * \param pinfo
+ * \param pinfo Parse settings
  */
 void ops_reader_pop(ops_parse_info_t *pinfo)
     { 

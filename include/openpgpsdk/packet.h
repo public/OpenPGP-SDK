@@ -585,9 +585,10 @@ typedef struct
     ops_boolean_t		signer_id_set:1;
     } ops_signature_info_t;
 
+/** Struct used when parsing a signature */
 typedef struct
     {
-    ops_signature_info_t	info;
+    ops_signature_info_t	info; /*!< The signature information */
     /* The following fields are only used while parsing the signature */
     unsigned char		hash2[2];	/*!< high 2 bytes of hashed value - for quick test */
     size_t			v4_hashed_data_start; /* only valid if accumulate is set */

@@ -306,6 +306,15 @@ void ops_crypto_finish()
 const char *ops_text_from_hash(ops_hash_t *hash)
     { return hash->name; }
 
+/**
+ \ingroup HighLevel_KeyGenerate
+ \brief Generates an RSA keypair
+ \param numbits Modulus size
+ \param e Public Exponent
+ \param keydata Pointer to keydata struct to hold new key
+ \return ops_true if key generated successfully; otherwise ops_false
+ \note It is the caller's responsibility to call ops_keydata_free(keydata)
+*/
 ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e, ops_keydata_t* keydata)
     {
     ops_secret_key_t *skey=NULL;
@@ -394,6 +403,17 @@ ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e,
     return ops_true;
     }
 
+/**
+ \ingroup HighLevel_KeyGenerate
+ \brief Creates a self-signed RSA keypair
+ \param numbits Modulus size
+ \param e Public Exponent
+ \param userid User ID
+ \return The new keypair or NULL
+
+ \note It is the caller's responsibility to call ops_keydata_free(keydata)
+ \sa ops_rsa_generate_keypair()
+*/
 ops_keydata_t* ops_rsa_create_selfsigned_keypair(const int numbits, const unsigned long e, ops_user_id_t * userid)
     {
     ops_keydata_t *keydata=NULL;

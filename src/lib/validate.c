@@ -490,8 +490,15 @@ void ops_keydata_reader_set(ops_parse_info_t *pinfo,const ops_keydata_t *key)
     ops_reader_set(pinfo,keydata_reader,keydata_destroyer,arg);
     }
 
-/* 
+/**
+ * \ingroup HighLevel_SignatureVerify
  * Validate all signatures on a single key against the given keyring
+ * \param result Where to put the result
+ * \param key Key to validate
+ * \param keyring Keyring to use for validation
+ * \param cb_get_passphrase Callback to use to get passphrase
+ * \note It is the caller's responsiblity to free result after use.
+ * \sa ops_validate_result_free()
  */
 void ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata_t *key,
                                  const ops_keyring_t *keyring,
@@ -529,18 +536,31 @@ void ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata
     ops_parse_info_delete(pinfo);
     }
 
+/**
+   \ingroup HighLevel_SignatureVerify
+   \param result Where to put the result
+   \param ring Keyring to use
+   \param cb_get_passphrase Callback to use to get passphrase
+   \note It is the caller's responsibility to free result after use.
+   \sa ops_validate_result_free()
+*/
 void ops_validate_all_signatures(ops_validate_result_t *result,
                                  const ops_keyring_t *ring,
-                                 ops_parse_cb_return_t cb (const ops_parser_content_t *, ops_parse_cb_info_t *)
-)
+                                 ops_parse_cb_return_t cb_get_passphrase (const ops_parser_content_t *, ops_parse_cb_info_t *)
+                                 )
     {
     int n;
 
     memset(result,'\0',sizeof *result);
     for(n=0 ; n < ring->nkeys ; ++n)
-        ops_validate_key_signatures(result,&ring->keys[n],ring, cb);
+        ops_validate_key_signatures(result,&ring->keys[n],ring, cb_get_passphrase);
     }
 
+/**
+   \ingroup HighLevel_SignatureVerify
+   Free result and associated memory
+   \param result Struct to be freed
+*/
 void ops_validate_result_free(ops_validate_result_t *result)
     {
     if (!result)
@@ -557,6 +577,17 @@ void ops_validate_result_free(ops_validate_result_t *result)
     result=NULL;
     }
 
+/**
+   \ingroup HighLevel_SignatureVerify
+   \param result Where to put the result
+   \param filename Name of file to be validated
+   \param armoured Treat file as armoured, if set
+   \param keyring Keyring to use
+   \return ops_true if signature validate successfully; ops_false if not
+   \note After verification, result holds the details of all keys which 
+   have passed, failed and not been recognised.
+   \note It is the caller's responsiblity to call ops_validate_result_free(result) after use.
+*/
 ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filename, const int armoured, const ops_keyring_t* keyring)
     {
     ops_parse_info_t *pinfo=NULL;

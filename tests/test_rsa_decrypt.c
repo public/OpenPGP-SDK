@@ -155,7 +155,6 @@ static void test_rsa_decrypt(const int has_armour, const char *filename)
 
     if (has_armour)
         ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
-    //    current_passphrase=has_passphrase ? bravo_passphrase : nopassphrase;
     
     // setup for writing parsed data to mem_out
     ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);

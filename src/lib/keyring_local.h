@@ -40,6 +40,7 @@ typedef union
     } ops_keydata_key_t;
     
 
+/** sigpacket_t */
 typedef struct 
     {
     ops_user_id_t* userid;

@@ -49,7 +49,6 @@ void hexdump(const unsigned char *src,size_t length);
 /* number of elements in an array */
 #define OPS_ARRAY_SIZE(a)	(sizeof(a)/sizeof(*(a)))
 
-/** Allocate zeroed memory */
 void *ops_mallocz(size_t n);
 
 #endif

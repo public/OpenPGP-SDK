@@ -139,6 +139,16 @@ ops_boolean_t ops_rsa_encrypt_mpi(const unsigned char *encoded_m_buf,
 static ops_parse_cb_return_t
 callback_write_parsed(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
+/**
+\ingroup HighLevel_Cryption
+Encrypt a file
+\param input_filename Name of file to be encrypted
+\param output_filename Name of file to write to. If NULL, name is constructed from input_filename
+\param pub_key Public Key to encrypt file for
+\param use_armour Write armoured text, if set
+\param allow_overwrite Allow output file to be overwrwritten if it exists
+\return ops_true if OK; else ops_false
+*/
 ops_boolean_t ops_encrypt_file(const char* input_filename, const char* output_filename, const ops_keydata_t *pub_key, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite)
     {
     int fd_in=0;
@@ -197,12 +207,14 @@ ops_boolean_t ops_encrypt_file(const char* input_filename, const char* output_fi
     return ops_true;
     }
 
-/* 
-the output filename can either be given explicitly, or if NULL,
-it will be derived from the input filename following GPG conventions.
-That is, we assume a binary encrypted file will be called <origfile>.gpg
-and an armoured file will be called <origfile.asc>
-If neither is true, then we add a .decrypted suffix.
+/**
+   \ingroup HighLevel_Cryption
+   \param input_filename Name of file to be decrypted
+   \param output_filename Name of file to write to. If NULL, the filename is constructed from the input filename, following GPG conventions.
+   \param keyring Keyring to use
+   \param use_armour Expect armoured text, if set
+   \param allow_overwrite Allow output file to overwritten, if set.
+   \param cb_get_passphrase Callback to use to get passphrase
 */
 
 ops_boolean_t ops_decrypt_file(const char* input_filename, const char* output_filename, ops_keyring_t* keyring, const ops_boolean_t use_armour, const ops_boolean_t allow_overwrite, ops_parse_cb_t* cb_get_passphrase)

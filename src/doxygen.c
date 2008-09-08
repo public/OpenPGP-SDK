@@ -51,12 +51,38 @@ You may find that the easier-to-use High Level API meets your needs.
 This API provides code used by SDK developers.
 */
 
-/** \defgroup HighLevel_Misc Miscellaneous
+/** \defgroup HighLevel_Signature Signatures and Verification
+    \ingroup HighLevelAPI
+ */
+    
+/** \defgroup HighLevel_SignatureSign Sign File or Buffer
+    \ingroup HighLevel_Signature
+ */
+    
+/** \defgroup HighLevel_SignatureVerify Verify File or Buffer
+    \ingroup HighLevel_Signature
+ */
+    
+/** \defgroup HighLevel_SignatureDetails Verify Signature Details
+    \ingroup HighLevel_Signature
+ */
+    
+/** \defgroup HighLevel_Cryption Encryption and Decryption
     \ingroup HighLevelAPI
  */
     
 /**
     \defgroup HighLevel_Keyring Keyring
+    \ingroup HighLevelAPI
+*/
+
+/**
+    \defgroup HighLevel_Print Print
+    \ingroup HighLevelAPI
+*/
+
+/**
+    \defgroup HighLevel_General General
     \ingroup HighLevelAPI
 */
 
@@ -76,12 +102,22 @@ This API provides code used by SDK developers.
 */
 
 /**
-    \defgroup HighLevel_KeyringMemory Memory Ops
+    \defgroup HighLevel_KeyGenerate Generate Key
     \ingroup HighLevel_Keyring
 */
 
 /**
-    \defgroup HighLevel_Key Key
+    \defgroup HighLevel_KeyWrite Write Key
+    \ingroup HighLevel_Keyring
+*/
+
+/**
+    \defgroup HighLevel_KeyGeneral Other Key Functions
+    \ingroup HighLevel_Keyring
+*/
+
+/**
+    \defgroup HighLevel_KeyringMemory Memory Ops
     \ingroup HighLevel_Keyring
 */
 
@@ -129,6 +165,14 @@ This API provides code used by SDK developers.
    \defgroup HighLevel_Writers Writers
 */
 
+/** \defgroup Core_Signature Signatures and Verification
+    \ingroup CoreAPI
+ */
+    
+/** \defgroup Core_Compress Compression and Decompression
+    \ingroup CoreAPI
+ */
+    
 /** \defgroup Core_Misc Miscellaneous
     \ingroup CoreAPI
  */
@@ -140,11 +184,6 @@ This API provides code used by SDK developers.
 
 /**
    \defgroup Core_Callbacks Callbacks
-   \ingroup CoreAPI
-*/
-
-/**
-   \defgroup Create
    \ingroup CoreAPI
 */
 
@@ -195,8 +234,8 @@ This API provides code used by SDK developers.
  *
  */
 /**
- * @defgroup Create Create
- * \ingroup AdvancedAPI
+ * @defgroup Core_Create Create
+ * \ingroup CoreAPI
  * These functions allow an OpenPGP object to be created. 
  *
  * The low-level functions are provided to enable flexible usage.

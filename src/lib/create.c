@@ -404,7 +404,7 @@ static ops_boolean_t write_secret_key_body(const ops_secret_key_t *key,
 
 
 /**
-   \ingroup HighLevel_Key
+   \ingroup HighLevel_KeyWrite
 
    \brief Writes a transferable PGP public key to the given output stream.
 
@@ -482,7 +482,7 @@ ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *keydata, op
     }
 
 /**
-   \ingroup HighLevel_Key
+   \ingroup HighLevel_KeyWrite
 
    \brief Writes a transferable PGP secret key to the given output stream.
 
@@ -1047,9 +1047,17 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
     }
 
 /**
-   \ingroup HighLevelAPI
+   \ingroup HighLevel_General
+
+   \brief Reads contents of file into new ops_memory_t struct.
+
+   \param filename Filename to read from
+   \param errnum Pointer to error
+   \return new ops_memory_t struct containing the contents of the file
    
-   \return allocated memory. If there was an error opening the file or reading from it, errnum is set to the cause
+   \note If there was an error opening the file or reading from it, errnum is set to the cause
+
+   \note It is the caller's responsibility to call ops_memory_free(mem)
 */
 
 ops_memory_t* ops_write_buf_from_file(const char *filename, int* errnum)
@@ -1090,6 +1098,18 @@ ops_memory_t* ops_write_buf_from_file(const char *filename, int* errnum)
     close(fd);    
     return mem;
     }
+
+/**
+   \ingroup HighLevel_General
+
+   \brief Reads contents of buffer into file
+
+   \param filename Filename to write to
+   \param buf Buffer to write to file
+   \param len Size of buffer
+   \param overwrite Flag to set whether to overwrite an existing file
+   \return 1 if OK; 0 if error
+*/
 
 int ops_write_file_from_buf(const char *filename, const char* buf, const size_t len, const ops_boolean_t overwrite)
     {

@@ -50,6 +50,7 @@ typedef struct
     unsigned offset;
     } validate_reader_arg_t;
 
+/** Struct used with the validate_key_cb callback */
 typedef struct
     {
     ops_public_key_t pkey;
@@ -69,23 +70,24 @@ typedef struct
     ops_parse_cb_return_t (*cb_get_passphrase) (const ops_parser_content_t *, ops_parse_cb_info_t *);
     } validate_key_cb_arg_t;
 
+/** Struct use with the validate_data_cb callback */
 typedef struct
     {
     enum
         {
         LITERAL_DATA,
         SIGNED_CLEARTEXT
-        } use;
+        } use; /*<! this is set to indicate what kind of data we have */
     union
         {
-        ops_literal_data_body_t literal_data_body; 
-        ops_signed_cleartext_body_t signed_cleartext_body; 
-        } data;
-    unsigned char hash[OPS_MAX_HASH_SIZE];
-    const ops_keyring_t *keyring;
-    validate_reader_arg_t *rarg;
-    ops_validate_result_t *result;
-    } validate_data_cb_arg_t;
+        ops_literal_data_body_t literal_data_body; /*<! Used to hold Literal Data */
+        ops_signed_cleartext_body_t signed_cleartext_body; /*<! Used to hold Signed Cleartext */
+        } data; /*<! the data itself */
+    unsigned char hash[OPS_MAX_HASH_SIZE]; /*<! the hash */
+    const ops_keyring_t *keyring; /*<! keyring to use */
+    validate_reader_arg_t *rarg; /*<! reader-specific arg */
+    ops_validate_result_t *result; /*<! where to put the result */
+    } validate_data_cb_arg_t; /*<! used with validate_data_cb callback */
 
 ops_boolean_t ops_check_signature(const unsigned char *hash,
                                   unsigned length,

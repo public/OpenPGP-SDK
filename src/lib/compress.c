@@ -232,10 +232,11 @@ static int bzip2_compressed_data_reader(void *dest,size_t length,
     }
 
 /**
- * \ingroup Utils
+ * \ingroup Core_Compress
  * 
  * \param *region 	Pointer to a region
  * \param *parse_info 	How to parse
+ * \param type Which compression type to expect
 */
 
 int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info,
