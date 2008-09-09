@@ -62,7 +62,7 @@ void ops_teardown_memory_write(ops_create_info_t *cinfo, ops_memory_t *mem);
 // memory reading
 void ops_setup_memory_read(ops_parse_info_t **pinfo, ops_memory_t *mem,
                            void* arg,
-                              ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *));
+                           ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *),ops_boolean_t accumulate);
 void ops_teardown_memory_read(ops_parse_info_t *pinfo, ops_memory_t *mem);
 
 // file writing

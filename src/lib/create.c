@@ -635,7 +635,8 @@ void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
  * freed.
  *
  * \param key The key structure to be initialised.
- * \param e The RSA parameter d (=e^-1 mod (p-1)(q-1)) [OPTIONAL]
+ * \param time
+ * \param d The RSA parameter d (=e^-1 mod (p-1)(q-1)) [OPTIONAL]
  * \param p The RSA parameter p
  * \param q The RSA parameter q (q > p)
  * \param u The RSA parameter u (=p^-1 mod q) [OPTIONAL]
@@ -663,6 +664,8 @@ void ops_fast_create_rsa_secret_key(ops_secret_key_t *key,time_t time,
  * \ingroup Core_WritePackets
  * \brief Writes a Secret Key packet.
  * \param key The secret key
+ * \param passphrase The passphrase
+ * \param pplen Length of passphrase
  * \param info
  * \return ops_true if OK; else ops_false
  */

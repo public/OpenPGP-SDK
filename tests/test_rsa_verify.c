@@ -314,13 +314,20 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
     validate_data_cb_arg_t validate_arg;
     ops_validate_result_t* result;
     int rtn=0;
-    
+    ops_memory_t* mem=NULL;
+    int errnum=0;
+
     result=ops_mallocz(sizeof (ops_validate_result_t));
 
     // open signed file
     snprintf(signedfile,sizeof signedfile,"%s/%s.%s",
              dir, filename,
              suffix);
+    
+    /* copy file into mem for later validation */
+    mem=ops_write_buf_from_file(signedfile,&errnum);
+
+    /* now validate file */
 #ifdef WIN32
     fd=open(signedfile,O_RDONLY | O_BINARY);
 #else
@@ -367,6 +374,21 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
 
     close(fd);
     ops_validate_result_free(result);
+    if (!rtn)
+        return(rtn);
+
+    /* Now check it also works from memory */
+    result=ops_mallocz(sizeof (ops_validate_result_t));
+
+    rtn=ops_validate_mem(result, mem, has_armour, &pub_keyring);
+
+    if (debug)
+        {
+        printf("from memory: valid=%d, invalid=%d, unknown=%d\n",
+               result->valid_count,
+               result->invalid_count,
+               result->unknown_signer_count);
+        }
 
     return (rtn);
     }

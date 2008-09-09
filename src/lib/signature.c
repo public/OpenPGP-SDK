@@ -636,6 +636,7 @@ static void ops_signature_start_signature(ops_create_signature_t *sig,
 
 /**
  * \ingroup Core_Signature
+ * \brief Setup to start a cleartext's signature
  */
 void ops_signature_start_cleartext_signature(ops_create_signature_t *sig,
                                    const ops_secret_key_t *key,
@@ -647,6 +648,7 @@ void ops_signature_start_cleartext_signature(ops_create_signature_t *sig,
 
 /**
  * \ingroup Core_Signature
+ * \brief Setup to start a message's signature
  */
 void ops_signature_start_message_signature(ops_create_signature_t *sig,
                                    const ops_secret_key_t *key,

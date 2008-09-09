@@ -369,6 +369,7 @@ ops_boolean_t ops_limited_read(unsigned char *dest,size_t length,
 
 /**
    \ingroup Core_ReadPackets
+   \brief Call ops_limited_read on next in stack
 */
 ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
 				       ops_region_t *region,
@@ -692,6 +693,7 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 static void data_free(ops_data_t *data)
     {
@@ -702,6 +704,7 @@ static void data_free(ops_data_t *data)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 static void string_free(char **str)
     {
@@ -711,6 +714,7 @@ static void string_free(char **str)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 /*! Free packet memory, set pointer to NULL */
 void ops_packet_free(ops_packet_t *packet)
@@ -721,6 +725,7 @@ void ops_packet_free(ops_packet_t *packet)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 void ops_headers_free(ops_headers_t *headers)
     {
@@ -737,6 +742,7 @@ void ops_headers_free(ops_headers_t *headers)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 void ops_signed_cleartext_trailer_free(ops_signed_cleartext_trailer_t *trailer)
     {
@@ -746,6 +752,7 @@ void ops_signed_cleartext_trailer_free(ops_signed_cleartext_trailer_t *trailer)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 void ops_cmd_get_passphrase_free(ops_secret_key_passphrase_t *skp)
     {
@@ -758,6 +765,7 @@ void ops_cmd_get_passphrase_free(ops_secret_key_passphrase_t *skp)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 /*! Free any memory allocated when parsing the packet content */
 void ops_parser_content_free(ops_parser_content_t *c)
@@ -918,6 +926,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 static void free_BN(BIGNUM **pp)
     {
@@ -927,6 +936,7 @@ static void free_BN(BIGNUM **pp)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 void ops_pk_session_key_free(ops_pk_session_key_t *sk)
     {
@@ -948,6 +958,7 @@ void ops_pk_session_key_free(ops_pk_session_key_t *sk)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 /*! Free the memory used when parsing a public key */
 void ops_public_key_free(ops_public_key_t *p)
@@ -1091,6 +1102,7 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 /*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_regexp_free(ops_ss_regexp_t *regexp)
@@ -1100,6 +1112,7 @@ void ops_ss_regexp_free(ops_ss_regexp_t *regexp)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 /*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_policy_url_free(ops_ss_policy_url_t *policy_url)
@@ -1109,6 +1122,7 @@ void ops_ss_policy_url_free(ops_ss_policy_url_t *policy_url)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 /*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_preferred_key_server_free(ops_ss_preferred_key_server_t *preferred_key_server)
@@ -1118,6 +1132,7 @@ void ops_ss_preferred_key_server_free(ops_ss_preferred_key_server_t *preferred_k
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 /*! Free the memory used when parsing this packet type */
 void ops_user_attribute_free(ops_user_attribute_t *user_att)
@@ -1153,6 +1168,7 @@ static int parse_user_attribute(ops_region_t *region, ops_parse_info_t *pinfo)
 
 /**
 \ingroup Core_Create
+\brief Free allocated memory
 */
 /*! Free the memory used when parsing this packet type */
 void ops_user_id_free(ops_user_id_t *id)

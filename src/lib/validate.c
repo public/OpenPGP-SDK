@@ -633,4 +633,59 @@ ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filen
         return ops_true;
     }
 
+/**
+   \ingroup HighLevel_SignatureVerify
+   \param result Where to put the result
+   \param mem Memory to be validated
+   \param armoured Treat data as armoured, if set
+   \param keyring Keyring to use
+   \return ops_true if signature validates successfully; ops_false if not
+   \note After verification, result holds the details of all keys which 
+   have passed, failed and not been recognised.
+   \note It is the caller's responsiblity to call ops_validate_result_free(result) after use.
+*/
+
+ops_boolean_t ops_validate_mem(ops_validate_result_t *result, ops_memory_t* mem, const int armoured, const ops_keyring_t* keyring)
+    {
+    ops_parse_info_t *pinfo=NULL;
+    validate_data_cb_arg_t validate_arg;
+
+    //
+    ops_setup_memory_read(&pinfo, mem, &validate_arg, validate_data_cb, ops_true);
+
+    // Set verification reader and handling options
+
+    memset(&validate_arg,'\0',sizeof validate_arg);
+    validate_arg.result=result;
+    validate_arg.keyring=keyring;
+    // Note: Coverity incorrectly reports an error that carg.rarg
+    // is never used.
+    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
+
+    if (armoured)
+        ops_reader_push_dearmour(pinfo);
+    
+    // Do the verification
+
+    ops_parse(pinfo);
+
+    if (debug)
+        {
+        printf("valid=%d, invalid=%d, unknown=%d\n",
+               result->valid_count,
+               result->invalid_count,
+               result->unknown_signer_count);
+        }
+
+    // Tidy up
+    if (armoured)
+        ops_reader_pop_dearmour(pinfo);
+    ops_teardown_memory_read(pinfo, mem);
+
+    if (result->invalid_count || result->unknown_signer_count || !result->valid_count)
+        return ops_false;
+    else
+        return ops_true;
+    }
+
 // eof

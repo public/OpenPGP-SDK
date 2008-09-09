@@ -393,7 +393,7 @@ static void test_rsa_signature_sign_memory(const int use_armour, const void* inp
 
     // Set verification reader and handling options
     
-    ops_setup_memory_read(&pinfo, mem, &validate_arg, callback_verify);
+    ops_setup_memory_read(&pinfo, mem, &validate_arg, callback_verify, ops_true);
     
     memset(&validate_arg,'\0',sizeof validate_arg);
     validate_arg.result=result;

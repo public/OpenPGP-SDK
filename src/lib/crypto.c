@@ -37,6 +37,7 @@
 \param buf Buffer in which to write decrypted unencoded MPI
 \param buflen Length of buffer
 \param encmpi
+\param skey
 \return length of MPI
 \note only RSA at present
 */
@@ -116,6 +117,7 @@ int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM
 
 /**
 \ingroup Core_MPI
+\brief RSA-encrypt an MPI
 */
 ops_boolean_t ops_rsa_encrypt_mpi(const unsigned char *encoded_m_buf,
                               const size_t sz_encoded_m_buf,

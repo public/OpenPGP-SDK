@@ -97,5 +97,6 @@ ops_parse_cb_return_t
 ops_validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 ops_boolean_t ops_validate_file(ops_validate_result_t* result, const char* filename, const int armoured, const ops_keyring_t* keyring);
+ops_boolean_t ops_validate_mem(ops_validate_result_t *result, ops_memory_t* mem, const int armoured, const ops_keyring_t* keyring);
 
 // EOF

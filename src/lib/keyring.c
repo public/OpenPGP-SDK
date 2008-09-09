@@ -692,9 +692,7 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, const ops_boolea
     pinfo=ops_parse_info_new();
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
 
-    ops_setup_memory_read(&pinfo, mem, NULL, cb_keyring_read);
-
-    //    ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_true);
+    ops_setup_memory_read(&pinfo, mem, NULL, cb_keyring_read, ops_true);
 
     if (armour)
         { ops_reader_push_dearmour(pinfo); }

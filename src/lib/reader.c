@@ -55,6 +55,7 @@ void ops_reader_set(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_dest
  * \brief Adds to reader stack
  * \param pinfo Parse settings
  * \param reader Reader to use
+ * \param destroyer Reader's destroyer
  * \param arg Reader-specific arg
  */
 void ops_reader_push(ops_parse_info_t *pinfo,ops_reader_t *reader,ops_reader_destroyer_t *destroyer,void *arg)
@@ -97,7 +98,7 @@ void *ops_reader_get_arg(ops_reader_info_t *rinfo)
 /**
  * \ingroup Internal_Readers_Generic
  * \brief Gets reader's arg from parse_info
- * \param parse_info
+ * \param pinfo
  * \return Pointer to parse_info's reader_info's arg
  */
 void *ops_reader_get_arg_from_pinfo(ops_parse_info_t *pinfo)

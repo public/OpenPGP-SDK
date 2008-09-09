@@ -182,6 +182,11 @@ This API provides code used by SDK developers.
    \defgroup HighLevel_Writers Writers
 */
 
+/**
+   \defgroup Core_Writers Writers
+   \ingroup CoreAPI
+*/
+
 /** \defgroup Core_WritePackets Write OpenPGP packets
     \ingroup CoreAPI
 */
