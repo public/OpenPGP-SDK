@@ -147,7 +147,7 @@ static void test_rsa_signature_clearsign_file(const char *filename, const ops_se
     
     // Must de-armour because it's clearsigned
     
-    ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+    ops_reader_push_dearmour(pinfo);
     
     // Do the verification
     
@@ -251,7 +251,7 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     
     // Must de-armour because it's clearsigned
     
-    ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+    ops_reader_push_dearmour(pinfo);
     
     // Do the verification
     
@@ -341,7 +341,7 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
     // Set up armour/passphrase options
     
     if (use_armour)
-        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+        ops_reader_push_dearmour(pinfo);
     
     // Do the verification
     
@@ -406,7 +406,7 @@ static void test_rsa_signature_sign_memory(const int use_armour, const void* inp
     // Set up armour/passphrase options
     
     if (use_armour)
-        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+        ops_reader_push_dearmour(pinfo);
     
     // Do the verification
     

@@ -1805,7 +1805,7 @@ void ops_list_packets(char* filename, ops_boolean_t armour, ops_keyring_t* keyri
     pinfo->cryptinfo.cb_get_passphrase=cb_get_passphrase;
 
     if(armour)
-	ops_reader_push_dearmour(pinfo,ops_true,ops_true,ops_true);
+	ops_reader_push_dearmour(pinfo);
 
     ops_parse_and_print_errors(pinfo);
 

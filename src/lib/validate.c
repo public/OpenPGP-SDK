@@ -608,7 +608,7 @@ ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filen
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
 
     if (armoured)
-        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+        ops_reader_push_dearmour(pinfo);
     
     // Do the verification
 

@@ -563,7 +563,7 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boole
     ops_parse_cb_set(pinfo,cb_keyring_read,NULL);
 
     if (armour)
-        { ops_reader_push_dearmour(pinfo, ops_false, ops_false, ops_false); }
+        { ops_reader_push_dearmour(pinfo); }
 
     if ( ops_parse_and_accumulate(keyring,pinfo) == 0 ) {
         res = ops_false; 
@@ -627,7 +627,7 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, const ops_boolea
     //    ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_true);
 
     if (armour)
-        { ops_reader_push_dearmour(pinfo, ops_false, ops_false, ops_false); }
+        { ops_reader_push_dearmour(pinfo); }
 
     if ( ops_parse_and_accumulate(keyring,pinfo) == 0 ) 
         {

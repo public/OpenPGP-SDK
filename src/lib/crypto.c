@@ -291,7 +291,7 @@ ops_boolean_t ops_decrypt_file(const char* input_filename, const char* output_fi
     // Set up armour/passphrase options
 
     if (use_armour)
-        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+        ops_reader_push_dearmour(pinfo);
     
     // Do it
 

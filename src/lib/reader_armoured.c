@@ -993,24 +993,37 @@ static void armoured_data_destroyer(ops_reader_info_t *rinfo)
  * \ingroup Core_Readers_Armour
  * \brief Pushes dearmouring reader onto stack
  * \param parse_info Usual structure containing information about to how to do the parse
- * \param without_gap Allow headers in armoured data that are not separated from the data by a blank line
- * \param no_gap Allow no blank line at the start of armoured data
- * \param trailing_whitespace Allow armoured data to have trailing whitespace where we strictly would not expect it
  * \sa ops_reader_pop_dearmour()
  */
-void ops_reader_push_dearmour(ops_parse_info_t *parse_info,
-			      ops_boolean_t without_gap,
-			      ops_boolean_t no_gap,
-			      ops_boolean_t trailing_whitespace)
+void ops_reader_push_dearmour(ops_parse_info_t *parse_info)
+    /* 
+       This function originally had these parameters to cater for
+       packets which didn't strictly match the RFC.
+       The initial 0.5 release is only going to support
+       strict checking. 
+       If it becomes desirable to support loose checking of armoured packets
+       and these params are reinstated, parse_headers() must be fixed
+       so that these flags work correctly.
+
+       // Allow headers in armoured data that are not separated from the data by a blank line
+       ops_boolean_t without_gap, 
+
+       // Allow no blank line at the start of armoured data
+       ops_boolean_t no_gap,
+
+       //Allow armoured data to have trailing whitespace where we strictly would not expect it			      
+       ops_boolean_t trailing_whitespace 
+    */
     {
     dearmour_arg_t *arg;
 
     arg=ops_mallocz(sizeof *arg);
     arg->seen_nl=ops_true;
+/*
     arg->allow_headers_without_gap=without_gap;
     arg->allow_no_gap=no_gap;
     arg->allow_trailing_whitespace=trailing_whitespace;
-
+*/
     arg->expect_sig=ops_false;
     arg->got_sig=ops_false;
 

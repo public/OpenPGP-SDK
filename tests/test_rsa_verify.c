@@ -58,6 +58,7 @@ static char *filename_rsa_v3sig_fail_bad_sig="gpg_rsa_sign_v3sig_fail_bad_sig.tx
 static char *filename_rsa_hash_md5="gpg_rsa_hash_md5.txt";
 
 static int num_malformed=0;
+static int num_wellformed=0;
 
 typedef ops_parse_cb_return_t (*ops_callback)(const ops_parser_content_t *, ops_parse_cb_info_t *);
 
@@ -69,6 +70,37 @@ static void make_filename_malformed(char* filename, int maxlen, const int i)
     {
     snprintf(filename,maxlen,"malformed_%d.txt",i);
     }
+
+static void make_filename_wellformed(char* filename, int maxlen, const int i)
+    {
+    snprintf(filename,maxlen,"wellformed_%d.txt",i);
+    }
+
+static void create_wellformed_testfiles()
+    {
+    int i=0;
+    int fd=0;
+    char* wellformed[]=
+        {
+        // no headers
+        "-----BEGIN PGP SIGNED MESSAGE-----\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        };
+    num_wellformed=sizeof (wellformed)/sizeof(char *);
+    for (i=0; i<num_wellformed; i++)
+        {
+        char fullname[MAXBUF];
+        char filename[MAXBUF];
+        make_filename_wellformed(filename,MAXBUF,i);
+        snprintf(fullname,MAXBUF,"%s/%s.asc",dir,filename);
+        if ((fd=open(fullname,O_WRONLY | O_CREAT, 0600)) < 0)
+            {
+            fprintf(stderr,"create_wellformed_testfiles: cannot open file %s for writing\n", fullname);
+            return;
+            }
+        write(fd,wellformed[i],strlen(wellformed[i]));
+        close(fd);
+        }
+}
 
 static void create_malformed_testfiles()
     {
@@ -101,7 +133,9 @@ static void create_malformed_testfiles()
         // bad header : invalid header
         "-----BEGIN PGP SIGNED MESSAGE-----\nUnknown: Header\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
         // bad armour trailer
-                        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PPP SIGNATURE-----\n-----END PGP SIGNATURE-----",
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PPP SIGNATURE-----\n-----END PGP SIGNATURE-----",
+        // no headers and no gap
+        "-----BEGIN PGP SIGNED MESSAGE-----\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
     };
     num_malformed=sizeof (malformed)/sizeof(char *);
     for (i=0; i<num_malformed; i++)
@@ -138,6 +172,7 @@ int init_suite_rsa_verify(void)
     create_small_testfile(filename_rsa_noarmour_fail_bad_sig);
 
     create_malformed_testfiles();
+    create_wellformed_testfiles();
 
     // Now sign the test files with GPG
 
@@ -309,7 +344,7 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
     // Set up armour options
 
     if (has_armour)
-        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+        ops_reader_push_dearmour(pinfo);
     
     // Do the verification
 
@@ -377,7 +412,47 @@ static void test_rsa_verify_fail(const int has_armour, const char *filename, ops
     // to the one expected
     if (errstack)
         {
+        CU_ASSERT(ops_has_error(errstack,expected_errcode));
         if  (!ops_has_error(errstack,expected_errcode))
+            {
+            printf("\nfilename=%s: errstack->errcode=0x%2x\n", filename, errstack->errcode);
+            ops_print_errors(errstack);
+            }
+        }
+    CU_ASSERT(rtn==0);
+
+    // clean up
+    ops_parse_info_delete(pinfo);
+    }
+
+static void test_rsa_verify_wellformed(const int has_armour, const char *filename, ops_callback callback)
+    {
+    int rtn=0;
+    ops_parse_info_t *pinfo=NULL;
+    ops_callback cb=NULL;
+    ops_error_t* errstack=NULL;
+
+    cb = callback==NULL ? callback_verify : callback;
+
+    // setup
+    pinfo=ops_parse_info_new();
+
+    // parse
+    rtn=test_rsa_verify(has_armour, filename, cb, pinfo);
+
+    // handle result - should fail with UNKNOWN SIGNER but not BAD FORMAT
+    errstack=ops_parse_info_get_errors(pinfo);
+
+    CU_ASSERT(errstack!=NULL);
+
+    // print out errors if we have actually got a different error
+    // to the one expected
+    if (errstack)
+        {
+        CU_ASSERT(ops_has_error(errstack,OPS_E_V_UNKNOWN_SIGNER));
+        CU_ASSERT(!ops_has_error(errstack,OPS_E_R_BAD_FORMAT));
+        if  (ops_has_error(errstack,OPS_E_R_BAD_FORMAT)
+             || !ops_has_error(errstack,OPS_E_V_UNKNOWN_SIGNER))
             {
             printf("\nfilename=%s: errstack->errcode=0x%2x\n", filename, errstack->errcode);
             ops_print_errors(errstack);
@@ -537,6 +612,20 @@ static void test_rsa_verify_clearsign_fail_malformed_msg(void)
         }
     }
 
+static void test_rsa_verify_clearsign_fail_wellformed_msg(void)
+    {
+    int i=0;
+    int armour=1;
+    assert(pub_keyring.nkeys);
+
+    for (i=0; i<num_wellformed; i++)
+        {
+        char filename[MAXBUF];
+        make_filename_wellformed(filename,MAXBUF,i);
+        test_rsa_verify_wellformed(armour,filename,NULL);
+        }
+    }
+
 CU_pSuite suite_rsa_verify()
 {
     CU_pSuite suite = NULL;
@@ -580,6 +669,9 @@ CU_pSuite suite_rsa_verify()
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "Clearsign: should fail on malformed message", test_rsa_verify_clearsign_fail_malformed_msg))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Clearsign: should not get BAD FORMAT on wellformed message", test_rsa_verify_clearsign_fail_wellformed_msg))
 	    return NULL;
 
     return suite;

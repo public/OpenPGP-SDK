@@ -149,7 +149,7 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext, const int 
 
     // other setup
     if (use_armour)
-        ops_reader_push_dearmour(pinfo,ops_false,ops_false,ops_false);
+        ops_reader_push_dearmour(pinfo);
 
     // do it
     rtn=ops_parse_and_print_errors(pinfo);
