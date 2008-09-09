@@ -91,11 +91,10 @@ static ops_errcode_name_map_t errcode_name_map[] =
     };
 
 /**
- * \ingroup Errors
- *
- * returns string representing error code name
+ * \ingroup HighLevel_Errors
+ * \brief returns error code name
  * \param errcode
- * \return string or "Unknown"
+ * \return error code name or "Unknown"
  */
 char *ops_errcode(const ops_errcode_t errcode)
     {
@@ -103,14 +102,14 @@ char *ops_errcode(const ops_errcode_t errcode)
     }
 
 /** 
- * push_error() pushes the given error on the given errorstack
- *
- * \param err
- * \param code
- * \param errno
- * \param file
- * \param line
- * \param comment
+ * \ingroup Core_Errors
+ * \brief Pushes the given error on the given errorstack
+ * \param errstack Error stack to use
+ * \param errcode Code of error to push
+ * \param sys_errno System errno (used if errcode=OPS_E_SYSTEM_ERROR)
+ * \param file Source filename where error occurred
+ * \param line Line in source file where error occurred
+ * \param fmt Comment
  *
  */
 
@@ -147,6 +146,11 @@ void ops_push_error(ops_error_t **errstack,ops_errcode_t errcode,int sys_errno,
     err->comment=comment;
     }
 
+/**
+\ingroup HighLevel_Errors
+\brief print this error
+\param err Error to print
+*/
 void ops_print_error(ops_error_t *err)
     {
     printf("%s:%d: ",err->file,err->line);
@@ -157,6 +161,11 @@ void ops_print_error(ops_error_t *err)
 	printf("%s, %s\n",ops_errcode(err->errcode),err->comment);
     }
 
+/**
+\ingroup HighLevel_Errors
+\brief Print all errors on stack
+\param errstack Error stack to print
+*/
 void ops_print_errors(ops_error_t *errstack)
     {
     ops_error_t *err;
@@ -165,6 +174,13 @@ void ops_print_errors(ops_error_t *errstack)
 	ops_print_error(err);
     }
 
+/**
+\ingroup HighLevel_Errors
+\brief Return true if given error is present anywhere on stack
+\param errstack Error stack to check
+\param errcode Error code to look for
+\return 1 if found; else 0
+*/
 int ops_has_error(ops_error_t *errstack, ops_errcode_t errcode)
     {
     ops_error_t *err;
@@ -176,6 +192,11 @@ int ops_has_error(ops_error_t *errstack, ops_errcode_t errcode)
     return 0;
     }
 
+/**
+\ingroup HighLevel_Errors
+\brief Frees all errors on stack
+\param errstack Error stack to free
+*/
 void ops_free_errors(ops_error_t *errstack)
 {
     ops_error_t *next;

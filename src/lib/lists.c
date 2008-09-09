@@ -32,7 +32,8 @@
 #include <openpgpsdk/final.h>
 
 /**
- * Initialises ulong list
+ * \ingroup Core_Lists
+ * \brief Initialises ulong list
  * \param *list	Pointer to existing list structure
  */
 void ops_ulong_list_init(ops_ulong_list_t *list)
@@ -43,8 +44,8 @@ void ops_ulong_list_init(ops_ulong_list_t *list)
     }
  
 /**
- * Frees allocated memory in ulong list. Does not free *list itself.
- *
+ * \ingroup Core_Lists
+ * \brief Frees allocated memory in ulong list. Does not free *list itself.
  * \param *list
  */
 void ops_ulong_list_free(ops_ulong_list_t *list)
@@ -55,7 +56,8 @@ void ops_ulong_list_free(ops_ulong_list_t *list)
     }
 
 /**
- * Resizes ulong list.
+ * \ingroup Core_Lists
+ * \brief Resizes ulong list.
  *
  * We only resize in one direction - upwards.
  * Algorithm used : double the current size then add 1
@@ -84,6 +86,7 @@ static unsigned int ops_ulong_list_resize(ops_ulong_list_t *list)
     }
 
 /**
+ * \ingroup Core_Lists
  * Adds entry to ulong list
  *
  * \param *list

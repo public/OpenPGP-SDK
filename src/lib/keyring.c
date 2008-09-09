@@ -232,6 +232,13 @@ static ops_parse_cb_return_t decrypt_cb(const ops_parser_content_t *content_,
     return OPS_RELEASE_MEMORY;
     }
 
+/**
+\ingroup Core_Keys
+\brief Decrypts secret key from given keydata with given passphrase
+\param key Key from which to get secret key
+\param pphrase Passphrase to use to decrypt secret key
+\return secret key
+*/
 ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_keydata_t *key,
 						   const char *pphrase)
     {
@@ -253,33 +260,55 @@ ops_secret_key_t *ops_decrypt_secret_key_from_data(const ops_keydata_t *key,
     return arg.skey;
     }
 
+/** 
+\ingroup Core_Keys
+\brief Set secret key in content
+\param content Content to be set
+\param key Keydata to get secret key from
+*/
 void ops_set_secret_key(ops_parser_content_union_t* content,const ops_keydata_t *key)
     {
     *content->get_secret_key.secret_key=&key->key.skey;
     }
 
+/**
+\ingroup Core_Keys
+\brief Get Key ID from keydata
+\param key Keydata to get Key ID from
+\return Pointer to Key ID inside keydata
+*/
 const unsigned char* ops_get_key_id(const ops_keydata_t *key)
     {
     return key->key_id;
     }
 
+/**
+\ingroup Core_Keys
+\brief How many User IDs in this key?
+\param key Keydata to check
+\return Num of user ids
+*/
 unsigned ops_get_user_id_count(const ops_keydata_t *key)
     {
     return key->nuids;
     }
 
+/**
+\ingroup Core_Keys
+\brief Get indexed user id from key
+\param key Key to get user id from
+\param index Which key to get
+\return Pointer to requested user id
+*/
 const unsigned char* ops_get_user_id(const ops_keydata_t *key, unsigned index)
     {
     return key->uids[index].user_id;
     }
 
 /**
-   \ingroup HighLevel_KeyGeneral
-
+   \ingroup HighLevel_Supported
    \brief Checks whether key's algorithm and type are supported by OpenPGP::SDK
-
    \param keydata Key to be checked
-
    \return ops_true if key algorithm and type are supported by OpenPGP::SDK; ops_false if not
 */
 
@@ -330,9 +359,14 @@ const ops_keydata_t* ops_keyring_get_key_by_index(const ops_keyring_t *keyring, 
     return &keyring->keys[index]; 
     }
 
-// \todo document OPS keyring format
-
 // \todo check where userid pointers are copied
+/**
+\ingroup Core_Keys
+\brief Copy user id, including contents
+\param dst Destination User ID
+\param src Source User ID
+\note If dst already has a user_id, it will be freed.
+*/
 void ops_copy_userid(ops_user_id_t* dst, const ops_user_id_t* src)
     {
     int len=strlen((char *)src->user_id);
@@ -344,6 +378,13 @@ void ops_copy_userid(ops_user_id_t* dst, const ops_user_id_t* src)
     }
 
 // \todo check where pkt pointers are copied
+/**
+\ingroup Core_Keys
+\brief Copy packet, including contents
+\param dst Destination packet
+\param src Source packet
+\note If dst already has a packet, it will be freed.
+*/
 void ops_copy_packet(ops_packet_t* dst, const ops_packet_t* src)
     {
     if (dst->raw)
@@ -354,6 +395,13 @@ void ops_copy_packet(ops_packet_t* dst, const ops_packet_t* src)
     memcpy(dst->raw, src->raw, src->length);
     }
 
+/**
+\ingroup Core_Keys
+\brief Add User ID to keydata
+\param keydata Key to which to add User ID
+\param userid User ID to add
+\return Pointer to new User ID
+*/
 ops_user_id_t* ops_add_userid_to_keydata(ops_keydata_t* keydata, const ops_user_id_t* userid)
     {
     ops_user_id_t* new_uid=NULL;
@@ -363,17 +411,22 @@ ops_user_id_t* ops_add_userid_to_keydata(ops_keydata_t* keydata, const ops_user_
     // initialise new entry in array
     new_uid=&keydata->uids[keydata->nuids];
 
-    //    keydata->uids[keydata->nuids].user_id=NULL;
     new_uid->user_id=NULL;
 
     // now copy it
-    //    ops_copy_userid(&keydata->uids[keydata->nuids],userid);
     ops_copy_userid(new_uid,userid);
     keydata->nuids++;
 
     return new_uid;
     }
 
+/**
+\ingroup Core_Keys
+\brief Add packet to key
+\param keydata Key to which to add packet
+\param packet Packet to add
+\return Pointer to new packet
+*/
 ops_packet_t* ops_add_packet_to_keydata(ops_keydata_t* keydata, const ops_packet_t* packet)
     {
     ops_packet_t* new_pkt=NULL;
@@ -392,6 +445,13 @@ ops_packet_t* ops_add_packet_to_keydata(ops_keydata_t* keydata, const ops_packet
     return new_pkt;
     }
 
+/**
+\ingroup Core_Keys
+\brief Add signed User ID to key
+\param keydata Key to which to add signed User ID
+\param user_id User ID to add
+\param sigpacket Packet to add
+*/
 void ops_add_signed_userid_to_keydata(ops_keydata_t* keydata, const ops_user_id_t* user_id, const ops_packet_t* sigpacket)
     {
     //int i=0;
@@ -416,6 +476,13 @@ void ops_add_signed_userid_to_keydata(ops_keydata_t* keydata, const ops_user_id_
     keydata->nsigs++;
     }
 
+/**
+\ingroup Core_Keys
+\brief Add selfsigned User ID to key
+\param keydata Key to which to add user ID
+\param userid Self-signed User ID to add
+\return ops_true if OK; else ops_false
+*/
 ops_boolean_t ops_add_selfsigned_userid_to_keydata(ops_keydata_t* keydata, ops_user_id_t* userid)
     {
     ops_packet_t sigpacket;
@@ -427,7 +494,6 @@ ops_boolean_t ops_add_selfsigned_userid_to_keydata(ops_keydata_t* keydata, ops_u
     ops_create_info_t* cinfo_sig=NULL;
 
     ops_create_signature_t *sig=NULL;
-    //    unsigned char keyid[OPS_KEY_ID_SIZE];
 
     /*
      * create signature packet for this userid
@@ -453,8 +519,6 @@ ops_boolean_t ops_add_selfsigned_userid_to_keydata(ops_keydata_t* keydata, ops_u
 
     sigpacket.length=ops_memory_get_length(mem_sig);
     sigpacket.raw=ops_memory_get_data(mem_sig);
-    //    pkt=ops_add_packet_to_keydata(keydata, &packet);
-    //    ops_add_signature_to_keydata(keydata, keydata->key_id, packet);
 
     // add userid to keydata
     ops_add_signed_userid_to_keydata(keydata, userid, &sigpacket);
@@ -469,6 +533,12 @@ ops_boolean_t ops_add_selfsigned_userid_to_keydata(ops_keydata_t* keydata, ops_u
     return ops_true;
     }
 
+/**
+\ingroup Core_Keys
+\brief Initialise ops_keydata_t
+\param keydata Keydata to initialise
+\param type OPS_PTAG_CT_PUBLIC_KEY or OPS_PTAG_CT_SECRET_KEY
+*/
 void ops_keydata_init(ops_keydata_t* keydata, const ops_content_tag_t type)
     {
     assert(keydata->type==OPS_PTAG_CT_RESERVED);

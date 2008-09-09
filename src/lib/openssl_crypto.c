@@ -79,6 +79,11 @@ static unsigned md5_finish(ops_hash_t *hash,unsigned char *out)
 static ops_hash_t md5={OPS_HASH_MD5,MD5_DIGEST_LENGTH,"MD5",md5_init,md5_add,
 		       md5_finish,NULL};
 
+/**
+   \ingroup Core_Crypto
+   \brief Initialise to MD5
+   \param hash Hash to initialise
+*/
 void ops_hash_md5(ops_hash_t *hash)
     {
     *hash=md5;
@@ -134,6 +139,11 @@ static unsigned sha1_finish(ops_hash_t *hash,unsigned char *out)
 static ops_hash_t sha1={OPS_HASH_SHA1,SHA_DIGEST_LENGTH,"SHA1",sha1_init,
 			sha1_add,sha1_finish,NULL};
 
+/**
+   \ingroup Core_Crypto
+   \brief Initialise to SHA1
+   \param hash Hash to initialise
+*/
 void ops_hash_sha1(ops_hash_t *hash)
     {
     *hash=sha1;
@@ -169,6 +179,15 @@ ops_boolean_t ops_dsa_verify(const unsigned char *hash,size_t hash_length,
     return ret != 0;
     }
 
+/**
+   \ingroup Core_Crypto
+   \brief Recovers message digest from the signature
+   \param out Where to write decrypted data to
+   \param in Encrypted data
+   \param length Length of encrypted data
+   \param rsa RSA public key
+   \return size of recovered message digest
+*/
 int ops_rsa_public_decrypt(unsigned char *out,const unsigned char *in,
 			   size_t length,const ops_rsa_public_key_t *rsa)
     {
@@ -187,6 +206,16 @@ int ops_rsa_public_decrypt(unsigned char *out,const unsigned char *in,
     return n;
     }
 
+/**
+   \ingroup Core_Crypto
+   \brief Signs data with RSA
+   \param out Where to write signature
+   \param in Data to sign
+   \param length Length of data
+   \param srsa RSA secret key
+   \param rsa RSA public key
+   \return number of bytes decrypted
+*/
 int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
 			    size_t length,const ops_rsa_secret_key_t *srsa,
 			    const ops_rsa_public_key_t *rsa)
@@ -218,6 +247,16 @@ int ops_rsa_private_encrypt(unsigned char *out,const unsigned char *in,
     return n;
     }
 
+/**
+\ingroup Core_Crypto
+\brief Decrypts RSA-encrypted data
+\param out Where to write the plaintext
+\param in Encrypted data
+\param length Length of encrypted data
+\param srsa RSA secret key
+\param rsa RSA public key
+\return size of recovered plaintext
+*/
 int ops_rsa_private_decrypt(unsigned char *out,const unsigned char *in,
 			    size_t length,const ops_rsa_secret_key_t *srsa,
 			    const ops_rsa_public_key_t *rsa)
@@ -255,6 +294,14 @@ int ops_rsa_private_decrypt(unsigned char *out,const unsigned char *in,
     return n;
     }
 
+/**
+   \ingroup Core_Crypto
+   \brief RSA-encrypts data
+   \param out Where to write the encrypted data
+   \param in Plaintext
+   \param length Size of plaintext
+   \param rsa RSA Public Key
+*/
 int ops_rsa_public_encrypt(unsigned char *out,const unsigned char *in,
 			   size_t length,const ops_rsa_public_key_t *rsa)
     {
@@ -285,6 +332,12 @@ int ops_rsa_public_encrypt(unsigned char *out,const unsigned char *in,
     return n;
     }
 
+/**
+   \ingroup Core_Crypto
+   \brief initialises openssl
+   \note Would usually call ops_init() instead
+   \sa ops_init()
+*/
 void ops_crypto_init()
     {
 #ifdef DMALLOC
@@ -294,6 +347,12 @@ void ops_crypto_init()
 #endif
     }
 
+/**
+   \ingroup Core_Crypto
+   \brief Finalise openssl
+   \note Would usually call ops_finish() instead
+   \sa ops_finish()
+*/
 void ops_crypto_finish()
     {
     CRYPTO_cleanup_all_ex_data();
@@ -303,6 +362,12 @@ void ops_crypto_finish()
 #endif
     }
 
+/**
+   \ingroup Core_Hashes
+   \brief Get Hash name
+   \param hash Hash struct
+   \return Hash name
+*/
 const char *ops_text_from_hash(ops_hash_t *hash)
     { return hash->name; }
 

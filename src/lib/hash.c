@@ -30,6 +30,13 @@
 
 static int debug=0;
 
+/**
+\ingroup Core_Hashes
+\brief Add to the hash
+\param hash Hash to add to
+\param n Int to add
+\param length Length of int in bytes
+*/
 void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length)
     {
     while(length--)
@@ -41,6 +48,12 @@ void ops_hash_add_int(ops_hash_t *hash,unsigned n,unsigned length)
 	}
     }
 
+/**
+\ingroup Core_Hashes
+\brief Setup hash for given hash algorithm
+\param hash Hash to set up
+\param alg Hash algorithm to use
+*/
 void ops_hash_any(ops_hash_t *hash,ops_hash_algorithm_t alg)
     {
     switch(alg)
@@ -58,6 +71,12 @@ void ops_hash_any(ops_hash_t *hash,ops_hash_algorithm_t alg)
 	}
     }
 
+/**
+\ingroup Core_Hashes
+\brief Returns size of hash for given hash algorithm
+\param alg Hash algorithm to use
+\return Size of hash algorithm in bytes
+*/
 unsigned ops_hash_size(ops_hash_algorithm_t alg)
     {
     switch(alg)
@@ -75,6 +94,12 @@ unsigned ops_hash_size(ops_hash_algorithm_t alg)
     return 0;
     }
 
+/**
+\ingroup Core_Hashes
+\brief Returns hash enum corresponding to given string
+\param hash Text name of hash algorithm i.e. "SHA1"
+\returns Corresponding enum i.e. OPS_HASH_SHA1
+*/
 ops_hash_algorithm_t ops_hash_algorithm_from_text(const char *hash)
     {
     if(!strcmp(hash,"SHA1"))
@@ -85,6 +110,15 @@ ops_hash_algorithm_t ops_hash_algorithm_from_text(const char *hash)
     return OPS_HASH_UNKNOWN;
     }
 
+/**
+\ingroup Core_Hashes
+\brief Hash given data
+\param out Where to write the hash
+\param alg Hash algorithm to use
+\param in Data to hash
+\param length Length of data
+\return Size of hash created
+*/
 unsigned ops_hash(unsigned char *out,ops_hash_algorithm_t alg,const void *in,
 		  size_t length)
     {
@@ -96,6 +130,15 @@ unsigned ops_hash(unsigned char *out,ops_hash_algorithm_t alg,const void *in,
     return hash.finish(&hash,out);
     }
 
+/**
+\ingroup Core_Hashes
+\brief Calculate hash for MDC packet
+\param preamble Preamble to hash
+\param sz_preamble Size of preamble
+\param plaintext Plaintext to hash
+\param sz_plaintext Size of plaintext
+\param hashed Resulting hash
+*/
 void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, const unsigned char* plaintext, const unsigned int sz_plaintext, unsigned char *hashed)
     {
     ops_hash_t hash;
@@ -145,6 +188,12 @@ void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, 
         }
     }
 
+/**
+\ingroup HighLevel_Supported
+\brief Is this Hash Algorithm supported?
+\param hash_alg Hash Algorithm to check
+\return ops_true if supported; else ops_false
+*/
 ops_boolean_t ops_is_hash_alg_supported(const ops_hash_algorithm_t *hash_alg)
     {
     switch (*hash_alg)

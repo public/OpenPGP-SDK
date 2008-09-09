@@ -303,7 +303,7 @@ static ops_boolean_t _read_scalar(unsigned *result,unsigned length,
     }
 
 /** 
- * \ingroup Core_Parse
+ * \ingroup Core_ReadPackets
  * \brief Read bytes from a region within the packet.
  *
  * Read length bytes into the buffer pointed to by *dest.  
@@ -367,6 +367,9 @@ ops_boolean_t ops_limited_read(unsigned char *dest,size_t length,
     return ops_true;
     }
 
+/**
+   \ingroup Core_ReadPackets
+*/
 ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
 				       ops_region_t *region,
 				       ops_error_t **errors,
@@ -536,7 +539,9 @@ static int limited_read_time(time_t *dest,ops_region_t *region,
         }
     }
 
-/** Read a multiprecision integer.
+/** 
+ * \ingroup Core_MPI
+ * Read a multiprecision integer.
  *
  * Large numbers (multiprecision integers, MPI) are stored in OpenPGP in two parts.  First there is a 2 byte scalar
  * indicating the length of the following MPI in Bits.  Then follow the bits that make up the actual number, most
@@ -685,6 +690,9 @@ static int limited_read_new_length(unsigned *length,ops_region_t *region,
     return limited_read_scalar(length,4,region,pinfo);
     }
 
+/**
+\ingroup Core_Create
+*/
 static void data_free(ops_data_t *data)
     {
     free(data->contents);
@@ -692,12 +700,18 @@ static void data_free(ops_data_t *data)
     data->len=0;
     }
 
+/**
+\ingroup Core_Create
+*/
 static void string_free(char **str)
     {
     free(*str);
     *str=NULL;
     }
 
+/**
+\ingroup Core_Create
+*/
 /*! Free packet memory, set pointer to NULL */
 void ops_packet_free(ops_packet_t *packet)
     {
@@ -705,6 +719,9 @@ void ops_packet_free(ops_packet_t *packet)
     packet->raw=NULL;
     }
 
+/**
+\ingroup Core_Create
+*/
 void ops_headers_free(ops_headers_t *headers)
     {
     unsigned n;
@@ -718,12 +735,18 @@ void ops_headers_free(ops_headers_t *headers)
     headers->headers=NULL;
     }
 
+/**
+\ingroup Core_Create
+*/
 void ops_signed_cleartext_trailer_free(ops_signed_cleartext_trailer_t *trailer)
     {
     free(trailer->hash);
     trailer->hash=NULL;
     }
 
+/**
+\ingroup Core_Create
+*/
 void ops_cmd_get_passphrase_free(ops_secret_key_passphrase_t *skp)
     {
     if (skp->passphrase && *skp->passphrase)
@@ -733,6 +756,9 @@ void ops_cmd_get_passphrase_free(ops_secret_key_passphrase_t *skp)
         }
     }
 
+/**
+\ingroup Core_Create
+*/
 /*! Free any memory allocated when parsing the packet content */
 void ops_parser_content_free(ops_parser_content_t *c)
     {
@@ -890,12 +916,18 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	}
     }
 
+/**
+\ingroup Core_Create
+*/
 static void free_BN(BIGNUM **pp)
     {
     BN_free(*pp);
     *pp=NULL;
     }
 
+/**
+\ingroup Core_Create
+*/
 void ops_pk_session_key_free(ops_pk_session_key_t *sk)
     {
     switch(sk->algorithm)
@@ -914,6 +946,9 @@ void ops_pk_session_key_free(ops_pk_session_key_t *sk)
 	}
     }
 
+/**
+\ingroup Core_Create
+*/
 /*! Free the memory used when parsing a public key */
 void ops_public_key_free(ops_public_key_t *p)
     {
@@ -949,6 +984,9 @@ void ops_public_key_free(ops_public_key_t *p)
 	}
     }
 
+/**
+   \ingroup Core_ReadPackets
+*/
 static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
 				 ops_parse_info_t *pinfo)
     {
@@ -1014,7 +1052,9 @@ static int parse_public_key_data(ops_public_key_t *key,ops_region_t *region,
     }
 
 
-/** Parse a public key packet.
+/**
+ * \ingroup Core_ReadPackets
+ * \brief Parse a public key packet.
  *
  * This function parses an entire v3 (== v2) or v4 public key packet for RSA, ElGamal, and DSA keys.
  *
@@ -1049,31 +1089,45 @@ static int parse_public_key(ops_content_tag_t tag,ops_region_t *region,
     }
 
 
+/**
+\ingroup Core_Create
+*/
 /*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_regexp_free(ops_ss_regexp_t *regexp)
     {
     string_free(&regexp->text);
     }
 
+/**
+\ingroup Core_Create
+*/
 /*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_policy_url_free(ops_ss_policy_url_t *policy_url)
     {
     string_free(&policy_url->text);
     }
 
+/**
+\ingroup Core_Create
+*/
 /*! Free the memory used when parsing this signature sub-packet type */
 void ops_ss_preferred_key_server_free(ops_ss_preferred_key_server_t *preferred_key_server)
     {
     string_free(&preferred_key_server->text);
     }
 
+/**
+\ingroup Core_Create
+*/
 /*! Free the memory used when parsing this packet type */
 void ops_user_attribute_free(ops_user_attribute_t *user_att)
     {
     data_free(&user_att->data);
     }
 
-/** Parse one user attribute packet.
+/** 
+ * \ingroup Core_ReadPackets
+ * \brief Parse one user attribute packet.
  *
  * User attribute packets contain one or more attribute subpackets.
  * For now, handle the whole packet as raw data.
@@ -1097,6 +1151,9 @@ static int parse_user_attribute(ops_region_t *region, ops_parse_info_t *pinfo)
     return 1;
     }
 
+/**
+\ingroup Core_Create
+*/
 /*! Free the memory used when parsing this packet type */
 void ops_user_id_free(ops_user_id_t *id)
     {
@@ -1104,7 +1161,9 @@ void ops_user_id_free(ops_user_id_t *id)
     id->user_id=NULL;
     }
 
-/** Parse a user id.
+/** 
+ * \ingroup Core_ReadPackets
+ * \brief Parse a user id.
  *
  * This function parses an user id packet, which is basically just a char array the size of the packet.
  *
@@ -1141,10 +1200,8 @@ static int parse_user_id(ops_region_t *region,ops_parse_info_t *pinfo)
     }
 
 /**
- * \ingroup Memory
- *
- * Free the memory used when parsing a private/experimental PKA signature 
- *
+ * \ingroup Core_Create
+ * \brief Free the memory used when parsing a private/experimental PKA signature 
  * \param unknown_sig
  */
 void free_unknown_sig_pka(ops_unknown_signature_t *unknown_sig)
@@ -1153,10 +1210,8 @@ void free_unknown_sig_pka(ops_unknown_signature_t *unknown_sig)
     }
 
 /**
- * \ingroup Memory
- *
- * Free the memory used when parsing a signature 
- *
+ * \ingroup Core_Create
+ * \brief Free the memory used when parsing a signature 
  * \param sig
  */
 void ops_signature_free(ops_signature_t *sig)
@@ -1197,7 +1252,9 @@ void ops_signature_free(ops_signature_t *sig)
 	}
     }
 
-/** Parse a version 3 signature.
+/**
+ * \ingroup Core_Parse
+ * \brief Parse a version 3 signature.
  *
  * This function parses an version 3 signature packet, handling RSA and DSA signatures.
  *
@@ -1294,7 +1351,9 @@ static int parse_v3_signature(ops_region_t *region,
     return 1;
     }
 
-/** Parse one signature sub-packet.
+/**
+ * \ingroup Core_ReadPackets
+ * \brief Parse one signature sub-packet.
  *
  * Version 4 signatures can have an arbitrary amount of (hashed and unhashed) subpackets.  Subpackets are used to hold
  * optional attributes of subpackets.
@@ -1543,43 +1602,65 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
     return 1;
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+ \ingroup Core_Create
+ \brief Free the memory used when parsing this signature sub-packet type
+ \param ss_preferred_ska
+*/
 void ops_ss_preferred_ska_free(ops_ss_preferred_ska_t *ss_preferred_ska)
     {
     data_free(&ss_preferred_ska->data);
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+   \param ss_preferred_hash
+*/
 void ops_ss_preferred_hash_free(ops_ss_preferred_hash_t *ss_preferred_hash)
     {
     data_free(&ss_preferred_hash->data);
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+*/
 void ops_ss_preferred_compression_free(ops_ss_preferred_compression_t *ss_preferred_compression)
     {
     data_free(&ss_preferred_compression->data);
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+*/
 void ops_ss_key_flags_free(ops_ss_key_flags_t *ss_key_flags)
     {
     data_free(&ss_key_flags->data);
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+*/
 void ops_ss_features_free(ops_ss_features_t *ss_features)
     {
     data_free(&ss_features->data);
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+*/
 void ops_ss_key_server_prefs_free(ops_ss_key_server_prefs_t *ss_key_server_prefs)
     {
     data_free(&ss_key_server_prefs->data);
     }
 
-/** Parse several signature subpackets.
+/** 
+ * \ingroup Core_ReadPackets
+ * \brief Parse several signature subpackets.
  *
  * Hashed and unhashed subpacket sets are preceded by an octet count that specifies the length of the complete set.
  * This function parses this length and then calls parse_one_signature_subpacket() for each subpacket until the
@@ -1623,7 +1704,9 @@ static int parse_signature_subpackets(ops_signature_t *sig,
     return 1;
     }
 
-/** Parse a version 4 signature.
+/** 
+ * \ingroup Core_ReadPackets
+ * \brief Parse a version 4 signature.
  *
  * This function parses a version 4 signature including all its hashed and unhashed subpackets.
  *
@@ -1752,7 +1835,9 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     return 1;
     }
 
-/** Parse a signature subpacket.
+/** 
+ * \ingroup Core_ReadPackets
+ * \brief Parse a signature subpacket.
  *
  * This function calls the appropriate function to handle v3 or v4 signatures.
  *
@@ -1785,6 +1870,10 @@ static int parse_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     return 0;
     }
 
+/**
+ \ingroup Core_ReadPackets
+ \brief Parse Compressed packet
+*/
 static int parse_compressed(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     unsigned char c[1]="";
@@ -1803,6 +1892,10 @@ static int parse_compressed(ops_region_t *region,ops_parse_info_t *pinfo)
     return ops_decompress(region,pinfo,C.compressed.type);
     }
 
+/**
+   \ingroup Core_ReadPackets
+   \brief Parse a One Pass Signature packet
+*/
 static int parse_one_pass(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     unsigned char c[1]="";
@@ -1847,37 +1940,56 @@ static int parse_one_pass(ops_region_t *region,ops_parse_info_t *pinfo)
     return 1;
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+*/
 void ops_ss_userdefined_free(ops_ss_userdefined_t *ss_userdefined)
     {
     data_free(&ss_userdefined->data);
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+*/
 void ops_ss_reserved_free(ops_ss_unknown_t *ss_unknown)
     {
     data_free(&ss_unknown->data);
     }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+*/
 void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data)
      {
      data_free(&ss_notation_data->name);
      data_free(&ss_notation_data->value);
      }
 
-/*! Free the memory used when parsing this signature sub-packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this signature sub-packet type 
+*/
 void ops_ss_revocation_reason_free(ops_ss_revocation_reason_t *ss_revocation_reason)
     {
     string_free(&ss_revocation_reason->text);
     }
 
-/*! Free the memory used when parsing this packet type */
+/**
+   \ingroup Core_Create
+   \brief Free the memory used when parsing this packet type 
+*/
 void ops_trust_free(ops_trust_t *trust)
     {
     data_free(&trust->data);
     }
 
+/**
+ \ingroup Core_ReadPackets
+ \brief Parse a Trust packet
+*/
 static int
 parse_trust (ops_region_t *region, ops_parse_info_t *pinfo)
     {
@@ -1891,6 +2003,10 @@ parse_trust (ops_region_t *region, ops_parse_info_t *pinfo)
     return 1;
     }
 
+/**
+   \ingroup Core_ReadPackets
+   \brief Parse a Literal Data packet
+*/
 static int parse_literal_data(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     ops_parser_content_t content;
@@ -1933,7 +2049,7 @@ static int parse_literal_data(ops_region_t *region,ops_parse_info_t *pinfo)
     }
 
 /**
- * \ingroup Memory
+ * \ingroup Core_Create
  *
  * ops_secret_key_free() frees the memory associated with "key". Note that
  * the key itself is not freed.
@@ -1993,6 +2109,10 @@ static int consume_packet(ops_region_t *region,ops_parse_info_t *pinfo,
     return 1;
     }
 
+/**
+ * \ingroup Core_ReadPackets
+ * \brief Parse a secret key
+ */
 static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     ops_parser_content_t content;
@@ -2313,6 +2433,10 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     return 1;
     }
 
+/**
+   \ingroup Core_ReadPackets
+   \brief Parse a Public Key Session Key packet
+*/
 static int parse_pk_session_key(ops_region_t *region,
                                 ops_parse_info_t *pinfo)
     {
@@ -2578,6 +2702,10 @@ int ops_decrypt_se_ip_data(ops_content_tag_t tag,ops_region_t *region,
     return r;
     }
 
+/**
+   \ingroup Core_ReadPackets
+   \brief Read a Symmetrically Encrypted packet
+*/
 static int parse_se_data(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     ops_parser_content_t content;
@@ -2590,6 +2718,10 @@ static int parse_se_data(ops_region_t *region,ops_parse_info_t *pinfo)
     return ops_decrypt_se_data(OPS_PTAG_CT_SE_DATA_BODY,region,pinfo);
     }
 
+/**
+   \ingroup Core_ReadPackets
+   \brief Read a Symmetrically Encrypted Integrity Protected packet
+*/
 static int parse_se_ip_data(ops_region_t *region,ops_parse_info_t *pinfo)
     {
     unsigned char c[1]="";
@@ -2605,6 +2737,10 @@ static int parse_se_ip_data(ops_region_t *region,ops_parse_info_t *pinfo)
     return ops_decrypt_se_ip_data(OPS_PTAG_CT_SE_IP_DATA_BODY,region,pinfo);
     }
 
+/**
+   \ingroup Core_ReadPackets
+   \brief Read a MDC packet
+*/
 static int parse_mdc(ops_region_t *region, ops_parse_info_t *pinfo)
 	{
 	ops_parser_content_t content;
@@ -2617,7 +2753,9 @@ static int parse_mdc(ops_region_t *region, ops_parse_info_t *pinfo)
 	return 1;
 	}
 
-/** Parse one packet.
+/** 
+ * \ingroup Core_ReadPackets
+ * \brief Parse one packet.
  *
  * This function parses the packet tag.  It computes the value of the
  * content tag and then calls the appropriate function to handle the
@@ -2799,7 +2937,7 @@ static int ops_parse_one_packet(ops_parse_info_t *pinfo,
     }
 
 /**
- * \ingroup Core_Parse
+ * \ingroup Core_ReadPackets
  * 
  * \brief Parse packets from an input stream until EOF or error.
  *
@@ -2860,7 +2998,7 @@ int ops_parse(ops_parse_info_t *pinfo)
     }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Parse packets and print any errors
  * \param pinfo	Parsing configuration
  * \return		1 on success in all packets, 0 on error in any packet
@@ -2877,7 +3015,7 @@ int ops_parse_and_print_errors(ops_parse_info_t *pinfo)
     }
 
 /**
- * \ingroup Core_Parse
+ * \ingroup Core_ReadPackets
  *
  * \brief Specifies whether one or more signature
  * subpacket types should be returned parsed; or raw; or ignored.
@@ -2926,7 +3064,7 @@ void ops_parse_options(ops_parse_info_t *pinfo,
     }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Creates a new zero-ed ops_parse_info_t struct
 \sa ops_parse_info_delete()
 */
@@ -2934,7 +3072,7 @@ ops_parse_info_t *ops_parse_info_new(void)
     { return ops_mallocz(sizeof(ops_parse_info_t)); }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Free ops_parse_info_t struct and its contents
 \sa ops_parse_info_new()
 */
@@ -2956,7 +3094,7 @@ void ops_parse_info_delete(ops_parse_info_t *pinfo)
     }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Returns the parse_info's reader_info
 \return Pointer to the reader_info inside the parse_info
 */
@@ -2964,7 +3102,7 @@ ops_reader_info_t *ops_parse_get_rinfo(ops_parse_info_t *pinfo)
     { return &pinfo->rinfo; }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Sets the parse_info's callback
 This is used when adding the first callback in a stack of callbacks.
 \sa ops_parse_cb_push()
@@ -2978,7 +3116,7 @@ void ops_parse_cb_set(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
     }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Adds a further callback to a stack of callbacks
 \sa ops_parse_cb_set()
 */
@@ -2992,21 +3130,21 @@ void ops_parse_cb_push(ops_parse_info_t *pinfo,ops_parse_cb_t *cb,void *arg)
     }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Returns callback's arg
 */
 void *ops_parse_cb_get_arg(ops_parse_cb_info_t *cbinfo)
     { return cbinfo->arg; }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Returns callback's errors
 */
 void *ops_parse_cb_get_errors(ops_parse_cb_info_t *cbinfo)
     { return cbinfo->errors; }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Calls the parse_cb_info's callback if present
 \return Return value from callback, if present; else OPS_FINISHED
 */
@@ -3020,7 +3158,7 @@ ops_parse_cb_return_t ops_parse_cb(const ops_parser_content_t *content,
     }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Calls the next callback  in the stack
 \return Return value from callback
 */
@@ -3029,7 +3167,7 @@ ops_parse_cb_return_t ops_parse_stacked_cb(const ops_parser_content_t *content,
     { return ops_parse_cb(content,cbinfo->next); }
 
 /**
-\ingroup Core_Parse
+\ingroup Core_ReadPackets
 \brief Returns the parse_info's errors
 \return parse_info's errors
 */

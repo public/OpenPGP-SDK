@@ -471,6 +471,12 @@ size_t ops_encrypt_se(ops_crypt_t *encrypt,void *out_,const void *in_,
     return saved;
     }
 
+/**
+\ingroup HighLevel_Supported
+\brief Is this Symmetric Algorithm supported?
+\param alg Symmetric Algorithm to check
+\return ops_true if supported; else ops_false
+*/
 ops_boolean_t ops_is_sa_supported(ops_symmetric_algorithm_t alg)
     {
     switch (alg)

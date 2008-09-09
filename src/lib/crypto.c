@@ -31,6 +31,15 @@
 
 #include <openpgpsdk/final.h>
 
+/**
+\ingroup Core_MPI
+\brief Decrypt and unencode MPI
+\param buf Buffer in which to write decrypted unencoded MPI
+\param buflen Length of buffer
+\param encmpi
+\return length of MPI
+\note only RSA at present
+*/
 int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM *encmpi,
 		    const ops_secret_key_t *skey)
     {
@@ -105,6 +114,9 @@ int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,const BIGNUM
     return n-i;
     }
 
+/**
+\ingroup Core_MPI
+*/
 ops_boolean_t ops_rsa_encrypt_mpi(const unsigned char *encoded_m_buf,
                               const size_t sz_encoded_m_buf,
 			      const ops_public_key_t *pkey,
@@ -140,7 +152,7 @@ static ops_parse_cb_return_t
 callback_write_parsed(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 /**
-\ingroup HighLevel_Cryption
+\ingroup HighLevel_Crypt
 Encrypt a file
 \param input_filename Name of file to be encrypted
 \param output_filename Name of file to write to. If NULL, name is constructed from input_filename
@@ -208,7 +220,7 @@ ops_boolean_t ops_encrypt_file(const char* input_filename, const char* output_fi
     }
 
 /**
-   \ingroup HighLevel_Cryption
+   \ingroup HighLevel_Crypt
    \param input_filename Name of file to be decrypted
    \param output_filename Name of file to write to. If NULL, the filename is constructed from the input filename, following GPG conventions.
    \param keyring Keyring to use

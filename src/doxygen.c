@@ -1,6 +1,8 @@
 /*! \mainpage Documentation
  *
- * The OpenPGP::SDK library has 2 APIs, which can be used interchangeably by a developer.
+ * The OpenPGP::SDK library has 2 APIs (High Level and Core), which can be used interchangeably by a user of the library. 
+
+There are also some functions documented here as Internal API, which will be of use to OpenPGP::SDK developers.
 
 \section section_highlevel_api The High-Level API
 
@@ -37,8 +39,6 @@ suitable for most users.
 
 If you want more fine-grained control, consider using the Core API.
 
-Expected modules:
-encrypt, decrypt, sign, verify, keys, print
 */
 
 /** @defgroup CoreAPI Core API
@@ -67,7 +67,19 @@ This API provides code used by SDK developers.
     \ingroup HighLevel_Signature
  */
     
-/** \defgroup HighLevel_Cryption Encryption and Decryption
+/** \defgroup HighLevel_Crypt Encryption and Decryption
+    \ingroup HighLevelAPI
+ */
+    
+/** \defgroup HighLevel_Supported Supported Algorithms
+    \ingroup HighLevelAPI
+ */
+    
+/** \defgroup HighLevel_Errors Error Handling
+    \ingroup HighLevelAPI
+ */
+    
+/** \defgroup HighLevel_Memory Memory
     \ingroup HighLevelAPI
  */
     
@@ -122,6 +134,11 @@ This API provides code used by SDK developers.
 */
 
 /**
+   \defgroup Core_Errors Error Handling
+   \ingroup CoreAPI
+*/
+
+/**
    \defgroup Core_Readers Readers
    \ingroup CoreAPI
 */
@@ -165,6 +182,26 @@ This API provides code used by SDK developers.
    \defgroup HighLevel_Writers Writers
 */
 
+/** \defgroup Core_WritePackets Write OpenPGP packets
+    \ingroup CoreAPI
+*/
+
+/** \defgroup Core_ReadPackets Read OpenPGP packets
+    \ingroup CoreAPI
+*/
+
+/** \defgroup Core_Keys Keys and Keyrings
+    \ingroup CoreAPI
+ */
+    
+/** \defgroup Core_Hashes Hashes
+    \ingroup CoreAPI
+ */
+    
+/** \defgroup Core_Crypto Encryption and Decryption
+    \ingroup CoreAPI
+ */
+    
 /** \defgroup Core_Signature Signatures and Verification
     \ingroup CoreAPI
  */
@@ -173,15 +210,22 @@ This API provides code used by SDK developers.
     \ingroup CoreAPI
  */
     
+/** \defgroup Core_MPI Functions to do with MPIs
+    \ingroup CoreAPI
+*/
+
 /** \defgroup Core_Misc Miscellaneous
     \ingroup CoreAPI
  */
     
-/**
-   \defgroup Core_Parse Parse
-   \ingroup CoreAPI
-*/
-
+/** \defgroup Core_Lists Linked Lists
+    \ingroup CoreAPI
+ */
+    
+/** \defgroup Core_Memory Memory
+    \ingroup CoreAPI
+ */
+    
 /**
    \defgroup Core_Callbacks Callbacks
    \ingroup CoreAPI
@@ -234,7 +278,7 @@ This API provides code used by SDK developers.
  *
  */
 /**
- * @defgroup Core_Create Create
+ * @defgroup Core_Create Create Structures
  * \ingroup CoreAPI
  * These functions allow an OpenPGP object to be created. 
  *

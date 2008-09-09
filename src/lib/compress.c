@@ -340,6 +340,15 @@ int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info,
     return ret;
     }
 
+/**
+\ingroup Core_WritePackets
+\brief Writes Compressed packet
+\param data Data to write out
+\param len Length of data
+\param cinfo Write settings
+\return ops_true if OK; else ops_false
+*/
+
 ops_boolean_t ops_write_compressed(const unsigned char *data,
                                    const unsigned int len,
                                    ops_create_info_t *cinfo)

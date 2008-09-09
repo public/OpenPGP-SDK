@@ -41,7 +41,7 @@ typedef struct
     } accumulate_arg_t;
 
 /**
- * \ingroup Callbacks
+ * \ingroup Core_Callbacks
  */
 static ops_parse_cb_return_t
 accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)

@@ -66,7 +66,7 @@ ops_boolean_t ops_write_ss_header(unsigned length,ops_content_tag_t type,
  * be freed. */
 
 /**
- * \ingroup Create
+ * \ingroup Core_Create
  *
  * ops_fast_create_user_id() sets id->user_id to the given user_id.
  * This is fast because it is only copying a char*. However, if user_id
@@ -81,10 +81,8 @@ void ops_fast_create_user_id(ops_user_id_t *id,unsigned char *user_id)
     }
 
 /**
- * \ingroup Create
- *
- * Writes a User Id from the information held in id and info
- *
+ * \ingroup Core_WritePackets
+ * \brief Writes a User Id packet
  * \param id
  * \param info
  * \return ops_true if OK, otherwise ops_false
@@ -98,10 +96,8 @@ ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
     }
 
 /**
- * \ingroup Create
- *
- * Write User Id
- * 
+ * \ingroup Core_WritePackets
+ * \brief Write a User Id packet.
  * \param user_id
  * \param info
  *
@@ -116,6 +112,9 @@ ops_boolean_t ops_write_user_id(const unsigned char *user_id,ops_create_info_t *
     return ops_write_struct_user_id(&id,info);
     }
 
+/**
+\ingroup Core_MPI
+*/
 static unsigned mpi_length(const BIGNUM *bn)
     {
     return 2+(BN_num_bits(bn)+7)/8;
@@ -154,7 +153,7 @@ static unsigned secret_key_length(const ops_secret_key_t *key)
     }
 
 /** 
- * \ingroup Create
+ * \ingroup Core_Create
  * \param key
  * \param time
  * \param n
@@ -562,13 +561,10 @@ ops_boolean_t ops_write_transferable_secret_key(const ops_keydata_t *keydata, co
     }
 
 /**
- * \ingroup Create
- *
- * Writes a Public Key from the information held in "key" and "info"
- *
+ * \ingroup Core_WritePackets
+ * \brief Writes a Public Key packet
  * \param key
  * \param info
- * \return Return value from write_public_key_body() unless call to ops_write_ptag() or ops_write_length() failed before it was called, in which case returns 0
  * \return ops_true if OK, otherwise ops_false
  */
 ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
@@ -582,21 +578,12 @@ ops_boolean_t ops_write_struct_public_key(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup Create
- *
- * Writes one RSA public key.
- *
- * The parameters for the public key are provided by "time", "n" and "e".
- *
- * This function expects "info" to specify a "writer" function to be used, for the
- * actual output.
- *
- * \sa See Detailed Description for usage.
- *
+ * \ingroup Core_WritePackets
+ * \brief Writes one RSA public key packet.
  * \param time Creation time
  * \param n RSA public modulus
  * \param e RSA public encryption exponent
- * \param info Writer setup
+ * \param info Writer settings
  *
  * \return ops_true if OK, otherwise ops_false
  */
@@ -613,7 +600,7 @@ ops_boolean_t ops_write_rsa_public_key(time_t time,const BIGNUM *n,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Create
  * \param out
  * \param key
  * \param make_packet
@@ -638,7 +625,7 @@ void ops_build_public_key(ops_memory_t *out,const ops_public_key_t *key,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Create
  *
  * Create an RSA secret key structure. If a parameter is marked as
  * [OPTIONAL], then it can be omitted and will be calculated from
@@ -673,13 +660,11 @@ void ops_fast_create_rsa_secret_key(ops_secret_key_t *key,time_t time,
     }
 
 /**
- * \ingroup Create
- *
- * Writes a secret key.
- *
+ * \ingroup Core_WritePackets
+ * \brief Writes a Secret Key packet.
  * \param key The secret key
  * \param info
- * \return success
+ * \return ops_true if OK; else ops_false
  */
 ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
                                           const unsigned char* passphrase,
@@ -765,17 +750,20 @@ ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Create
  *
- * Create a new ops_create_info_t structure.
+ * \brief Create a new ops_create_info_t structure.
  *
  * \return the new structure.
+ * \note It is the responsiblity of the caller to call ops_create_info_delete().
+ * \sa ops_create_info_delete()
  */
 ops_create_info_t *ops_create_info_new(void)
     { return ops_mallocz(sizeof(ops_create_info_t)); }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Create
+ * \brief Delete an ops_create_info_t strucut and associated resources.
  *
  * Delete an ops_create_info_t structure. If a writer is active, then
  * that is also deleted.
@@ -788,7 +776,14 @@ void ops_create_info_delete(ops_create_info_t *info)
     free(info);
     }
 
-ops_boolean_t ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char *cs)
+/** 
+ \ingroup Core_Create
+ \brief Calculate the checksum for a session key
+ \param session_key Session Key to use
+ \param cs Checksum to be written
+ \return ops_true if OK; else ops_false
+*/
+ops_boolean_t ops_calc_session_key_checksum(ops_pk_session_key_t *session_key, unsigned char cs[2])
     {
     unsigned int i=0;
     unsigned long checksum=0;
@@ -832,6 +827,15 @@ static ops_boolean_t create_unencoded_m_buf(ops_pk_session_key_t *session_key, u
     return(ops_calc_session_key_checksum(session_key, m_buf+1+CAST_KEY_LENGTH));
     }
 
+/** 
+\ingroup Core_Create
+\brief implementation of EME-PKCS1-v1_5-ENCODE, as defined in OpenPGP RFC
+\param M
+\param mLen
+\param pkey
+\param EM
+\return ops_true if OK; else ops_false
+*/
 ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
                            const ops_public_key_t *pkey,
                            unsigned char* EM
@@ -881,6 +885,15 @@ ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
     return ops_true;
     }
 
+/**
+ \ingroup Core_Create
+\brief Creates an ops_pk_session_key_t struct from keydata
+\param key Keydata to use
+\return ops_pk_session_key_t struct
+\note It is the caller's responsiblity to free the returned pointer
+\note Currently hard-coded to use CAST5
+\note Currently hard-coded to use RSA
+*/
 ops_pk_session_key_t *ops_create_pk_session_key(const ops_keydata_t *key)
     {
     /*
@@ -958,6 +971,13 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_keydata_t *key)
     return session_key;
     }
 
+/**
+\ingroup Core_WritePackets
+\brief Writes Public Key Session Key packet
+\param info Write settings
+\param pksk Public Key Session Key to write out
+\param ops_true if OK; else ops_false
+*/
 ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 				       ops_pk_session_key_t *pksk)
     {
@@ -974,6 +994,14 @@ ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
         ;
     }
 
+/**
+\ingroup Core_WritePackets
+\brief Writes MDC packet
+\param hashed Hash for MDC
+\param info Write settings
+\param ops_true if OK; else ops_false
+*/
+
 ops_boolean_t ops_write_mdc(const unsigned char *hashed,
                             ops_create_info_t* info)
     {
@@ -983,6 +1011,15 @@ ops_boolean_t ops_write_mdc(const unsigned char *hashed,
         && ops_write(hashed, OPS_SHA1_HASH_SIZE, info);
     }
 
+/**
+\ingroup Core_WritePackets
+\brief Writes Literal Data packet from buffer
+\param data Buffer to write out
+\param maxlen Max length of buffer
+\param type Literal Data Type
+\param info Write settings
+\param ops_true if OK; else ops_false
+*/
 ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data, 
                                      const int maxlen, 
                                      const ops_literal_data_type_t type,
@@ -1001,6 +1038,15 @@ ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data,
         && ops_write_scalar(0, 4, info)
         && ops_write(data, maxlen, info);
     }
+
+/**
+\ingroup Core_WritePackets
+\brief Writes Literal Data packet from contents of file
+\param filename Name of file to read from
+\param type Literal Data Type
+\param info Write settings
+\param ops_true if OK; else ops_false
+*/
 
 ops_boolean_t ops_write_literal_data_from_file(const char *filename, 
                                      const ops_literal_data_type_t type,
@@ -1053,7 +1099,7 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
 
    \param filename Filename to read from
    \param errnum Pointer to error
-   \return new ops_memory_t struct containing the contents of the file
+   \return new ops_memory_t pointer containing the contents of the file
    
    \note If there was an error opening the file or reading from it, errnum is set to the cause
 
@@ -1142,6 +1188,15 @@ int ops_write_file_from_buf(const char *filename, const char* buf, const size_t 
     return 0;
     }
 
+/**
+\ingroup Core_WritePackets
+\brief Write Symmetrically Encrypted packet
+\param data Data to encrypt
+\param len Length of data
+\param info Write settings
+\return ops_true if OK; else ops_false
+\note Hard-coded to use AES256
+*/
 ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data, 
                                                      const int len, 
                                                      ops_create_info_t *info)
@@ -1167,6 +1222,15 @@ ops_boolean_t ops_write_symmetrically_encrypted_data(const unsigned char *data,
         && ops_write(data, len, info);
     }
 
+/**
+\ingroup Core_WritePackets
+\brief Write a One Pass Signature packet
+\param skey Secret Key to use
+\param hash_alg Hash Algorithm to use
+\param sig_type Signature type
+\param info Write settings
+\return ops_true if OK; else ops_false
+*/
 ops_boolean_t ops_write_one_pass_sig(const ops_secret_key_t* skey,
                                      const ops_hash_algorithm_t hash_alg,
                                      const ops_sig_type_t sig_type,

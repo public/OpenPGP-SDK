@@ -42,10 +42,8 @@
 static int debug=0;
 
 /**
- * \ingroup Utils
- *
- * Calculate a public key fingerprint.
- *
+ * \ingroup Core_Keys
+ * \brief Calculate a public key fingerprint.
  * \param fp Where to put the calculated fingerprint
  * \param key The key for which the fingerprint is calculated
  */
@@ -109,10 +107,8 @@ void ops_fingerprint(ops_fingerprint_t *fp,const ops_public_key_t *key)
     }
 
 /**
- * \ingroup Utils
- *
- * Calculate the Key ID from the public key.
- *
+ * \ingroup Core_Keys
+ * \brief Calculate the Key ID from the public key.
  * \param keyid Space for the calculated ID to be stored
  * \param key The key for which the ID is calculated
  * \todo add error return value

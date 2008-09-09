@@ -36,6 +36,12 @@ struct ops_memory
     size_t allocated;
     };
 
+/**
+\ingroup HighLevel_Memory
+\brief Memory to initialise
+\param mem memory to initialise
+\param initial_size Size to initialise to
+*/
 void ops_memory_init(ops_memory_t *mem,size_t initial_size)
     {
     mem->length=0;
@@ -52,6 +58,12 @@ void ops_memory_init(ops_memory_t *mem,size_t initial_size)
     mem->allocated=initial_size;
     }
 
+/**
+\ingroup HighLevel_Memory
+\brief Pad memory to required length
+\param mem Memory to use
+\param length New size
+*/
 void ops_memory_pad(ops_memory_t *mem,size_t length)
     {
     assert(mem->allocated >= mem->length);
@@ -63,6 +75,13 @@ void ops_memory_pad(ops_memory_t *mem,size_t length)
     assert(mem->allocated >= mem->length+length);
     }
 
+/**
+\ingroup HighLevel_Memory
+\brief Add data to memory
+\param mem Memory to which to add
+\param src Data to add
+\param length Length of data to add
+*/
 void ops_memory_add(ops_memory_t *mem,const unsigned char *src,size_t length)
     {
     ops_memory_pad(mem,length);
@@ -82,12 +101,23 @@ void ops_memory_place_int(ops_memory_t *mem,unsigned offset,unsigned n,
     }
 
 /**
- * Unlike ops_memory_release(), this retains the allocated memory but
- * sets the length of stored data to zero.
+ * \ingroup HighLevel_Memory
+ * \brief Retains allocated memory and set length of stored data to zero.
+ * \param mem Memory to clear
+ * \sa ops_memory_release()
+ * \sa ops_memory_free()
  */
 void ops_memory_clear(ops_memory_t *mem)
     { mem->length=0; }
 
+/**
+\ingroup HighLevel_Memory
+\brief Free memory and associated data
+\param mem Memory to free
+\note This does not free mem itself
+\sa ops_memory_clear()
+\sa ops_memory_free()
+*/
 void ops_memory_release(ops_memory_t *mem)
     {
     free(mem->buf);
@@ -131,19 +161,22 @@ void ops_memory_make_packet(ops_memory_t *out,ops_content_tag_t tag)
     }
 
 /**
-   \ingroup HighLevel_Misc
+   \ingroup HighLevel_Memory
    \brief Create a new zeroed ops_memory_t
    \return Pointer to new ops_memory_t
    \note Free using ops_memory_free() after use.
+   \sa ops_memory_free()
 */
 
 ops_memory_t *ops_memory_new()
     { return ops_mallocz(sizeof(ops_memory_t)); }
 
 /**
-   \ingroup HighLevel_Misc
-   \brief Free memory
+   \ingroup HighLevel_Memory
+   \brief Free memory ptr and associated memory
    \param mem Memory to be freed
+   \sa ops_memory_release()
+   \sa ops_memory_clear()
 */
 
 void ops_memory_free(ops_memory_t *mem)
@@ -153,7 +186,7 @@ void ops_memory_free(ops_memory_t *mem)
     }
 
 /**
-   \ingroup HighLevel_Misc
+   \ingroup HighLevel_Memory
    \brief Get length of data stored in ops_memory_t struct
    \return Number of bytes in data
 */
@@ -161,7 +194,7 @@ size_t ops_memory_get_length(const ops_memory_t *mem)
     { return mem->length; }
 
 /**
-   \ingroup HighLevel_Misc
+   \ingroup HighLevel_Memory
    \brief Get data stored in ops_memory_t struct
    \return Pointer to data
 */

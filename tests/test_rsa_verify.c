@@ -82,8 +82,10 @@ static void create_wellformed_testfiles()
     int fd=0;
     char* wellformed[]=
         {
-        // no headers
+        // no headers in header
         "-----BEGIN PGP SIGNED MESSAGE-----\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        // no headers in trailer
+        "-----BEGIN PGP SIGNED MESSAGE-----\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
         };
     num_wellformed=sizeof (wellformed)/sizeof(char *);
     for (i=0; i<num_wellformed; i++)
