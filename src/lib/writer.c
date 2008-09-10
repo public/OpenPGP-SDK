@@ -56,7 +56,7 @@ static ops_boolean_t base_write(const void *src,unsigned length,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_WritePackets
  *
  * \param src
  * \param length
@@ -71,7 +71,7 @@ ops_boolean_t ops_write(const void *src,unsigned length,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_WritePackets
  * \param n
  * \param length
  * \param info
@@ -93,7 +93,7 @@ ops_boolean_t ops_write_scalar(unsigned n,unsigned length,
     }
 
 /** 
- * \ingroup Create
+ * \ingroup Core_WritePackets
  * \param bn
  * \param info
  * \return 1 if OK, otherwise 0
@@ -111,7 +111,7 @@ ops_boolean_t ops_write_mpi(const BIGNUM *bn,ops_create_info_t *info)
     }
 
 /** 
- * \ingroup Create
+ * \ingroup Core_WritePackets
  * \param tag
  * \param info
  * \return 1 if OK, otherwise 0
@@ -127,7 +127,7 @@ ops_boolean_t ops_write_ptag(ops_content_tag_t tag,ops_create_info_t *info)
     }
 
 /** 
- * \ingroup Create
+ * \ingroup Core_WritePackets
  * \param length
  * \param info
  * \return 1 if OK, otherwise 0
@@ -191,13 +191,14 @@ void writer_info_delete(ops_writer_info_t *winfo)
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Writers
  *
  * Set a writer in info. There should not be another writer set.
  *
  * \param info The info structure
- * \param writer The writer
- * \param destroyer The destroyer
+ * \param writer 
+ * \param finaliser
+ * \param destroyer 
  * \param arg The argument for the writer and destroyer
  */
 void ops_writer_set(ops_create_info_t *info,
@@ -214,13 +215,14 @@ void ops_writer_set(ops_create_info_t *info,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Writers
  *
  * Push a writer in info. There must already be another writer set.
  *
  * \param info The info structure
- * \param writer The writer
- * \param destroyer The destroyer
+ * \param writer 
+ * \param finaliser 
+ * \param destroyer 
  * \param arg The argument for the writer and destroyer
  */
 void ops_writer_push(ops_create_info_t *info,
@@ -259,7 +261,7 @@ void ops_writer_pop(ops_create_info_t *info)
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Writers
  *
  * Close the writer currently set in info.
  *
@@ -275,7 +277,7 @@ ops_boolean_t ops_writer_close(ops_create_info_t *info)
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Writers
  *
  * Get the arg supplied to ops_create_info_set_writer().
  *
@@ -286,15 +288,14 @@ void *ops_writer_get_arg(ops_writer_info_t *winfo)
     { return winfo->arg; }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Writers
  *
  * Write to the next writer down in the stack.
  *
  * \param src The data to write.
  * \param length The length of src.
- * \param flags The writer flags.
  * \param errors A place to store errors.
- * \param info The writer_info structure.
+ * \param winfo The writer_info structure.
  * \return Success - if ops_false, then errors should contain the error.
  */
 ops_boolean_t ops_stacked_write(const void *src,unsigned length,
@@ -304,7 +305,7 @@ ops_boolean_t ops_stacked_write(const void *src,unsigned length,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Writers
  *
  * Free the arg. Many writers just have a malloc()ed lump of storage, this
  * function releases it.
@@ -315,7 +316,7 @@ void ops_writer_generic_destroyer(ops_writer_info_t *winfo)
     { free(ops_writer_get_arg(winfo)); }
 
 /**
- * \ingroup Create
+ * \ingroup Core_Writers
  *
  * A writer that just writes to the next one down. Useful for when you
  * want to insert just a finaliser into the stack.

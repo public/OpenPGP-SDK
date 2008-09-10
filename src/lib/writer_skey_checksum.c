@@ -63,6 +63,11 @@ static void skey_checksum_destroyer(ops_writer_info_t* winfo)
     free(arg);
     }
 
+/**
+\ingroup Core_WritersNext
+\param cinfo
+\param skey
+*/
 void ops_push_skey_checksum_writer(ops_create_info_t *cinfo, ops_secret_key_t *skey)
     {
     //    OPS_USED(info);

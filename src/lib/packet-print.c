@@ -23,10 +23,6 @@
   \brief Standard API print functions
 */
 
-/** @defgroup StdPrint Print
-    \ingroup StandardAPI
-*/
-
 #include <assert.h>
 #include <string.h>
 #include "openpgpsdk/crypto.h"
@@ -66,7 +62,7 @@ static void showtime(const char *name,time_t t);
 static void showtime_short(time_t t);
 
 /**
-   \ingroup StdPrintKeyring
+   \ingroup Core_Print
 
    Prints a public key in succinct detail
 
@@ -104,6 +100,10 @@ ops_print_public_keydata(const ops_keydata_t *key)
 	}
     }
 
+/**
+\ingroup Core_Print
+\param pkey
+*/
 void 
 ops_print_public_key(const ops_public_key_t *pkey)
     {
@@ -147,7 +147,7 @@ ops_print_public_key(const ops_public_key_t *pkey)
     }
 
 /**
-   \ingroup StdPrintKeyring
+   \ingroup Core_Print
 
    Prints a public key in full detail
 
@@ -163,7 +163,7 @@ ops_print_public_keydata_verbose(const ops_keydata_t *key)
     }
 
 /**
-   \ingroup StdPrintKeyring
+   \ingroup Core_Print
 
    Prints a secret key
 
@@ -212,6 +212,11 @@ ops_print_secret_key_verbose(const ops_secret_key_t* skey)
 	}
 */
 
+/**
+\ingroup Core_Print
+\param type
+\param skey
+*/
 void 
 ops_print_secret_key_verbose(const ops_content_tag_t type, const ops_secret_key_t* skey)
     {
@@ -265,6 +270,10 @@ ops_print_secret_key_verbose(const ops_content_tag_t type, const ops_secret_key_
     printf("------- end of SECRET KEY or ENCRYPTED SECRET KEY ------\n");
     }
 
+/**
+\ingroup Core_Print
+\param key
+*/
 void
 ops_print_secret_keydata_verbose(const ops_keydata_t *key)
     {
@@ -551,6 +560,11 @@ static void print_block(const char *name,const unsigned char *str,
     printf("<<<<< %s <<<<<\n",name);
     }
 
+/**
+\ingroup Core_Print
+\param tag
+\param key
+*/
 void ops_print_pk_session_key(ops_content_tag_t tag,
 				 const ops_pk_session_key_t *key)
     {
@@ -601,6 +615,10 @@ static void end_subpacket()
     indent--;
     }
 
+/**
+\ingroup Core_Print
+\param content_
+*/
 int ops_print_packet(const ops_parser_content_t *content_)
     {
     const ops_parser_content_union_t *content=&content_->content;
@@ -1793,6 +1811,13 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
     return OPS_RELEASE_MEMORY;
     }
 
+/**
+\ingroup Core_Print
+\param filename
+\param armour
+\param keyring
+\param cb_get_passphrase
+*/
 void ops_list_packets(char* filename, ops_boolean_t armour, ops_keyring_t* keyring, ops_parse_cb_t* cb_get_passphrase)
     {
     int fd=0;

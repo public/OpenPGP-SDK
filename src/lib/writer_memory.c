@@ -41,13 +41,16 @@ static ops_boolean_t memory_writer(const unsigned char *src,unsigned length,
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_WritersFirst
+ * \brief Write to memory
  *
- * Set a memory writer. Note that it is the caller's resposibility to
- * release mem.
+ * Set a memory writer. 
  *
  * \param info The info structure
- * \param mem The memory structure */
+ * \param mem The memory structure 
+ * \note It is the caller's responsiblity to call ops_memory_free(mem)
+ * \sa ops_memory_free()
+ */
 
 void ops_writer_set_memory(ops_create_info_t *info,ops_memory_t *mem)
     {

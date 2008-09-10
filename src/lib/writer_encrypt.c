@@ -97,6 +97,10 @@ static void encrypt_destroyer (ops_writer_info_t *winfo)
     free (arg);
     }
 
+/**
+\ingroup Core_WritersNext
+\brief Push Encrypted Writer onto stack (create SE packets)
+*/
 void ops_writer_push_encrypt_crypt(ops_create_info_t *cinfo,
                                    ops_crypt_t *crypt)
     {

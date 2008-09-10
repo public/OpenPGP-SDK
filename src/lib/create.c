@@ -47,7 +47,7 @@
 static int debug=0;
 
 /** 
- * \ingroup Create
+ * \ingroup Core_Create
  * \param length
  * \param type
  * \param info
@@ -486,6 +486,8 @@ ops_boolean_t ops_write_transferable_public_key(const ops_keydata_t *keydata, op
    \brief Writes a transferable PGP secret key to the given output stream.
 
    \param keydata Key to be written
+   \param passphrase
+   \param pplen
    \param armoured Flag is set for armoured output
    \param info Output stream
 
@@ -979,7 +981,7 @@ ops_pk_session_key_t *ops_create_pk_session_key(const ops_keydata_t *key)
 \brief Writes Public Key Session Key packet
 \param info Write settings
 \param pksk Public Key Session Key to write out
-\param ops_true if OK; else ops_false
+\return ops_true if OK; else ops_false
 */
 ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 				       ops_pk_session_key_t *pksk)
@@ -1002,7 +1004,7 @@ ops_boolean_t ops_write_pk_session_key(ops_create_info_t *info,
 \brief Writes MDC packet
 \param hashed Hash for MDC
 \param info Write settings
-\param ops_true if OK; else ops_false
+\return ops_true if OK; else ops_false
 */
 
 ops_boolean_t ops_write_mdc(const unsigned char *hashed,
@@ -1021,7 +1023,7 @@ ops_boolean_t ops_write_mdc(const unsigned char *hashed,
 \param maxlen Max length of buffer
 \param type Literal Data Type
 \param info Write settings
-\param ops_true if OK; else ops_false
+\return ops_true if OK; else ops_false
 */
 ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data, 
                                      const int maxlen, 
@@ -1048,7 +1050,7 @@ ops_boolean_t ops_write_literal_data_from_buf(const unsigned char *data,
 \param filename Name of file to read from
 \param type Literal Data Type
 \param info Write settings
-\param ops_true if OK; else ops_false
+\return ops_true if OK; else ops_false
 */
 
 ops_boolean_t ops_write_literal_data_from_file(const char *filename, 
@@ -1109,7 +1111,7 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
    \note It is the caller's responsibility to call ops_memory_free(mem)
 */
 
-ops_memory_t* ops_write_buf_from_file(const char *filename, int* errnum)
+ops_memory_t* ops_write_mem_from_file(const char *filename, int* errnum)
     {
     size_t initial_size=1024;
     int fd=0;

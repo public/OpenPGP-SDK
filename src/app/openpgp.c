@@ -507,8 +507,6 @@ int main(int argc, char **argv)
             exit(-1);
             }
         // now decrypt key
-        // \todo
-        //fprintf(stdout, "Enter passphrase: ");
         skey=ops_decrypt_secret_key_from_data(keydata,opt_passphrase);
         assert(skey);
 

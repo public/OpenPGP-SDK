@@ -223,6 +223,7 @@ ops_boolean_t ops_encrypt_file(const char* input_filename, const char* output_fi
 
 /**
    \ingroup HighLevel_Crypto
+   \brief Decrypt a file.
    \param input_filename Name of file to be decrypted
    \param output_filename Name of file to write to. If NULL, the filename is constructed from the input filename, following GPG conventions.
    \param keyring Keyring to use

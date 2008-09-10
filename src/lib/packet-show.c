@@ -363,7 +363,7 @@ void ops_text_init(ops_text_t *text)
     }
 
 /**
- * \ingroup Memory
+ * \ingroup Core_Print
  *
  * ops_text_free() frees the memory used by an ops_text_t structure
  *
@@ -525,7 +525,7 @@ static ops_text_t *showall_octets_bits(ops_data_t *data,ops_bit_map_t **map,
  */
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  * returns description of the Packet Tag 
  * \param packet_tag
  * \return string or "Unknown"
@@ -542,7 +542,7 @@ const char *ops_show_packet_tag(ops_packet_tag_t packet_tag)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns description of the Signature Sub-Packet type
  * \param ss_type Signature Sub-Packet type
@@ -554,7 +554,7 @@ const char *ops_show_ss_type(ops_ss_type_t ss_type)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns description of the Revocation Reason code
  * \todo add reference
@@ -567,7 +567,7 @@ const char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns description of the given Signature type
  * \param sig_type Signature type
@@ -580,7 +580,7 @@ const char *ops_show_sig_type(ops_sig_type_t sig_type)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns description of the given Public Key Algorithm
  * \param pka Public Key Algorithm type
@@ -593,7 +593,7 @@ const char *ops_show_pka(ops_public_key_algorithm_t pka)
     }
 
 /** 
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  * returns description of the Preferred Compression
  * \param octet
  * \return string or "Unknown"
@@ -604,7 +604,7 @@ const char *ops_show_ss_preferred_compression(unsigned char octet)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns set of descriptions of the given Preferred Compression Algorithms
  * \param ss_preferred_compression Array of Preferred Compression Algorithms
@@ -620,7 +620,7 @@ ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t 
 
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns description of the Hash Algorithm type
  * \param hash Hash Algorithm type
@@ -634,7 +634,7 @@ const char *ops_show_hash_algorithm(unsigned char hash)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns set of descriptions of the given Preferred Hash Algorithms
  * \param ss_preferred_hash Array of Preferred Hash Algorithms
@@ -654,7 +654,7 @@ const char *ops_show_symmetric_algorithm(unsigned char hash)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  * returns description of the given Preferred Symmetric Key Algorithm
  * \param octet
  * \todo add reference
@@ -666,7 +666,7 @@ const char *ops_show_ss_preferred_ska(unsigned char octet)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns set of descriptions of the given Preferred Symmetric Key Algorithms
  * \param ss_preferred_ska Array of Preferred Symmetric Key Algorithms
@@ -681,7 +681,7 @@ ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska
     }
 
 /** 
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  * returns description of one SS Feature
  * \param octet
  * \return string or "Unknown"
@@ -695,7 +695,7 @@ static char *ops_show_ss_feature(unsigned char octet,unsigned offset)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns set of descriptions of the given SS Features
  * \param ss_features Signature Sub-Packet Features
@@ -739,7 +739,7 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  * returns description of SS Key Flag
  * \param octet
  * \param map
@@ -752,7 +752,7 @@ const char *ops_show_ss_key_flag(unsigned char octet, ops_bit_map_t *map)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns set of descriptions of the given Preferred Key Flags
  * \param ss_key_flags Array of Key Flags
@@ -794,7 +794,7 @@ ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns description of one given Key Server Preference
  *
@@ -811,7 +811,7 @@ const char *ops_show_ss_key_server_prefs(unsigned char prefs,
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  * returns set of descriptions of given Key Server Preferences
  * \param ss_key_server_prefs
  * \return NULL if cannot allocate memory or other error
@@ -854,7 +854,7 @@ ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_ser
     }
 
 /**
- * \ingroup HighLevel_Print
+ * \ingroup Core_Print
  *
  * returns set of descriptions of the given SS Notation Data Flags
  * \param ss_notation_data Signature Sub-Packet Notation Data

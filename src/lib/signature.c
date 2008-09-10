@@ -842,7 +842,7 @@ static int open_output_file(ops_create_info_t **cinfo, const char* input_filenam
     }
 
 /**
-   \ingroup HighLevel_SignatureSign
+   \ingroup HighLevel_Sign
    \brief Sign a file with a Cleartext Signature
    \param input_filename Name of file to be signed
    \param output_filename Filename to be created. If NULL, filename will be constructed from the input_filename.
@@ -954,7 +954,7 @@ ops_boolean_t ops_sign_file_as_cleartext(const char* input_filename, const char*
 
 
 /** 
- * \ingroup HighLevel_SignatureSign
+ * \ingroup HighLevel_Sign
  * \brief Sign a buffer with a Cleartext signature
  * \param cleartext Text to be signed
  * \param len Length of text
@@ -1036,7 +1036,7 @@ ops_boolean_t ops_sign_buf_as_cleartext(const char* cleartext, const size_t len,
     }
 
 /**
-\ingroup HighLevel_SignatureSign
+\ingroup HighLevel_Sign
 \brief Sign a file
 \param input_filename Input filename
 \param output_filename Output filename. If NULL, a name is constructed from the input filename.
@@ -1079,7 +1079,7 @@ ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filen
     // read input file into buf
 
     int errnum;
-    mem_buf=ops_write_buf_from_file(input_filename,&errnum);
+    mem_buf=ops_write_mem_from_file(input_filename,&errnum);
     if (errnum)
         return ops_false;
 
@@ -1145,7 +1145,7 @@ ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filen
     }
 
 /**
-\ingroup HighLevel_SignatureSign
+\ingroup HighLevel_Sign
 \brief Signs a buffer
 \param input Input text to be signed
 \param input_len Length of input text

@@ -412,6 +412,12 @@ char *ops_malloc_passphrase(char *pp)
     return passphrase;
     }
 
+/**
+ \ingroup HighLevel_Callbacks
+ \brief Callback to use when you need to prompt user for passphrase
+ \param content_
+ \param cbinfo
+*/
 ops_parse_cb_return_t
 callback_cmd_get_passphrase_from_cmdline(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     {

@@ -478,6 +478,7 @@ ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e,
 
  \note It is the caller's responsibility to call ops_keydata_free(keydata)
  \sa ops_rsa_generate_keypair()
+ \sa ops_keydata_free()
 */
 ops_keydata_t* ops_rsa_create_selfsigned_keypair(const int numbits, const unsigned long e, ops_user_id_t * userid)
     {

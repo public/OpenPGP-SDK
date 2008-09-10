@@ -194,7 +194,7 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
     snprintf(signed_file,sizeof signed_file,"%s.asc",myfile);
 
     // read file contents
-    input=ops_write_buf_from_file(myfile,&errnum);
+    input=ops_write_mem_from_file(myfile,&errnum);
     CU_ASSERT(errnum==0);
 
     // sign file

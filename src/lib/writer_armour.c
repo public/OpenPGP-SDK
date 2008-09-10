@@ -126,6 +126,8 @@ static void dash_escaped_destroyer(ops_writer_info_t *winfo)
     }
 
 /**
+ * \ingroup Core_WritersNext
+ * \brief Push Clearsigned Writer onto stack
  * \param info
  * \param sig
  */
@@ -288,6 +290,8 @@ static ops_boolean_t linebreak_writer(const unsigned char *src,
     }
 
 /**
+ * \ingroup Core_WritersNext
+ * \brief Push armoured signature on stack
  * \param info
  */
 ops_boolean_t ops_writer_switch_to_armoured_signature(ops_create_info_t *info)
@@ -351,6 +355,11 @@ static ops_boolean_t armoured_message_finaliser(ops_error_t **errors,
     return ops_stacked_write(trailer,sizeof trailer-1,errors,winfo);
     }
 
+/**
+ \ingroup Core_WritersNext
+ \brief Write a PGP MESSAGE 
+ \todo replace with generic function
+*/
 void ops_writer_push_armoured_message(ops_create_info_t *info)
 //				  ops_create_signature_t *sig)
     {
@@ -402,6 +411,7 @@ static ops_boolean_t armoured_finaliser(ops_armor_type_t type, ops_error_t **err
 	if(arg->pos == 2 && !ops_stacked_write("=",1,errors,winfo))
 	    return ops_false;
 	}
+
     /* Ready for the checksum */
     if(!ops_stacked_write("\r\n=",3,errors,winfo))
 	return ops_false;
@@ -431,6 +441,10 @@ static ops_boolean_t armoured_private_key_finaliser(ops_error_t **errors,
     }
 
 // \todo use this for other armoured types
+/**
+ \ingroup Core_WritersNext
+ \brief Push Armoured Writer on stack (generic)
+*/
 void ops_writer_push_armoured(ops_create_info_t *info, ops_armor_type_t type)
     {
     static char hdr_public_key[]="-----BEGIN PGP PUBLIC KEY BLOCK-----\r\nVersion: "

@@ -46,7 +46,7 @@ typedef struct
     } reader_fd_arg_t;
 
 /**
- * \ingroup Parse
+ * \ingroup Core_Readers
  *
  * ops_reader_fd() attempts to read up to "plength" bytes from the file 
  * descriptor in "parse_info" into the buffer starting at "dest" using the
@@ -94,7 +94,7 @@ static void fd_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
 /**
-   \ingroup Core_Readers_File
+   \ingroup Core_Readers_First
    \brief Starts stack with file reader
 */
 

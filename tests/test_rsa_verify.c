@@ -325,7 +325,7 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
              suffix);
     
     /* copy file into mem for later validation */
-    mem=ops_write_buf_from_file(signedfile,&errnum);
+    mem=ops_write_mem_from_file(signedfile,&errnum);
 
     /* now validate file */
 #ifdef WIN32

@@ -91,7 +91,7 @@ static ops_errcode_name_map_t errcode_name_map[] =
     };
 
 /**
- * \ingroup HighLevel_Errors
+ * \ingroup Core_Errors
  * \brief returns error code name
  * \param errcode
  * \return error code name or "Unknown"
@@ -147,7 +147,7 @@ void ops_push_error(ops_error_t **errstack,ops_errcode_t errcode,int sys_errno,
     }
 
 /**
-\ingroup HighLevel_Errors
+\ingroup Core_Errors
 \brief print this error
 \param err Error to print
 */
@@ -162,7 +162,7 @@ void ops_print_error(ops_error_t *err)
     }
 
 /**
-\ingroup HighLevel_Errors
+\ingroup Core_Errors
 \brief Print all errors on stack
 \param errstack Error stack to print
 */
@@ -175,7 +175,7 @@ void ops_print_errors(ops_error_t *errstack)
     }
 
 /**
-\ingroup HighLevel_Errors
+\ingroup Core_Errors
 \brief Return true if given error is present anywhere on stack
 \param errstack Error stack to check
 \param errcode Error code to look for
@@ -193,7 +193,7 @@ int ops_has_error(ops_error_t *errstack, ops_errcode_t errcode)
     }
 
 /**
-\ingroup HighLevel_Errors
+\ingroup Core_Errors
 \brief Frees all errors on stack
 \param errstack Error stack to free
 */

@@ -58,7 +58,7 @@ static char *str_from_map_or_null(int type, ops_map_t *map)
     }
 
 /**
- * \ingroup Utils
+ * \ingroup Core_Print
  *
  * Searches the given map for the given type.
  * Returns a readable string if found, "Unknown" if not.
@@ -81,8 +81,10 @@ void hexdump(const unsigned char *src,size_t length)
     }
 
 /**
- * \ingroup HighLevel_Misc
+ * \ingroup HighLevel_Functions
  * \brief Initialises OpenPGP::SDK. To be called before any other OPS function.
+ *
+ * Initialises OpenPGP::SDK and the underlying openssl library.
  */
 
 void ops_init(void)
@@ -91,7 +93,7 @@ void ops_init(void)
     }
 
 /**
- * \ingroup HighLevel_Misc
+ * \ingroup HighLevel_Functions
  * \brief Closes down OpenPGP::SDK.
  *
  * Close down OpenPGP:SDK, release any resources under the control of

@@ -72,7 +72,7 @@ static void mem_destroyer(ops_reader_info_t *rinfo)
     { free(ops_reader_get_arg(rinfo)); }
 
 /**
-   \ingroup Core_Readers_Memory
+   \ingroup Core_Readers_First
    \brief Starts stack with memory reader
 */
 

@@ -65,7 +65,8 @@ static void fd_destroyer(ops_writer_info_t *winfo)
     }
 
 /**
- * \ingroup Create
+ * \ingroup Core_WritersFirst
+ * \brief Write to a File
  *
  * Set the writer in info to be a stock writer that writes to a file
  * descriptor. If another writer has already been set, then that is

@@ -54,6 +54,10 @@ static void encrypt_se_ip_destroyer (ops_writer_info_t *winfo);
 
 //
 
+/**
+\ingroup Core_WritersNext
+\brief Push Encrypted SE IP Writer onto stack
+*/
 void ops_writer_push_encrypt_se_ip(ops_create_info_t *cinfo,
                              const ops_keydata_t *pub_key)
     {

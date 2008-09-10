@@ -46,7 +46,7 @@
 #include <openpgpsdk/final.h>
 
 /**
-   \ingroup HighLevel_KeyringMemory
+   \ingroup HighLevel_Keyring
    
    \brief Creates a new ops_keydata_t struct
 
@@ -60,11 +60,11 @@ ops_keydata_t *ops_keydata_new(void)
 
 
 /**
- \ingroup HighLevel_KeyringMemory
+ \ingroup HighLevel_Keyring
 
  \brief Frees keydata and its memory
 
- \param key Key to be freed.
+ \param keydata Key to be freed.
 
  \note This frees the keydata itself, as well as any other memory alloc-ed by it. 
 */
@@ -562,7 +562,7 @@ void ops_keydata_init(ops_keydata_t* keydata, const ops_content_tag_t type)
     ... 
 
     // Free memory alloc-ed in ops_keyring_read_from_file()
-    ops_keyring_free();
+    ops_keyring_free(keyring);
     \endcode
 */
 
@@ -589,6 +589,9 @@ cb_keyring_read(const ops_parser_content_t *content_,
 
    \note If you call this twice on the same keyring struct, without calling
    ops_keyring_free() between these calls, you will introduce a memory leak.
+
+   \sa ops_keyring_read_from_mem()
+   \sa ops_keyring_free()
 
    Example code:
    \code
@@ -673,6 +676,10 @@ ops_boolean_t ops_keyring_read_from_file(ops_keyring_t *keyring, const ops_boole
 
    \note If you call this twice on the same keyring struct, without calling
    ops_keyring_free() between these calls, you will introduce a memory leak.
+
+   \sa ops_keyring_read_from_file
+   \sa ops_keyring_free
+
    Example code:
    \code
    ops_memory_t* mem; // Filled with keyring packets
@@ -717,7 +724,7 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, const ops_boolea
     }
 
 /**
-   \ingroup HighLevel_KeyringMemory
+   \ingroup HighLevel_KeyringRead
  
    \brief Frees keyring's contents (but not keyring itself)
  

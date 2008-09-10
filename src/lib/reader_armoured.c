@@ -1033,7 +1033,7 @@ void ops_reader_push_dearmour(ops_parse_info_t *parse_info)
 /**
  * \ingroup Core_Readers_Armour
  * \brief Pops dearmour reader from stock
- * \param parse_info
+ * \param pinfo
  * \sa ops_reader_push_dearmour()
  */
 void ops_reader_pop_dearmour(ops_parse_info_t *pinfo)

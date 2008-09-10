@@ -34,69 +34,148 @@ The Internal API contains functions for use by SDK developers.
 */
 
 /** @defgroup HighLevelAPI High Level API
-\brief This API provides basic high-level functionality, which should be
-suitable for most users. 
+\brief Easy access to OpenPGP::SDK functions
+
+This API provides basic high-level functionality, which should be
+suitable for most users.
 
 If you want more fine-grained control, consider using the Core API.
 
-The main functions are found in \ref HighLevel_Signature, \ref HighLevel_Crypto and \ref HighLevel_Keyring.
+A good place to look for example code which uses the High Level API is the command line application, found in openpgpsdk/src/app/openpgp.c.
+
+Example code:
+\code
+void main()
+{
+  ops_uid_id_t uid;
+  char* pubring_name="pubring.gpg";
+  char* secring_name="secring.gpg";
+  char* passphrase="mysecret";
+  int pplen=strlen(passphrase);
+  ops_keyring_t* pubring=NULL;
+  ops_keyring_t* secring=NULL;
+  ops_keydata_t * keydata=NULL;
+  ops_create_info_t* cinfo=NULL;
+  ops_secret_key_t* skey=NULL;
+  ops_validate_result* validate_result=NULL;
+  int fd=0;
+
+  ops_init();
+
+  // Create a new self-signed RSA key pair
+  uid.user_id=(unsigned char *) "Test User (RSA 2048-bit key) <testuser@test.com>";
+  keydata=ops_rsa_create_selfsigned_keypair(2048,65537,&uid);
+  if (!keydata)
+    exit (-1);
+
+  // Append to keyrings
+  fd=ops_setup_file_append(&cinfo, pubring_name);
+  ops_write_transferable_public_key(keydata, ARMOUR_NO, cinfo);
+  ops_teardown_file_write(cinfo,fd)
+
+  fd=ops_setup_file_append(&cinfo, secring_name);
+  ops_write_transferable_secret_key(keydata, passphrase, pplen, ARMOUR_NO, cinfo);
+  ops_teardown_file_write(cinfo,fd)
+
+  // Load public and secret keyrings
+  if (!ops_keyring_read_from_file(pubring, ARMOUR_NO, pubring_name))
+    exit(-1);
+  if (!ops_keyring_read_from_file(secring, ARMOUR_NO, secring_name))
+    exit(-1);
+
+  // Sign a file with the new secret key
+  skey=ops_decrypt_secret_key_from_data(keydata,passphrase);
+  if (!ops_sign_file("mytestfile", NULL, skey, ARMOUR_YES, OVERWRITE_YES))
+    exit(-1);
+
+  // Verify signed file with new public key
+  validate_result=ops_mallocz(sizeof *validate_result);
+  if (ops_validate_file(validate_result, "mytestfile.asc", ARMOUR_YES, pubring)==ops_true)
+    printf("OK\n")
+  else
+    printf("Not verified OK: %d invalid signatures, %d unknown signatures\n", validate_result->invalid_count, validate_result->unknown_signer_count);
+  ops_validate_result_free(validate_result);
+
+  // Encrypt a file with the new public key
+  if (ops_encrypt_file("mytestfile2", NULL, keydata, ARMOUR_YES, OVERWRITE_YES)!=ops_true)
+    exit(-1);
+
+  // Decrypt encrypted file with the new secret key
+  if (ops_decrypt_file("mytestfile2.asc",NULL, secring, ARMOUR_YES, OVERWRITE_YES, callback_cmd_get_passphrase_from_cmdline)!=ops_true)
+    exit(-1)
+
+  ops_finish();
+}
+\endcode
 */
 
 /** @defgroup CoreAPI Core API
 This API provides detailed control over all aspects of the SDK.
 
 You may find that the easier-to-use High Level API meets your needs.
-*/
+
+Please note that the Core API documentation is still a Work-In-Progress.
+
+If you are using the Core API for the first time, you may find that the best place to start if by finding an existing function which does most of what you need and modifying it. A good place to look for such a function is in the test suite (openpgpsdk/tests).
+ *
+ * \par To Read OpenPGP packets
+ * - \ref Core_ReadPackets
+ * - \ref Core_Readers
+ *
+ * \par Usage 1 : To Parse an input stream (discarding parsed data)
+ * - Configure an ops_parse_options_t structure
+ *   - Set "Reader" function and args (to get the data)
+ *   - Set "Callback" function and args (to do something useful with the parsed data)
+ * - Call ops_parse_options() to specify whether individual subpacket types are to parsed, left raw or ignored
+ * - Finally, call ops_parse() 
+ *
+ * \par Usage 2 : To Parse an input stream (storing parsed data in keyring)
+ * - Get keyring
+ * - Configure an ops_parse_options_t structure
+ *   - Set "Reader" function and args (to get the data)
+ *   - No need to set "Callback" function and args 
+ * - No need to call ops_parse_options() to specify whether individual subpacket types are to parsed, left raw or ignored
+ * - Call ops_parse_and_accumulate() to populate keyring
+ * - Don't forget to call ops_keyring_free() when you've finished with the keyring to release the memory.
+ */
 
 /** @defgroup InternalAPI Internal API
 This API provides code used by SDK developers.
 */
 
-/** \defgroup HighLevel_Signature Signatures/Verification
-    \ingroup HighLevelAPI
+/**
+   \defgroup HighLevel_Functions High Level API Functions
+   \ingroup HighLevelAPI
+*/
+
+/** \defgroup HighLevel_Sign Sign File or Buffer
+    \ingroup HighLevel_Functions
  */
     
-/** \defgroup HighLevel_SignatureSign Sign File or Buffer
-    \ingroup HighLevel_Signature
+/** \defgroup HighLevel_Verify Verify File, Buffer, Key or Keyring
+    \ingroup HighLevel_Functions
  */
     
-/** \defgroup HighLevel_SignatureVerify Verify File or Buffer
-    \ingroup HighLevel_Signature
- */
-    
-/** \defgroup HighLevel_SignatureVerifyKey Verify Key or Keyring
-    \ingroup HighLevel_Signature
- */
-    
-/** \defgroup HighLevel_Crypto Encryption/Decryption
-    \ingroup HighLevelAPI
+/** \defgroup HighLevel_Crypto Encrypt or Decrypt File
+    \ingroup HighLevel_Functions
  */
     
 /**
     \defgroup HighLevel_Keyring Keys and Keyrings
-    \ingroup HighLevelAPI
+    \ingroup HighLevel_Functions
 */
 
 /** \defgroup HighLevel_Supported Supported Algorithms
-    \ingroup HighLevelAPI
- */
-    
-/** \defgroup HighLevel_Errors Error Handling
-    \ingroup HighLevelAPI
+    \ingroup HighLevel_Functions
  */
     
 /** \defgroup HighLevel_Memory Memory
-    \ingroup HighLevelAPI
+    \ingroup HighLevel_Functions
  */
     
 /**
-    \defgroup HighLevel_Print Print
-    \ingroup HighLevelAPI
-*/
-
-/**
     \defgroup HighLevel_General General
-    \ingroup HighLevelAPI
+    \ingroup HighLevel_Functions
 */
 
 /**
@@ -129,9 +208,38 @@ This API provides code used by SDK developers.
     \ingroup HighLevel_Keyring
 */
 
+/** \defgroup Core_ReadPackets Read OpenPGP packets
+    \ingroup CoreAPI
+*/
+
 /**
-    \defgroup HighLevel_KeyringMemory Memory Ops
-    \ingroup HighLevel_Keyring
+   \defgroup Core_Readers Readers
+   \ingroup CoreAPI
+*/
+
+/** \defgroup Core_WritePackets Write OpenPGP packets
+    \ingroup CoreAPI
+*/
+
+
+/**
+   \defgroup HighLevel_Callbacks Callbacks
+   \ingroup HighLevel_Functions
+*/
+
+/**
+   \defgroup Core_Writers Writers
+   \ingroup CoreAPI
+*/
+
+/**
+   \defgroup Core_WritersFirst First (stacks start with one of these)
+   \ingroup Core_Writers
+*/
+
+/**
+   \defgroup Core_WritersNext Next (stacks may use these)
+   \ingroup Core_Writers
 */
 
 /**
@@ -140,23 +248,8 @@ This API provides code used by SDK developers.
 */
 
 /**
-   \defgroup Core_Readers Readers
-   \ingroup CoreAPI
-*/
-
-/**
    \defgroup Core_Readers_First First (stacks start with one of these)
    \ingroup Core_Readers
-*/
-
-/**
-   \defgroup Core_Readers_File File Input
-   \ingroup Core_Readers_First
-*/
-
-/**
-   \defgroup Core_Readers_Memory Memory Input
-   \ingroup Core_Readers_First
 */
 
 /**
@@ -179,23 +272,6 @@ This API provides code used by SDK developers.
   \ingroup Core_Readers_Additional
 */
 
-/**
-   \defgroup HighLevel_Writers Writers
-*/
-
-/**
-   \defgroup Core_Writers Writers
-   \ingroup CoreAPI
-*/
-
-/** \defgroup Core_WritePackets Write OpenPGP packets
-    \ingroup CoreAPI
-*/
-
-/** \defgroup Core_ReadPackets Read OpenPGP packets
-    \ingroup CoreAPI
-*/
-
 /** \defgroup Core_Keys Keys and Keyrings
     \ingroup CoreAPI
  */
@@ -204,15 +280,15 @@ This API provides code used by SDK developers.
     \ingroup CoreAPI
  */
     
-/** \defgroup Core_Crypto Encryption and Decryption
+/** \defgroup Core_Crypto Encryption/Decryption
     \ingroup CoreAPI
  */
     
-/** \defgroup Core_Signature Signatures and Verification
+/** \defgroup Core_Signature Signatures/Verification
     \ingroup CoreAPI
  */
     
-/** \defgroup Core_Compress Compression and Decompression
+/** \defgroup Core_Compress Compression/Decompression
     \ingroup CoreAPI
  */
     
@@ -220,10 +296,11 @@ This API provides code used by SDK developers.
     \ingroup CoreAPI
 */
 
-/** \defgroup Core_Misc Miscellaneous
+/**
+    \defgroup Core_Print Print
     \ingroup CoreAPI
- */
-    
+*/
+
 /** \defgroup Core_Lists Linked Lists
     \ingroup CoreAPI
  */
@@ -235,6 +312,7 @@ This API provides code used by SDK developers.
 /**
    \defgroup Core_Callbacks Callbacks
    \ingroup CoreAPI
+   These callback functions are used when parsing or creating.
 */
 
 /** 
@@ -258,77 +336,10 @@ This API provides code used by SDK developers.
 */
 
 /**
- * @defgroup Parse Parse
- * \ingroup AdvancedAPI
- * These functions allow an OpenPGP object (for example, an OpenPGP message or keyring) to be parsed.
- *
- * \par Usage 1 : To Parse an input stream (discarding parsed data)
- * - Configure an ops_parse_options_t structure
- *   - Set "Reader" function and args (to get the data)
- *   - Set "Callback" function and args (to do something useful with the parsed data)
- * - Call ops_parse_options() to specify whether individual subpacket types are to parsed, left raw or ignored
- * - Finally, call ops_parse() 
- *
- * \par Usage 2 : To Parse an input stream (storing parsed data in keyring)
- * - Get keyring
- * - Configure an ops_parse_options_t structure
- *   - Set "Reader" function and args (to get the data)
- *   - No need to set "Callback" function and args 
- * - No need to call ops_parse_options() to specify whether individual subpacket types are to parsed, left raw or ignored
- * - Call ops_parse_and_accumulate() to populate keyring
- * - Don't forget to call ops_keyring_free() when you've finished with the keyring to release the memory.
- * 
- * \par Readers:
- * - ops_reader_fd() is one reader function provided by this library to read from an open file. 
- * - Users may define their own readers.
- *
- */
-/**
- * @defgroup Core_Create Create Structures
+ * \defgroup Core_Create Create 
  * \ingroup CoreAPI
  * These functions allow an OpenPGP object to be created. 
- *
- * The low-level functions are provided to enable flexible usage.
- * Higher-level functions which bundle several functions together into 
- * common operations may be added in the future.
- *
- * \par Example Usage 1 : To create an unsigned RSA public key with user id:
- * - Get the key parameters (creation time, modulus, exponent)
- * - Get the userid
- * - Configure an ops_writer_fd_arg_t structure
- *   - Set "Writer" function
- * - Call ops_write_rsa_public_key()
- * - Call ops_write_user_id()
- *
- * \par Writers:
- * - ops_writer_fd() is one writer function provided by this library to write to an open file. 
- * - Users may define their own writers.
- *
- */
-/**
- * @defgroup Memory Memory
- * \ingroup AdvancedAPI
- * These functions relate to memory usage.
- */
-/**
- * @defgroup Show Show
- * \ingroup AdvancedAPI
- * These functions allow the contents to be displayed in human-readable form.
- */
-/**
- * @defgroup Utils Utils
- * \ingroup AdvancedAPI
- * These functions are of general utility.
- */
-/**
- * @defgroup Verify Verify
- * \ingroup AdvancedAPI
- * These functions are for verifying signatures.
  */
 
-/**
- * @defgroup Callbacks Callbacks
- * \ingroup AdvancedAPI
- * These callback functions are used when parsing or creating.
- */
+
 

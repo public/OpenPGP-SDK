@@ -94,4 +94,9 @@ typedef enum ops_writer_ret_t ops_writer_ret_t;
  */
 typedef struct ops_create_info ops_create_info_t;
 
+#define ARMOUR_YES ops_true
+#define ARMOUR_NO ops_false
+#define OVERWRITE_YES ops_true
+#define OVERWRITE_NO ops_false
+
 #endif

@@ -116,10 +116,6 @@ static int keydata_reader(void *dest,size_t length,ops_error_t **errors,
     return length;
     }
 
-/**
- * \ingroup Callbacks
- */
-
 static void free_signature_info(ops_signature_info_t *sig)
     {
     free (sig->v4_hashed_data);
@@ -491,12 +487,12 @@ void ops_keydata_reader_set(ops_parse_info_t *pinfo,const ops_keydata_t *key)
     }
 
 /**
- * \ingroup HighLevel_SignatureVerify
- * \brief Any errors found?
+ * \ingroup HighLevel_Verify
+ * \brief Indicicates whether any errors were found
  * \param result Validation result to check
  * \return ops_false if any invalid signatures or unknown signers or no valid signatures; else ops_true
  */
-ops_boolean_t result_status(ops_validate_result_t* result)
+ops_boolean_t validate_result_status(ops_validate_result_t* result)
     {
     if (result->invalid_count || result->unknown_signer_count || !result->valid_count)
         return ops_false;
@@ -505,7 +501,7 @@ ops_boolean_t result_status(ops_validate_result_t* result)
     }
 
 /**
- * \ingroup HighLevel_SignatureVerifyKey
+ * \ingroup HighLevel_Verify
  * \brief Validate all signatures on a single key against the given keyring
  * \param result Where to put the result
  * \param key Key to validate
@@ -575,7 +571,7 @@ ops_boolean_t ops_validate_key_signatures(ops_validate_result_t *result,const op
     }
 
 /**
-   \ingroup HighLevel_SignatureVerifyKey
+   \ingroup HighLevel_Verify
    \param result Where to put the result
    \param ring Keyring to use
    \param cb_get_passphrase Callback to use to get passphrase
@@ -592,16 +588,14 @@ ops_boolean_t ops_validate_all_signatures(ops_validate_result_t *result,
     memset(result,'\0',sizeof *result);
     for(n=0 ; n < ring->nkeys ; ++n)
         ops_validate_key_signatures(result,&ring->keys[n],ring, cb_get_passphrase);
-    return result_status(result);
+    return validate_result_status(result);
     }
 
 /**
-   \ingroup HighLevel_SignatureVerify
+   \ingroup HighLevel_Verify
    \brief Frees validation result and associated memory
    \param result Struct to be freed
-   \note Must be called after ops_validate_file() or ops_validate_mem()
-   \sa ops_validate_file
-   \sa ops_validate_mem
+   \note Must be called after validation functions
 */
 void ops_validate_result_free(ops_validate_result_t *result)
     {
@@ -620,7 +614,7 @@ void ops_validate_result_free(ops_validate_result_t *result)
     }
 
 /**
-   \ingroup HighLevel_SignatureVerify
+   \ingroup HighLevel_Verify
    \brief Verifies the signatures in a signed file
    \param result Where to put the result
    \param filename Name of file to be validated
@@ -693,11 +687,12 @@ ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filen
         ops_reader_pop_dearmour(pinfo);
     ops_teardown_file_read(pinfo, fd);
 
-    return result_status(result);
+    return validate_result_status(result);
     }
 
 /**
-   \ingroup HighLevel_SignatureVerify
+   \ingroup HighLevel_Verify
+   \brief Verifies the signatures in a ops_memory_t struct
    \param result Where to put the result
    \param mem Memory to be validated
    \param armoured Treat data as armoured, if set
@@ -745,7 +740,7 @@ ops_boolean_t ops_validate_mem(ops_validate_result_t *result, ops_memory_t* mem,
         ops_reader_pop_dearmour(pinfo);
     ops_teardown_memory_read(pinfo, mem);
 
-    return result_status(result);
+    return validate_result_status(result);
     }
 
 // eof
