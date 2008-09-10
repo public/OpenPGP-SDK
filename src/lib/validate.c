@@ -491,7 +491,7 @@ void ops_keydata_reader_set(ops_parse_info_t *pinfo,const ops_keydata_t *key)
     }
 
 /**
- * \ingroup HighLevel_SignatureVerify
+ * \ingroup HighLevel_SignatureVerifyKey
  * Validate all signatures on a single key against the given keyring
  * \param result Where to put the result
  * \param key Key to validate
@@ -537,7 +537,7 @@ void ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata
     }
 
 /**
-   \ingroup HighLevel_SignatureVerify
+   \ingroup HighLevel_SignatureVerifyKey
    \param result Where to put the result
    \param ring Keyring to use
    \param cb_get_passphrase Callback to use to get passphrase
@@ -558,8 +558,11 @@ void ops_validate_all_signatures(ops_validate_result_t *result,
 
 /**
    \ingroup HighLevel_SignatureVerify
-   Free result and associated memory
+   \brief Frees validation result and associated memory
    \param result Struct to be freed
+   \note Must be called after ops_validate_file() or ops_validate_mem()
+   \sa ops_validate_file
+   \sa ops_validate_mem
 */
 void ops_validate_result_free(ops_validate_result_t *result)
     {
@@ -579,14 +582,36 @@ void ops_validate_result_free(ops_validate_result_t *result)
 
 /**
    \ingroup HighLevel_SignatureVerify
+   \brief Verifies the signatures in a signed file
    \param result Where to put the result
    \param filename Name of file to be validated
    \param armoured Treat file as armoured, if set
    \param keyring Keyring to use
-   \return ops_true if signature validate successfully; ops_false if not
+   \return ops_true if signatures validate successfully; ops_false if signatures fail or there are no signatures
    \note After verification, result holds the details of all keys which 
    have passed, failed and not been recognised.
    \note It is the caller's responsiblity to call ops_validate_result_free(result) after use.
+
+Example code:
+\code
+void example(const char* filename, const int armoured, const ops_keyring_t* keyring)
+{
+  ops_validate_result_t* result=ops_mallocz(sizeof *result);
+  
+  if (ops_validate_file(result, filename, armoured, keyring)==ops_true)
+  {
+    printf("OK");
+    // look at result for details of keys with good signatures
+  }
+  else
+  {
+    printf("ERR");
+    // look at result for details of failed signatures or unknown signers
+  }
+
+  ops_validate_result_free(result);
+}
+\endcode
 */
 ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filename, const int armoured, const ops_keyring_t* keyring)
     {
@@ -597,6 +622,8 @@ ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filen
 
     //
     fd=ops_setup_file_read(&pinfo, filename, &validate_arg, validate_data_cb, ops_true);
+    if (fd < 0)
+        return ops_false;
 
     // Set verification reader and handling options
 

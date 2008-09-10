@@ -154,7 +154,7 @@ static ops_parse_cb_return_t
 callback_write_parsed(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
 
 /**
-\ingroup HighLevel_Crypt
+\ingroup HighLevel_Crypto
 Encrypt a file
 \param input_filename Name of file to be encrypted
 \param output_filename Name of file to write to. If NULL, name is constructed from input_filename
@@ -222,7 +222,7 @@ ops_boolean_t ops_encrypt_file(const char* input_filename, const char* output_fi
     }
 
 /**
-   \ingroup HighLevel_Crypt
+   \ingroup HighLevel_Crypto
    \param input_filename Name of file to be decrypted
    \param output_filename Name of file to write to. If NULL, the filename is constructed from the input filename, following GPG conventions.
    \param keyring Keyring to use

@@ -190,7 +190,7 @@ int ops_setup_file_append(ops_create_info_t **cinfo, const char* filename)
     if(fd < 0)
         {
         perror(filename);
-        exit(2);
+        return fd;
         }
     
     *cinfo=ops_create_info_new();
@@ -237,7 +237,10 @@ int ops_setup_file_read(ops_parse_info_t **pinfo, const char *filename,
     fd=open(filename,O_RDONLY);
 #endif
     if (fd < 0)
-        return ops_false;
+        {
+        perror(filename);
+        return fd;
+        }
 
     *pinfo=ops_parse_info_new();
     ops_parse_cb_set(*pinfo,callback,arg);

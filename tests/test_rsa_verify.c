@@ -390,6 +390,16 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
                result->unknown_signer_count);
         }
 
+    ops_validate_result_free(result);
+
+    if (!rtn)
+        return(rtn);
+
+    // Now check it works from HighLevel API call
+    result=ops_mallocz(sizeof (ops_validate_result_t));
+    CU_ASSERT(ops_validate_file(result,signedfile,has_armour,&pub_keyring)==ops_true);
+    ops_validate_result_free(result);
+
     return (rtn);
     }
 

@@ -815,14 +815,53 @@ void ops_signature_add_primary_user_id(ops_create_signature_t *sig,
 ops_hash_t *ops_signature_get_hash(ops_create_signature_t *sig)
     { return &sig->hash; }
 
+static int open_output_file(ops_create_info_t **cinfo, const char* input_filename, const char* output_filename, const ops_boolean_t use_armour, const ops_boolean_t overwrite)
+    {
+    int fd_out;
+
+    // setup output file
+
+    if (output_filename)
+        {
+        fd_out=ops_setup_file_write(cinfo, output_filename, overwrite);
+        }
+    else
+        {
+        char *myfilename=NULL;
+        unsigned filenamelen=strlen(input_filename)+4+1;
+        myfilename=ops_mallocz(filenamelen);
+        if (use_armour)
+            snprintf(myfilename,filenamelen,"%s.asc",input_filename);
+        else
+            snprintf(myfilename,filenamelen,"%s.gpg",input_filename);
+        fd_out=ops_setup_file_write(cinfo, myfilename, overwrite);
+        free(myfilename);
+        } 
+
+    return fd_out;
+    }
+
 /**
    \ingroup HighLevel_SignatureSign
-   Sign a file with a Cleartext Signature
-   \param filename Filename to be signed
+   \brief Sign a file with a Cleartext Signature
+   \param input_filename Name of file to be signed
+   \param output_filename Filename to be created. If NULL, filename will be constructed from the input_filename.
    \param skey Secret Key to sign with
    \param overwrite Allow output file to be overwritten, if set
+   \return ops_true if OK, else ops_false
+
+   Example code:
+   \code
+   void example(const ops_secret_key_t *skey, ops_boolean_t overwrite)
+   {
+   if (ops_sign_file_as_cleartext("mytestfile.txt",NULL,skey,overwrite)==ops_true)
+       printf("OK");
+   else
+       printf("ERR");
+   }
+   \endcode
 */
-ops_boolean_t ops_sign_file_as_cleartext(const char* filename, const ops_secret_key_t *skey, const ops_boolean_t overwrite)
+ops_boolean_t ops_sign_file_as_cleartext(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t overwrite)
     {
     // \todo allow choice of hash algorithams
     // enforce use of SHA1 for now
@@ -830,20 +869,19 @@ ops_boolean_t ops_sign_file_as_cleartext(const char* filename, const ops_secret_
     unsigned char keyid[OPS_KEY_ID_SIZE];
     ops_create_signature_t *sig=NULL;
 
-    char signed_file[MAXBUF+1];
-    char *suffix= "asc";
     int fd_in=0;
     int fd_out=0;
     ops_create_info_t *cinfo=NULL;
     unsigned char buf[MAXBUF];
     //int flags=0;
     ops_boolean_t rtn=ops_false;
+    ops_boolean_t use_armour=ops_true;
 
     // open file to sign
 #ifdef WIN32
-    fd_in=open(filename,O_RDONLY | O_BINARY);
+    fd_in=open(input_filename,O_RDONLY | O_BINARY);
 #else
-    fd_in=open(filename,O_RDONLY);
+    fd_in=open(input_filename,O_RDONLY);
 #endif
     if(fd_in < 0)
         {
@@ -851,12 +889,13 @@ ops_boolean_t ops_sign_file_as_cleartext(const char* filename, const ops_secret_
         }
     
     // set up output file
-    snprintf(signed_file,sizeof signed_file,"%s.%s",filename,suffix);
-    fd_out=ops_setup_file_write(&cinfo, signed_file, overwrite);
+
+    fd_out=open_output_file(&cinfo, input_filename, output_filename, use_armour, overwrite);
+
     if (fd_out < 0)
-        { 
-        close (fd_in);
-        return ops_false; 
+        {
+        close(fd_in);
+        return ops_false;
         }
 
     // set up signature
@@ -916,13 +955,31 @@ ops_boolean_t ops_sign_file_as_cleartext(const char* filename, const ops_secret_
 
 /** 
  * \ingroup HighLevel_SignatureSign
+ * \brief Sign a buffer with a Cleartext signature
  * \param cleartext Text to be signed
  * \param len Length of text
  * \param signed_cleartext ops_memory_t struct in which to write the signed cleartext
  * \param skey Secret key with which to sign the cleartext
  * \return ops_true if OK; else ops_false
+
  * \note It is the calling function's responsibility to free signed_cleartext
  * \note signed_cleartext should be a NULL pointer when passed in 
+
+ Example code:
+ \code
+ void example(const ops_secret_key_t *skey)
+ {
+   ops_memory_t* mem=NULL;
+   const char* buf="Some example text";
+   size_t len=strlen(buf);
+   if (ops_sign_buf_as_cleartext(buf,len, &mem, skey)==ops_true)
+     printf("OK");
+   else
+     printf("ERR");
+   // free signed cleartext after use
+   ops_memory_free(mem);
+ }
+ \endcode
  */
 ops_boolean_t ops_sign_buf_as_cleartext(const char* cleartext, const size_t len, ops_memory_t** signed_cleartext, const ops_secret_key_t *skey)
     {
@@ -987,13 +1044,26 @@ ops_boolean_t ops_sign_buf_as_cleartext(const char* cleartext, const size_t len,
 \param use_armour Write armoured text, if set.
 \param overwrite May overwrite existing file, if set.
 \return ops_true if OK; else ops_false;
+
+Example code:
+\code
+void example(const ops_secret_key_t *skey)
+{
+  const char* filename="mytestfile";
+  const ops_boolean_t use_armour=ops_false;
+  const ops_boolean_t overwrite=ops_false;
+  if (ops_sign_file(filename, NULL, skey, use_armour, overwrite)==ops_true)
+    printf("OK");
+  else
+    printf("ERR");  
+}
+\endcode
 */
 ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filename, const ops_secret_key_t *skey, const ops_boolean_t use_armour, const ops_boolean_t overwrite)
     {
     // \todo allow choice of hash algorithams
     // enforce use of SHA1 for now
 
-    char *myfilename=NULL;
     unsigned char keyid[OPS_KEY_ID_SIZE];
     ops_create_signature_t *sig=NULL;
 
@@ -1013,21 +1083,14 @@ ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filen
     if (errnum)
         return ops_false;
 
-    // setup output filename
-    if (!output_filename)
+    // setup output file
+
+    fd_out=open_output_file(&cinfo, input_filename, output_filename, use_armour, overwrite);
+
+    if (fd_out < 0)
         {
-        unsigned filenamelen=strlen(input_filename)+4+1;
-        myfilename=ops_mallocz(filenamelen);
-        if (use_armour)
-            snprintf(myfilename,filenamelen,"%s.asc",input_filename);
-        else
-            snprintf(myfilename,filenamelen,"%s.gpg",input_filename);
-        fd_out=ops_setup_file_write(&cinfo, myfilename, overwrite);
-        free(myfilename);
-        } 
-    else
-        {
-        fd_out=ops_setup_file_write(&cinfo, output_filename, overwrite);
+        ops_memory_free(mem_buf);
+        return ops_false;
         }
 
     // set up signature
@@ -1083,7 +1146,7 @@ ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filen
 
 /**
 \ingroup HighLevel_SignatureSign
-\brief Signs input text; returns ops_memory_t struct containing signed input text.
+\brief Signs a buffer
 \param input Input text to be signed
 \param input_len Length of input text
 \param sig_type Signature type
@@ -1091,8 +1154,31 @@ ops_boolean_t ops_sign_file(const char* input_filename, const char* output_filen
 \param use_armour Write armoured text, if set
 \return New ops_memory_t struct containing signed text
 \note It is the caller's responsibility to call ops_memory_free(me)
+
+Example Code:
+\code
+void example(const ops_secret_key_t *skey)
+{
+  const char* buf="Some example text";
+  const size_t len=strlen(buf);
+  const ops_boolean_t use_armour=ops_true;
+
+  ops_memory_t* mem=NULL;
+  
+  mem=ops_sign_buf(buf,len,OPS_SIG_BINARY,skey,use_armour);
+  if (mem)
+  {
+    printf ("OK");
+    ops_memory_free(mem);
+  }
+  else
+  {
+    printf("ERR");
+  }
+}
+\endcode
 */
-ops_memory_t* ops_sign_mem(const void* input, const int input_len, const ops_sig_type_t sig_type, const ops_secret_key_t *skey, const ops_boolean_t use_armour)
+ops_memory_t* ops_sign_buf(const void* input, const size_t input_len, const ops_sig_type_t sig_type, const ops_secret_key_t *skey, const ops_boolean_t use_armour)
     {
     // \todo allow choice of hash algorithams
     // enforce use of SHA1 for now

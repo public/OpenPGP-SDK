@@ -99,7 +99,7 @@ static void test_rsa_signature_clearsign_file(const char *filename, const ops_se
 
     // sign file
     overwrite=ops_true;
-    ops_sign_file_as_cleartext(myfile, skey, overwrite);
+    ops_sign_file_as_cleartext(myfile, NULL, skey, overwrite);
 
     /*
      * Validate output
@@ -378,7 +378,7 @@ static void test_rsa_signature_sign_memory(const int use_armour, const void* inp
 
     // filenames
 
-    mem=ops_sign_mem(input, input_len, OPS_SIG_TEXT, skey, use_armour);
+    mem=ops_sign_buf(input, input_len, OPS_SIG_TEXT, skey, use_armour);
 
     /*
      * Validate output

@@ -537,7 +537,7 @@ int main(int argc, char **argv)
 
         // sign file
         overwrite=ops_true;
-        ops_sign_file_as_cleartext(opt_filename, skey, overwrite);
+        ops_sign_file_as_cleartext(opt_filename, NULL, skey, overwrite);
         break;
 
     case VERIFY:

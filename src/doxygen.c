@@ -39,6 +39,7 @@ suitable for most users.
 
 If you want more fine-grained control, consider using the Core API.
 
+The main functions are found in \ref HighLevel_Signature, \ref HighLevel_Crypto and \ref HighLevel_Keyring.
 */
 
 /** @defgroup CoreAPI Core API
@@ -51,7 +52,7 @@ You may find that the easier-to-use High Level API meets your needs.
 This API provides code used by SDK developers.
 */
 
-/** \defgroup HighLevel_Signature Signatures and Verification
+/** \defgroup HighLevel_Signature Signatures/Verification
     \ingroup HighLevelAPI
  */
     
@@ -63,14 +64,23 @@ This API provides code used by SDK developers.
     \ingroup HighLevel_Signature
  */
     
+/** \defgroup HighLevel_SignatureVerifyKey Verify Key or Keyring
+    \ingroup HighLevel_Signature
+ */
+    
 /** \defgroup HighLevel_SignatureDetails Verify Signature Details
     \ingroup HighLevel_Signature
  */
     
-/** \defgroup HighLevel_Crypt Encryption and Decryption
+/** \defgroup HighLevel_Crypto Encryption/Decryption
     \ingroup HighLevelAPI
  */
     
+/**
+    \defgroup HighLevel_Keyring Keys and Keyrings
+    \ingroup HighLevelAPI
+*/
+
 /** \defgroup HighLevel_Supported Supported Algorithms
     \ingroup HighLevelAPI
  */
@@ -83,11 +93,6 @@ This API provides code used by SDK developers.
     \ingroup HighLevelAPI
  */
     
-/**
-    \defgroup HighLevel_Keyring Keyring
-    \ingroup HighLevelAPI
-*/
-
 /**
     \defgroup HighLevel_Print Print
     \ingroup HighLevelAPI
