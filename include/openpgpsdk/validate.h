@@ -32,11 +32,11 @@ typedef struct
 
 void ops_validate_result_free(ops_validate_result_t *result);
 
-void ops_validate_key_signatures(ops_validate_result_t *result,
+ops_boolean_t ops_validate_key_signatures(ops_validate_result_t *result,
                                  const ops_keydata_t* keydata,
                                  const ops_keyring_t *ring,
                                  ops_parse_cb_return_t cb (const ops_parser_content_t *, ops_parse_cb_info_t *));
-void ops_validate_all_signatures(ops_validate_result_t *result,
+ops_boolean_t ops_validate_all_signatures(ops_validate_result_t *result,
                                  const ops_keyring_t *ring,
                                  ops_parse_cb_return_t (const ops_parser_content_t *, ops_parse_cb_info_t *));
 

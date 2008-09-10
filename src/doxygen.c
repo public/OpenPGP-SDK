@@ -68,10 +68,6 @@ This API provides code used by SDK developers.
     \ingroup HighLevel_Signature
  */
     
-/** \defgroup HighLevel_SignatureDetails Verify Signature Details
-    \ingroup HighLevel_Signature
- */
-    
 /** \defgroup HighLevel_Crypto Encryption/Decryption
     \ingroup HighLevelAPI
  */

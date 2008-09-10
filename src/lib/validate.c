@@ -491,16 +491,49 @@ void ops_keydata_reader_set(ops_parse_info_t *pinfo,const ops_keydata_t *key)
     }
 
 /**
+ * \ingroup HighLevel_SignatureVerify
+ * \brief Any errors found?
+ * \param result Validation result to check
+ * \return ops_false if any invalid signatures or unknown signers or no valid signatures; else ops_true
+ */
+ops_boolean_t result_status(ops_validate_result_t* result)
+    {
+    if (result->invalid_count || result->unknown_signer_count || !result->valid_count)
+        return ops_false;
+    else
+        return ops_true;
+    }
+
+/**
  * \ingroup HighLevel_SignatureVerifyKey
- * Validate all signatures on a single key against the given keyring
+ * \brief Validate all signatures on a single key against the given keyring
  * \param result Where to put the result
  * \param key Key to validate
  * \param keyring Keyring to use for validation
  * \param cb_get_passphrase Callback to use to get passphrase
+ * \return ops_true if all signatures OK; else ops_false
  * \note It is the caller's responsiblity to free result after use.
  * \sa ops_validate_result_free()
+ 
+ Example Code:
+\code
+void example(const ops_keydata_t* key, const ops_keyring_t *keyring)
+{
+  ops_validate_result_t *result=NULL;
+  if (ops_validate_key_signatures(result, key, keyring, callback_cmd_get_passphrase_from_cmdline)==ops_true)
+    printf("OK");
+  else
+    printf("ERR");
+  printf("valid=%d, invalid=%d, unknown=%d\n",
+         result->valid_count,
+         result->invalid_count,
+         result->unknown_signer_count);
+  ops_validate_result_free(result);
+}
+
+\endcode
  */
-void ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata_t *key,
+ops_boolean_t ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata_t *key,
                                  const ops_keyring_t *keyring,
                                  ops_parse_cb_return_t cb_get_passphrase (const ops_parser_content_t *, ops_parse_cb_info_t *)
                                  )
@@ -534,6 +567,11 @@ void ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata
     ops_user_attribute_free(&carg.user_attribute);
 
     ops_parse_info_delete(pinfo);
+
+    if (result->invalid_count || result->unknown_signer_count || !result->valid_count)
+        return ops_false;
+    else
+        return ops_true;
     }
 
 /**
@@ -544,7 +582,7 @@ void ops_validate_key_signatures(ops_validate_result_t *result,const ops_keydata
    \note It is the caller's responsibility to free result after use.
    \sa ops_validate_result_free()
 */
-void ops_validate_all_signatures(ops_validate_result_t *result,
+ops_boolean_t ops_validate_all_signatures(ops_validate_result_t *result,
                                  const ops_keyring_t *ring,
                                  ops_parse_cb_return_t cb_get_passphrase (const ops_parser_content_t *, ops_parse_cb_info_t *)
                                  )
@@ -554,6 +592,7 @@ void ops_validate_all_signatures(ops_validate_result_t *result,
     memset(result,'\0',sizeof *result);
     for(n=0 ; n < ring->nkeys ; ++n)
         ops_validate_key_signatures(result,&ring->keys[n],ring, cb_get_passphrase);
+    return result_status(result);
     }
 
 /**
@@ -654,10 +693,7 @@ ops_boolean_t ops_validate_file(ops_validate_result_t *result, const char* filen
         ops_reader_pop_dearmour(pinfo);
     ops_teardown_file_read(pinfo, fd);
 
-    if (result->invalid_count || result->unknown_signer_count || !result->valid_count)
-        return ops_false;
-    else
-        return ops_true;
+    return result_status(result);
     }
 
 /**
@@ -709,10 +745,7 @@ ops_boolean_t ops_validate_mem(ops_validate_result_t *result, ops_memory_t* mem,
         ops_reader_pop_dearmour(pinfo);
     ops_teardown_memory_read(pinfo, mem);
 
-    if (result->invalid_count || result->unknown_signer_count || !result->valid_count)
-        return ops_false;
-    else
-        return ops_true;
+    return result_status(result);
     }
 
 // eof

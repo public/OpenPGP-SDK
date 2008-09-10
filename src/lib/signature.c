@@ -405,7 +405,7 @@ static ops_boolean_t finalise_signature(ops_hash_t *hash,
     }
 
 /**
- * \ingroup HighLevel_SignatureDetails
+ * \ingroup Core_Signature
  *
  * \brief Verify a certification signature.
  *
@@ -439,7 +439,7 @@ ops_check_user_id_certification_signature(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup HighLevel_SignatureDetails
+ * \ingroup Core_Signature
  *
  * Verify a certification signature.
  *
@@ -472,7 +472,7 @@ ops_check_user_attribute_certification_signature(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup HighLevel_SignatureDetails
+ * \ingroup Core_Signature
  *
  * Verify a subkey signature.
  *
@@ -499,7 +499,7 @@ ops_check_subkey_signature(const ops_public_key_t *key,
     }
 
 /**
- * \ingroup HighLevel_SignatureDetails
+ * \ingroup Core_Signature
  *
  * Verify a direct signature.
  *

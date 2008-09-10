@@ -141,7 +141,7 @@ static void verify_keypair(ops_boolean_t armoured)
 
     result=ops_mallocz(sizeof(*result));
 
-    ops_validate_all_signatures(result, &pub_keyring, NULL);
+    CU_ASSERT(ops_validate_all_signatures(result, &pub_keyring, NULL)==ops_true);
     CU_ASSERT(result->valid_count==1);
 
     CU_ASSERT(memcmp(result->valid_sigs[0].signer_id,keyid,OPS_KEY_ID_SIZE)==0);
@@ -174,7 +174,7 @@ static void verify_keypair(ops_boolean_t armoured)
 
     result=ops_mallocz(sizeof(*result));
 
-    ops_validate_all_signatures(result, &sec_keyring, cb_get_passphrase);
+    CU_ASSERT(ops_validate_all_signatures(result, &sec_keyring, cb_get_passphrase)==ops_true);
     CU_ASSERT(result->valid_count==1);
     CU_ASSERT(result->invalid_count==0);
     CU_ASSERT(result->unknown_signer_count==0);
@@ -292,7 +292,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
     keydata1=ops_keyring_find_key_by_userid(&keyring1, name1);
     assert(keydata1);
 
-    ops_validate_key_signatures(result, keydata1, &keyring2, NULL);
+    CU_ASSERT(ops_validate_key_signatures(result, keydata1, &keyring2, NULL)==ops_false);
 
     CU_ASSERT(result->valid_count==0);
     CU_ASSERT(result->invalid_count==0);
@@ -310,7 +310,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
     keydata3=ops_keyring_find_key_by_userid(&keyring3, name2);
     assert(keydata3);
 
-    ops_validate_key_signatures(result, keydata3, &keyring3, NULL);
+    CU_ASSERT(ops_validate_key_signatures(result, keydata3, &keyring3, NULL)==ops_false);
 
     CU_ASSERT(result->valid_count==0);
     CU_ASSERT(result->invalid_count==1);
