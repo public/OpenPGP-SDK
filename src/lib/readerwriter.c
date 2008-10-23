@@ -442,4 +442,10 @@ callback_cmd_get_passphrase_from_cmdline(const ops_parser_content_t *content_,op
     return OPS_RELEASE_MEMORY;
     }
 
+ops_boolean_t ops_reader_set_accumulate(ops_parse_info_t* pinfo, ops_boolean_t state)
+    {
+    pinfo->rinfo.accumulate=state;
+    return state;
+    }
+
 // EOF

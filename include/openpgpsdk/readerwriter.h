@@ -78,6 +78,8 @@ int ops_setup_file_read(ops_parse_info_t **pinfo, const char *filename, void* ar
                         ops_parse_cb_return_t callback(const ops_parser_content_t *, ops_parse_cb_info_t *), ops_boolean_t accumulate);
 void ops_teardown_file_read(ops_parse_info_t *pinfo, int fd);
 
+ops_boolean_t ops_reader_set_accumulate(ops_parse_info_t* pinfo, ops_boolean_t state);
+
 // useful callbacks
 ops_parse_cb_return_t
 callback_literal_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
