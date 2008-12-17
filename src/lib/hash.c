@@ -66,6 +66,22 @@ void ops_hash_any(ops_hash_t *hash,ops_hash_algorithm_t alg)
 	ops_hash_sha1(hash);
 	break;
 
+    case OPS_HASH_SHA256:
+	ops_hash_sha256(hash);
+	break;
+
+    case OPS_HASH_SHA384:
+	ops_hash_sha384(hash);
+	break;
+
+    case OPS_HASH_SHA512:
+	ops_hash_sha512(hash);
+	break;
+
+    case OPS_HASH_SHA224:
+	ops_hash_sha224(hash);
+	break;
+
     default:
 	assert(0);
 	}
@@ -87,6 +103,18 @@ unsigned ops_hash_size(ops_hash_algorithm_t alg)
     case OPS_HASH_SHA1:
 	return 20;
 
+ case OPS_HASH_SHA256:
+     return 32;
+
+ case OPS_HASH_SHA224:
+     return 28;
+
+ case OPS_HASH_SHA512:
+     return 64;
+
+ case OPS_HASH_SHA384:
+     return 48;
+
     default:
 	assert(0);
 	}
@@ -106,6 +134,16 @@ ops_hash_algorithm_t ops_hash_algorithm_from_text(const char *hash)
 	return OPS_HASH_SHA1;
     else if(!strcmp(hash,"MD5"))
 	return OPS_HASH_MD5;
+    else if (!strcmp(hash,"SHA256"))
+        return OPS_HASH_SHA256;
+    /*
+    else if (!strcmp(hash,"SHA224"))
+        return OPS_HASH_SHA224;
+    */
+    else if (!strcmp(hash,"SHA512"))
+        return OPS_HASH_SHA512;
+    else if (!strcmp(hash,"SHA384"))
+        return OPS_HASH_SHA384;
 
     return OPS_HASH_UNKNOWN;
     }
@@ -181,8 +219,8 @@ void ops_calc_mdc_hash(const unsigned char* preamble, const size_t sz_preamble, 
     if (debug)
         {
         unsigned int i=0;
-        fprintf(stderr,"\nhashed (len=%d): ",SHA_DIGEST_LENGTH);
-        for (i=0; i<SHA_DIGEST_LENGTH;i++)
+        fprintf(stderr,"\nhashed (len=%d): ",OPS_SHA1_HASH_SIZE);
+        for (i=0; i<OPS_SHA1_HASH_SIZE;i++)
             fprintf(stderr," 0x%02x", hashed[i]);
         fprintf(stderr,"\n");
         }
@@ -200,6 +238,7 @@ ops_boolean_t ops_is_hash_alg_supported(const ops_hash_algorithm_t *hash_alg)
         {
     case OPS_HASH_MD5:
     case OPS_HASH_SHA1:
+    case OPS_HASH_SHA256:
         return ops_true;
 
     default:

@@ -27,6 +27,8 @@
  
 #include "tests.h"
 
+#include <openssl/dsa.h>
+
 /* 
  * initialisation
  */
@@ -243,6 +245,26 @@ static void test_cfb_aes256()
     test_cfb(OPS_SA_AES_256);
     }
 
+static void test_dsa_verify()
+    {
+    // This test currently just tests my understanding of how openssl/DSA
+    // works. Will replace it with OPS functions for key generation
+    // and signature generation when these are implemented in OPS.
+
+    //DSA *params=DSA_new();
+
+    DSA *dsa = DSA_generate_parameters(100, NULL, 0, NULL, NULL, NULL, NULL);
+    CU_ASSERT(DSA_generate_key(dsa)==1);
+
+    const unsigned char testmd[]="hello world";
+    const int len=sizeof(testmd)/sizeof(unsigned char);
+    printf("len: %d\n", len);
+    DSA_SIG *sig=DSA_do_sign(&testmd[0], len, dsa);
+    CU_ASSERT(sig!=NULL);
+    CU_ASSERT(DSA_do_verify(&testmd[0], len, sig, dsa));
+    DSA_free(dsa);
+    }
+
 CU_pSuite suite_crypto()
 {
     CU_pSuite suite = NULL;
@@ -304,6 +326,9 @@ CU_pSuite suite_crypto()
         return NULL;
 
     //    test_one_cfb(OPS_SA_TWOFISH);
+
+    if (NULL == CU_add_test(suite, "Test DSA Verify", test_dsa_verify))
+        return NULL;
 
     return suite;
 }

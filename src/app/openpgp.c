@@ -42,19 +42,18 @@
 
 #define MAXBUF 1024
 
-static const char* usage="%s --list-keys | --encrypt | --decrypt | --sign | --clearsign | --verify [--keyring=<keyring>] [--userid=<userid>] [--filename=<filename>] [--armour] [--homedir=<homedir>]\n";
+static const char* usage="%s --list-keys | --list-packets | --encrypt | --decrypt | --sign | --clearsign | --verify [--keyring=<keyring>] [--userid=<userid>] [--file=<filename>] [--armour] [--homedir=<homedir>]\n";
 static const char* usage_list_keys="%s --list-keys [--keyring=<keyring>]\n";
-// \todo static const char* usage_list_packets="%s --list-packets \n";
 static const char* usage_find_key="%s --find-key --userid=<userid> [--keyring=<keyring>] \n";
 static const char* usage_export_key="%s --export-key --userid=<userid> [--keyring=<keyring>] \n";
-static const char* usage_import_key="%s --import-key --filename=<filename> --keyring=<keyring> \n";
+static const char* usage_import_key="%s --import-key --file=<filename> --keyring=<keyring> [--armour]\n";
 static const char* usage_generate_key="%s --generate-key --userid=<userid> [--numbits=<numbits>] [--passphrase=<passphrase>]\n";
-static const char* usage_encrypt="%s --encrypt --userid=<userid> --filename=<filename> [--armour] [--homedir=<homedir>]\n";
-static const char* usage_decrypt="%s --decrypt --filename=<filename> [--armour] [--homedir=<homedir>]\n";
-static const char* usage_sign="%s --sign --userid=<userid> --filename=<filename> [--armour] [--homedir=<homedir>]\n";
-static const char* usage_clearsign="%s --clearsign --userid=<userid> --filename=<filename> [--homedir=<homedir>]\n";
-static const char* usage_verify="%s --verify --filename=<filename> [--homedir=<homedir>] [--armour]\n";
-static const char* usage_list_packets="%s --list-packets --filename=<filename> [--homedir=<homedir>] [--armour]\n";
+static const char* usage_encrypt="%s --encrypt --userid=<userid> --file=<filename> [--armour] [--homedir=<homedir>]\n";
+static const char* usage_decrypt="%s --decrypt --file=<filename> [--armour] [--homedir=<homedir>]\n";
+static const char* usage_sign="%s --sign --userid=<userid> --file=<filename> [--armour] [--homedir=<homedir>]\n";
+static const char* usage_clearsign="%s --clearsign --userid=<userid> --file=<filename> [--homedir=<homedir>]\n";
+static const char* usage_verify="%s --verify --file=<filename> [--homedir=<homedir>] [--armour]\n";
+static const char* usage_list_packets="%s --list-packets --file=<filename> [--homedir=<homedir>] [--armour]\n";
 
 static char* pname;
 
@@ -87,7 +86,6 @@ static struct option long_options[]=
     {
     // commands
     { "list-keys", no_argument, NULL, LIST_KEYS },
-    //\todo    { "list-packets", no_argument, NULL, LIST_PACKETS },
     { "find-key", no_argument, NULL, FIND_KEY },
     { "export-key", no_argument, NULL, EXPORT_KEY },
     { "import-key", no_argument, NULL, IMPORT_KEY },
@@ -105,7 +103,7 @@ static struct option long_options[]=
     { "keyring", required_argument, NULL, KEYRING },
     { "userid", required_argument, NULL, USERID },
     { "passphrase", required_argument, NULL, PASSPHRASE },
-    { "filename", required_argument, NULL, FILENAME },
+    { "file", required_argument, NULL, FILENAME },
     { "homedir", required_argument, NULL, HOMEDIR },
     { "armour", no_argument, NULL, ARMOUR },
     { "numbits", required_argument, NULL, NUMBITS },
@@ -181,12 +179,6 @@ int main(int argc, char **argv)
             cmd=LIST_KEYS;
             break;
             
-            /* \todo
-        case LIST_PACKETS:
-            cmd=LIST_PACKETS;
-            break;
-            */
-
         case FIND_KEY:
             cmd=FIND_KEY;
             break;
@@ -549,11 +541,11 @@ int main(int argc, char **argv)
 
         if (ops_validate_file(validate_result, opt_filename, armour, pubring)==ops_true)
             {
-            fprintf(stdout, "Verified OK\n");
+            fprintf(stdout, "Verify OK\n");
             }
         else
             {
-            fprintf(stdout, "Not verified OK: %d invalid signatures, %d unknown signatures\n", validate_result->invalid_count, validate_result->unknown_signer_count);
+            fprintf(stdout, "Verify FAIL: %d invalid signatures, %d unknown signatures\n", validate_result->invalid_count, validate_result->unknown_signer_count);
             }
         ops_validate_result_free(validate_result);
         break;

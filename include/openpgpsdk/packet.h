@@ -174,6 +174,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_CREATION_TIME		=0x200+2,	/*!< signature creation time */
     OPS_PTAG_SS_EXPIRATION_TIME		=0x200+3,	/*!< signature expiration time */
 
+    OPS_PTAG_SS_EXPORTABLE_CERTIFICATION =0x200+4, /*!< exportable certification */
     OPS_PTAG_SS_TRUST			=0x200+5,	/*!< trust signature */
     OPS_PTAG_SS_REGEXP			=0x200+6,	/*!< regular expression */
     OPS_PTAG_SS_REVOCABLE		=0x200+7,	/*!< revocable */
@@ -188,7 +189,7 @@ enum ops_content_tag_t
     OPS_PTAG_SS_KEY_SERVER_PREFS	=0x200+23, /*!< key server preferences */
     OPS_PTAG_SS_PREFERRED_KEY_SERVER	=0x200+24, /*!< Preferred Key Server */
     OPS_PTAG_SS_PRIMARY_USER_ID		=0x200+25, /*!< primary User ID */
-    OPS_PTAG_SS_POLICY_URL		=0x200+26, /*!< Policy URL */
+    OPS_PTAG_SS_POLICY_URI		=0x200+26, /*!< Policy URI */
     OPS_PTAG_SS_KEY_FLAGS 		=0x200+27, /*!< key flags */
     OPS_PTAG_SS_SIGNERS_USER_ID		=0x200+28, /*!< Signer's User ID */
     OPS_PTAG_SS_REVOCATION_REASON	=0x200+29, /*!< reason for revocation */
@@ -438,6 +439,7 @@ typedef enum
     OPS_HASH_SHA256	= 8,	/*!< SHA256 */
     OPS_HASH_SHA384	= 9,	/*!< SHA384 */
     OPS_HASH_SHA512	=10,	/*!< SHA512 */
+    OPS_HASH_SHA224 = 11,   /*!< SHA224 */
     } ops_hash_algorithm_t;
 
 // Maximum block size for symmetric crypto
@@ -453,7 +455,8 @@ typedef enum
 #define OPS_CHECKHASH_SIZE	20
 
 // SHA1 Hash Size \todo is this the same as OPS_CHECKHASH_SIZE??
-#define OPS_SHA1_HASH_SIZE SHA_DIGEST_LENGTH
+#define OPS_SHA1_HASH_SIZE 		SHA_DIGEST_LENGTH
+#define OPS_SHA256_HASH_SIZE	SHA256_DIGEST_LENGTH
 
 // Max hash size
 #define OPS_MAX_HASH_SIZE	64

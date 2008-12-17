@@ -626,8 +626,6 @@ int ops_print_packet(const ops_parser_content_t *content_)
     const char *str;
     static ops_boolean_t unarmoured;
 
-    /*    OPS_USED(cbinfo);*/
-
     if(unarmoured && content_->tag != OPS_PTAG_CT_UNARMOURED_TEXT)
 	{
 	unarmoured=ops_false;
@@ -700,8 +698,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	    print_tagname("PUBLIC KEY");
 	else
 	    print_tagname("PUBLIC SUBKEY");
-
-	ops_print_public_keydata((const ops_keydata_t *) &content->public_key);
+	ops_print_public_key(&content->public_key);
 	break;
 
     case OPS_PTAG_CT_TRUST:
@@ -739,6 +736,8 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	print_string_and_value("Hash Algorithm",
 			       ops_show_hash_algorithm(content->signature.info.hash_algorithm),
 			       content->signature.info.hash_algorithm);
+
+    print_unsigned_int("Hashed data len", content->signature.info.v4_hashed_data_length);
 
 	print_indent();
 	print_hexdump_data("hash2",&content->signature.hash2[0],2);
@@ -979,7 +978,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
 	end_subpacket();
 	break;
 
-    case OPS_PTAG_SS_POLICY_URL:
+    case OPS_PTAG_SS_POLICY_URI:
 	start_subpacket(content_->tag);
 	print_string("Policy URL",
 		     content->ss_policy_url.text);
@@ -998,6 +997,11 @@ int ops_print_packet(const ops_parser_content_t *content_)
 		     content->ss_preferred_key_server.text);
 	end_subpacket();
 	break;
+
+ case OPS_PTAG_SS_EMBEDDED_SIGNATURE:
+     start_subpacket(content_->tag);
+     end_subpacket(content_->tag); // \todo print out contents?
+     break;
 
     case OPS_PTAG_SS_USERDEFINED00:
     case OPS_PTAG_SS_USERDEFINED01:
@@ -1142,13 +1146,13 @@ int ops_print_packet(const ops_parser_content_t *content_)
 
     case OPS_PTAG_CT_SECRET_KEY:
 	print_tagname("OPS_PTAG_CT_SECRET_KEY");
-	ops_print_secret_keydata((const ops_keydata_t *)&content->secret_key);
+	ops_print_secret_key_verbose(content_->tag,&content->secret_key);
 	break;
 
     case OPS_PTAG_CT_ENCRYPTED_SECRET_KEY:
 	//	print_secret_key(content_->tag,&content->secret_key);
 	print_tagname("OPS_PTAG_CT_ENCRYPTED_SECRET_KEY");
-	ops_print_secret_keydata((const ops_keydata_t *)&content->secret_key);
+	ops_print_secret_key_verbose(content_->tag,&content->secret_key);
 	break;
 
     case OPS_PTAG_CT_ARMOUR_HEADER:
@@ -1203,7 +1207,7 @@ int ops_print_packet(const ops_parser_content_t *content_)
 
     default:
 	print_tagname("UNKNOWN PACKET TYPE");
-	fprintf(stderr,"packet-dump: unknown tag=%d (0x%x)\n",content_->tag,
+	fprintf(stderr,"ops_print_packet: unknown tag=%d (0x%x)\n",content_->tag,
 		content_->tag);
 	exit(1);
 	}
@@ -1212,15 +1216,10 @@ int ops_print_packet(const ops_parser_content_t *content_)
 
 static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * content_, ops_parse_cb_info_t *cbinfo)
     {
-    const ops_parser_content_union_t *content=&content_->content;
-    ops_text_t *text;
-    const char *str;
-    //    const ops_keydata_t *decrypter;
-    //    const ops_secret_key_t *secret;
-    static ops_boolean_t unarmoured;
-
     OPS_USED(cbinfo);
 
+    ops_print_packet(content_);
+#ifdef XXX
     if(unarmoured && content_->tag != OPS_PTAG_CT_UNARMOURED_TEXT)
 	{
 	unarmoured=ops_false;
@@ -1323,6 +1322,7 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 	print_string_and_value("Hash Algorithm",
 			       ops_show_hash_algorithm(content->signature.info.hash_algorithm),
 			       content->signature.info.hash_algorithm);
+    print_unsigned_int("Hashed data len", content->signature.info.v4_hashed_data_length);
 
 	print_indent();
 	print_hexdump_data("hash2",&content->signature.hash2[0],2);
@@ -1808,6 +1808,7 @@ static ops_parse_cb_return_t cb_list_packets(const ops_parser_content_t * conten
 		content_->tag);
 	exit(1);
 	}
+#endif /*XXX*/
     return OPS_RELEASE_MEMORY;
     }
 

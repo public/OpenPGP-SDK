@@ -11,6 +11,7 @@ COMMONTESTSRC= test_packet_types.c \
                test_cmdline.c \
                 test_crypt_mpi.c test_rsa_decrypt.c test_rsa_encrypt.c \
                 test_rsa_signature.c test_rsa_verify.c \
+                test_dsa_verify.c \
                 test_rsa_keys.c \
                 test_crypto.c test_common.c
 COMMONTESTOBJ=$(COMMONTESTSRC:.c=.o)

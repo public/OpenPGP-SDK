@@ -53,6 +53,8 @@ extern CU_pSuite suite_rsa_signature();
 extern CU_pSuite suite_rsa_verify();
 extern CU_pSuite suite_rsa_keys();
 
+extern CU_pSuite suite_dsa_verify();
+
 extern CU_pSuite suite_rsa_decrypt_GPGtest();
 extern CU_pSuite suite_rsa_encrypt_GPGtest();
 extern CU_pSuite suite_rsa_signature_GPGtest();
@@ -96,8 +98,9 @@ ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
 //ops_memory_t* mem_literal_data;
 
-// "Alpha" is the user who has NO passphrase on his key
-char* alpha_user_id;
+// "Alpha" is the user who has NO passphrase on his key - RSA
+char alpha_user_id[MAXBUF+1];
+char* alpha_comment;
 char* alpha_name;
 const ops_keydata_t *alpha_pub_keydata;
 const ops_keydata_t *alpha_sec_keydata;
@@ -105,14 +108,34 @@ const ops_public_key_t *alpha_pkey;
 const ops_secret_key_t *alpha_skey;
 char* alpha_passphrase;
 
-// "Bravo" is the user who has a passphrase on his key
+// "Bravo" is the user who has a passphrase on his key - RSA
 char* bravo_name;
+char* bravo_comment;
 char* bravo_passphrase;
-char* bravo_user_id;
+char bravo_user_id[MAXBUF+1];
 const ops_keydata_t *bravo_pub_keydata;
 const ops_keydata_t *bravo_sec_keydata;
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
+//const ops_keydata_t *decrypter;
+
+// "AlphaDSA" is the user who has NO passphrase on his key - DSA
+char alphadsa_user_id[MAXBUF+1];
+char* alphadsa_name;
+const ops_keydata_t *alphadsa_pub_keydata;
+const ops_keydata_t *alphadsa_sec_keydata;
+const ops_public_key_t *alphadsa_pkey;
+const ops_secret_key_t *alphadsa_skey;
+char* alphadsa_passphrase;
+
+// "BravoDSA" is the user who has a passphrase on his key - DSA
+char* bravodsa_name;
+char* bravodsa_passphrase;
+char bravodsa_user_id[MAXBUF+1];
+const ops_keydata_t *bravodsa_pub_keydata;
+const ops_keydata_t *bravodsa_sec_keydata;
+const ops_public_key_t *bravodsa_pkey;
+const ops_secret_key_t *bravodsa_skey;
 //const ops_keydata_t *decrypter;
 
 // "Charlie" is a 3rd user, used to test cmd line generation
@@ -133,6 +156,17 @@ char* charlie_user_id;
 #endif // #ifndef WIN32
 
 #endif /* ATTRIBUTE_UNUSED */
+
+typedef struct 
+    {
+    unsigned keysize;
+    unsigned qsize;
+    ops_hash_algorithm_t hashalg;
+    char userid[MAXBUF+1];
+    char filename[MAXBUF+1];
+    } dsatest_t;
+extern dsatest_t dsstests[];
+extern const unsigned sz_dsstests;
 
 #endif
 

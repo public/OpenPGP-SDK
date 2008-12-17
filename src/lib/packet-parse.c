@@ -866,7 +866,7 @@ void ops_parser_content_free(ops_parser_content_t *c)
 	ops_ss_regexp_free(&c->content.ss_regexp);
 	break;
 
-    case OPS_PTAG_SS_POLICY_URL:
+    case OPS_PTAG_SS_POLICY_URI:
 	ops_ss_policy_url_free(&c->content.ss_policy_url);
 	break;
 
@@ -895,6 +895,10 @@ void ops_parser_content_free(ops_parser_content_t *c)
     case OPS_PTAG_SS_REVOCATION_REASON:
 	ops_ss_revocation_reason_free(&c->content.ss_revocation_reason);
 	break;
+
+ case OPS_PTAG_SS_EMBEDDED_SIGNATURE:
+     ops_ss_embedded_signature_free(&c->content.ss_embedded_signature);
+     break;
 
     case OPS_PARSER_PACKET_END:
 	ops_packet_free(&c->content.packet);
@@ -1499,6 +1503,12 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	break;
 
+ case OPS_PTAG_SS_EMBEDDED_SIGNATURE:
+     // \todo should do something with this sig?
+     if (!read_data(&C.ss_embedded_signature.sig,&subregion,pinfo))
+         return 0;
+     break;
+
     case OPS_PTAG_SS_NOTATION_DATA:
 	if(!limited_read_data(&C.ss_notation_data.flags,4,&subregion,pinfo))
 	    return 0;
@@ -1516,7 +1526,7 @@ static int parse_one_signature_subpacket(ops_signature_t *sig,
 	    return 0;
 	break;
 
-    case OPS_PTAG_SS_POLICY_URL:
+    case OPS_PTAG_SS_POLICY_URI:
 	if(!read_string(&C.ss_policy_url.text,&subregion,pinfo))
 	    return 0;
 	break;
@@ -1740,12 +1750,18 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     unsigned char c[1]="";
     ops_parser_content_t content;
     
+    //debug=1;
+    if (debug)
+        { fprintf(stderr, "\nparse_v4_signature\n"); }
+    
     // clear signature
     memset(&C.signature,'\0',sizeof C.signature);
 
     /* We need to hash the packet data from version through the hashed subpacket data */
 
     C.signature.v4_hashed_data_start=pinfo->rinfo.alength-1;
+    if (debug)
+        { fprintf(stderr, "v4_hashed_data_start=%ld\n", C.signature.v4_hashed_data_start); }
 
     /* Set version,type,algorithms */
 
@@ -1754,17 +1770,24 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     if(!limited_read(c,1,region,pinfo))
 	return 0;
     C.signature.info.type=c[0];
+    if (debug)
+        { fprintf(stderr, "signature type=%d\n", C.signature.info.type); }
+
     /* XXX: check signature type */
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
     C.signature.info.key_algorithm=c[0];
     /* XXX: check algorithm */
+    if (debug)
+        { fprintf(stderr, "key_algorithm=%d\n", C.signature.info.key_algorithm); }
 
     if(!limited_read(c,1,region,pinfo))
 	return 0;
     C.signature.info.hash_algorithm=c[0];
     /* XXX: check algorithm */
+    if (debug)
+        { fprintf(stderr, "hash_algorithm=%d %s\n", C.signature.info.hash_algorithm, ops_show_hash_algorithm(C.signature.info.hash_algorithm)); }
 
     CBP(pinfo,OPS_PTAG_CT_SIGNATURE_HEADER,&content);
 
@@ -1773,6 +1796,8 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
 
     C.signature.info.v4_hashed_data_length=pinfo->rinfo.alength
         -C.signature.v4_hashed_data_start;
+    if (debug)
+        { fprintf(stderr, "v4_hashed_data_length=%ld\n", C.signature.info.v4_hashed_data_length); }
 
     // copy hashed subpackets
     if (C.signature.info.v4_hashed_data)
@@ -1984,6 +2009,11 @@ void ops_ss_notation_data_free(ops_ss_notation_data_t *ss_notation_data)
      data_free(&ss_notation_data->value);
      }
 
+void ops_ss_embedded_signature_free(ops_ss_embedded_signature_t *ss_embedded_signature)
+    {
+    data_free(&ss_embedded_signature->sig);
+    }
+
 /**
    \ingroup Core_Create
    \brief Free the memory used when parsing this signature sub-packet type 
@@ -2091,8 +2121,8 @@ void ops_secret_key_free(ops_secret_key_t *key)
 	break;
 
     default:
-	fprintf(stderr,"Unknown algorithm: %d\n",key->public_key.algorithm);
-	assert(0);
+        fprintf(stderr,"ops_secret_key_free: Unknown algorithm: %d (%s)\n",key->public_key.algorithm, ops_show_pka(key->public_key.algorithm));
+        //assert(0);
 	}
 
     ops_public_key_free(&key->public_key);
@@ -2364,16 +2394,14 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
 
 	break;
 
-    /*
     case OPS_PKA_DSA:
         
 	if(!limited_read_mpi(&C.secret_key.key.dsa.x,region,pinfo))
 	    ret=0;
 	break;
-    */
-
+ 
     default:
-        OPS_ERROR_1(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_PUBLIC_KEY_ALG,"Unsupported Public Key algorithm (%s)",ops_show_pka(C.secret_key.public_key.algorithm));
+        OPS_ERROR_2(&pinfo->errors,OPS_E_ALG_UNSUPPORTED_PUBLIC_KEY_ALG,"Unsupported Public Key algorithm %d (%s)",C.secret_key.public_key.algorithm,ops_show_pka(C.secret_key.public_key.algorithm));
         ret=0;
         //	assert(0);
 	}

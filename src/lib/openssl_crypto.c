@@ -127,13 +127,13 @@ static unsigned sha1_finish(ops_hash_t *hash,unsigned char *out)
         {
         unsigned i=0;
         fprintf(stderr,"***\n***\nsha1_finish\n***\n");
-        for (i=0; i<20; i++)
+        for (i=0; i<SHA_DIGEST_LENGTH; i++)
             fprintf(stderr,"0x%02x ",out[i]);
         fprintf(stderr,"\n");
         }
     free(hash->data);
     hash->data=NULL;
-    return 20;
+    return SHA_DIGEST_LENGTH;
     }
 
 static ops_hash_t sha1={OPS_HASH_SHA1,SHA_DIGEST_LENGTH,"SHA1",sha1_init,
@@ -149,6 +149,238 @@ void ops_hash_sha1(ops_hash_t *hash)
     *hash=sha1;
     }
 
+static void sha256_init(ops_hash_t *hash)
+    {
+    if (debug)
+        {
+        fprintf(stderr,"***\n***\nsha256_init\n***\n");
+        }
+    assert(!hash->data);
+    hash->data=malloc(sizeof(SHA256_CTX));
+    SHA256_Init(hash->data);
+    }
+
+static void sha256_add(ops_hash_t *hash,const unsigned char *data,
+		     unsigned length)
+    {
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"adding %d to hash:\n ", length);
+        for (i=0; i<length; i++)
+            {
+            fprintf(stderr,"0x%02x ", data[i]);
+            if (!((i+1) % 16))
+                fprintf(stderr,"\n");
+            else if (!((i+1) % 8))
+                fprintf(stderr,"  ");
+            }
+        fprintf(stderr,"\n");
+        }
+    SHA256_Update(hash->data,data,length);
+    }
+
+static unsigned sha256_finish(ops_hash_t *hash,unsigned char *out)
+    {
+    SHA256_Final(out,hash->data);
+    if (debug)
+        {
+        unsigned i=0;
+        fprintf(stderr,"***\n***\nsha1_finish\n***\n");
+        for (i=0; i<SHA256_DIGEST_LENGTH; i++)
+            fprintf(stderr,"0x%02x ",out[i]);
+        fprintf(stderr,"\n");
+        }
+    free(hash->data);
+    hash->data=NULL;
+    return SHA256_DIGEST_LENGTH;
+    }
+
+static ops_hash_t sha256={OPS_HASH_SHA256,SHA256_DIGEST_LENGTH,"SHA256",sha256_init,
+			sha256_add,sha256_finish,NULL};
+
+void ops_hash_sha256(ops_hash_t *hash)
+    {
+    *hash=sha256;
+    }
+
+/*
+ * SHA384
+ */
+
+static void sha384_init(ops_hash_t *hash)
+    {
+    if (debug)
+        {
+        fprintf(stderr,"***\n***\nsha384_init\n***\n");
+        }
+    assert(!hash->data);
+    hash->data=malloc(sizeof(SHA512_CTX));
+    SHA384_Init(hash->data);
+    }
+
+static void sha384_add(ops_hash_t *hash,const unsigned char *data,
+		     unsigned length)
+    {
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"adding %d to hash:\n ", length);
+        for (i=0; i<length; i++)
+            {
+            fprintf(stderr,"0x%02x ", data[i]);
+            if (!((i+1) % 16))
+                fprintf(stderr,"\n");
+            else if (!((i+1) % 8))
+                fprintf(stderr,"  ");
+            }
+        fprintf(stderr,"\n");
+        }
+    SHA384_Update(hash->data,data,length);
+    }
+
+static unsigned sha384_finish(ops_hash_t *hash,unsigned char *out)
+    {
+    SHA384_Final(out,hash->data);
+    if (debug)
+        {
+        unsigned i=0;
+        fprintf(stderr,"***\n***\nsha1_finish\n***\n");
+        for (i=0; i<SHA384_DIGEST_LENGTH; i++)
+            fprintf(stderr,"0x%02x ",out[i]);
+        fprintf(stderr,"\n");
+        }
+    free(hash->data);
+    hash->data=NULL;
+    return SHA384_DIGEST_LENGTH;
+    }
+
+static ops_hash_t sha384={OPS_HASH_SHA384,SHA384_DIGEST_LENGTH,"SHA384",sha384_init,
+			sha384_add,sha384_finish,NULL};
+
+void ops_hash_sha384(ops_hash_t *hash)
+    {
+    *hash=sha384;
+    }
+
+/*
+ * SHA512
+ */
+
+static void sha512_init(ops_hash_t *hash)
+    {
+    if (debug)
+        {
+        fprintf(stderr,"***\n***\nsha512_init\n***\n");
+        }
+    assert(!hash->data);
+    hash->data=malloc(sizeof(SHA512_CTX));
+    SHA512_Init(hash->data);
+    }
+
+static void sha512_add(ops_hash_t *hash,const unsigned char *data,
+		     unsigned length)
+    {
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"adding %d to hash:\n ", length);
+        for (i=0; i<length; i++)
+            {
+            fprintf(stderr,"0x%02x ", data[i]);
+            if (!((i+1) % 16))
+                fprintf(stderr,"\n");
+            else if (!((i+1) % 8))
+                fprintf(stderr,"  ");
+            }
+        fprintf(stderr,"\n");
+        }
+    SHA512_Update(hash->data,data,length);
+    }
+
+static unsigned sha512_finish(ops_hash_t *hash,unsigned char *out)
+    {
+    SHA512_Final(out,hash->data);
+    if (debug)
+        {
+        unsigned i=0;
+        fprintf(stderr,"***\n***\nsha1_finish\n***\n");
+        for (i=0; i<SHA512_DIGEST_LENGTH; i++)
+            fprintf(stderr,"0x%02x ",out[i]);
+        fprintf(stderr,"\n");
+        }
+    free(hash->data);
+    hash->data=NULL;
+    return SHA512_DIGEST_LENGTH;
+    }
+
+static ops_hash_t sha512={OPS_HASH_SHA512,SHA512_DIGEST_LENGTH,"SHA512",sha512_init,
+			sha512_add,sha512_finish,NULL};
+
+void ops_hash_sha512(ops_hash_t *hash)
+    {
+    *hash=sha512;
+    }
+
+/*
+ * SHA224
+ */
+
+static void sha224_init(ops_hash_t *hash)
+    {
+    if (debug)
+        {
+        fprintf(stderr,"***\n***\nsha1_init\n***\n");
+        }
+    assert(!hash->data);
+    hash->data=malloc(sizeof(SHA256_CTX));
+    SHA224_Init(hash->data);
+    }
+
+static void sha224_add(ops_hash_t *hash,const unsigned char *data,
+		     unsigned length)
+    {
+    if (debug)
+        {
+        unsigned int i=0;
+        fprintf(stderr,"adding %d to hash:\n ", length);
+        for (i=0; i<length; i++)
+            {
+            fprintf(stderr,"0x%02x ", data[i]);
+            if (!((i+1) % 16))
+                fprintf(stderr,"\n");
+            else if (!((i+1) % 8))
+                fprintf(stderr,"  ");
+            }
+        fprintf(stderr,"\n");
+        }
+    SHA224_Update(hash->data,data,length);
+    }
+
+static unsigned sha224_finish(ops_hash_t *hash,unsigned char *out)
+    {
+    SHA224_Final(out,hash->data);
+    if (debug)
+        {
+        unsigned i=0;
+        fprintf(stderr,"***\n***\nsha1_finish\n***\n");
+        for (i=0; i<SHA224_DIGEST_LENGTH; i++)
+            fprintf(stderr,"0x%02x ",out[i]);
+        fprintf(stderr,"\n");
+        }
+    free(hash->data);
+    hash->data=NULL;
+    return SHA224_DIGEST_LENGTH;
+    }
+
+static ops_hash_t sha224={OPS_HASH_SHA224,SHA224_DIGEST_LENGTH,"SHA224",sha224_init,
+			sha224_add,sha224_finish,NULL};
+
+void ops_hash_sha224(ops_hash_t *hash)
+    {
+    *hash=sha224;
+    }
+
 ops_boolean_t ops_dsa_verify(const unsigned char *hash,size_t hash_length,
 			     const ops_dsa_signature_t *sig,
 			     const ops_dsa_public_key_t *dsa)
@@ -156,6 +388,9 @@ ops_boolean_t ops_dsa_verify(const unsigned char *hash,size_t hash_length,
     DSA_SIG *osig;
     DSA *odsa;
     int ret;
+
+    if (debug)
+        { fprintf(stderr,"ops_dsa_verify(hash len=%ld)\n", hash_length); }
 
     osig=DSA_SIG_new();
     osig->r=sig->r;
@@ -167,7 +402,27 @@ ops_boolean_t ops_dsa_verify(const unsigned char *hash,size_t hash_length,
     odsa->g=dsa->g;
     odsa->pub_key=dsa->y;
 
+    if (debug)
+        {
+        fprintf(stderr,"hash passed in:\n");
+        unsigned i;
+        for (i=0; i<hash_length; i++)
+            {
+            fprintf(stderr,"%02x ", hash[i]);
+            }
+        fprintf(stderr,"\n");
+        }
+    //printf("hash_length=%ld\n", hash_length);
+    //printf("Q=%d\n", BN_num_bytes(odsa->q));
+    unsigned int qlen=BN_num_bytes(odsa->q);
+    if (qlen < hash_length)
+        hash_length=qlen;
+    //    ret=DSA_do_verify(hash,hash_length,osig,odsa);
     ret=DSA_do_verify(hash,hash_length,osig,odsa);
+    if (debug)
+        {
+        fprintf(stderr,"ret=%d\n",ret);
+        }
     assert(ret >= 0);
 
     odsa->p=odsa->q=odsa->g=odsa->pub_key=NULL;

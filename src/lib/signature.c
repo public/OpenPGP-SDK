@@ -82,6 +82,10 @@ static unsigned char prefix_md5[]={ 0x30,0x20,0x30,0x0C,0x06,0x08,0x2A,0x86,
 static unsigned char prefix_sha1[]={ 0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0E,
 				     0x03,0x02,0x1A,0x05,0x00,0x04,0x14 };
 
+static unsigned char prefix_sha256[]={ 0x30,0x31,0x30,0x0d,0x06,0x09,0x60,0x86,
+                                       0x48,0x01,0x65,0x03,0x04,0x02,0x01,0x05,
+                                       0x00,0x04,0x20 };
+
 /**
    \ingroup Core_Create
    implementation of EMSA-PKCS1-v1_5, as defined in OpenPGP RFC
@@ -252,6 +256,7 @@ static ops_boolean_t rsa_verify(ops_hash_algorithm_t type,
 	{
     case OPS_HASH_MD5: prefix=prefix_md5; plen=sizeof prefix_md5; break;
     case OPS_HASH_SHA1: prefix=prefix_sha1; plen=sizeof prefix_sha1; break;
+    case OPS_HASH_SHA256: prefix=prefix_sha256; plen=sizeof prefix_sha256; break;
     default: assert(0); break;
 	}
 

@@ -31,6 +31,7 @@
 #include "CUnit/Basic.h"
 #include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/std_print.h"
+#include "openpgpsdk/packet-show.h"
 #include "../src/lib/parse_local.h"
 
 #include "tests.h"
@@ -40,27 +41,60 @@ char gpgcmd[MAXBUF+1];
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
 
-char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
+//char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
+char alpha_user_id[MAXBUF+1];
 char *alpha_name="Alpha";
+char *alpha_comment="RSA, no passphrase";
+char *alpha_email="alpha@test.com";
+
 const ops_public_key_t *alpha_pkey;
 const ops_secret_key_t *alpha_skey;
 const ops_keydata_t *alpha_pub_keydata;
 const ops_keydata_t *alpha_sec_keydata;
 char* alpha_passphrase="";
 
-char *bravo_user_id="Bravo (RSA, passphrase) <bravo@test.com>";
+//char *bravo_user_id="Bravo (RSA, passphrase) <bravo@test.com>";
+char bravo_user_id[MAXBUF+1];
 char *bravo_name="Bravo";
+char *bravo_comment="RSA, passphrase";
+char *bravo_email="bravo@test.com";
+
 const ops_public_key_t *bravo_pkey;
 const ops_secret_key_t *bravo_skey;
 const ops_keydata_t *bravo_pub_keydata;
 const ops_keydata_t *bravo_sec_keydata;
 char* bravo_passphrase="hello";
 
+//char *alphadsa_user_id="AlphaDSA (DSA, no passphrase) <alphadsae@test.com>";
+char alphadsa_user_id[MAXBUF+1];
+char *alphadsa_name="AlphaDSA";
+char *alphadsa_comment="DSA, no passphrase";
+char *alphadsa_email="alphadsa@test.com";
+
+const ops_public_key_t *alphadsa_pkey;
+const ops_secret_key_t *alphadsa_skey;
+const ops_keydata_t *alphadsa_pub_keydata;
+const ops_keydata_t *alphadsa_sec_keydata;
+char* alphadsa_passphrase="";
+
+//char *bravodsa_user_id="BravoDSA (DSA, passphrase) <bravodsa@test.com>";
+char bravodsa_user_id[MAXBUF+1];
+char *bravodsa_name="BravoDSA";
+char *bravodsa_comment="DSA, passphrase";
+char *bravodsa_email="bravodsa@test.com";
+
+const ops_public_key_t *bravodsa_pkey;
+const ops_secret_key_t *bravodsa_skey;
+const ops_keydata_t *bravodsa_pub_keydata;
+const ops_keydata_t *bravodsa_sec_keydata;
+char* bravodsa_passphrase="hellodsa";
+
 char *charlie_user_id="Charlie (test user) <charlie@test.com>";
 
 const ops_keydata_t *decrypter=NULL;
 
 static void setup_test_keys();
+static void setup_test_dsa_keys();
 
 void setup()
     {
@@ -71,6 +105,8 @@ void setup()
     assert(strlen(dir));
     snprintf(gpgcmd,sizeof gpgcmd,"gpg --quiet --no-tty --homedir=%s --openpgp",dir);
 
+    setup_test_dsa_keys();
+    // this includes reading in the keyrings so must go last
     setup_test_keys();
     }
 
@@ -81,9 +117,26 @@ static void setup_test_keys()
     int fd=0;
     char cmd[MAXBUF+1];
     ops_boolean_t armour=ops_false;
+    const int keylength=1024;
+    const char* RSA="RSA";
+    const char* DSA="DSA";
+    char* format="Key-Type: %s\nKey-Usage: encrypt, sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n";
 
-    char *rsa_nopass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Alpha\nName-Comment: RSA, no passphrase\nName-Email: alpha@test.com\nKey-Length: 1024\n";
-    char *rsa_pass="Key-Type: RSA\nKey-Usage: encrypt, sign\nName-Real: Bravo\nName-Comment: RSA, passphrase\nName-Email: bravo@test.com\nPassphrase: hello\nKey-Length: 1024\n";
+    char rsa_nopass[MAXBUF+1];
+    snprintf(rsa_nopass,MAXBUF,format,RSA,alpha_name, alpha_comment, alpha_email, keylength);
+    snprintf(alpha_user_id, MAXBUF, "%s (%s) <%s>", alpha_name, alpha_comment, alpha_email);
+
+    char rsa_pass[MAXBUF+1];
+    snprintf(rsa_pass,MAXBUF,format,RSA,bravo_name, bravo_comment, bravo_email, keylength);
+    snprintf(bravo_user_id, MAXBUF, "%s (%s) <%s>", bravo_name, bravo_comment, bravo_email);
+
+    char dsa_nopass[MAXBUF+1];
+    snprintf(dsa_nopass,MAXBUF,format, DSA, alphadsa_name, alphadsa_comment, alphadsa_email, keylength);
+    snprintf(alphadsa_user_id, MAXBUF, "%s (%s) <%s>", alphadsa_name, alphadsa_comment, alphadsa_email);
+
+    char dsa_pass[MAXBUF+1];
+    snprintf(dsa_pass, MAXBUF, format, DSA, bravodsa_name, bravodsa_comment, bravodsa_email, keylength);
+    snprintf(bravodsa_user_id, MAXBUF, "%s (%s) <%s>", bravodsa_name, bravodsa_comment, bravodsa_email);
 
     /*
      * Create a RSA keypair with no passphrase
@@ -130,6 +183,50 @@ static void setup_test_keys()
     system(cmd);
     
     /*
+     * Create a DSA keypair with no passphrase
+     */
+
+    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.alphadsa");
+
+#ifdef WIN32
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
+#else
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
+#endif
+        {
+        fprintf(stderr,"Can't create AlphaDSA key details\n");
+        return;
+        }
+
+    write(fd,dsa_nopass,strlen(dsa_nopass));
+    close(fd);
+
+    snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    system(cmd);
+
+    /*
+     * Create a RSA keypair with passphrase
+     */
+
+    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.bravodsa");
+
+#ifdef WIN32
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
+#else
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
+#endif
+        {
+        fprintf(stderr,"Can't create Bravo key details\n");
+        return;
+        }
+
+    write(fd,dsa_pass,strlen(dsa_pass));
+    close(fd);
+
+    snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    system(cmd);
+    
+    /*
      * read keyrings
      */
 
@@ -164,6 +261,65 @@ static void setup_test_keys()
     assert(alpha_skey);
     assert(bravo_pkey);
     assert(bravo_skey); //not yet set because of passphrase
+    }
+
+static void setup_test_dsa_keys()
+    {
+    int fd=0;
+    char cmd[MAXBUF+1];
+    char def[MAXBUF+1];
+    char * keydetails="/tmp/keydetails";
+    char name[MAXBUF+1];
+    char comment[MAXBUF+1];
+    char email[MAXBUF+1];
+
+    unsigned i;
+    int ret;
+
+    for (i=0; i<sz_dsstests; i++)
+        {
+        snprintf(name, MAXBUF, "DSA%i", i);
+        snprintf(comment, MAXBUF, "Keysize %d, Qsize %d, Hash %s",
+                 dsstests[i].keysize,
+                 dsstests[i].qsize,
+                 ops_show_hash_algorithm(dsstests[i].hashalg));
+        snprintf(email, MAXBUF, "dsa%d@testing.com", i);
+
+        printf("%s, %s, %s\n", name, comment, email);
+
+        // key definition
+        snprintf(def, MAXBUF, 
+                 "Key-Type: DSA\nKey-Usage: encrypt, sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n",
+                 name, comment, email, dsstests[i].keysize);
+
+#ifdef WIN32
+        if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600))<0)
+#else
+        if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
+#endif
+            {
+            fprintf(stderr,"Can't open keydetails file %s\n", keydetails);
+            return;
+            }
+
+        write(fd,def,strlen(def));
+        close(fd);
+
+        // save userids
+
+        snprintf(dsstests[i].userid, MAXBUF, "%s (%s) <%s>", name, comment, email);
+
+        // create DSA keypair with no passphrase
+
+        snprintf(cmd,sizeof cmd,"%s --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+        fprintf(stderr,"cmd: %s\n", cmd);
+        ret=system(cmd);
+        if (ret)
+            {
+            fprintf(stderr, "Command failed: returns %d\n", ret);
+            assert(0); 
+            }
+        }
     }
 
 void cleanup()
@@ -546,5 +702,30 @@ int file_compare(char* file1, char* file2)
     fclose(fp2);
     return err;
     }
+
+dsatest_t dsstests [] = 
+    {
+    { 1024, 160, OPS_HASH_SHA1, "", ""},
+    { 1024, 160, OPS_HASH_SHA224, "", ""},
+    { 1024, 160, OPS_HASH_SHA256, "", ""},
+    { 1024, 160, OPS_HASH_SHA384, "", ""},
+    { 1024, 160, OPS_HASH_SHA512, "", ""},
+    /*
+      GPG only allows generation of 1024-bit DSA keys
+    { 2048, 224, OPS_HASH_SHA224, "", ""},
+    { 2048, 224, OPS_HASH_SHA256, "", ""},
+    { 2048, 224, OPS_HASH_SHA384, "", ""},
+    { 2048, 224, OPS_HASH_SHA512, "", ""},
+
+    { 2048, 256, OPS_HASH_SHA256, "", ""},
+    { 2048, 256, OPS_HASH_SHA384, "", ""},
+    { 2048, 256, OPS_HASH_SHA512, "", ""},
+
+    { 3072, 256, OPS_HASH_SHA256, "", ""},
+    { 3072, 256, OPS_HASH_SHA384, "", ""},
+    { 3072, 256, OPS_HASH_SHA512, "", ""},
+*/
+    };
+const unsigned sz_dsstests = sizeof(dsstests) / sizeof(dsatest_t);
 
 // EOF

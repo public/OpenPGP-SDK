@@ -57,6 +57,8 @@ static char *filename_rsa_v3sig_fail_bad_sig="gpg_rsa_sign_v3sig_fail_bad_sig.tx
 
 static char *filename_rsa_hash_md5="gpg_rsa_hash_md5.txt";
 
+static char *filename_rsa_hash_sha256="gpg_rsa_hash_sha256.txt";
+
 static int num_malformed=0;
 static int num_wellformed=0;
 
@@ -123,7 +125,7 @@ static void create_malformed_testfiles()
         // no gap after armour headers in signature
         "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
         // unsupported hash
-        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
+        "-----BEGIN PGP SIGNED MESSAGE-----\nHash: RIPEMD160\n\nmessage to encrypt\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v1.4.6 (GNU/Linux)\n\niJwEAQECAAYFAkiup4kACgkQr5tWFB2nA4mpVwP8DeeMDFrp7ICHYleyW/UmBIQH\ndXuviEA9WK/BUyHVKxLOyciAw18vm1rKJE9Q30GUrFkPvaOV6XZXZMDBXY/CQixT\nHjKRoFapgbzA5hqDeLjjkJ59hjS5jmsOrdyIebOVrF7YaSRji15uAeeIzBQ0lClZ\nupkvjuuc6o0RoS/+otk=\n=itEi\n-----END PGP SIGNATURE-----\n",
         // missing BEGIN SIG
         "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA1\n\nmessage to encrypt\n-----END PGP SIGNATURE-----",
         // missing END SIG
@@ -168,6 +170,7 @@ int init_suite_rsa_verify(void)
     create_small_testfile(filename_rsa_v3sig);
     create_small_testfile(filename_rsa_v3sig_fail_bad_sig);
     create_small_testfile(filename_rsa_hash_md5);
+    create_small_testfile(filename_rsa_hash_sha256);
 
     create_small_testfile(filename_rsa_noarmour_nopassphrase);
     create_small_testfile(filename_rsa_noarmour_passphrase);
@@ -226,6 +229,13 @@ int init_suite_rsa_verify(void)
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --compress-level 0 --sign --digest-algo \"MD5\" --local-user %s > %s/%s.gpg",
              dir, filename_rsa_hash_md5,
              gpgcmd, alpha_name, dir, filename_rsa_hash_md5);
+    if (system(cmd))
+        { return 1; }
+
+    // SHA256 hash
+    snprintf(cmd,sizeof cmd,"cat %s/%s | %s --compress-level 0 --sign --digest-algo \"SHA256\" --local-user %s > %s/%s.gpg",
+             dir, filename_rsa_hash_sha256,
+             gpgcmd, alpha_name, dir, filename_rsa_hash_sha256);
     if (system(cmd))
         { return 1; }
 
@@ -514,6 +524,14 @@ static void test_rsa_verify_hash_md5(void)
     test_rsa_verify_ok(armour,filename_rsa_hash_md5);
     }
 
+static void test_rsa_verify_hash_sha256(void)
+    {
+    int armour=0;
+    assert(pub_keyring.nkeys);
+
+    test_rsa_verify_ok(armour,filename_rsa_hash_sha256);
+    }
+
 static void test_rsa_verify_noarmour_nopassphrase(void)
     {
     int armour=0;
@@ -695,6 +713,9 @@ CU_pSuite suite_rsa_verify()
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "MD5 Hash", test_rsa_verify_hash_md5))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "SHA256 Hash", test_rsa_verify_hash_sha256))
 	    return NULL;
 
     if (NULL == CU_add_test(suite, "Unarmoured: should fail on bad sig", test_rsa_verify_noarmour_fail_bad_sig))
