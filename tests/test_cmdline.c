@@ -110,7 +110,7 @@ static void test_encrypt(void)
     {
     int rtn=0;
 
-    snprintf(cmd, MAXBUF, "%s --encrypt --homedir=%s --userid='%s' --filename=%s/%s", openpgp, dir, alpha_user_id, dir, testfile_encrypt);
+    snprintf(cmd, MAXBUF, "%s --encrypt --homedir=%s --userid='%s' --file=%s/%s", openpgp, dir, alpha_user_id, dir, testfile_encrypt);
     rtn=system(cmd);
     CU_ASSERT(rtn==0);
     }
@@ -124,7 +124,7 @@ static void test_decrypt(void)
     CU_ASSERT(system(cmd)==0);
 
     // now decrypt the encrypted file to recreate it
-    snprintf(cmd, MAXBUF, "echo | %s --decrypt --homedir=%s --userid='%s' --filename=%s/%s.gpg", openpgp, dir, alpha_user_id, dir, testfile_encrypt);
+    snprintf(cmd, MAXBUF, "echo | %s --decrypt --homedir=%s --userid='%s' --file=%s/%s.gpg", openpgp, dir, alpha_user_id, dir, testfile_encrypt);
     rtn=system(cmd);
     CU_ASSERT(rtn==0);
 
@@ -136,22 +136,22 @@ static void test_decrypt(void)
 
 static void test_sign(void)
     {
-    snprintf(cmd, MAXBUF, "%s --sign --homedir=%s --userid='%s' --filename=%s/%s --armour", openpgp, dir, alpha_user_id, dir, testfile_sign);
+    snprintf(cmd, MAXBUF, "%s --sign --homedir=%s --userid='%s' --file=%s/%s --armour", openpgp, dir, alpha_user_id, dir, testfile_sign);
     CU_ASSERT(system(cmd)==0);
     }
 
 static void test_clearsign(void)
     {
-    snprintf(cmd, MAXBUF, "%s --clearsign --homedir=%s --userid='%s' --filename=%s/%s ", openpgp, dir, alpha_user_id, dir, testfile_clearsign);
+    snprintf(cmd, MAXBUF, "%s --clearsign --homedir=%s --userid='%s' --file=%s/%s ", openpgp, dir, alpha_user_id, dir, testfile_clearsign);
     CU_ASSERT(system(cmd)==0);
     }
 
 static void test_verify(void)
     {
-    snprintf(cmd, MAXBUF, "%s --verify --homedir=%s --filename=%s/%s.asc --armour > /dev/null", openpgp, dir, dir, testfile_sign);
+    snprintf(cmd, MAXBUF, "%s --verify --homedir=%s --file=%s/%s.asc --armour > /dev/null", openpgp, dir, dir, testfile_sign);
     CU_ASSERT(system(cmd)==0);
 
-    snprintf(cmd, MAXBUF, "%s --verify --homedir=%s --filename=%s/%s.asc --armour > /dev/null", openpgp, dir, dir, testfile_clearsign);
+    snprintf(cmd, MAXBUF, "%s --verify --homedir=%s --file=%s/%s.asc --armour > /dev/null", openpgp, dir, dir, testfile_clearsign);
     CU_ASSERT(system(cmd)==0);
     }
 
