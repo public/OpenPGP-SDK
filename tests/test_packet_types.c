@@ -196,8 +196,8 @@ static void test_literal_data_packet_text()
 
     // cleanup
     local_cleanup();
-    ops_teardown_memory_read(pinfo,mem);
     ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
+    ops_teardown_memory_read(pinfo,mem);
     free (testtext);
     }
 
@@ -244,8 +244,8 @@ static void test_literal_data_packet_data()
 
     // cleanup
     local_cleanup();
-    ops_teardown_memory_read(pinfo,mem);
     ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
+    ops_teardown_memory_read(pinfo,mem);
     free (in);
     }
 
@@ -334,8 +334,8 @@ static void test_compressed_literal_data_packet_text()
 
     // cleanup
     local_cleanup();
-    ops_teardown_memory_read(pinfo,mem_compress);
     ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
+    ops_teardown_memory_read(pinfo,mem_compress);
     //    ops_teardown_memory_read(pinfo,mem);
     free (testtext);
     }
@@ -452,8 +452,8 @@ static void test_ops_se_ip()
 
     // cleanup
     local_cleanup();
-    ops_teardown_memory_read(pinfo,mem);
     ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
+    ops_teardown_memory_read(pinfo,mem);
     ops_memory_free(mem_ldt);
     }
 

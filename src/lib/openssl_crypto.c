@@ -751,6 +751,7 @@ ops_keydata_t* ops_rsa_create_selfsigned_keypair(const int numbits, const unsign
     return keydata;
     }
 
+/*
 int ops_dsa_size(const ops_dsa_public_key_t *dsa)
     {
     int size;
@@ -764,17 +765,15 @@ int ops_dsa_size(const ops_dsa_public_key_t *dsa)
     DSAparams_print_fp(stderr, odsa);
     size=DSA_size(odsa);
 
-    odsa->p=odsa->q=odsa->g=odsa->pub_key=NULL;
+    odsa->p=odsa->q=odsa->g=odsa->pub_key=odsa->priv_key=NULL;
     DSA_free(odsa);
 
     return size;
     }
+*/
 
 DSA_SIG* ops_dsa_sign(unsigned char* hashbuf, unsigned hashsize, const ops_dsa_secret_key_t *sdsa, const ops_dsa_public_key_t *dsa)
     {
-    //    int t;
-    //    int dummy;
-    //    unsigned int siglen;
     DSA *odsa;
     DSA_SIG *dsasig;
 
@@ -787,7 +786,7 @@ DSA_SIG* ops_dsa_sign(unsigned char* hashbuf, unsigned hashsize, const ops_dsa_s
 
     dsasig=DSA_do_sign(hashbuf,hashsize,odsa);
 
-    odsa->p=odsa->q=odsa->g=odsa->pub_key=NULL;
+    odsa->p=odsa->q=odsa->g=odsa->pub_key=odsa->priv_key=NULL;
     DSA_free(odsa);
 
     return dsasig;

@@ -36,7 +36,6 @@
 int main()
     {
 
-    //    mem_literal_data=ops_memory_new();
     setup();
 
     if (CUE_SUCCESS != CU_initialize_registry())

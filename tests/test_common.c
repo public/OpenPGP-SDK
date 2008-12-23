@@ -102,6 +102,8 @@ static void read_keyrings();
 
 void setup()
     {
+    ops_crypto_init();
+
     // Create temp directory
     if (!mktmpdir())
         return;
@@ -374,6 +376,8 @@ static void setup_test_extra_dsa_keys()
 void cleanup()
     {
     char cmd[MAXBUF];
+
+    ops_crypto_finish();
 
     return;
 
