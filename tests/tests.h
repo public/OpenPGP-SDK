@@ -53,6 +53,7 @@ extern CU_pSuite suite_rsa_signature();
 extern CU_pSuite suite_rsa_verify();
 extern CU_pSuite suite_rsa_keys();
 
+extern CU_pSuite suite_dsa_signature();
 extern CU_pSuite suite_dsa_verify();
 
 extern CU_pSuite suite_rsa_decrypt_GPGtest();

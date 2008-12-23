@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 
 #include "CUnit/Basic.h"
+#include "openpgpsdk/defs.h"
 #include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/std_print.h"
 #include "openpgpsdk/packet-show.h"
@@ -65,7 +66,6 @@ const ops_keydata_t *bravo_pub_keydata;
 const ops_keydata_t *bravo_sec_keydata;
 char* bravo_passphrase="hello";
 
-//char *alphadsa_user_id="AlphaDSA (DSA, no passphrase) <alphadsae@test.com>";
 char alphadsa_user_id[MAXBUF+1];
 char *alphadsa_name="AlphaDSA";
 char *alphadsa_comment="DSA, no passphrase";
@@ -94,7 +94,11 @@ char *charlie_user_id="Charlie (test user) <charlie@test.com>";
 const ops_keydata_t *decrypter=NULL;
 
 static void setup_test_keys();
-static void setup_test_dsa_keys();
+static void setup_test_keyptrs();
+static void setup_test_extra_dsa_keys();
+static void setup_test_rsa_keyptrs();
+static void setup_test_dsa_keyptrs();
+static void read_keyrings();
 
 void setup()
     {
@@ -105,18 +109,97 @@ void setup()
     assert(strlen(dir));
     snprintf(gpgcmd,sizeof gpgcmd,"gpg --quiet --no-tty --homedir=%s --openpgp",dir);
 
-    setup_test_dsa_keys();
-    // this includes reading in the keyrings so must go last
     setup_test_keys();
+    setup_test_extra_dsa_keys();
+    setup_test_keyptrs();
     }
+
+
+void read_keyrings()
+    {
+    char keyring_name[MAXBUF+1];
+
+    /*
+     * read keyrings
+     */
+
+    snprintf(keyring_name,sizeof keyring_name,"%s/pubring.gpg", dir);
+    ops_keyring_read_from_file(&pub_keyring,OPS_UNARMOURED,keyring_name);
+
+    snprintf(keyring_name,sizeof keyring_name,"%s/secring.gpg", dir);
+    ops_keyring_read_from_file(&sec_keyring,OPS_UNARMOURED,keyring_name);
+    }
+
+void setup_test_keyptrs()
+    {
+    read_keyrings();
+    setup_test_rsa_keyptrs();
+    setup_test_dsa_keyptrs();
+    }
+
+void setup_test_rsa_keyptrs()
+    {
+    /*
+     * set up key pointers
+     */
+
+    assert(pub_keyring.nkeys);
+
+    alpha_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
+    bravo_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, bravo_user_id);
+    assert(alpha_pub_keydata);
+    assert(bravo_pub_keydata);
+
+    alpha_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alpha_user_id);
+    bravo_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravo_user_id);
+    assert(alpha_sec_keydata);
+    assert(bravo_sec_keydata);
+
+    alpha_pkey=ops_get_public_key_from_data(alpha_pub_keydata);
+    alpha_skey=ops_get_secret_key_from_data(alpha_sec_keydata);
+    bravo_pkey=ops_get_public_key_from_data(bravo_pub_keydata);
+    bravo_skey=ops_decrypt_secret_key_from_data(bravo_sec_keydata,bravo_passphrase);
+
+    assert(alpha_pkey);
+    assert(alpha_skey);
+    assert(bravo_pkey);
+    assert(bravo_skey); //not yet set because of passphrase
+}
+
+void setup_test_dsa_keyptrs()
+    {
+    /*
+     * set up key pointers
+     */
+
+    assert(pub_keyring.nkeys);
+
+    alphadsa_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, alphadsa_user_id);
+    bravodsa_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, bravodsa_user_id);
+    assert(alphadsa_pub_keydata);
+    assert(bravodsa_pub_keydata);
+
+    alphadsa_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alphadsa_user_id);
+    bravodsa_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravodsa_user_id);
+    assert(alphadsa_sec_keydata);
+    assert(bravodsa_sec_keydata);
+
+    alphadsa_pkey=ops_get_public_key_from_data(alphadsa_pub_keydata);
+    alphadsa_skey=ops_get_secret_key_from_data(alphadsa_sec_keydata);
+    bravodsa_pkey=ops_get_public_key_from_data(bravodsa_pub_keydata);
+    bravodsa_skey=ops_decrypt_secret_key_from_data(bravodsa_sec_keydata,bravodsa_passphrase);
+
+    assert(alphadsa_pkey);
+    assert(alphadsa_skey);
+    assert(bravodsa_pkey);
+    assert(bravodsa_skey); //not yet set because of passphrase
+}
 
 static void setup_test_keys()
     {
     char keydetails[MAXBUF+1];
-    char keyring_name[MAXBUF+1];
     int fd=0;
     char cmd[MAXBUF+1];
-    ops_boolean_t armour=ops_false;
     const int keylength=1024;
     const char* RSA="RSA";
     const char* DSA="DSA";
@@ -226,44 +309,9 @@ static void setup_test_keys()
     snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     system(cmd);
     
-    /*
-     * read keyrings
-     */
-
-    snprintf(keyring_name,sizeof keyring_name,"%s/pubring.gpg", dir);
-    ops_keyring_read_from_file(&pub_keyring,armour,keyring_name);
-
-    snprintf(keyring_name,sizeof keyring_name,"%s/secring.gpg", dir);
-    ops_keyring_read_from_file(&sec_keyring,armour,keyring_name);
-
-    /*
-     * set up key pointers
-     */
-
-    assert(pub_keyring.nkeys);
-
-    alpha_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
-    bravo_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, bravo_user_id);
-    assert(alpha_pub_keydata);
-    assert(bravo_pub_keydata);
-
-    alpha_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alpha_user_id);
-    bravo_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravo_user_id);
-    assert(alpha_sec_keydata);
-    assert(bravo_sec_keydata);
-
-    alpha_pkey=ops_get_public_key_from_data(alpha_pub_keydata);
-    alpha_skey=ops_get_secret_key_from_data(alpha_sec_keydata);
-    bravo_pkey=ops_get_public_key_from_data(bravo_pub_keydata);
-    bravo_skey=ops_decrypt_secret_key_from_data(bravo_sec_keydata,bravo_passphrase);
-
-    assert(alpha_pkey);
-    assert(alpha_skey);
-    assert(bravo_pkey);
-    assert(bravo_skey); //not yet set because of passphrase
     }
 
-static void setup_test_dsa_keys()
+static void setup_test_extra_dsa_keys()
     {
     int fd=0;
     char cmd[MAXBUF+1];
@@ -320,6 +368,7 @@ static void setup_test_dsa_keys()
             assert(0); 
             }
         }
+
     }
 
 void cleanup()

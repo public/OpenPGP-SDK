@@ -93,6 +93,13 @@ int main()
         return CU_get_error();
         }
 
+    if (NULL == suite_dsa_signature()) 
+        {
+        fprintf(stderr,"ERROR: initialising suite_dsa_signature\n");
+        CU_cleanup_registry();
+        return CU_get_error();
+        }
+
     if (NULL == suite_dsa_verify()) 
         {
         fprintf(stderr,"ERROR: initialising suite_dsa_verify\n");

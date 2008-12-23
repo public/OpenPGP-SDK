@@ -29,6 +29,7 @@
 #include "util.h"
 #include "packet.h"
 #include "packet-parse.h"
+#include <openssl/dsa.h>
 
 #define OPS_MIN_HASH_SIZE	16
 
@@ -170,4 +171,6 @@ ops_boolean_t ops_decrypt_file(const char* input_filename, const char* output_fi
 ops_boolean_t ops_rsa_generate_keypair(const int numbits, const unsigned long e, ops_keydata_t* keydata);
 ops_keydata_t* ops_rsa_create_selfsigned_keypair(const int numbits, const unsigned long e, ops_user_id_t * userid);
 
+int ops_dsa_size(const ops_dsa_public_key_t *dsa);
+DSA_SIG* ops_dsa_sign(unsigned char* hashbuf, unsigned hashsize, const ops_dsa_secret_key_t *sdsa, const ops_dsa_public_key_t *dsa);
 #endif
