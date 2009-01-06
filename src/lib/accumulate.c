@@ -183,9 +183,8 @@ static void dump_one_keydata(const ops_keydata_t *key)
     printf("\n\n");
     }
 
-// XXX: note necessarily a maintained part of the API.
+// XXX: not a maintained part of the API - use ops_keyring_list()
 /** ops_dump_keyring
-    \todo decide whether this is part of the API or not
 */
 void ops_dump_keyring(const ops_keyring_t *keyring)
     {

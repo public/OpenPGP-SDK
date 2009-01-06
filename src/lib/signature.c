@@ -610,7 +610,6 @@ static void start_signature_in_mem(ops_create_signature_t *sig)
  * \param key The public key to be signed
  * \param id The user ID being bound to the key
  * \param type Signature type
- * \todo Expand description. Allow other hashes.
  */
 void ops_signature_start_key_signature(ops_create_signature_t *sig,
 				       const ops_public_key_t *key,
@@ -742,7 +741,6 @@ ops_boolean_t ops_signature_hashed_subpackets_end(ops_create_signature_t *sig)
  * \param skey
  * \param info
  *
- * \todo get a better description of how/when this is used
  */
 
 ops_boolean_t ops_write_signature(ops_create_signature_t *sig, const ops_public_key_t *key,

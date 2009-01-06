@@ -57,7 +57,6 @@ typedef struct _ops_hash_t ops_hash_t;
 */
 typedef enum ops_content_tag_t ops_packet_tag_t;
 /** SS types are a subset of all content types.
- \todo may be want to separate these out?
 */
 typedef enum ops_content_tag_t ops_ss_type_t;
 /* typedef enum ops_sig_type_t ops_sig_type_t; */

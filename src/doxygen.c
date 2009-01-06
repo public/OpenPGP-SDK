@@ -143,39 +143,34 @@ If you are using the Core API for the first time, you may find that the best pla
 This API provides code used by SDK developers.
 */
 
-/**
-   \defgroup HighLevel_Functions High Level API Functions
-   \ingroup HighLevelAPI
-*/
-
 /** \defgroup HighLevel_Sign Sign File or Buffer
-    \ingroup HighLevel_Functions
+    \ingroup HighLevelAPI
  */
     
 /** \defgroup HighLevel_Verify Verify File, Buffer, Key or Keyring
-    \ingroup HighLevel_Functions
+    \ingroup HighLevelAPI
  */
     
 /** \defgroup HighLevel_Crypto Encrypt or Decrypt File
-    \ingroup HighLevel_Functions
+    \ingroup HighLevelAPI
  */
     
 /**
     \defgroup HighLevel_Keyring Keys and Keyrings
-    \ingroup HighLevel_Functions
+    \ingroup HighLevelAPI
 */
 
 /** \defgroup HighLevel_Supported Supported Algorithms
-    \ingroup HighLevel_Functions
+    \ingroup HighLevelAPI
  */
     
 /** \defgroup HighLevel_Memory Memory
-    \ingroup HighLevel_Functions
+    \ingroup HighLevelAPI
  */
     
 /**
     \defgroup HighLevel_General General
-    \ingroup HighLevel_Functions
+    \ingroup HighLevelAPI
 */
 
 /**
@@ -224,7 +219,7 @@ This API provides code used by SDK developers.
 
 /**
    \defgroup HighLevel_Callbacks Callbacks
-   \ingroup HighLevel_Functions
+   \ingroup HighLevelAPI
 */
 
 /**

@@ -562,8 +562,7 @@ const char *ops_show_ss_type(ops_ss_type_t ss_type)
  * \ingroup Core_Print
  *
  * returns description of the Revocation Reason code
- * \todo add reference
- * \todo make typesafe
+ * \param ss_rr_code Revocation Reason code
  * \return string or "Unknown"
  */
 const char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
@@ -576,7 +575,6 @@ const char *ops_show_ss_rr_code(ops_ss_rr_code_t ss_rr_code)
  *
  * returns description of the given Signature type
  * \param sig_type Signature type
- * \todo add reference
  * \return string or "Unknown"
  */
 const char *ops_show_sig_type(ops_sig_type_t sig_type)
@@ -589,7 +587,6 @@ const char *ops_show_sig_type(ops_sig_type_t sig_type)
  *
  * returns description of the given Public Key Algorithm
  * \param pka Public Key Algorithm type
- * \todo add reference
  * \return string or "Unknown"
  */
 const char *ops_show_pka(ops_public_key_algorithm_t pka)
@@ -600,7 +597,7 @@ const char *ops_show_pka(ops_public_key_algorithm_t pka)
 /** 
  * \ingroup Core_Print
  * returns description of the Preferred Compression
- * \param octet
+ * \param octet Preferred Compression
  * \return string or "Unknown"
 */
 const char *ops_show_ss_preferred_compression(unsigned char octet)
@@ -615,7 +612,6 @@ const char *ops_show_ss_preferred_compression(unsigned char octet)
  * \param ss_preferred_compression Array of Preferred Compression Algorithms
  * \return NULL if cannot allocate memory or other error
  * \return pointer to structure, if no error
- * \todo make typesafe
  */
 ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t ss_preferred_compression)
     {
@@ -629,8 +625,6 @@ ops_text_t *ops_showall_ss_preferred_compression(ops_ss_preferred_compression_t 
  *
  * returns description of the Hash Algorithm type
  * \param hash Hash Algorithm type
- * \todo add reference
- * \todo make typesafe
  * \return string or "Unknown"
  */
 const char *ops_show_hash_algorithm(unsigned char hash)
@@ -645,7 +639,6 @@ const char *ops_show_hash_algorithm(unsigned char hash)
  * \param ss_preferred_hash Array of Preferred Hash Algorithms
  * \return NULL if cannot allocate memory or other error
  * \return pointer to structure, if no error
- * \todo make typesafe
  */
 ops_text_t *ops_showall_ss_preferred_hash(ops_ss_preferred_hash_t ss_preferred_hash)
     {
@@ -662,7 +655,6 @@ const char *ops_show_symmetric_algorithm(unsigned char hash)
  * \ingroup Core_Print
  * returns description of the given Preferred Symmetric Key Algorithm
  * \param octet
- * \todo add reference
  * \return string or "Unknown"
 */
 const char *ops_show_ss_preferred_ska(unsigned char octet)
@@ -677,7 +669,6 @@ const char *ops_show_ss_preferred_ska(unsigned char octet)
  * \param ss_preferred_ska Array of Preferred Symmetric Key Algorithms
  * \return NULL if cannot allocate memory or other error
  * \return pointer to structure, if no error
- * \todo make typesafe
  */
 ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska)
     {
@@ -690,7 +681,6 @@ ops_text_t *ops_showall_ss_preferred_ska(ops_ss_preferred_ska_t ss_preferred_ska
  * returns description of one SS Feature
  * \param octet
  * \return string or "Unknown"
- * \todo add reference
 */
 static char *ops_show_ss_feature(unsigned char octet,unsigned offset)
     {
@@ -706,8 +696,6 @@ static char *ops_show_ss_feature(unsigned char octet,unsigned offset)
  * \param ss_features Signature Sub-Packet Features
  * \return NULL if cannot allocate memory or other error
  * \return pointer to structure, if no error
- * \todo make typesafe
- * \todo add reference
  */
 /* XXX: shouldn't this use show_all_octets_bits? */
 ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
@@ -749,7 +737,6 @@ ops_text_t *ops_showall_ss_features(ops_ss_features_t ss_features)
  * \param octet
  * \param map
  * \return
- * \todo add reference
 */
 const char *ops_show_ss_key_flag(unsigned char octet, ops_bit_map_t *map)
     {
@@ -763,8 +750,6 @@ const char *ops_show_ss_key_flag(unsigned char octet, ops_bit_map_t *map)
  * \param ss_key_flags Array of Key Flags
  * \return NULL if cannot allocate memory or other error
  * \return pointer to structure, if no error
- * \todo make typesafe
- * \todo add reference
  */
 ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
     {
@@ -806,8 +791,6 @@ ops_text_t *ops_showall_ss_key_flags(ops_ss_key_flags_t ss_key_flags)
  * \param prefs Byte containing bitfield of preferences
  * \param map
  * \return string or "Unknown"
- * \todo add reference
- * \todo make typesafe
  */
 const char *ops_show_ss_key_server_prefs(unsigned char prefs,
 					 ops_bit_map_t *map)
@@ -821,8 +804,6 @@ const char *ops_show_ss_key_server_prefs(unsigned char prefs,
  * \param ss_key_server_prefs
  * \return NULL if cannot allocate memory or other error
  * \return pointer to structure, if no error
- * \todo make typesafe
- * \todo add reference
  * 
 */
 ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_server_prefs)
@@ -865,8 +846,6 @@ ops_text_t *ops_showall_ss_key_server_prefs(ops_ss_key_server_prefs_t ss_key_ser
  * \param ss_notation_data Signature Sub-Packet Notation Data
  * \return NULL if cannot allocate memory or other error
  * \return pointer to structure, if no error
- * \todo make typesafe
- * \todo add reference
  */
 ops_text_t *ops_showall_ss_notation_data_flags(ops_ss_notation_data_t ss_notation_data)
     {

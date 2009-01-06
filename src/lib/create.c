@@ -102,7 +102,6 @@ ops_boolean_t ops_write_struct_user_id(ops_user_id_t *id,
  * \param info
  *
  * \return return value from ops_write_struct_user_id()
- * \todo better descr of return value
  */
 ops_boolean_t ops_write_user_id(const unsigned char *user_id,ops_create_info_t *info)
     {
