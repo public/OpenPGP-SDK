@@ -26,6 +26,7 @@ our %Subst=(
 	    CRYPTO_LIBS => '-lcrypto',
 	    ZLIB => '-lz',
 	    BZ2LIB => '-lbz2',
+	    CUNITLIB => '-lcunit',
 	    INCLUDES => '',
 	    CFLAGS => '',
 	   );
