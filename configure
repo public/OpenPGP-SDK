@@ -93,7 +93,7 @@ my %Functions=(
 
 my @Headers=qw(alloca.h);
 my @Types=qw(time_t);
-my @RHeaders=qw(openssl/bn.h openssl/idea.h zlib.h bzlib.h);
+my @RHeaders=qw(openssl/bn.h openssl/idea.h zlib.h bzlib.h CUnit/Basic.h);
 
 our %Knowledge=(
 		cc => sub { return $Subst{CC} || chooseBinary('gcc','cc')
