@@ -22,6 +22,7 @@
 #include "CUnit/Basic.h"
 
 #include <openpgpsdk/types.h>
+#include <openpgpsdk/defs.h>
 #include "openpgpsdk/keyring.h"
 #include <openpgpsdk/armour.h>
 #include <openpgpsdk/create.h>
@@ -424,61 +425,55 @@ static void test_dsa_signature_sign_memory(const int use_armour, const void* inp
 
 static void test_dsa_signature_large_noarmour_nopassphrase(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(armour,filename_dsa_large_noarmour_nopassphrase, alphadsa_skey);
+    test_dsa_signature_sign(OPS_UNARMOURED,filename_dsa_large_noarmour_nopassphrase, alphadsa_skey);
     }
 
 static void test_dsa_signature_large_armour_nopassphrase(void)
     {
-    int armour=1;
     assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(armour,filename_dsa_large_armour_nopassphrase, alphadsa_skey);
+    test_dsa_signature_sign(OPS_ARMOURED,filename_dsa_large_armour_nopassphrase, alphadsa_skey);
     }
 
 static void test_dsa_signature_noarmour_nopassphrase(void)
     {
     unsigned char testdata[MAXBUF];
-    int armour=0;
     assert(pub_keyring.nkeys);
     assert(alphadsa_skey);
-    test_dsa_signature_sign(armour,filename_dsa_noarmour_nopassphrase, alphadsa_skey);
+    test_dsa_signature_sign(OPS_UNARMOURED,filename_dsa_noarmour_nopassphrase, alphadsa_skey);
     create_testdata("test_dsa_signature_noarmour_nopassphrase",testdata, MAXBUF);
-    test_dsa_signature_sign_memory(armour,testdata,MAXBUF, alphadsa_skey);
+    test_dsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF, alphadsa_skey);
     }
 
 static void test_dsa_signature_noarmour_passphrase(void)
     {
     unsigned char testdata[MAXBUF];
-    int armour=0;
     assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(armour,filename_dsa_noarmour_passphrase, bravodsa_skey);
+    test_dsa_signature_sign(OPS_UNARMOURED,filename_dsa_noarmour_passphrase, bravodsa_skey);
 
     create_testdata("test_dsa_signature_noarmour_passphrase",testdata, MAXBUF);
-    test_dsa_signature_sign_memory(armour,testdata,MAXBUF, bravodsa_skey);
+    test_dsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF, bravodsa_skey);
     }
 
 static void test_dsa_signature_armour_nopassphrase(void)
     {
     unsigned char testdata[MAXBUF];
-    int armour=1;
     assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(armour,filename_dsa_armour_nopassphrase, alphadsa_skey);
+    test_dsa_signature_sign(OPS_ARMOURED,filename_dsa_armour_nopassphrase, alphadsa_skey);
 
     create_testdata("test_dsa_signature_armour_nopassphrase",testdata, MAXBUF);
-    test_dsa_signature_sign_memory(armour,testdata,MAXBUF, alphadsa_skey);
+    test_dsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF, alphadsa_skey);
     }
 
 static void test_dsa_signature_armour_passphrase(void)
     {
     unsigned char testdata[MAXBUF];
 
-    int armour=1;
     assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(armour,filename_dsa_armour_passphrase, bravodsa_skey);
+    test_dsa_signature_sign(OPS_ARMOURED,filename_dsa_armour_passphrase, bravodsa_skey);
 
     create_testdata("test_dsa_signature_armour_passphrase",testdata, MAXBUF);
-    test_dsa_signature_sign_memory(armour,testdata,MAXBUF, bravodsa_skey);
+    test_dsa_signature_sign_memory(OPS_ARMOURED,testdata,MAXBUF, bravodsa_skey);
     }
 
 static void test_dsa_signature_clearsign_file_nopassphrase(void)
@@ -503,6 +498,25 @@ static void test_dsa_signature_clearsign_buf_passphrase(void)
     {
     assert(pub_keyring.nkeys);
     test_dsa_signature_clearsign_buf(filename_dsa_clearsign_buf_passphrase, bravodsa_skey);
+    }
+
+static void test_dsa_signature_dss(void)
+    {
+    unsigned char testdata[MAXBUF];
+    assert(sec_keyring.nkeys);
+    unsigned i;
+    for (i=0; i<sz_dsstests; i++)
+        {
+        char teststr[MAXBUF];
+        const ops_keydata_t* keydata;
+        const ops_secret_key_t* skey;
+
+        snprintf(teststr,MAXBUF,"%s%d","test_dsa_signature_dss",i);
+        create_testdata(teststr,testdata,MAXBUF);
+        keydata=ops_keyring_find_key_by_userid(&sec_keyring,dsstests[i].userid);
+        skey=ops_get_secret_key_from_data(keydata);
+        test_dsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF,skey);
+        }
     }
 
 /*
@@ -548,6 +562,9 @@ static int add_tests(CU_pSuite suite)
 	    return 0;
     
     if (NULL == CU_add_test(suite, "Large, armour, no passphrase", test_dsa_signature_large_armour_nopassphrase))
+	    return 0;
+    
+    if (NULL == CU_add_test(suite, "DSS keys", test_dsa_signature_dss))
 	    return 0;
     
     /*

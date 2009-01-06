@@ -21,6 +21,7 @@
 
 #include "CUnit/Basic.h"
  
+#include <openpgpsdk/defs.h>
 #include <openpgpsdk/types.h>
 #include "openpgpsdk/keyring.h"
 #include <openpgpsdk/armour.h>
@@ -213,38 +214,32 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
 
 static void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
     {
-    int armour=0;
-    test_rsa_encrypt(armour,filename_rsa_noarmour_nopassphrase_singlekey, alpha_pub_keydata);
+    test_rsa_encrypt(OPS_UNARMOURED,filename_rsa_noarmour_nopassphrase_singlekey, alpha_pub_keydata);
     }
 
 static void test_rsa_encrypt_noarmour_passphrase_singlekey(void)
     {
-    int armour=0;
-    test_rsa_encrypt(armour,filename_rsa_noarmour_passphrase_singlekey,bravo_pub_keydata);
+    test_rsa_encrypt(OPS_UNARMOURED,filename_rsa_noarmour_passphrase_singlekey,bravo_pub_keydata);
     }
 
 static void test_rsa_encrypt_armour_nopassphrase_singlekey(void)
     {
-    int armour=1;
-    test_rsa_encrypt(armour,filename_rsa_armour_nopassphrase_singlekey,alpha_pub_keydata);
+    test_rsa_encrypt(OPS_ARMOURED,filename_rsa_armour_nopassphrase_singlekey,alpha_pub_keydata);
     }
 
 static void test_rsa_encrypt_armour_passphrase_singlekey(void)
     {
-    int armour=1;
-    test_rsa_encrypt(armour,filename_rsa_armour_passphrase_singlekey,bravo_pub_keydata);
+    test_rsa_encrypt(OPS_ARMOURED,filename_rsa_armour_passphrase_singlekey,bravo_pub_keydata);
     }
 
 static void test_rsa_encrypt_large_noarmour_nopassphrase(void)
     {
-    int armour=0;
-    test_rsa_encrypt(armour,filename_rsa_large_noarmour_nopassphrase, alpha_pub_keydata);
+    test_rsa_encrypt(OPS_UNARMOURED,filename_rsa_large_noarmour_nopassphrase, alpha_pub_keydata);
     }
 
 static void test_rsa_encrypt_large_armour_nopassphrase(void)
     {
-    int armour=1;
-    test_rsa_encrypt(armour,filename_rsa_large_armour_nopassphrase, alpha_pub_keydata);
+    test_rsa_encrypt(OPS_ARMOURED,filename_rsa_large_armour_nopassphrase, alpha_pub_keydata);
     }
 
 /*

@@ -194,7 +194,7 @@ void setup_test_dsa_keyptrs()
     assert(alphadsa_pkey);
     assert(alphadsa_skey);
     assert(bravodsa_pkey);
-    assert(bravodsa_skey); //not yet set because of passphrase
+    assert(bravodsa_skey); 
 }
 
 static void setup_test_keys()

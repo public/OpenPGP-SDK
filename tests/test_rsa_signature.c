@@ -21,6 +21,7 @@
 
 #include "CUnit/Basic.h"
 
+#include <openpgpsdk/defs.h>
 #include <openpgpsdk/types.h>
 #include "openpgpsdk/keyring.h"
 #include <openpgpsdk/armour.h>
@@ -424,60 +425,54 @@ static void test_rsa_signature_sign_memory(const int use_armour, const void* inp
 
 static void test_rsa_signature_large_noarmour_nopassphrase(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
-    test_rsa_signature_sign(armour,filename_rsa_large_noarmour_nopassphrase, alpha_skey);
+    test_rsa_signature_sign(OPS_UNARMOURED,filename_rsa_large_noarmour_nopassphrase, alpha_skey);
     }
 
 static void test_rsa_signature_large_armour_nopassphrase(void)
     {
-    int armour=1;
     assert(pub_keyring.nkeys);
-    test_rsa_signature_sign(armour,filename_rsa_large_armour_nopassphrase, alpha_skey);
+    test_rsa_signature_sign(OPS_ARMOURED,filename_rsa_large_armour_nopassphrase, alpha_skey);
     }
 
 static void test_rsa_signature_noarmour_nopassphrase(void)
     {
     unsigned char testdata[MAXBUF];
-    int armour=0;
     assert(pub_keyring.nkeys);
-    test_rsa_signature_sign(armour,filename_rsa_noarmour_nopassphrase, alpha_skey);
+    test_rsa_signature_sign(OPS_UNARMOURED,filename_rsa_noarmour_nopassphrase, alpha_skey);
     create_testdata("test_rsa_signature_noarmour_nopassphrase",testdata, MAXBUF);
-    test_rsa_signature_sign_memory(armour,testdata,MAXBUF, alpha_skey);
+    test_rsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF, alpha_skey);
     }
 
 static void test_rsa_signature_noarmour_passphrase(void)
     {
     unsigned char testdata[MAXBUF];
-    int armour=0;
     assert(pub_keyring.nkeys);
-    test_rsa_signature_sign(armour,filename_rsa_noarmour_passphrase, bravo_skey);
+    test_rsa_signature_sign(OPS_ARMOURED,filename_rsa_noarmour_passphrase, bravo_skey);
 
     create_testdata("test_rsa_signature_noarmour_passphrase",testdata, MAXBUF);
-    test_rsa_signature_sign_memory(armour,testdata,MAXBUF, bravo_skey);
+    test_rsa_signature_sign_memory(OPS_ARMOURED,testdata,MAXBUF, bravo_skey);
     }
 
 static void test_rsa_signature_armour_nopassphrase(void)
     {
     unsigned char testdata[MAXBUF];
-    int armour=1;
     assert(pub_keyring.nkeys);
-    test_rsa_signature_sign(armour,filename_rsa_armour_nopassphrase, alpha_skey);
+    test_rsa_signature_sign(OPS_ARMOURED,filename_rsa_armour_nopassphrase, alpha_skey);
 
     create_testdata("test_rsa_signature_armour_nopassphrase",testdata, MAXBUF);
-    test_rsa_signature_sign_memory(armour,testdata,MAXBUF, alpha_skey);
+    test_rsa_signature_sign_memory(OPS_ARMOURED,testdata,MAXBUF, alpha_skey);
     }
 
 static void test_rsa_signature_armour_passphrase(void)
     {
     unsigned char testdata[MAXBUF];
 
-    int armour=1;
     assert(pub_keyring.nkeys);
-    test_rsa_signature_sign(armour,filename_rsa_armour_passphrase, bravo_skey);
+    test_rsa_signature_sign(OPS_ARMOURED,filename_rsa_armour_passphrase, bravo_skey);
 
     create_testdata("test_rsa_signature_armour_passphrase",testdata, MAXBUF);
-    test_rsa_signature_sign_memory(armour,testdata,MAXBUF, bravo_skey);
+    test_rsa_signature_sign_memory(OPS_ARMOURED,testdata,MAXBUF, bravo_skey);
     }
 
 static void test_rsa_signature_clearsign_file_nopassphrase(void)

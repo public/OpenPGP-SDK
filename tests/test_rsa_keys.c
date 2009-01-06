@@ -21,6 +21,7 @@
 
 #include "CUnit/Basic.h"
 
+#include "openpgpsdk/defs.h"
 #include "openpgpsdk/keyring.h"
 #include "openpgpsdk/crypto.h"
 #include "openpgpsdk/packet.h"
@@ -192,27 +193,24 @@ static void verify_keypair(ops_boolean_t armoured)
 
 static void test_rsa_keys_verify_keypair(void)
     {
-    ops_boolean_t armoured=ops_false;
-    verify_keypair(armoured);
+    verify_keypair(OPS_UNARMOURED);
     }
 
 static void test_rsa_keys_read_from_file(void)
     {
     ops_keyring_t keyring;
-    ops_boolean_t armoured=ops_false;
     char filename[MAXBUF+1];
     snprintf(filename,MAXBUF,"%s/%s", dir, "pubring.gpg");
 
     memset(&keyring, '\0', sizeof keyring);
 
-    ops_keyring_read_from_file(&keyring, armoured, filename);
+    ops_keyring_read_from_file(&keyring, OPS_UNARMOURED, filename);
     ops_keyring_free(&keyring);
     }
 
 static void test_rsa_keys_verify_armoured_keypair(void)
     {
-    ops_boolean_t armoured=ops_true;
-    verify_keypair(armoured);
+    verify_keypair(OPS_ARMOURED);
     }
 
 static void test_rsa_keys_verify_keypair_fail(void)
@@ -229,7 +227,6 @@ static void test_rsa_keys_verify_keypair_fail(void)
     ops_keyring_t keyring3;
     char filename[MAXBUF+1];
     int fd=0;
-    ops_boolean_t armour=ops_true;
     char* name1="First User<user1@nowhere.com>";
     uid1.user_id=(unsigned char *)name1;
     char* name2="Second<user2@nowhere.com>";
@@ -256,18 +253,18 @@ static void test_rsa_keys_verify_keypair_fail(void)
     CU_ASSERT(keydata != NULL);
     snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_1");
     fd=ops_setup_file_write(&cinfo, filename,overwrite);
-    ops_write_transferable_public_key(keydata,armour,cinfo);
+    ops_write_transferable_public_key(keydata,OPS_ARMOURED,cinfo);
     ops_teardown_file_write(cinfo,fd);
-    ops_keyring_read_from_file(&keyring1, armour, filename);
+    ops_keyring_read_from_file(&keyring1, OPS_ARMOURED, filename);
 
     // Keyring 2
     keydata=ops_rsa_create_selfsigned_keypair(1024,65537,&uid2);
     CU_ASSERT(keydata2 != NULL);
     snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_2");
     fd=ops_setup_file_write(&cinfo, filename,overwrite);
-    ops_write_transferable_public_key(keydata,armour,cinfo);
+    ops_write_transferable_public_key(keydata,OPS_ARMOURED,cinfo);
     ops_teardown_file_write(cinfo,fd);
-    ops_keyring_read_from_file(&keyring2, armour, filename);
+    ops_keyring_read_from_file(&keyring2, OPS_ARMOURED, filename);
 
     // Keyring 3
     assert(keydata->nsigs==1); // keydata is the key used in keyring2
@@ -280,9 +277,9 @@ static void test_rsa_keys_verify_keypair_fail(void)
 
     snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_3_bad");
     fd=ops_setup_file_write(&cinfo, filename, overwrite);
-    ops_write_transferable_public_key(keydata,armour,cinfo);
+    ops_write_transferable_public_key(keydata,OPS_ARMOURED,cinfo);
     ops_teardown_file_write(cinfo,fd);
-    ops_keyring_read_from_file(&keyring3, armour, filename);
+    ops_keyring_read_from_file(&keyring3, OPS_ARMOURED, filename);
 
     /*
      * Test: Validate key against keyring without this key in it. 

@@ -21,6 +21,7 @@
 
 #include "CUnit/Basic.h"
 
+#include <openpgpsdk/defs.h>
 #include <openpgpsdk/types.h>
 #include "openpgpsdk/keyring.h"
 #include <openpgpsdk/armour.h>
@@ -510,73 +511,64 @@ static void test_rsa_verify_wellformed(const int has_armour, const char *filenam
 
 static void test_rsa_verify_v3sig(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_ok(armour,filename_rsa_v3sig);
+    test_rsa_verify_ok(OPS_UNARMOURED,filename_rsa_v3sig);
     }
 
 static void test_rsa_verify_hash_md5(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_ok(armour,filename_rsa_hash_md5);
+    test_rsa_verify_ok(OPS_UNARMOURED,filename_rsa_hash_md5);
     }
 
 static void test_rsa_verify_hash_sha256(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_ok(armour,filename_rsa_hash_sha256);
+    test_rsa_verify_ok(OPS_UNARMOURED,filename_rsa_hash_sha256);
     }
 
 static void test_rsa_verify_noarmour_nopassphrase(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_ok(armour,filename_rsa_noarmour_nopassphrase);
+    test_rsa_verify_ok(OPS_UNARMOURED,filename_rsa_noarmour_nopassphrase);
     }
 
 static void test_rsa_verify_noarmour_passphrase(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
-    test_rsa_verify_ok(armour,filename_rsa_noarmour_passphrase);
+    test_rsa_verify_ok(OPS_UNARMOURED,filename_rsa_noarmour_passphrase);
     }
 
 static void test_rsa_verify_armour_nopassphrase(void)
     {
-    int armour=1;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_ok(armour,filename_rsa_armour_nopassphrase);
+    test_rsa_verify_ok(OPS_ARMOURED,filename_rsa_armour_nopassphrase);
     }
 
 static void test_rsa_verify_armour_passphrase(void)
     {
-    int armour=1;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_ok(armour,filename_rsa_armour_passphrase);
+    test_rsa_verify_ok(OPS_ARMOURED,filename_rsa_armour_passphrase);
     }
 
 static void test_rsa_verify_clearsign_nopassphrase(void)
     {
-    int armour=1;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_ok(armour,filename_rsa_clearsign_nopassphrase);
+    test_rsa_verify_ok(OPS_ARMOURED,filename_rsa_clearsign_nopassphrase);
     }
 
 static void test_rsa_verify_clearsign_passphrase(void)
     {
-    int armour=1;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_ok(armour,filename_rsa_clearsign_passphrase);
+    test_rsa_verify_ok(OPS_ARMOURED,filename_rsa_clearsign_passphrase);
     }
 
 static ops_parse_cb_return_t callback_bad_sig(const ops_parser_content_t* content_, ops_parse_cb_info_t *cbinfo)
@@ -628,53 +620,48 @@ static ops_parse_cb_return_t callback_bad_sig(const ops_parser_content_t* conten
 
 static void test_rsa_verify_noarmour_fail_bad_sig(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_fail(armour,filename_rsa_noarmour_fail_bad_sig,callback_bad_sig,OPS_E_V_BAD_SIGNATURE);
+    test_rsa_verify_fail(OPS_UNARMOURED,filename_rsa_noarmour_fail_bad_sig,callback_bad_sig,OPS_E_V_BAD_SIGNATURE);
     }
 
 static void test_rsa_verify_v3sig_fail_bad_sig(void)
     {
-    int armour=0;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_fail(armour,filename_rsa_v3sig_fail_bad_sig, callback_bad_sig, OPS_E_V_BAD_SIGNATURE);
+    test_rsa_verify_fail(OPS_UNARMOURED,filename_rsa_v3sig_fail_bad_sig, callback_bad_sig, OPS_E_V_BAD_SIGNATURE);
     }
 
 static void test_rsa_verify_clearsign_fail_bad_sig(void)
     {
-    int armour=1;
     assert(pub_keyring.nkeys);
 
-    test_rsa_verify_fail(armour,filename_rsa_clearsign_fail_bad_sig,callback_bad_sig,OPS_E_V_BAD_SIGNATURE);
+    test_rsa_verify_fail(OPS_ARMOURED,filename_rsa_clearsign_fail_bad_sig,callback_bad_sig,OPS_E_V_BAD_SIGNATURE);
     }
 
 static void test_rsa_verify_clearsign_fail_malformed_msg(void)
     {
     int i=0;
-    int armour=1;
     assert(pub_keyring.nkeys);
 
     for (i=0; i<num_malformed; i++)
         {
         char filename[MAXBUF];
         make_filename_malformed(filename,MAXBUF,i);
-        test_rsa_verify_fail(armour,filename,NULL,OPS_E_R_BAD_FORMAT);
+        test_rsa_verify_fail(OPS_ARMOURED,filename,NULL,OPS_E_R_BAD_FORMAT);
         }
     }
 
 static void test_rsa_verify_clearsign_fail_wellformed_msg(void)
     {
     int i=0;
-    int armour=1;
     assert(pub_keyring.nkeys);
 
     for (i=0; i<num_wellformed; i++)
         {
         char filename[MAXBUF];
         make_filename_wellformed(filename,MAXBUF,i);
-        test_rsa_verify_wellformed(armour,filename,NULL);
+        test_rsa_verify_wellformed(OPS_ARMOURED,filename,NULL);
         }
     }
 
