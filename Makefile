@@ -5,13 +5,13 @@ SUBDIRS=src tests
 all: Makefiles include/openpgpsdk/configure.h headers default
 
 headers:
-	cd include/openpgpsdk && $(MAKE) -wS headers
+	cd include/openpgpsdk && $(MAKE) headers
 
 #(cd $$d; echo "+++ make in $$d"; $(MAKE) -wS; echo "--- $$d"); \
 
 default:
 	set -e; for d in $(SUBDIRS); do \
-	cd $$d; $(MAKE) -w || exit 1; cd ..;\
+	cd $$d; $(MAKE) || exit 1; cd ..;\
 	done
 
 include/openpgpsdk/configure.h: include/openpgpsdk/configure.h.template configure
