@@ -46,7 +46,7 @@ static const char* usage="%s --list-keys | --list-packets | --encrypt | --decryp
 static const char* usage_list_keys="%s --list-keys [--keyring=<keyring>]\n";
 static const char* usage_find_key="%s --find-key --userid=<userid> [--keyring=<keyring>] \n";
 static const char* usage_export_key="%s --export-key --userid=<userid> [--keyring=<keyring>] \n";
-static const char* usage_import_key="%s --import-key --file=<filename> --keyring=<keyring> [--armour]\n";
+static const char* usage_import_key="%s --import-key --file=<filename> [--homedir=<dir>] [--armour]\n";
 static const char* usage_generate_key="%s --generate-key --userid=<userid> [--numbits=<numbits>] [--passphrase=<passphrase>]\n";
 static const char* usage_encrypt="%s --encrypt --userid=<userid> --file=<filename> [--armour] [--homedir=<homedir>]\n";
 static const char* usage_decrypt="%s --decrypt --file=<filename> [--armour] [--homedir=<homedir>]\n";
@@ -382,23 +382,23 @@ int main(int argc, char **argv)
         break;
 
     case IMPORT_KEY:
-        if (!got_filename || !got_keyring)
+        if (!got_filename)
             {
             print_usage(usage_import_key, pname);
             exit(-1);
             }
         fprintf(stderr,"before:\n");
-        ops_keyring_list(myring);
+        ops_keyring_list(pubring);
 
         // read new key
-        if (!ops_keyring_read_from_file(myring, armour, opt_filename))
+        if (!ops_keyring_read_from_file(pubring, armour, opt_filename))
             {
             fprintf(stderr,"Cannot import key from file %s\n", opt_filename);
             exit(-1);
             }
 
         fprintf(stderr,"after:\n");
-        ops_keyring_list(myring);
+        ops_keyring_list(pubring);
         
         break;
 
