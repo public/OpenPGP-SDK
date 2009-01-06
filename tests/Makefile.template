@@ -5,7 +5,7 @@ CC=%CC%
 CFLAGS=-Wall -Werror -g $(DM_FLAGS) -I../include %INCLUDES% %CFLAGS%
 LDFLAGS=-g %LDFLAGS%
 LIBDEPS=../lib/libops.a
-LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% %CUNITLIB% %OTHERLIBS% $(DM_LIB) 
+LIBS=$(LIBDEPS) %CRYPTO_LIBS% %ZLIB% %BZ2LIB% %CUNITLIB% %OTHERLIBS% $(DM_LIB) 
 
 COMMONTESTSRC= test_packet_types.c \
                test_cmdline.c \

@@ -24,7 +24,8 @@ sub trace {
 
 our %Subst=(
 	    CRYPTO_LIBS => '-lcrypto',
-	    ZLIB => '-lz -lbz2',
+	    ZLIB => '-lz',
+	    BZ2LIB => '-lbz2',
 	    INCLUDES => '',
 	    CFLAGS => '',
 	   );
@@ -47,6 +48,11 @@ my %Args=(
 	      my $loc=shift;
 	      $Subst{INCLUDES}.=" -I $loc";
 	      $Subst{ZLIB}="$loc/libz.a";
+	  },
+	  '--with-bz2lib=' => sub {
+	      my $loc=shift;
+	      $Subst{INCLUDES}.=" -I $loc";
+	      $Subst{BZ2LIB}="$loc/libbz2.a";
 	  },
 	  '--with-cunit=' => sub {
 	      my $loc=shift;
@@ -86,7 +92,7 @@ my %Functions=(
 
 my @Headers=qw(alloca.h);
 my @Types=qw(time_t);
-my @RHeaders=qw(openssl/bn.h openssl/idea.h zlib.h);
+my @RHeaders=qw(openssl/bn.h openssl/idea.h zlib.h bzlib.h);
 
 our %Knowledge=(
 		cc => sub { return $Subst{CC} || chooseBinary('gcc','cc')
