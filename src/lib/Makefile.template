@@ -24,7 +24,9 @@ LIBOBJS = packet-parse.o packet-print.o packet-show.o \
 headers:
 	cd ../../include/openpgpsdk && $(MAKE) headers
 
-lib: $(LIBOBJS)
+lib: ../../lib/libops.a
+
+../../lib/libops.a: $(LIBOBJS)
 	ar rc ../../lib/libops.a $(LIBOBJS)
 
 tags:
