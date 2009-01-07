@@ -51,15 +51,15 @@ int clean_suite_cmdline(void)
 
 static void test_list_keys(void)
     {
-    snprintf(cmd, MAXBUF, "%s/../../src/app/openpgp --list-keys --homedir=%s --keyring='pubring.gpg' 2>&1 > /dev/null", dir, dir);
-    CU_ASSERT(system(cmd)==0);
+    snprintf(cmd, MAXBUF, "%s/../../src/app/openpgp --list-keys --homedir=%s --keyring='pubring.gpg'", dir, dir);
+    CU_ASSERT(run(cmd)==0);
 
-    snprintf(cmd, MAXBUF, "%s/../../src/app/openpgp --list-keys --homedir=%s --keyring='secring.gpg' 2>&1 > /dev/null", dir, dir);
-    CU_ASSERT(system(cmd)==0);
+    snprintf(cmd, MAXBUF, "%s/../../src/app/openpgp --list-keys --homedir=%s --keyring='secring.gpg'", dir, dir);
+    CU_ASSERT(run(cmd)==0);
 
     // This one should fail
-    snprintf(cmd, MAXBUF, "%s/../../src/app/openpgp --list-keys --homedir=%s --keyring='badring.gpg' 2>&1 > /dev/null", dir, dir);
-    CU_ASSERT(system(cmd)!=0);
+    snprintf(cmd, MAXBUF, "%s/../../src/app/openpgp --list-keys --homedir=%s --keyring='badring.gpg'", dir, dir);
+    CU_ASSERT(run(cmd)!=0);
     }
 
 static void test_find_key(void)
@@ -67,33 +67,33 @@ static void test_find_key(void)
     int rtn=0;
 
     snprintf(cmd, MAXBUF, "%s --find-key --homedir=%s --keyring='pubring.gpg' --userid='%s'", openpgp, dir, alpha_user_id);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn>0);
 
     // should be found in secring
     snprintf(cmd, MAXBUF, "%s --find-key --homedir=%s --keyring='secring.gpg' --userid='%s'", openpgp, dir, alpha_user_id);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn>1);
 
     // this one should not succeed
     snprintf(cmd, MAXBUF, "%s --find-key --homedir=%s --keyring='pubring.gpg' --userid='%s'", openpgp, dir, bad_user_id);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
     }
 
 static void test_exportkey(void)
     {
     int rtn=0;
-    snprintf(cmd, MAXBUF, "%s --export-key --homedir=%s --keyring='pubring.gpg' --userid='%s' > /dev/null", openpgp,dir, alpha_user_id);
-    rtn=system(cmd);
+    snprintf(cmd, MAXBUF, "%s --export-key --homedir=%s --keyring='pubring.gpg' --userid='%s'", openpgp,dir, alpha_user_id);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
 
-    snprintf(cmd, MAXBUF, "%s --export-key --homedir=%s --keyring='pubring.gpg' --userid='%s' > /dev/null", openpgp,dir, bravo_user_id);
-    rtn=system(cmd);
+    snprintf(cmd, MAXBUF, "%s --export-key --homedir=%s --keyring='pubring.gpg' --userid='%s'", openpgp,dir, bravo_user_id);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
 
-    snprintf(cmd, MAXBUF, "%s --export-key --homedir=%s --keyring='pubring.gpg' --userid='%s' 2>&1 > /dev/null", openpgp,dir, bad_user_id);
-    rtn=system(cmd);
+    snprintf(cmd, MAXBUF, "%s --export-key --homedir=%s --keyring='pubring.gpg' --userid='%s'", openpgp,dir, bad_user_id);
+    rtn=run(cmd);
     CU_ASSERT(rtn!=0);
     }
 
@@ -101,8 +101,8 @@ static void test_generate_key(void)
     {
     int rtn=0;
 
-    snprintf(cmd, MAXBUF, "%s --generate-key --homedir=%s --userid='%s' > /dev/null", openpgp, dir, charlie_user_id);
-    rtn=system(cmd);
+    snprintf(cmd, MAXBUF, "%s --generate-key --homedir=%s --userid='%s'", openpgp, dir, charlie_user_id);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
     }
 
@@ -111,7 +111,7 @@ static void test_encrypt(void)
     int rtn=0;
 
     snprintf(cmd, MAXBUF, "%s --encrypt --homedir=%s --userid='%s' --file=%s/%s", openpgp, dir, alpha_user_id, dir, testfile_encrypt);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
     }
 
@@ -121,38 +121,38 @@ static void test_decrypt(void)
 
     // move original file
     snprintf(cmd, MAXBUF, "mv %s/%s %s/copy.%s", dir, testfile_encrypt, dir, testfile_encrypt);
-    CU_ASSERT(system(cmd)==0);
+    CU_ASSERT(run(cmd)==0);
 
     // now decrypt the encrypted file to recreate it
     snprintf(cmd, MAXBUF, "echo | %s --decrypt --homedir=%s --userid='%s' --file=%s/%s.gpg", openpgp, dir, alpha_user_id, dir, testfile_encrypt);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
 
     // now compare the original and the decrypted file
     snprintf(cmd, MAXBUF, "diff %s/%s %s/copy.%s", dir, testfile_encrypt, dir, testfile_encrypt);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
     }
 
 static void test_sign(void)
     {
     snprintf(cmd, MAXBUF, "%s --sign --homedir=%s --userid='%s' --file=%s/%s --armour", openpgp, dir, alpha_user_id, dir, testfile_sign);
-    CU_ASSERT(system(cmd)==0);
+    CU_ASSERT(run(cmd)==0);
     }
 
 static void test_clearsign(void)
     {
     snprintf(cmd, MAXBUF, "%s --clearsign --homedir=%s --userid='%s' --file=%s/%s ", openpgp, dir, alpha_user_id, dir, testfile_clearsign);
-    CU_ASSERT(system(cmd)==0);
+    CU_ASSERT(run(cmd)==0);
     }
 
 static void test_verify(void)
     {
-    snprintf(cmd, MAXBUF, "%s --verify --homedir=%s --file=%s/%s.asc --armour > /dev/null", openpgp, dir, dir, testfile_sign);
-    CU_ASSERT(system(cmd)==0);
+    snprintf(cmd, MAXBUF, "%s --verify --homedir=%s --file=%s/%s.asc --armour", openpgp, dir, dir, testfile_sign);
+    CU_ASSERT(run(cmd)==0);
 
-    snprintf(cmd, MAXBUF, "%s --verify --homedir=%s --file=%s/%s.asc --armour > /dev/null", openpgp, dir, dir, testfile_clearsign);
-    CU_ASSERT(system(cmd)==0);
+    snprintf(cmd, MAXBUF, "%s --verify --homedir=%s --file=%s/%s.asc --armour", openpgp, dir, dir, testfile_clearsign);
+    CU_ASSERT(run(cmd)==0);
     }
 
 static int add_tests(CU_pSuite suite)

@@ -154,7 +154,7 @@ static void verify_keypair(ops_boolean_t armoured)
     // Validate public key with GPG
 
     snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0); 
 
     /*
@@ -184,7 +184,7 @@ static void verify_keypair(ops_boolean_t armoured)
 
     // validate with GPG
     snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0); 
 
     // cleanup
@@ -316,7 +316,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
 
     // validate with GPG - should fail
     snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn!=0); 
 
     /*
@@ -330,6 +330,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
     */
     }
 
+#ifdef XXX
 static void test_rsa_keys_todo(void)
     {
     /*
@@ -343,6 +344,7 @@ static void test_rsa_keys_todo(void)
     // revoked
     //CU_FAIL("Test TODO: Check for key revocation");
     }
+#endif
 
 CU_pSuite suite_rsa_keys()
     {
@@ -373,8 +375,10 @@ CU_pSuite suite_rsa_keys()
     if (NULL == CU_add_test(suite, "Read keyring from file", test_rsa_keys_read_from_file))
         return NULL;
 
+    /*
     if (NULL == CU_add_test(suite, "TODO", test_rsa_keys_todo))
         return NULL;
+    */
 
     // return
     return suite;

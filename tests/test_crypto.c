@@ -258,7 +258,6 @@ static void test_dsa_verify()
 
     const unsigned char testmd[]="hello world";
     const int len=sizeof(testmd)/sizeof(unsigned char);
-    printf("len: %d\n", len);
     DSA_SIG *sig=DSA_do_sign(&testmd[0], len, dsa);
     CU_ASSERT(sig!=NULL);
     CU_ASSERT(DSA_do_verify(&testmd[0], len, sig, dsa));

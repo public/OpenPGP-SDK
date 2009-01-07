@@ -230,7 +230,7 @@ static void test_rsa_decrypt_generic(char* sym_alg)
                              rcpt,
                              armour_cmd,
                              dir, filename);
-                    if (system(cmd))
+                    if (run(cmd))
                         {
                         fprintf(stderr,"Err: cmd is %s\n", cmd);
                         //                        return 1;

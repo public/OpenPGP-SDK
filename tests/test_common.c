@@ -42,7 +42,6 @@ char gpgcmd[MAXBUF+1];
 ops_keyring_t pub_keyring;
 ops_keyring_t sec_keyring;
 
-//char *alpha_user_id="Alpha (RSA, no passphrase) <alpha@test.com>";
 char alpha_user_id[MAXBUF+1];
 char *alpha_name="Alpha";
 char *alpha_comment="RSA, no passphrase";
@@ -54,7 +53,6 @@ const ops_keydata_t *alpha_pub_keydata;
 const ops_keydata_t *alpha_sec_keydata;
 char* alpha_passphrase="";
 
-//char *bravo_user_id="Bravo (RSA, passphrase) <bravo@test.com>";
 char bravo_user_id[MAXBUF+1];
 char *bravo_name="Bravo";
 char *bravo_comment="RSA, passphrase";
@@ -77,7 +75,6 @@ const ops_keydata_t *alphadsa_pub_keydata;
 const ops_keydata_t *alphadsa_sec_keydata;
 char* alphadsa_passphrase="";
 
-//char *bravodsa_user_id="BravoDSA (DSA, passphrase) <bravodsa@test.com>";
 char bravodsa_user_id[MAXBUF+1];
 char *bravodsa_name="BravoDSA";
 char *bravodsa_comment="DSA, passphrase";
@@ -93,15 +90,20 @@ char *charlie_user_id="Charlie (test user) <charlie@test.com>";
 
 const ops_keydata_t *decrypter=NULL;
 
+char logfile[MAXBUF];
+
 static void setup_test_keys();
 static void setup_test_keyptrs();
 static void setup_test_extra_dsa_keys();
 static void setup_test_rsa_keyptrs();
 static void setup_test_dsa_keyptrs();
 static void read_keyrings();
+static void create_logfile();
 
 void setup()
     {
+    create_logfile();
+
     ops_crypto_init();
 
     // Create temp directory
@@ -114,8 +116,33 @@ void setup()
     setup_test_keys();
     setup_test_extra_dsa_keys();
     setup_test_keyptrs();
+
     }
 
+void create_logfile()
+    {
+    time_t nowtime;
+    struct tm now;
+    int fd;
+    int flags;
+
+    // generate timestamp
+    time(&nowtime);
+    localtime_r(&nowtime,&now);
+    snprintf(logfile,MAXBUF,"logs/logfile_%d%02d%02d_%02d%02d%02d", 1900+now.tm_year, now.tm_mon+1,now.tm_mday,now.tm_hour,now.tm_min,now.tm_sec);
+
+    // open file as new
+    flags = O_WRONLY | O_CREAT | O_TRUNC;
+#ifdef WIN32
+    flags |= O_BINARY;
+#endif
+    if ((fd=open(logfile,flags,0600)) < 0)
+        {
+        fprintf(stderr,"Cannot open logfile %s\n", logfile);
+        exit(-1);
+        }
+    close(fd);
+    }
 
 void read_keyrings()
     {
@@ -243,7 +270,7 @@ static void setup_test_keys()
     close(fd);
 
     snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
-    system(cmd);
+    run(cmd);
 
     /*
      * Create a RSA keypair with passphrase
@@ -265,7 +292,7 @@ static void setup_test_keys()
     close(fd);
 
     snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
-    system(cmd);
+    run(cmd);
     
     /*
      * Create a DSA keypair with no passphrase
@@ -287,7 +314,7 @@ static void setup_test_keys()
     close(fd);
 
     snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
-    system(cmd);
+    run(cmd);
 
     /*
      * Create a RSA keypair with passphrase
@@ -309,7 +336,7 @@ static void setup_test_keys()
     close(fd);
 
     snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
-    system(cmd);
+    run(cmd);
     
     }
 
@@ -335,7 +362,7 @@ static void setup_test_extra_dsa_keys()
                  ops_show_hash_algorithm(dsstests[i].hashalg));
         snprintf(email, MAXBUF, "dsa%d@testing.com", i);
 
-        printf("%s, %s, %s\n", name, comment, email);
+        //        printf("%s, %s, %s\n", name, comment, email);
 
         // key definition
         snprintf(def, MAXBUF, 
@@ -362,8 +389,7 @@ static void setup_test_extra_dsa_keys()
         // create DSA keypair with no passphrase
 
         snprintf(cmd,sizeof cmd,"%s --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
-        fprintf(stderr,"cmd: %s\n", cmd);
-        ret=system(cmd);
+        ret=run(cmd);
         if (ret)
             {
             fprintf(stderr, "Command failed: returns %d\n", ret);
@@ -383,7 +409,7 @@ void cleanup()
 
     /* Remove test dir and files */
     snprintf(cmd,sizeof cmd,"rm -rf %s", dir);
-    if (system(cmd))
+    if (run(cmd))
         {
         perror("Can't delete test directory ");
         return;
@@ -415,7 +441,7 @@ int mktmpdir (void)
             }
         else
             {
-            fprintf (stderr,"Couldn't open dir: errno=%d\n", errno);
+            fprintf (stderr,"Couldn't open dir %s, errno=%d\n", dir, errno);
             perror(NULL);
             }
         }
@@ -754,6 +780,17 @@ int file_compare(char* file1, char* file2)
     fclose(fp1);
     fclose(fp2);
     return err;
+    }
+
+int run(const char* cmd)
+    {
+    char fullcmd[MAXBUF];
+
+    const char *format="(echo; echo %s; %s) >> %s 2>&1";
+    assert(strlen(format)-2-2+strlen(cmd)+strlen(logfile) < MAXBUF);
+    snprintf (fullcmd, sizeof fullcmd, format, cmd, cmd, logfile);
+
+    return(system(fullcmd));
     }
 
 dsatest_t dsstests [] = 

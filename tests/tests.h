@@ -67,6 +67,8 @@ extern char gpgcmd[];
 void setup();
 void cleanup();
 
+int run(const char* cmd);
+
 int mktmpdir();
 extern char dir[];
 char* create_testtext(const char *text, const unsigned int repeats);

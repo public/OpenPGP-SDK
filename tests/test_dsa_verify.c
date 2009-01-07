@@ -82,7 +82,7 @@ static void create_signed_dsa_testfile(dsatest_t * test)
              ops_show_hash_algorithm(test->hashalg), 
              test->userid, dir, test->filename);
 
-    ret=system(cmd);
+    ret=run(cmd);
     if (ret)
         {
         fprintf(stderr,"cmd: %s\nCommand failed with %d\n", cmd, ret);
@@ -127,45 +127,45 @@ int init_suite_dsa_verify(void)
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s > %s/%s.gpg",
              dir, filename_dsa_noarmour_nopassphrase,
              gpgcmd, alphadsa_name, dir, filename_dsa_noarmour_nopassphrase);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s --armor > %s/%s.asc",
              dir, filename_dsa_armour_nopassphrase,
              gpgcmd, alphadsa_name, dir, filename_dsa_armour_nopassphrase);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s > %s/%s.gpg",
              dir, filename_dsa_noarmour_passphrase,
              gpgcmd, bravodsa_name, bravodsa_passphrase, dir, filename_dsa_noarmour_passphrase);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s --passphrase %s --armor > %s/%s.asc",
              dir, filename_dsa_armour_passphrase,
              gpgcmd, bravodsa_name, bravodsa_passphrase, dir, filename_dsa_armour_passphrase);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --sign --local-user %s > %s/%s.gpg",
              dir, filename_dsa_noarmour_fail_bad_sig,
              gpgcmd, alphadsa_name, dir, filename_dsa_noarmour_fail_bad_sig);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     // V3 signature
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --compress-level 0 --sign --force-v3-sigs --local-user %s > %s/%s.gpg",
              dir, filename_dsa_v3sig,
              gpgcmd, alphadsa_name, dir, filename_dsa_v3sig);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     // V3 signature to fail
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --compress-level 0 --sign --force-v3-sigs --local-user %s > %s/%s.gpg",
              dir, filename_dsa_v3sig_fail_bad_sig,
              gpgcmd, alphadsa_name, dir, filename_dsa_v3sig_fail_bad_sig);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     /*
@@ -181,19 +181,19 @@ int init_suite_dsa_verify(void)
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor > %s/%s.asc",
              dir, filename_dsa_clearsign_nopassphrase,
              gpgcmd, alphadsa_name, dir, filename_dsa_clearsign_nopassphrase);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --passphrase %s --armor > %s/%s.asc",
              dir, filename_dsa_clearsign_passphrase,
              gpgcmd, bravodsa_name, bravodsa_passphrase, dir, filename_dsa_clearsign_passphrase);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
 
     snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-level 0 --clearsign --textmode --local-user %s --armor > %s/%s.asc",
              dir, filename_dsa_clearsign_fail_bad_sig,
              gpgcmd, alphadsa_name, dir, filename_dsa_clearsign_fail_bad_sig);
-    if (system(cmd))
+    if (run(cmd))
         { return 1; }
     // sig will be turned bad on verification
     // \todo make sig bad here instead
@@ -214,7 +214,7 @@ int init_suite_dsa_verify(void)
         snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-algo \"ZIP\" --compress-level %d --sign --local-user %s > %s/%s.gpg", 
                  dir, filename, 
                  gpgcmd, level, alphadsa_name, dir, filename);
-        if (system(cmd))
+        if (run(cmd))
             {
             return 1;
             }
@@ -227,7 +227,7 @@ int init_suite_dsa_verify(void)
         snprintf(cmd,sizeof cmd,"cat %s/%s | %s --openpgp --compress-algo \"ZIP\" --compress-level %d --sign --armour --local-user %s > %s/%s.asc", 
                  dir, filename, 
                  gpgcmd, level, alphadsa_name, dir, filename);
-        if (system(cmd))
+        if (run(cmd))
             {
             return 1;
             }

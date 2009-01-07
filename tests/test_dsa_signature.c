@@ -169,9 +169,8 @@ static void test_dsa_signature_clearsign_file(const char *filename, const ops_se
     // Check signature with GPG
     {
 
-    //snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
-    snprintf(cmd,sizeof cmd,"cat %s | %s --verify", signed_file, gpgcmd);
-    rtn=system(cmd);
+    snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
     }
     }
@@ -274,7 +273,7 @@ static void test_dsa_signature_clearsign_buf(const char *filename, const ops_sec
     {
 
     snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
     }
     }
@@ -363,7 +362,7 @@ static void test_dsa_signature_sign(const int use_armour, const char *filename, 
     {
 
     snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
     }
     }
