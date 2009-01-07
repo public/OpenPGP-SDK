@@ -199,7 +199,7 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
     snprintf(decrypted_file,sizeof decrypted_file,"%s/decrypted_%s",dir,filename);
     snprintf(cmd,sizeof cmd,"cat %s | %s --decrypt --output=%s %s",encrypted_file, gpgcmd, decrypted_file, pp);
     //printf("cmd: %s\n", cmd);
-    rtn=system(cmd);
+    rtn=run(cmd);
     CU_ASSERT(rtn==0);
     CU_ASSERT(file_compare(myfile,decrypted_file)==0);
 
