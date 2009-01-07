@@ -28,7 +28,7 @@ clean:
 	done
 	find . -name '*.core' | xargs rm -f
 	rm -rf oink-links
-	-rm lib/*
+	rm -f lib/*
 
 Makefiles:
 	@set -e; for d in $(SUBDIRS); do \
