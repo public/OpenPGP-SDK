@@ -98,7 +98,7 @@ my %Functions=(
 
 my @Headers=qw(alloca.h);
 my @Types=qw(time_t);
-my @RHeaders=qw(openssl/bn.h zlib.h bzlib.h);
+my @RHeaders=qw(openssl/bn.h zlib.h bzlib.h CUnit/Basic.h);
 
 our %Knowledge=(
 		cc => sub { return $Subst{CC} || chooseBinary('gcc','cc')
@@ -123,7 +123,7 @@ while(my $arg=shift) {
 }
 
 if (! $without_idea) {
-    unshift(@RHeaders, "openssl/idea.h");
+    push(@RHeaders, "openssl/idea.h");
 }
 
 #my $os=`uname -s`;
