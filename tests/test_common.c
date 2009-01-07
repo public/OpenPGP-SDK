@@ -405,14 +405,16 @@ void cleanup()
 
     ops_crypto_finish();
 
-    return;
 
-    /* Remove test dir and files */
-    snprintf(cmd,sizeof cmd,"rm -rf %s", dir);
-    if (run(cmd))
+    if (CU_get_error()==CUE_SUCCESS)
         {
-        perror("Can't delete test directory ");
-        return;
+        /* Remove test dir and files */
+        snprintf(cmd,sizeof cmd,"rm -rf %s", dir);
+        if (run(cmd))
+            {
+            perror("Can't delete test directory ");
+            return;
+            }
         }
     }
 
