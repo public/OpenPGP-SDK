@@ -14,6 +14,7 @@ our $Log;
 our $LogFile='/dev/null';
 
 my $use_oink;
+my $without_idea = !1;
 
 sub trace {
     return if !$Log;
@@ -69,6 +70,10 @@ my %Args=(
 	      $Log=new IO::File(">$LogFile");
 	      $Log->autoflush(1);
 	  },
+	  '--without-idea' => sub {
+	      $Subst{CFLAGS}.=' -DOPENSSL_NO_IDEA';
+	      $without_idea = 1;
+	  },
 	  '--64' => sub {
 	      $Subst{CFLAGS}.=' -m64';
 	      $Subst{LDFLAGS}.=' -m64';
@@ -93,7 +98,7 @@ my %Functions=(
 
 my @Headers=qw(alloca.h);
 my @Types=qw(time_t);
-my @RHeaders=qw(openssl/bn.h openssl/idea.h zlib.h bzlib.h CUnit/Basic.h);
+my @RHeaders=qw(openssl/bn.h zlib.h bzlib.h);
 
 our %Knowledge=(
 		cc => sub { return $Subst{CC} || chooseBinary('gcc','cc')
@@ -115,6 +120,10 @@ while(my $arg=shift) {
     my $code=$Args{$arg};
     croak "Don't understand: $arg" if !defined $code;
     &$code($arg2);
+}
+
+if (! $without_idea) {
+    unshift(@RHeaders, "openssl/idea.h");
 }
 
 #my $os=`uname -s`;
