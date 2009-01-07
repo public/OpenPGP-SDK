@@ -1760,8 +1760,6 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
     /* We need to hash the packet data from version through the hashed subpacket data */
 
     C.signature.v4_hashed_data_start=pinfo->rinfo.alength-1;
-    if (debug)
-        { fprintf(stderr, "v4_hashed_data_start=%ld\n", C.signature.v4_hashed_data_start); }
 
     /* Set version,type,algorithms */
 
@@ -1796,8 +1794,6 @@ static int parse_v4_signature(ops_region_t *region,ops_parse_info_t *pinfo)
 
     C.signature.info.v4_hashed_data_length=pinfo->rinfo.alength
         -C.signature.v4_hashed_data_start;
-    if (debug)
-        { fprintf(stderr, "v4_hashed_data_length=%ld\n", C.signature.info.v4_hashed_data_length); }
 
     // copy hashed subpackets
     if (C.signature.info.v4_hashed_data)
