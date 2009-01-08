@@ -405,8 +405,11 @@ void cleanup()
 
     ops_crypto_finish();
 
-
-    if (CU_get_error()==CUE_SUCCESS)
+    if (CU_get_number_of_tests_failed())
+	{
+	fprintf(stderr,"Test directory %s retained, because one or more tests failed.\n", dir);
+	}
+    else
         {
         /* Remove test dir and files */
         snprintf(cmd,sizeof cmd,"rm -rf %s", dir);
