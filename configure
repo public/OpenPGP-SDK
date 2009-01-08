@@ -152,6 +152,10 @@ fixSubst();
 my $path=`pwd`;
 chomp $path;
 
+my @gpgcmd = ("gpg","--version");
+print "Checking for existence of gpg\n";
+system (@gpgcmd) == 0
+    or die "Cannot find gpg";
 
 create('src/lib/.depend');
 create('src/app/.depend');
