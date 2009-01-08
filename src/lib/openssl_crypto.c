@@ -389,9 +389,6 @@ ops_boolean_t ops_dsa_verify(const unsigned char *hash,size_t hash_length,
     DSA *odsa;
     int ret;
 
-    if (debug)
-        { fprintf(stderr,"ops_dsa_verify(hash len=%ld)\n", hash_length); }
-
     osig=DSA_SIG_new();
     osig->r=sig->r;
     osig->s=sig->s;
