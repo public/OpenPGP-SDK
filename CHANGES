@@ -1,0 +1,5 @@
+Changes since V0.9
+==================
+
+  *) Ask gpg to use fast randomness during testing.
+     [Daniel Kahn Gillmor <dkg@fifthhorseman.net> and Ben Laurie]

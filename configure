@@ -147,6 +147,15 @@ if($Subst{OINK}) {
     $Subst{CC}="$path/util/oink_cc.pl --cc=$Subst{CC}";
 }
 
+if (system('gpg --quick-random --version >/dev/null 2>&1') == 0) {
+  $Subst{'GNUPG_QUICK_RANDOM'}='--quick-random';
+} elsif (system('gpg --debug-quick-random --version >/dev/null 2>&1') == 0) {
+  $Subst{'GNUPG_QUICK_RANDOM'}='--debug-quick-random';
+} else {
+  print "Could not find a gpg flag to enable quick randomness.  Running tests may bleed the system entropy.";
+  $Subst{'GNUPG_QUICK_RANDOM'}='';
+}
+
 fixSubst();
 
 my @gpgcmd = ("gpg","--version");

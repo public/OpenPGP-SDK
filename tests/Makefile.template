@@ -28,6 +28,7 @@ clean:
 	rm -f $(EXES) *.o *.i
 	rm -rf testdir.*
 	rm -f TAGS
+	rm -f tests
 
 .depend: *.[ch] ../include/openpgpsdk/*.h
 	$(CC) $(CFLAGS) -E -M *.c > .depend

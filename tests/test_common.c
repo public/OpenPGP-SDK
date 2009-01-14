@@ -269,7 +269,7 @@ static void setup_test_keys()
     write(fd,rsa_nopass,strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd,sizeof cmd,"%s --openpgp " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     run(cmd);
 
     /*
@@ -291,7 +291,7 @@ static void setup_test_keys()
     write(fd,rsa_pass,strlen(rsa_pass));
     close(fd);
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd,sizeof cmd,"%s --openpgp " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     run(cmd);
     
     /*
@@ -313,7 +313,7 @@ static void setup_test_keys()
     write(fd,dsa_nopass,strlen(dsa_nopass));
     close(fd);
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd,sizeof cmd,"%s --openpgp " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     run(cmd);
 
     /*
@@ -335,7 +335,7 @@ static void setup_test_keys()
     write(fd,dsa_pass,strlen(dsa_pass));
     close(fd);
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd,sizeof cmd,"%s --openpgp " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
     run(cmd);
     
     }
@@ -388,7 +388,7 @@ static void setup_test_extra_dsa_keys()
 
         // create DSA keypair with no passphrase
 
-        snprintf(cmd,sizeof cmd,"%s --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+        snprintf(cmd,sizeof cmd,"%s " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
         ret=run(cmd);
         if (ret)
             {
