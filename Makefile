@@ -24,11 +24,18 @@ force_depend:
 
 clean:
 	@set -e; for d in $(SUBDIRS); do \
-	(cd $$d; echo "+++ make clean in $$d"; $(MAKE) clean; echo "--- $$d"); \
+	if [ -f $$d/Makefile ] ; then (cd $$d; echo "+++ make clean in $$d"; $(MAKE) clean; echo "--- $$d"); fi; \
 	done
 	find . -name '*.core' | xargs rm -f
 	rm -rf oink-links
 	rm -f lib/*
+
+distclean: clean
+	rm -f bin/openpgp lib/libops.a
+	rm -rf doc/doxy-user
+	rm -f include/openpgpsdk/configure.h include/openpgpsdk/packet-show-cast.h
+	rm -f src/Makefile src/lib/Makefile src/app/Makefile util/Makefile.oink tests/Makefile
+	rm -f src/app/.depend src/lib/.depend tests/.depend
 
 Makefiles:
 	@set -e; for d in $(SUBDIRS); do \
