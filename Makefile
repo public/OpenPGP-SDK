@@ -29,6 +29,7 @@ clean:
 	find . -name '*.core' | xargs rm -f
 	rm -rf oink-links
 	rm -f lib/*
+	rm -f tests/logs/logfile_*
 
 distclean: clean
 	rm -f bin/openpgp lib/libops.a
