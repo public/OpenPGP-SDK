@@ -9,3 +9,6 @@ Changes since V0.9
 
   *) Clean logfiles in make clean.
      [Daniel Kahn Gillmor <dkg@fifthhorseman.net>]
+
+  *) Add Camellia support.
+     [David Shaw <dshaw@jabberwocky.com>]
