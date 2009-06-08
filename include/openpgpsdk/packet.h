@@ -420,6 +420,9 @@ typedef enum
     OPS_SA_AES_192	=8, /*!< AES with 192-bit key */
     OPS_SA_AES_256	=9, /*!< AES with 256-bit key */
     OPS_SA_TWOFISH	=10, /*!< Twofish with 256-bit key (TWOFISH) */
+    OPS_SA_CAMELLIA_128 =11, /*!< Camellia with 128-bit key */
+    OPS_SA_CAMELLIA_192 =12, /*!< Camellia with 192-bit key */
+    OPS_SA_CAMELLIA_256 =13, /*!< Camellia with 256-bit key */
     } ops_symmetric_algorithm_t;
 
 /** Hashing Algorithm Numbers.

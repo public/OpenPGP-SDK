@@ -30,6 +30,12 @@
 #include "packet.h"
 #include "packet-parse.h"
 #include <openssl/dsa.h>
+#include <openssl/opensslv.h>
+#include <openssl/opensslconf.h>
+
+#if OPENSSL_VERSION_NUMBER < 0x00908030L
+# define OPENSSL_NO_CAMELLIA
+#endif
 
 #define OPS_MIN_HASH_SIZE	16
 

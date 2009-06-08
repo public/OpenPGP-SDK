@@ -608,7 +608,8 @@ void ops_crypto_init()
 void ops_crypto_finish()
     {
     CRYPTO_cleanup_all_ex_data();
-    ERR_remove_state(0);
+    // FIXME: what should we do instead (function is deprecated)?
+    //    ERR_remove_state(0);
 #ifdef DMALLOC
     CRYPTO_mem_leaks_fp(stderr);
 #endif

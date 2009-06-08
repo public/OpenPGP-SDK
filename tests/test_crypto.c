@@ -142,6 +142,23 @@ static void test_ecb_aes256()
     test_ecb(OPS_SA_AES_256);
     }
 
+#ifndef OPENSSL_NO_CAMELLIA
+static void test_ecb_camellia128()
+    {
+    test_ecb(OPS_SA_CAMELLIA_128);
+    }
+
+static void test_ecb_camellia192()
+    {
+    test_ecb(OPS_SA_CAMELLIA_192);
+    }
+
+static void test_ecb_camellia256()
+    {
+    test_ecb(OPS_SA_CAMELLIA_256);
+    }
+#endif  // ndef OPENSSL_NO_CAMELLIA
+
 static void test_cfb(ops_symmetric_algorithm_t alg)
     {
     // Used for trying low-level OpenSSL tests
@@ -165,7 +182,8 @@ static void test_cfb(ops_symmetric_algorithm_t alg)
 
     if(!ops_crypt_any(&crypt, alg))
         {
-        fprintf(stderr,"Failed to initialise crypt struct: alg=%d (%s)\n",alg,ops_show_symmetric_algorithm(alg));
+        fprintf(stderr,"Failed to initialise crypt struct: alg=%d (%s)\n",
+		alg,ops_show_symmetric_algorithm(alg));
         CU_FAIL("Failed to initialise crypt struct");
         return;
         }
@@ -197,22 +215,30 @@ static void test_cfb(ops_symmetric_algorithm_t alg)
         {
         // plaintext
         printf("\n");
-        printf("plaintext: 0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-               plaintext[0], plaintext[1], plaintext[2], plaintext[3], plaintext[4], plaintext[5], plaintext[6], plaintext[7]);
-        printf("plaintext: %c    %c    %c    %c      %c    %c    %c    %c\n", 
-               plaintext[0], plaintext[1], plaintext[2], plaintext[3], plaintext[4], plaintext[5], plaintext[6], plaintext[7]);
+        printf("plaintext: 0x%.2x 0x%.2x 0x%.2x 0x%.2x"
+	       "   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
+               plaintext[0], plaintext[1], plaintext[2], plaintext[3],
+	       plaintext[4], plaintext[5], plaintext[6], plaintext[7]);
+        printf("plaintext: %c    %c    %c    %c"
+	       "      %c    %c    %c    %c\n", 
+               plaintext[0], plaintext[1], plaintext[2], plaintext[3],
+	       plaintext[4], plaintext[5], plaintext[6], plaintext[7]);
 
         // encrypted
-        printf("encrypted: 0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
+        printf("encrypted: 0x%.2x 0x%.2x 0x%.2x 0x%.2x"
+	       "   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
                out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
         printf("encrypted: %c    %c    %c    %c      %c    %c    %c    %c\n", 
                out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7]);
 
         // decrypted
-        printf("decrypted: 0x%.2x 0x%.2x 0x%.2x 0x%.2x   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
-               out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
+        printf("decrypted: 0x%.2x 0x%.2x 0x%.2x 0x%.2x"
+	       "   0x%.2x 0x%.2x 0x%.2x 0x%.2x\n", 
+               out2[0], out2[1], out2[2], out2[3],
+	       out2[4], out2[5], out2[6], out2[7]);
         printf("decrypted: %c    %c    %c    %c      %c    %c    %c    %c\n", 
-               out2[0], out2[1], out2[2], out2[3], out2[4], out2[5], out2[6], out2[7]);
+               out2[0], out2[1], out2[2], out2[3],
+	       out2[4], out2[5], out2[6], out2[7]);
         }
     }
 
@@ -245,15 +271,30 @@ static void test_cfb_aes256()
     test_cfb(OPS_SA_AES_256);
     }
 
+static void test_cfb_camellia128()
+    {
+    test_cfb(OPS_SA_CAMELLIA_128);
+    }
+
+static void test_cfb_camellia192()
+    {
+    test_cfb(OPS_SA_CAMELLIA_192);
+    }
+
+static void test_cfb_camellia256()
+    {
+    test_cfb(OPS_SA_CAMELLIA_256);
+    }
+
 static void test_dsa_verify()
     {
     // This test currently just tests my understanding of how openssl/DSA
     // works. Will replace it with OPS functions for key generation
     // and signature generation when these are implemented in OPS.
 
-    //DSA *params=DSA_new();
+    DSA *dsa = DSA_new();
 
-    DSA *dsa = DSA_generate_parameters(100, NULL, 0, NULL, NULL, NULL, NULL);
+    DSA_generate_parameters_ex(dsa, 100, NULL, 0, NULL, NULL, NULL);
     CU_ASSERT(DSA_generate_key(dsa)==1);
 
     const unsigned char testmd[]="hello world";
@@ -299,6 +340,21 @@ CU_pSuite suite_crypto()
 
     //    test_one_cfb(OPS_SA_TWOFISH);
 
+#ifndef OPENSSL_NO_CAMELLIA
+    if (NULL == CU_add_test(suite, "Test ECB (Camellia 128)",
+			    test_ecb_camellia128))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Test ECB (Camellia 192)",
+			    test_ecb_camellia192))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Test ECB (Camellia 256)",
+			    test_ecb_camellia256))
+	    return NULL;
+#endif  // ndef OPENSSL_NO_CAMELLIA
+
+
     /* CFB tests */
 
 #ifdef LATER
@@ -325,6 +381,18 @@ CU_pSuite suite_crypto()
         return NULL;
 
     //    test_one_cfb(OPS_SA_TWOFISH);
+
+    if (NULL == CU_add_test(suite, "Test CFB (Camellia 128)",
+			    test_cfb_camellia128))
+        return NULL;
+
+    if (NULL == CU_add_test(suite, "Test CFB (Camellia 192)",
+			    test_cfb_camellia192))
+        return NULL;
+
+    if (NULL == CU_add_test(suite, "Test CFB (Camellia 256)",
+			    test_cfb_camellia256))
+        return NULL;
 
     if (NULL == CU_add_test(suite, "Test DSA Verify", test_dsa_verify))
         return NULL;
