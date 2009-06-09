@@ -271,6 +271,7 @@ static void test_cfb_aes256()
     test_cfb(OPS_SA_AES_256);
     }
 
+#ifndef OPENSSL_NO_CAMELLIA
 static void test_cfb_camellia128()
     {
     test_cfb(OPS_SA_CAMELLIA_128);
@@ -285,6 +286,7 @@ static void test_cfb_camellia256()
     {
     test_cfb(OPS_SA_CAMELLIA_256);
     }
+#endif  // ndef OPENSSL_NO_CAMELLIA
 
 static void test_dsa_verify()
     {
@@ -382,6 +384,7 @@ CU_pSuite suite_crypto()
 
     //    test_one_cfb(OPS_SA_TWOFISH);
 
+#ifndef OPENSSL_NO_CAMELLIA
     if (NULL == CU_add_test(suite, "Test CFB (Camellia 128)",
 			    test_cfb_camellia128))
         return NULL;
@@ -393,6 +396,7 @@ CU_pSuite suite_crypto()
     if (NULL == CU_add_test(suite, "Test CFB (Camellia 256)",
 			    test_cfb_camellia256))
         return NULL;
+#endif  // ndef OPENSSL_NO_CAMELLIA
 
     if (NULL == CU_add_test(suite, "Test DSA Verify", test_dsa_verify))
         return NULL;
