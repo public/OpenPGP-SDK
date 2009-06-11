@@ -1,0 +1,127 @@
+.\"  -*- nroff -*-
+.Dd $Mdocdate: 09 June, 2009 $
+.Dt OPENPGP 1
+.Os
+.Sh NAME
+openpgp
+.Nd Perform basic OpenPGP operations
+.Sh SYNOPSIS
+.Nm openpgp --encrypt --userid='Foo <foo@example.org>' --file=data.txt
+.Pp
+.Nm openpgp --list-keys --keyring=/path/to/keyring.gpg
+.Pp
+.Sh DESCRIPTION
+.Nm
+can perform basic OpenPGP operatings in compliance with RFC 4880.
+.Pp
+You must supply one command, and any number of options.
+.Pp
+.Sh COMMANDS
+.Pp
+.ti 2
+\fB--list-keys\fP list all public keys and associated user ids found
+in \fIkeyring\fP.
+.Pp
+.ti 2
+\fB--list-packets\fP list all OpenPGP packets found in \fIfile\fP.
+Use \fB--armour\fP if \fIfile\fP is ASCII-armored.
+.Pp
+.ti 2
+\fB--encrypt\fP encrypt the specified \fIfile\fP. The encrypted data
+will be output to \fIfile\fP.gpg or \fIfile\fP.asc (depending on the
+presence of \fI--armour\fP).
+.Pp
+.ti 2
+\fB--decrypt\fP decrypt the specified \fIfile\fP.  Specify
+\fB--armour\fP if \fBfile\fP is ASCII-armored.  If \fIfile\fP is in
+"foo.asc" or "foo.gpg", the output will placed in "foo".  Otherwise,
+the output will be placed in \fIfile\fP.decrypted.  \fBopenpgp\fP may
+prompt for a passphrase on the console if needed for access to the
+private key material stored in \fIkeyring\fP/secring.gpg.
+.Pp
+.ti 2
+\fB--sign\fP sign the specified \fIfile\fP and store output in
+\fIfile\fP.gpg or \fIfile\fP.asc (depending on presence of
+\fB--armour\fP)
+.Pp
+.ti 2
+\fB--clearsign\fP sign the specified \fIfile\fP and create
+human-readable clearsigned output in \fIfile\fP.asc
+.Pp
+.ti 2
+\fB--verify\fP ensure that specified \fIfile\fP is properly signed.
+Specify \fB--armour\fP if \fIfile\fP is ASCII-armored.
+.Pp
+.ti 2
+\fB--generate-key\fP create an RSA primary key of bit length
+\fInumbits\fP with User ID \fIuserid\fP and store it in \fIhomedir\fP.
+.Pp
+.ti 2
+\fB--export-key\fP export the first key with User ID \fIuserid\fP from
+\fIkeyring\fP.  This emits the key in ASCII-armored form to standard
+output.
+.Pp
+.ti 2
+\fB--import-key\fP imports the OpenPGP-formatted RSA key in \fIfile\fP
+and store it in \fIhomedir\fP.  Specify \fB--armour\fP if the key is
+ASCII-armored.
+.Pp
+.Sh OPTIONS
+.Pp
+.ti 2
+\fB--keyring=\fP\fIkeyring\fP selects a keyring to scan for
+\fB--list-keys\fP.
+.Pp
+.ti 2
+\fB--userid=\fP\fIuserid\fP selects which userid to use for signatures,
+to target for encryption, or for key generation.
+.Pp
+.ti 2
+\fB--file=\fP\fIfilename\fP selects the file to use for encryption or
+decryption.
+.Pp
+.ti 2
+\fB--numbits=\fP\fInumbits\fP determines the size of newly-generated
+RSA keys.
+.Pp
+.ti 2
+\fB--armour\fP indicates whether to produce or consume ASCII-armored
+OpenPGP material.  Lack of this flag usually indicates no ASCII armor.
+.Pp
+.ti 2
+\fB--homedir=\fP\fIhomedir\fP specifies where to find keyrings for
+encryption and decryption.  Secret key material is looked for in
+\fIhomedir\fP/secring.gpg, and public key material is looked for in
+\fIhomedir\fP/pubring.gpg.  If not specified, \fIhomedir\fP defaults
+to ~/.gnupg .
+.Pp
+.Sh EXAMPLES
+.Nm openpgp --list-keys --keyring=$(pwd)/my-keyring.gpg
+.Pp
+.Nm openpgp --decrypt --file=blah.gpg
+.Sh BUGS
+\fB--verify\fP does not seem to work with clearsigs.
+.Pp
+It does not appear possible to both sign and encrypt in the same step.
+.Pp
+\fB--keyring\fP seems to need an absolute path to the keyring file.
+.Pp
+\fB--list-keys\fP does not actually validate the self-signatures of
+any attached user IDs.
+.Pp
+\fB--encrypt\fP will encrypt to keys not specifically marked for
+encryption.
+.Pp
+\fB--export-key\fP does not seem to emit the self-signature for keys.
+.Pp
+It is not possible to \fB--export-key\fP without ASCII armor.
+.Pp
+.Sh AUTHOR
+.Nm
+was written by Ben Laurie and Rachel Willmer for Nominet UK
+(www.nic.uk) as part of OpenPGPSDK.  This man page was written for
+Debian by Daniel Kahn Gillmor <dkg@fifthhorseman.net>, but may be used
+along with the openpgp program, under the same license as OpenPGPSDK.
+.Sh SEE ALSO
+.Xr gpg 1 ,
+/usr/share/doc/gnupg/DETAILS.gz, RFC 4880 (http://tools.ietf.org/html/rfc4880)
