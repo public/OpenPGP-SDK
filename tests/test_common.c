@@ -733,7 +733,7 @@ callback_verify_example(const ops_parser_content_t *content_,
         }
 
     return rtn;
-	}
+    }
 
 void reset_vars()
     {
