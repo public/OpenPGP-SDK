@@ -339,11 +339,7 @@ static int test_rsa_verify(const int has_armour, const char *filename, ops_callb
     mem=ops_write_mem_from_file(signedfile,&errnum);
 
     /* now validate file */
-#ifdef WIN32
     fd=open(signedfile,O_RDONLY | O_BINARY);
-#else
-    fd=open(signedfile,O_RDONLY);
-#endif
     if(fd < 0)
         {
         perror(signedfile);

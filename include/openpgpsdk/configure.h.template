@@ -6,3 +6,8 @@
 
 /* for tests, flag to tell gpg not to use blocking randomness */
 #define GNUPG_QUICK_RANDOM "%GNUPG_QUICK_RANDOM%"
+
+/* Avoid a bunch of #ifs */
+#ifndef O_BINARY
+# define O_BINARY	0
+#endif

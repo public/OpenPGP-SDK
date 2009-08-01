@@ -1063,11 +1063,7 @@ ops_boolean_t ops_write_literal_data_from_file(const char *filename,
     ops_memory_t* mem=NULL;
     size_t len=0;
 
-#ifdef WIN32
     fd=open(filename,O_RDONLY | O_BINARY);
-#else
-    fd=open(filename,O_RDONLY);
-#endif
     if (fd < 0)
         return ops_false;
 
@@ -1119,11 +1115,7 @@ ops_memory_t* ops_write_mem_from_file(const char *filename, int* errnum)
 
     *errnum=0;
 
-#ifdef WIN32
     fd=open(filename,O_RDONLY | O_BINARY);
-#else
-    fd=open(filename,O_RDONLY);
-#endif
     if (fd < 0)
         {
         *errnum=errno;
@@ -1172,9 +1164,8 @@ int ops_write_file_from_buf(const char *filename, const char* buf, const size_t 
         flags |= O_TRUNC;
     else
         flags |= O_EXCL;
-#ifdef WIN32
     flags |= O_BINARY;
-#endif
+
     fd=open(filename,flags, 0600);
     if (fd < 0)
         {

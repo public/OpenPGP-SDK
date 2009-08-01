@@ -124,7 +124,6 @@ void create_logfile()
     time_t nowtime;
     struct tm now;
     int fd;
-    int flags;
 
     // generate timestamp
     time(&nowtime);
@@ -132,11 +131,7 @@ void create_logfile()
     snprintf(logfile,MAXBUF,"logs/logfile_%d%02d%02d_%02d%02d%02d", 1900+now.tm_year, now.tm_mon+1,now.tm_mday,now.tm_hour,now.tm_min,now.tm_sec);
 
     // open file as new
-    flags = O_WRONLY | O_CREAT | O_TRUNC;
-#ifdef WIN32
-    flags |= O_BINARY;
-#endif
-    if ((fd=open(logfile,flags,0600)) < 0)
+    if ((fd=open(logfile, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600)) < 0)
         {
         fprintf(stderr,"Cannot open logfile %s\n", logfile);
         exit(-1);
@@ -256,11 +251,7 @@ static void setup_test_keys()
 
     snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.alpha");
 
-#ifdef WIN32
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
-#else
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-#endif
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
         {
         fprintf(stderr,"Can't create Alpha key details\n");
         return;
@@ -278,11 +269,7 @@ static void setup_test_keys()
 
     snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.bravo");
 
-#ifdef WIN32
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
-#else
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-#endif
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
         {
         fprintf(stderr,"Can't create Bravo key details\n");
         return;
@@ -300,11 +287,7 @@ static void setup_test_keys()
 
     snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.alphadsa");
 
-#ifdef WIN32
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
-#else
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-#endif
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
         {
         fprintf(stderr,"Can't create AlphaDSA key details\n");
         return;
@@ -322,11 +305,7 @@ static void setup_test_keys()
 
     snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.bravodsa");
 
-#ifdef WIN32
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600))<0)
-#else
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL, 0600))<0)
-#endif
+    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
         {
         fprintf(stderr,"Can't create Bravo key details\n");
         return;
@@ -369,11 +348,8 @@ static void setup_test_extra_dsa_keys()
                  "Key-Type: DSA\nKey-Usage: encrypt, sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n",
                  name, comment, email, dsstests[i].keysize);
 
-#ifdef WIN32
-        if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600))<0)
-#else
-        if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
-#endif
+        if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600))
+	    < 0)
             {
             fprintf(stderr,"Can't open keydetails file %s\n", keydetails);
             return;
@@ -517,11 +493,7 @@ void create_testfile(const char *name, const unsigned int repeats)
 
     int fd=0;
     snprintf(filename,sizeof filename,"%s/%s",dir,name);
-#ifdef WIN32
-    if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL | O_BINARY, 0600))<0)
-#else
-    if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL, 0600))<0)
-#endif
+    if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
 	return;
 
     testtext=create_testtext(name, repeats);

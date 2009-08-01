@@ -177,11 +177,7 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
 
     ops_create_info_t *cinfo;
 
-#ifdef WIN32
     fd_in=open(input_filename,O_RDONLY | O_BINARY);
-#else
-    fd_in=open(input_filename,O_RDONLY);
-#endif
     if(fd_in < 0)
         {
         perror(input_filename);
