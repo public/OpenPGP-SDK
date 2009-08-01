@@ -210,10 +210,10 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
         
 	int n=0;
 
-	n=read(fd_in,buf+done,bufsz);
+	n=read(fd_in, buf+done, bufsz);
 	if (!n)
 	    break;
-	assert(n>=0);
+	assert(n >= 0);
 
         done+=n;
         }
