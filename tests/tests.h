@@ -178,5 +178,17 @@ typedef struct
 extern dsatest_t dsstests[];
 extern const unsigned sz_dsstests;
 
+struct validate_data_cb_arg;
+
+void check_sig_with_ops_core(ops_parse_info_t *pinfo,
+			     ops_boolean_t use_armour,
+			     struct validate_data_cb_arg *validate_arg);
+void check_sig(const char *signed_file);
+
+void set_up_file_names(char myfile[MAXBUF], char signed_file[MAXBUF],
+		       const char *filename, const char *ext);
+
+
+
 #endif
 

@@ -19,6 +19,9 @@
  * limitations under the License.
  */
 
+// FIXME: now that these tests print errors during parse, they are
+// blatantly broken, but still pass.
+
 #include "CUnit/Basic.h"
 
 #include <openpgpsdk/types.h>
@@ -94,90 +97,6 @@ int clean_suite_dsa_signature(void)
     reset_vars();
 
     return 0;
-    }
-
-static void check_sig_with_ops_core(ops_parse_info_t *pinfo,
-				    ops_boolean_t use_armour,
-				    validate_data_cb_arg_t *validate_arg)
-    {
-    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));
-    int rtn=0;
-
-    memset(validate_arg, '\0', sizeof *validate_arg);
-    validate_arg->result=result;
-    validate_arg->keyring=&pub_keyring;
-    validate_arg->rarg=ops_reader_get_arg_from_pinfo(pinfo);
-    
-    ops_parse_options(pinfo, OPS_PTAG_SS_ALL, OPS_PARSE_PARSED);
-    pinfo->rinfo.accumulate=ops_true;
-    
-    // Set up armour/passphrase options
-    
-    if (use_armour)
-        ops_reader_push_dearmour(pinfo);
-    
-    // Do the verification
-    
-    rtn=ops_parse_and_print_errors(pinfo);
-    CU_ASSERT(rtn==1);
-    
-    // Tidy up
-    if (use_armour)
-        ops_reader_pop_dearmour(pinfo);
-    
-    ops_parse_info_delete(pinfo);
-    ops_validate_result_free(result);
-    }
-
-static void check_sig_with_ops(const char *signed_file)
-    {
-    validate_data_cb_arg_t validate_arg;
-    int fd=0;
-    ops_parse_info_t *pinfo=NULL;
-    
-    if (debug)
-        fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
-    
-    // open signed file
-    fd=open(signed_file, O_RDONLY | O_BINARY);
-    if(fd < 0)
-        {
-        perror(signed_file);
-        exit(2);
-        }
-    
-    // Set verification reader and handling options
-    pinfo=ops_parse_info_new();
-    ops_reader_set_fd(pinfo, fd);
-    ops_parse_cb_set(pinfo, callback_verify, &validate_arg);
-
-    check_sig_with_ops_core(pinfo, ops_false, &validate_arg);
-
-    close(fd);
-    }
-
-static void check_sig_with_gpg(const char *signed_file)
-    {
-    char cmd[MAXBUF+1];
-    int rtn;
-
-    snprintf(cmd, sizeof cmd, "%s --verify %s", gpgcmd, signed_file);
-    rtn=run(cmd);
-    CU_ASSERT(rtn == 0);
-    }
-
-static void check_sig(const char *signed_file)
-    {
-    check_sig_with_ops(signed_file);
-    check_sig_with_gpg(signed_file);
-    }
-
-// make sure myfile and signed_file are big enough
-static void set_up_file_names(char myfile[MAXBUF], char signed_file[MAXBUF],
-			      const char *filename, const char *ext)
-    {
-    snprintf(myfile, MAXBUF, "%s/%s", dir, filename);
-    snprintf(signed_file, MAXBUF, "%s.%s", myfile, ext);
     }
 
 static void test_dsa_signature_clearsign_file(const char *filename,

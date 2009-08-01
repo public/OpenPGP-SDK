@@ -19,6 +19,9 @@
  * limitations under the License.
  */
 
+// FIXME: now that these tests print errors during parse, they are
+// blatantly broken, but still pass.
+
 #include "CUnit/Basic.h"
 
 #include <openpgpsdk/defs.h>
@@ -99,274 +102,62 @@ int clean_suite_rsa_signature(void)
 static void test_rsa_signature_clearsign_file(const char *filename,
 					      const ops_secret_key_t *skey)
     {
-    char cmd[MAXBUF+1];
-    char myfile[MAXBUF+1];
-    char signed_file[MAXBUF+1];
-    int rtn=0;
+    char myfile[MAXBUF];
+    char signed_file[MAXBUF];
     ops_boolean_t overwrite;
 
-    // setup filenames
-    snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
-    snprintf(signed_file,sizeof signed_file,"%s.asc",myfile);
+    set_up_file_names(myfile, signed_file, filename, "asc");
 
     // sign file
     overwrite=ops_true;
     ops_sign_file_as_cleartext(myfile, NULL, skey, overwrite);
 
-    /*
-     * Validate output
-     */
-
-    // Check with OPS
-
-    {
-    int fd=0;
-    ops_parse_info_t *pinfo=NULL;
-    validate_data_cb_arg_t validate_arg;
-    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));
-    int rtn=0;
-    
-    if (debug)
-        {
-        fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
-        }
-    
-    // open signed file
-    fd=open(signed_file,O_RDONLY | O_BINARY);
-    if(fd < 0)
-        {
-        perror(signed_file);
-        exit(2);
-        }
-    
-    // Set verification reader and handling options
-    
-    pinfo=ops_parse_info_new();
-    
-    memset(&validate_arg,'\0',sizeof validate_arg);
-    validate_arg.result=result;
-    validate_arg.keyring=&pub_keyring;
-    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
-    
-    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
-    ops_reader_set_fd(pinfo,fd);
-    pinfo->rinfo.accumulate=ops_true;
-    
-    // Must de-armour because it's clearsigned
-    
-    ops_reader_push_dearmour(pinfo);
-    
-    // Do the verification
-    
-    rtn=ops_parse(pinfo);
-    ops_print_errors(ops_parse_info_get_errors(pinfo));
-    CU_ASSERT(rtn==1);
-    
-    // Tidy up
-    //    if (has_armour)
-        ops_reader_pop_dearmour(pinfo);
-    
-    ops_parse_info_delete(pinfo);
-    
-    close(fd);
-    ops_validate_result_free(result);
-    }
-
-    // Check signature with GPG
-    {
-
-    //snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
-    snprintf(cmd,sizeof cmd,"cat %s | %s --verify", signed_file, gpgcmd);
-    rtn=run(cmd);
-    CU_ASSERT(rtn==0);
-    }
+    check_sig(signed_file);
     }
 
 static void test_rsa_signature_clearsign_buf(const char *filename,
 					     const ops_secret_key_t *skey)
     {
-    char cmd[MAXBUF+1];
-    char myfile[MAXBUF+1];
-    char signed_file[MAXBUF+1];
-    int rtn=0;
+    char myfile[MAXBUF];
+    char signed_file[MAXBUF];
     ops_memory_t *input=NULL;
     ops_memory_t *output=NULL;
     ops_boolean_t overwrite;
     int errnum=0;
 
-    // setup filenames 
     // (we are testing the function which signs a buf, but still want
     // to read/write the buffers from/to files for external viewing
-
-    snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
-    snprintf(signed_file,sizeof signed_file,"%s.asc",myfile);
+    set_up_file_names(myfile, signed_file, filename, "asc");
 
     // read file contents
-    input=ops_write_mem_from_file(myfile,&errnum);
+    input=ops_write_mem_from_file(myfile, &errnum);
     CU_ASSERT(errnum==0);
 
     // sign file
-    ops_sign_buf_as_cleartext((const char *)ops_memory_get_data(input),ops_memory_get_length(input),&output,skey);
+    ops_sign_buf_as_cleartext(ops_memory_get_data(input),
+			      ops_memory_get_length(input), &output,skey);
 
     // write to file
     overwrite=ops_true;
-    ops_write_file_from_buf(signed_file, (const char*)ops_memory_get_data(output),ops_memory_get_length(output),overwrite);
+    ops_write_file_from_buf(signed_file, ops_memory_get_data(output),
+			    ops_memory_get_length(output), overwrite);
 
-    /*
-     * Validate output
-     */
-
-    // Check with OPS
-
-    {
-    int fd=0;
-    ops_parse_info_t *pinfo=NULL;
-    validate_data_cb_arg_t validate_arg;
-    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));
-
-    int rtn=0;
-    
-    if (debug)
-        {
-        fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
-        }
-    
-    // open signed file
-    fd=open(signed_file,O_RDONLY | O_BINARY);
-    if(fd < 0)
-        {
-        perror(signed_file);
-        exit(2);
-        }
-    
-    // Set verification reader and handling options
-    
-    pinfo=ops_parse_info_new();
-    
-    memset(&validate_arg,'\0',sizeof validate_arg);
-    validate_arg.result=result;
-    validate_arg.keyring=&pub_keyring;
-    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
-    
-    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
-    ops_reader_set_fd(pinfo,fd);
-    pinfo->rinfo.accumulate=ops_true;
-    
-    // Must de-armour because it's clearsigned
-    
-    ops_reader_push_dearmour(pinfo);
-    
-    // Do the verification
-    
-    rtn=ops_parse(pinfo);
-    ops_print_errors(ops_parse_info_get_errors(pinfo));
-    CU_ASSERT(rtn==1);
-    
-    // Tidy up
-    //    if (has_armour)
-        ops_reader_pop_dearmour(pinfo);
-    
-    ops_parse_info_delete(pinfo);
-    
-    close(fd);
-    ops_validate_result_free(result);
-    }
-
-    // Check signature with GPG
-    {
-
-    snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
-    rtn=run(cmd);
-    CU_ASSERT(rtn==0);
-    }
+    check_sig(signed_file);
     }
 
 static void test_rsa_signature_sign(const int use_armour, const char *filename,
 				    const ops_secret_key_t *skey)
     {
-    char cmd[MAXBUF+1];
-    char myfile[MAXBUF+1];
-    char signed_file[MAXBUF+1];
+    char myfile[MAXBUF];
+    char signed_file[MAXBUF];
     char *suffix= use_armour ? "asc" : "gpg";
-    int rtn=0;
     ops_boolean_t overwrite=ops_true;
 
-    // filenames
-    snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
-    snprintf(signed_file,sizeof signed_file,"%s.%s",myfile,suffix);
+    set_up_file_names(myfile, signed_file, filename, suffix);
 
     ops_sign_file(myfile, signed_file, skey, use_armour, overwrite);
-    //ops_sign_file(myfile, NULL, skey, use_armour, overwrite);
 
-    /*
-     * Validate output
-     */
-
-    // Check with OPS
-
-    {
-    int fd=0;
-    ops_parse_info_t *pinfo=NULL;
-    validate_data_cb_arg_t validate_arg;
-    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));;
-    int rtn=0;
-    
-    if (debug)
-        {
-        fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
-        }
-    
-    // open signed file
-    fd=open(signed_file,O_RDONLY | O_BINARY);
-    if(fd < 0)
-        {
-        perror(signed_file);
-        exit(2);
-        }
-    
-    // Set verification reader and handling options
-    
-    pinfo=ops_parse_info_new();
-    
-    memset(&validate_arg,'\0',sizeof validate_arg);
-    validate_arg.result=result;
-    validate_arg.keyring=&pub_keyring;
-    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
-    
-    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
-    ops_reader_set_fd(pinfo,fd);
-    pinfo->rinfo.accumulate=ops_true;
-    
-    // Set up armour/passphrase options
-    
-    if (use_armour)
-        ops_reader_push_dearmour(pinfo);
-    
-    // Do the verification
-    
-    rtn=ops_parse_and_print_errors(pinfo);
-    CU_ASSERT(rtn==1);
-    
-    // Tidy up
-    if (use_armour)
-        ops_reader_pop_dearmour(pinfo);
-    
-    ops_parse_info_delete(pinfo);
-    
-    close(fd);
-    ops_validate_result_free(result);
-    }
-
-    // Check signature with GPG
-    {
-
-    snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
-    rtn=run(cmd);
-    CU_ASSERT(rtn==0);
-    }
+    check_sig(signed_file);
     }
 
 static void test_rsa_signature_sign_memory(const int use_armour,
@@ -374,14 +165,9 @@ static void test_rsa_signature_sign_memory(const int use_armour,
 					   const int input_len,
 					   const ops_secret_key_t *skey)
     {
-    int rtn=0;
     ops_memory_t* mem=NULL;
     ops_parse_info_t *pinfo=NULL;
     validate_data_cb_arg_t validate_arg;
-    ops_validate_result_t* result=ops_mallocz(sizeof (ops_validate_result_t));
-    
-
-    // filenames
 
     mem=ops_sign_buf(input, input_len, OPS_SIG_TEXT, skey, use_armour);
 
@@ -397,36 +183,12 @@ static void test_rsa_signature_sign_memory(const int use_armour,
     ops_write_file_from_buf("/tmp/memory.asc", ops_memory_get_data(mem),
 			    ops_memory_get_length(mem), ops_true);
 
-    // Set verification reader and handling options
-    
     ops_setup_memory_read(&pinfo, mem, &validate_arg, callback_verify,
 			  ops_true);
-    
-    memset(&validate_arg,'\0',sizeof validate_arg);
-    validate_arg.result=result;
-    validate_arg.keyring=&pub_keyring;
-    validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
-    
-    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    pinfo->rinfo.accumulate=ops_true;
-    
-    // Set up armour/passphrase options
-    
-    if (use_armour)
-        ops_reader_push_dearmour(pinfo);
-    
-    // Do the verification
-    
-    rtn=ops_parse_and_print_errors(pinfo);
-    CU_ASSERT(rtn==1);
-    
-    // Tidy up
-    if (use_armour)
-        ops_reader_pop_dearmour(pinfo);
-    
-    ops_parse_info_delete(pinfo);
+
+    check_sig_with_ops_core(pinfo, use_armour, &validate_arg);
+
     ops_memory_free(mem);
-    ops_validate_result_free(result);
     }
 
 static void test_rsa_signature_large_noarmour_nopassphrase(void)
