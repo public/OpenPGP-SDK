@@ -121,11 +121,7 @@ static void test_rsa_signature_clearsign_file(const char *filename, const ops_se
         }
     
     // open signed file
-#ifdef WIN32
     fd=open(signed_file,O_RDONLY | O_BINARY);
-#else
-    fd=open(signed_file,O_RDONLY);
-#endif
     if(fd < 0)
         {
         perror(signed_file);
@@ -225,11 +221,7 @@ static void test_rsa_signature_clearsign_buf(const char *filename, const ops_sec
         }
     
     // open signed file
-#ifdef WIN32
     fd=open(signed_file,O_RDONLY | O_BINARY);
-#else
-    fd=open(signed_file,O_RDONLY);
-#endif
     if(fd < 0)
         {
         perror(signed_file);
@@ -314,11 +306,7 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename, 
         }
     
     // open signed file
-#ifdef WIN32
     fd=open(signed_file,O_RDONLY | O_BINARY);
-#else
-    fd=open(signed_file,O_RDONLY);
-#endif
     if(fd < 0)
         {
         perror(signed_file);
