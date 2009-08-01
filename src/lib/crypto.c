@@ -201,29 +201,26 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
 
     // Do the writing
 
-    unsigned char* buf=NULL;
-    size_t bufsz=16;
+    unsigned buffer[10240];
     int done=0;
     for (;;)
         {
-        buf=realloc(buf, done+bufsz);
-        
 	int n=0;
 
-	n=read(fd_in, buf+done, bufsz);
+	n=read(fd_in, buffer, sizeof buffer);
 	if (!n)
 	    break;
 	assert(n >= 0);
 
+	// FIXME: apparently writing can't fail.
+	ops_write(buffer, n, cinfo);
+
         done+=n;
         }
 
-    // This does the writing
-    ops_write(buf, done, cinfo);
 
     // tidy up
     close(fd_in);
-    free(buf);
     ops_teardown_file_write(cinfo, fd_out);
 
     return ops_true;
