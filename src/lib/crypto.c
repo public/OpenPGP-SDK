@@ -41,7 +41,7 @@
 \return length of MPI
 \note only RSA at present
 */
-int ops_decrypt_and_unencode_mpi(unsigned char *buf,unsigned buflen,
+int ops_decrypt_and_unencode_mpi(unsigned char *buf, unsigned buflen,
 				 const BIGNUM *encmpi,
 				 const ops_secret_key_t *skey)
     {
@@ -177,7 +177,7 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
 
     ops_create_info_t *cinfo;
 
-    fd_in=open(input_filename,O_RDONLY | O_BINARY);
+    fd_in=open(input_filename, O_RDONLY | O_BINARY);
     if(fd_in < 0)
         {
         perror(input_filename);
@@ -265,7 +265,7 @@ ops_boolean_t ops_decrypt_file(const char* input_filename,
         if (fd_out < 0)
             { 
             perror(output_filename); 
-            ops_teardown_file_read(pinfo,fd_in);
+            ops_teardown_file_read(pinfo, fd_in);
             return ops_false;
             }
         }
@@ -274,7 +274,7 @@ ops_boolean_t ops_decrypt_file(const char* input_filename,
         int suffixlen=4;
         char *defaultsuffix=".decrypted";
         const char *suffix=input_filename+strlen(input_filename)-suffixlen;
-        if (!strcmp(suffix,".gpg") || !strcmp(suffix,".asc"))
+        if (!strcmp(suffix, ".gpg") || !strcmp(suffix, ".asc"))
             {
             myfilename=ops_mallocz(strlen(input_filename)-suffixlen+1);
             strncpy(myfilename, input_filename,

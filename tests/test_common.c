@@ -111,7 +111,8 @@ void setup()
         return;
 
     assert(strlen(dir));
-    snprintf(gpgcmd,sizeof gpgcmd,"gpg --quiet --no-tty --homedir=%s --openpgp",dir);
+    snprintf(gpgcmd, sizeof gpgcmd,
+	     "gpg --quiet --no-tty --homedir=%s --openpgp", dir);
 
     setup_test_keys();
     setup_test_extra_dsa_keys();
@@ -127,13 +128,15 @@ void create_logfile()
 
     // generate timestamp
     time(&nowtime);
-    localtime_r(&nowtime,&now);
-    snprintf(logfile,MAXBUF,"logs/logfile_%d%02d%02d_%02d%02d%02d", 1900+now.tm_year, now.tm_mon+1,now.tm_mday,now.tm_hour,now.tm_min,now.tm_sec);
+    localtime_r(&nowtime, &now);
+    snprintf(logfile, MAXBUF, "logs/logfile_%d%02d%02d_%02d%02d%02d",
+	     1900+now.tm_year, now.tm_mon+1, now.tm_mday, now.tm_hour,
+	     now.tm_min, now.tm_sec);
 
     // open file as new
     if ((fd=open(logfile, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600)) < 0)
         {
-        fprintf(stderr,"Cannot open logfile %s\n", logfile);
+        fprintf(stderr, "Cannot open logfile %s\n", logfile);
         exit(-1);
         }
     close(fd);
@@ -147,11 +150,11 @@ void read_keyrings()
      * read keyrings
      */
 
-    snprintf(keyring_name,sizeof keyring_name,"%s/pubring.gpg", dir);
-    ops_keyring_read_from_file(&pub_keyring,OPS_UNARMOURED,keyring_name);
+    snprintf(keyring_name, sizeof keyring_name, "%s/pubring.gpg", dir);
+    ops_keyring_read_from_file(&pub_keyring, OPS_UNARMOURED, keyring_name);
 
-    snprintf(keyring_name,sizeof keyring_name,"%s/secring.gpg", dir);
-    ops_keyring_read_from_file(&sec_keyring,OPS_UNARMOURED,keyring_name);
+    snprintf(keyring_name, sizeof keyring_name, "%s/secring.gpg", dir);
+    ops_keyring_read_from_file(&sec_keyring, OPS_UNARMOURED, keyring_name);
     }
 
 void setup_test_keyptrs()
@@ -169,20 +172,25 @@ void setup_test_rsa_keyptrs()
 
     assert(pub_keyring.nkeys);
 
-    alpha_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, alpha_user_id);
-    bravo_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, bravo_user_id);
+    alpha_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring,
+						     alpha_user_id);
+    bravo_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring,
+						     bravo_user_id);
     assert(alpha_pub_keydata);
     assert(bravo_pub_keydata);
 
-    alpha_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alpha_user_id);
-    bravo_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravo_user_id);
+    alpha_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring,
+						     alpha_user_id);
+    bravo_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring,
+						     bravo_user_id);
     assert(alpha_sec_keydata);
     assert(bravo_sec_keydata);
 
     alpha_pkey=ops_get_public_key_from_data(alpha_pub_keydata);
     alpha_skey=ops_get_secret_key_from_data(alpha_sec_keydata);
     bravo_pkey=ops_get_public_key_from_data(bravo_pub_keydata);
-    bravo_skey=ops_decrypt_secret_key_from_data(bravo_sec_keydata,bravo_passphrase);
+    bravo_skey=ops_decrypt_secret_key_from_data(bravo_sec_keydata,
+						bravo_passphrase);
 
     assert(alpha_pkey);
     assert(alpha_skey);
@@ -198,20 +206,25 @@ void setup_test_dsa_keyptrs()
 
     assert(pub_keyring.nkeys);
 
-    alphadsa_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, alphadsa_user_id);
-    bravodsa_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring, bravodsa_user_id);
+    alphadsa_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring,
+							alphadsa_user_id);
+    bravodsa_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring,
+							bravodsa_user_id);
     assert(alphadsa_pub_keydata);
     assert(bravodsa_pub_keydata);
 
-    alphadsa_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, alphadsa_user_id);
-    bravodsa_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring, bravodsa_user_id);
+    alphadsa_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring,
+							alphadsa_user_id);
+    bravodsa_sec_keydata=ops_keyring_find_key_by_userid(&sec_keyring,
+							bravodsa_user_id);
     assert(alphadsa_sec_keydata);
     assert(bravodsa_sec_keydata);
 
     alphadsa_pkey=ops_get_public_key_from_data(alphadsa_pub_keydata);
     alphadsa_skey=ops_get_secret_key_from_data(alphadsa_sec_keydata);
     bravodsa_pkey=ops_get_public_key_from_data(bravodsa_pub_keydata);
-    bravodsa_skey=ops_decrypt_secret_key_from_data(bravodsa_sec_keydata,bravodsa_passphrase);
+    bravodsa_skey=ops_decrypt_secret_key_from_data(bravodsa_sec_keydata,
+						   bravodsa_passphrase);
 
     assert(alphadsa_pkey);
     assert(alphadsa_skey);
@@ -227,23 +240,31 @@ static void setup_test_keys()
     const int keylength=1024;
     const char* RSA="RSA";
     const char* DSA="DSA";
-    char* format="Key-Type: %s\nKey-Usage: encrypt, sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n";
+    const char format[]="Key-Type: %s\nKey-Usage: encrypt, sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n";
 
     char rsa_nopass[MAXBUF+1];
-    snprintf(rsa_nopass,MAXBUF,format,RSA,alpha_name, alpha_comment, alpha_email, keylength);
-    snprintf(alpha_user_id, MAXBUF, "%s (%s) <%s>", alpha_name, alpha_comment, alpha_email);
+    snprintf(rsa_nopass, MAXBUF, format, RSA,alpha_name, alpha_comment,
+	     alpha_email, keylength);
+    snprintf(alpha_user_id, MAXBUF, "%s (%s) <%s>", alpha_name, alpha_comment,
+	     alpha_email);
 
     char rsa_pass[MAXBUF+1];
-    snprintf(rsa_pass,MAXBUF,format,RSA,bravo_name, bravo_comment, bravo_email, keylength);
-    snprintf(bravo_user_id, MAXBUF, "%s (%s) <%s>", bravo_name, bravo_comment, bravo_email);
+    snprintf(rsa_pass, MAXBUF, format, RSA, bravo_name, bravo_comment,
+	     bravo_email, keylength);
+    snprintf(bravo_user_id, MAXBUF, "%s (%s) <%s>", bravo_name, bravo_comment,
+	     bravo_email);
 
     char dsa_nopass[MAXBUF+1];
-    snprintf(dsa_nopass,MAXBUF,format, DSA, alphadsa_name, alphadsa_comment, alphadsa_email, keylength);
-    snprintf(alphadsa_user_id, MAXBUF, "%s (%s) <%s>", alphadsa_name, alphadsa_comment, alphadsa_email);
+    snprintf(dsa_nopass, MAXBUF, format, DSA, alphadsa_name, alphadsa_comment,
+	     alphadsa_email, keylength);
+    snprintf(alphadsa_user_id, MAXBUF, "%s (%s) <%s>", alphadsa_name,
+	     alphadsa_comment, alphadsa_email);
 
     char dsa_pass[MAXBUF+1];
-    snprintf(dsa_pass, MAXBUF, format, DSA, bravodsa_name, bravodsa_comment, bravodsa_email, keylength);
-    snprintf(bravodsa_user_id, MAXBUF, "%s (%s) <%s>", bravodsa_name, bravodsa_comment, bravodsa_email);
+    snprintf(dsa_pass, MAXBUF, format, DSA, bravodsa_name, bravodsa_comment,
+	     bravodsa_email, keylength);
+    snprintf(bravodsa_user_id, MAXBUF, "%s (%s) <%s>", bravodsa_name,
+	     bravodsa_comment, bravodsa_email);
 
     /*
      * Create a RSA keypair with no passphrase
@@ -251,72 +272,81 @@ static void setup_test_keys()
 
     snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.alpha");
 
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
+    if ((fd=open(keydetails, O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
         {
-        fprintf(stderr,"Can't create Alpha key details\n");
+        fprintf(stderr, "Can't create Alpha key details\n");
         return;
         }
 
-    write(fd,rsa_nopass,strlen(rsa_nopass));
+    write(fd, rsa_nopass, strlen(rsa_nopass));
     close(fd);
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd, sizeof cmd, "%s --openpgp " GNUPG_QUICK_RANDOM
+	     " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s", gpgcmd,
+	     keydetails);
     run(cmd);
 
     /*
      * Create a RSA keypair with passphrase
      */
 
-    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.bravo");
+    snprintf(keydetails, sizeof keydetails, "%s/%s", dir, "keydetails.bravo");
 
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
+    if ((fd=open(keydetails, O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
         {
-        fprintf(stderr,"Can't create Bravo key details\n");
+        fprintf(stderr, "Can't create Bravo key details\n");
         return;
         }
 
-    write(fd,rsa_pass,strlen(rsa_pass));
+    write(fd, rsa_pass, strlen(rsa_pass));
     close(fd);
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd, sizeof cmd, "%s --openpgp " GNUPG_QUICK_RANDOM
+	     " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s", gpgcmd,
+	     keydetails);
     run(cmd);
     
     /*
      * Create a DSA keypair with no passphrase
      */
 
-    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.alphadsa");
+    snprintf(keydetails, sizeof keydetails, "%s/%s", dir,
+	     "keydetails.alphadsa");
 
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
+    if ((fd=open(keydetails, O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
         {
-        fprintf(stderr,"Can't create AlphaDSA key details\n");
+        fprintf(stderr, "Can't create AlphaDSA key details\n");
         return;
         }
 
-    write(fd,dsa_nopass,strlen(dsa_nopass));
+    write(fd, dsa_nopass, strlen(dsa_nopass));
     close(fd);
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd, sizeof cmd, "%s --openpgp " GNUPG_QUICK_RANDOM
+	     " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s", gpgcmd,
+	     keydetails);
     run(cmd);
 
     /*
      * Create a RSA keypair with passphrase
      */
 
-    snprintf(keydetails,sizeof keydetails,"%s/%s",dir,"keydetails.bravodsa");
+    snprintf(keydetails, sizeof keydetails, "%s/%s", dir,
+	     "keydetails.bravodsa");
 
-    if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
+    if ((fd=open(keydetails, O_WRONLY | O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
         {
-        fprintf(stderr,"Can't create Bravo key details\n");
+        fprintf(stderr ,"Can't create Bravo key details\n");
         return;
         }
 
-    write(fd,dsa_pass,strlen(dsa_pass));
+    write(fd, dsa_pass, strlen(dsa_pass));
     close(fd);
 
-    snprintf(cmd,sizeof cmd,"%s --openpgp " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+    snprintf(cmd, sizeof cmd, "%s --openpgp " GNUPG_QUICK_RANDOM
+	     " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s", gpgcmd,
+	     keydetails);
     run(cmd);
-    
     }
 
 static void setup_test_extra_dsa_keys()
@@ -336,8 +366,7 @@ static void setup_test_extra_dsa_keys()
         {
         snprintf(name, MAXBUF, "DSA%i", i);
         snprintf(comment, MAXBUF, "Keysize %d, Qsize %d, Hash %s",
-                 dsstests[i].keysize,
-                 dsstests[i].qsize,
+                 dsstests[i].keysize, dsstests[i].qsize,
                  ops_show_hash_algorithm(dsstests[i].hashalg));
         snprintf(email, MAXBUF, "dsa%d@testing.com", i);
 
@@ -345,26 +374,30 @@ static void setup_test_extra_dsa_keys()
 
         // key definition
         snprintf(def, MAXBUF, 
-                 "Key-Type: DSA\nKey-Usage: encrypt, sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n",
+                 "Key-Type: DSA\nKey-Usage: encrypt, sign\nName-Real: %s\n"
+		 "Name-Comment: %s\nName-Email: %s\nKey-Length: %d\n",
                  name, comment, email, dsstests[i].keysize);
 
-        if ((fd=open(keydetails,O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600))
+        if ((fd=open(keydetails, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600))
 	    < 0)
             {
-            fprintf(stderr,"Can't open keydetails file %s\n", keydetails);
+            fprintf(stderr, "Can't open keydetails file %s\n", keydetails);
             return;
             }
 
-        write(fd,def,strlen(def));
+        write(fd, def, strlen(def));
         close(fd);
 
         // save userids
 
-        snprintf(dsstests[i].userid, MAXBUF, "%s (%s) <%s>", name, comment, email);
+        snprintf(dsstests[i].userid, MAXBUF, "%s (%s) <%s>", name, comment,
+		 email);
 
         // create DSA keypair with no passphrase
 
-        snprintf(cmd,sizeof cmd,"%s " GNUPG_QUICK_RANDOM " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",gpgcmd,keydetails);
+        snprintf(cmd, sizeof cmd, "%s " GNUPG_QUICK_RANDOM
+		 " --gen-key --s2k-cipher-algo \"AES\" --expert --batch %s",
+		 gpgcmd, keydetails);
         ret=run(cmd);
         if (ret)
             {
@@ -383,12 +416,13 @@ void cleanup()
 
     if (CU_get_number_of_tests_failed())
 	{
-	fprintf(stderr,"Test directory %s retained, because one or more tests failed.\n", dir);
+	fprintf(stderr, "Test directory %s retained, "
+		"because one or more tests failed.\n", dir);
 	}
     else
         {
         /* Remove test dir and files */
-        snprintf(cmd,sizeof cmd,"rm -rf %s", dir);
+        snprintf(cmd, sizeof cmd, "rm -rf %s", dir);
         if (run(cmd))
             {
             perror("Can't delete test directory ");
@@ -408,11 +442,11 @@ int mktmpdir (void)
     while (limit--) 
         {
         rnd=random();
-        snprintf(dir,sizeof dir,"./testdir.%ld",rnd);
+        snprintf(dir, sizeof dir, "./testdir.%ld", rnd);
         
         // Try to create directory
 #ifndef WIN32
-        if (!mkdir(dir,0700))
+        if (!mkdir(dir, 0700))
 #else
     	if (!_mkdir(dir))
 #endif
@@ -422,17 +456,16 @@ int mktmpdir (void)
             }
         else
             {
-            fprintf (stderr,"Couldn't open dir %s, errno=%d\n", dir, errno);
+            fprintf(stderr, "Couldn't open dir %s, errno=%d\n", dir, errno);
             perror(NULL);
             }
         }
-    fprintf(stderr,"Too many temp dirs: please delete them\n");
+    fprintf(stderr, "Too many temp dirs: please delete them\n");
     exit(1);
     }
 
 char* create_testtext(const char *text, const unsigned int repeats)
     {
-    //const unsigned int repeats=10;
     unsigned int i=0;
 
     const unsigned int maxbuf=1024;
@@ -442,20 +475,21 @@ char* create_testtext(const char *text, const unsigned int repeats)
     char* bigbuf=NULL; 
 
     buf[maxbuf]='\0';
-    snprintf(buf,sizeof buf,"%s : Test Text\n", text);
+    snprintf(buf, sizeof buf, "%s : Test Text\n", text);
 
     sz_one=strlen(buf);
     sz_big=sz_one*repeats+1;
 
     bigbuf=ops_mallocz(sz_big); 
 
-   for (i=0; i<repeats; i++)
+    for (i=0 ; i < repeats ; i++)
         {
-        char* ptr=bigbuf+ (i*(sz_one-1));
-        snprintf(ptr,sz_one,buf);
+        char* ptr=bigbuf+(i*(sz_one-1));
+	// FIXME: this should be memcpy or something.
+        snprintf(ptr, sz_one, buf);
         }
 
-   return bigbuf;
+    return bigbuf;
     }
 
 void create_testdata(const char *text, unsigned char *buf, const int maxlen)
@@ -468,22 +502,18 @@ void create_testdata(const char *text, unsigned char *buf, const int maxlen)
 #ifdef WIN32
     srand( (unsigned)time( NULL ) );
 #endif
-    for (i=strlen(text)+strlen(preamble); i<maxlen; i++)
-        {
+    for (i=strlen(text)+strlen(preamble) ; i < maxlen ; i++)
         buf[i]=(random() & 0xFF);
-        }
     }
 
 void create_small_testfile(const char* name)
     {
-    const unsigned int repeats=10;
-    create_testfile(name, repeats);
+    create_testfile(name, 10);
     }
 
 void create_large_testfile(const char* name)
     {
-    const unsigned int repeats=10^6;
-    create_testfile(name, repeats);
+    create_testfile(name, 10^6);
     }
 
 void create_testfile(const char *name, const unsigned int repeats)
@@ -492,8 +522,8 @@ void create_testfile(const char *name, const unsigned int repeats)
     char* testtext=NULL;
 
     int fd=0;
-    snprintf(filename,sizeof filename,"%s/%s",dir,name);
-    if ((fd=open(filename,O_WRONLY| O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
+    snprintf(filename, sizeof filename, "%s/%s", dir, name);
+    if ((fd=open(filename, O_WRONLY| O_CREAT | O_EXCL | O_BINARY, 0600)) < 0)
 	return;
 
     testtext=create_testtext(name, repeats);
@@ -527,25 +557,24 @@ callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
             {
             unsigned i=0;
             fprintf(stderr,"***\n***Raw Packet:\n");
-            for (i=0; i<content_->content.packet.length; i++)
+            for (i=0 ; i < content_->content.packet.length ; i++)
                 {
                 fprintf(stderr,"0x%02x ", content_->content.packet.raw[i]);
                 if (!((i+1) % 16))
-                    fprintf(stderr,"\n");
+                    fprintf(stderr, "\n");
                 else if (!((i+1) % 8))
-                    fprintf(stderr,"  ");
+                    fprintf(stderr, "  ");
                 }
-            fprintf(stderr,"\n");
+            fprintf(stderr, "\n");
             }
         break;
 
     case OPS_PARSER_ERROR:
-        printf("parse error: %s\n",content->error.error);
+        printf("parse error: %s\n", content->error.error);
         break;
         
     case OPS_PARSER_ERRCODE:
-        printf("parse error: %s\n",
-               ops_errcode(content->errcode.errcode));
+        printf("parse error: %s\n", ops_errcode(content->errcode.errcode));
         break;
         
     default:
@@ -558,7 +587,8 @@ callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
     }
 
 ops_parse_cb_return_t
-test_cb_get_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+test_cb_get_passphrase(const ops_parser_content_t *content_,
+		       ops_parse_cb_info_t *cbinfo)
     {
     //    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
     char *passphrase=NULL;
@@ -595,12 +625,15 @@ test_cb_get_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t 
  
 // move definition to better location
 ops_parse_cb_return_t
-validate_key_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+validate_key_cb(const ops_parser_content_t *content_,
+		ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-validate_data_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+validate_data_cb(const ops_parser_content_t *content_,
+		 ops_parse_cb_info_t *cbinfo);
 
 ops_parse_cb_return_t
-callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+callback_data_signature(const ops_parser_content_t *content_,
+			ops_parse_cb_info_t *cbinfo)
     {
     //    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
 
@@ -622,18 +655,19 @@ callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
 
     case OPS_PTAG_CT_SIGNATURE:
-        return validate_data_cb(content_,cbinfo);
+        return validate_data_cb(content_, cbinfo);
         break;
 
     default:
-        return callback_general(content_,cbinfo);
+        return callback_general(content_, cbinfo);
         }
 
     return OPS_RELEASE_MEMORY;
     }
  
 ops_parse_cb_return_t
-callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+callback_verify(const ops_parser_content_t *content_,
+		ops_parse_cb_info_t *cbinfo)
     {
     switch(content_->tag)
         {
@@ -662,19 +696,20 @@ callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo
         return callback_data_signature(content_, cbinfo);
 
     default:
-        return callback_general(content_,cbinfo);
+        return callback_general(content_, cbinfo);
 	}
 
     return OPS_RELEASE_MEMORY;
     }
 
 ops_parse_cb_return_t
-callback_verify_example(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+callback_verify_example(const ops_parser_content_t *content_,
+			ops_parse_cb_info_t *cbinfo)
     {
     ops_parse_cb_return_t rtn;
 
     // run standard callback
-    rtn=callback_verify(content_,cbinfo);
+    rtn=callback_verify(content_, cbinfo);
 
     // do extra work here, if needed
     switch(content_->tag)
@@ -719,14 +754,14 @@ int file_compare(char* file1, char* file2)
     int err=0;
 
     // open files
-    if ((fp1=fopen(file1,"rb"))==NULL)
+    if ((fp1=fopen(file1, "rb"))==NULL)
         {
-        fprintf(stderr,"file_compare: cannot open file %s\n",file1);
+        fprintf(stderr, "file_compare: cannot open file %s\n", file1);
         return -1;
         }
-    if ((fp2=fopen(file2,"rb"))==NULL)
+    if ((fp2=fopen(file2, "rb"))==NULL)
         {
-        fprintf(stderr,"file_compare: cannot open file %s\n",file2);
+        fprintf(stderr, "file_compare: cannot open file %s\n", file2);
         fclose(fp1);
         return -1;
         }
@@ -736,20 +771,22 @@ int file_compare(char* file1, char* file2)
         ch1 = fgetc(fp1);
         if (ferror(fp1))
             {
-            fprintf(stderr,"file_compare: error reading from file %s\n",file1);
+            fprintf(stderr, "file_compare: error reading from file %s\n",
+		    file1);
             err = -1;
             break;
             }
         ch2 = fgetc(fp2);
         if (ferror(fp2))
             {
-            fprintf(stderr,"file_compare: error reading from file %s\n",file2);
+            fprintf(stderr, "file_compare: error reading from file %s\n",
+		    file2);
             err = -1;
             break;
             }
         if (ch1 != ch2)
             {
-            printf("Files %s and %s differ\n",file1,file2);
+            printf("Files %s and %s differ\n", file1, file2);
             err = 1;
             break;
             }
