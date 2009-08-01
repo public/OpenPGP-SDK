@@ -23,14 +23,14 @@
 
 #include "CUnit/Basic.h"
 
-char openpgp[MAXBUF+1];
-char cmd[MAXBUF+1];
+static char openpgp[MAXBUF+1];
+static char cmd[MAXBUF+1];
 
-char *testfile_encrypt="cmdline_encrypt.txt";
-char *testfile_sign="cmdline_sign.txt";
-char *testfile_clearsign="cmdline_clearsign.txt";
+static const char testfile_encrypt[]="cmdline_encrypt.txt";
+static const char testfile_sign[]="cmdline_sign.txt";
+static const char testfile_clearsign[]="cmdline_clearsign.txt";
 
-const char* bad_user_id="no one by this name <noone@nowwhere.com>";
+static const char bad_user_id[]="no one by this name <noone@nowwhere.com>";
 
 int init_suite_cmdline(void)
     {
