@@ -41,16 +41,26 @@
 
 static int debug=0;
 
-static char *filename_dsa_large_noarmour_nopassphrase="ops_dsa_signed_large_noarmour_nopassphrase.txt";
-static char *filename_dsa_large_armour_nopassphrase="ops_dsa_signed_large_armour_nopassphrase.txt";
-static char *filename_dsa_noarmour_nopassphrase="ops_dsa_signed_noarmour_nopassphrase.txt";
-static char *filename_dsa_noarmour_passphrase="ops_dsa_signed_noarmour_passphrase.txt";
-static char *filename_dsa_armour_nopassphrase="ops_dsa_signed_armour_nopassphrase.txt";
-static char *filename_dsa_armour_passphrase="ops_dsa_signed_armour_passphrase.txt";
-static char *filename_dsa_clearsign_file_nopassphrase="ops_dsa_signed_clearsign_file_nopassphrase.txt";
-static char *filename_dsa_clearsign_file_passphrase="ops_dsa_signed_clearsign_file_passphrase.txt";
-static char *filename_dsa_clearsign_buf_nopassphrase="ops_dsa_signed_clearsign_buf_nopassphrase.txt";
-static char *filename_dsa_clearsign_buf_passphrase="ops_dsa_signed_clearsign_buf_passphrase.txt";
+static const char filename_dsa_large_noarmour_nopassphrase[]
+  ="ops_dsa_signed_large_noarmour_nopassphrase.txt";
+static const char filename_dsa_large_armour_nopassphrase[]
+  ="ops_dsa_signed_large_armour_nopassphrase.txt";
+static const char filename_dsa_noarmour_nopassphrase[]
+  ="ops_dsa_signed_noarmour_nopassphrase.txt";
+static const char filename_dsa_noarmour_passphrase[]
+  ="ops_dsa_signed_noarmour_passphrase.txt";
+static const char filename_dsa_armour_nopassphrase[]
+  ="ops_dsa_signed_armour_nopassphrase.txt";
+static const char filename_dsa_armour_passphrase[]
+  ="ops_dsa_signed_armour_passphrase.txt";
+static const char filename_dsa_clearsign_file_nopassphrase[]
+  ="ops_dsa_signed_clearsign_file_nopassphrase.txt";
+static const char filename_dsa_clearsign_file_passphrase[]
+  ="ops_dsa_signed_clearsign_file_passphrase.txt";
+static const char filename_dsa_clearsign_buf_nopassphrase[]
+  ="ops_dsa_signed_clearsign_buf_nopassphrase.txt";
+static const char filename_dsa_clearsign_buf_passphrase[]
+  ="ops_dsa_signed_clearsign_buf_passphrase.txt";
 
 /* Signature suite initialization.
  * Create temporary directory.
@@ -86,7 +96,8 @@ int clean_suite_dsa_signature(void)
     return 0;
     }
 
-static void test_dsa_signature_clearsign_file(const char *filename, const ops_secret_key_t *skey)
+static void test_dsa_signature_clearsign_file(const char *filename,
+					      const ops_secret_key_t *skey)
     {
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
@@ -95,8 +106,8 @@ static void test_dsa_signature_clearsign_file(const char *filename, const ops_se
     ops_boolean_t overwrite;
 
     // setup filenames
-    snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
-    snprintf(signed_file,sizeof signed_file,"%s.asc",myfile);
+    snprintf(myfile, sizeof myfile, "%s/%s", dir, filename);
+    snprintf(signed_file, sizeof signed_file, "%s.asc", myfile);
 
     // sign file
     overwrite=ops_true;
@@ -116,16 +127,10 @@ static void test_dsa_signature_clearsign_file(const char *filename, const ops_se
     int rtn=0;
     
     if (debug)
-        {
         fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
-        }
     
     // open signed file
-#ifdef WIN32
-    fd=open(signed_file,O_RDONLY | O_BINARY);
-#else
-    fd=open(signed_file,O_RDONLY);
-#endif
+    fd=open(signed_file, O_RDONLY | O_BINARY);
     if(fd < 0)
         {
         perror(signed_file);
@@ -136,14 +141,14 @@ static void test_dsa_signature_clearsign_file(const char *filename, const ops_se
     
     pinfo=ops_parse_info_new();
     
-    memset(&validate_arg,'\0',sizeof validate_arg);
+    memset(&validate_arg, '\0', sizeof validate_arg);
     validate_arg.result=result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
-    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
-    ops_reader_set_fd(pinfo,fd);
+    ops_parse_options(pinfo, OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_cb_set(pinfo, callback_verify, &validate_arg);
+    ops_reader_set_fd(pinfo, fd);
     pinfo->rinfo.accumulate=ops_true;
     
     // Must de-armour because it's clearsigned
@@ -169,13 +174,14 @@ static void test_dsa_signature_clearsign_file(const char *filename, const ops_se
     // Check signature with GPG
     {
 
-    snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
+    snprintf(cmd, sizeof cmd, "%s --verify %s", gpgcmd, signed_file);
     rtn=run(cmd);
-    CU_ASSERT(rtn==0);
+    CU_ASSERT(rtn == 0);
     }
     }
 
-static void test_dsa_signature_clearsign_buf(const char *filename, const ops_secret_key_t *skey)
+static void test_dsa_signature_clearsign_buf(const char *filename,
+					     const ops_secret_key_t *skey)
     {
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
@@ -190,19 +196,21 @@ static void test_dsa_signature_clearsign_buf(const char *filename, const ops_sec
     // (we are testing the function which signs a buf, but still want
     // to read/write the buffers from/to files for external viewing
 
-    snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
-    snprintf(signed_file,sizeof signed_file,"%s.asc",myfile);
+    snprintf(myfile, sizeof myfile, "%s/%s", dir, filename);
+    snprintf(signed_file, sizeof signed_file, "%s.asc", myfile);
 
     // read file contents
-    input=ops_write_mem_from_file(myfile,&errnum);
+    input=ops_write_mem_from_file(myfile, &errnum);
     CU_ASSERT(errnum==0);
 
     // sign file
-    ops_sign_buf_as_cleartext((const char *)ops_memory_get_data(input),ops_memory_get_length(input),&output,skey);
+    ops_sign_buf_as_cleartext(ops_memory_get_data(input),
+			      ops_memory_get_length(input), &output, skey);
 
     // write to file
     overwrite=ops_true;
-    ops_write_file_from_buf(signed_file, (const char*)ops_memory_get_data(output),ops_memory_get_length(output),overwrite);
+    ops_write_file_from_buf(signed_file, ops_memory_get_data(output),
+			    ops_memory_get_length(output), overwrite);
 
     /*
      * Validate output
@@ -224,11 +232,7 @@ static void test_dsa_signature_clearsign_buf(const char *filename, const ops_sec
         }
     
     // open signed file
-#ifdef WIN32
     fd=open(signed_file,O_RDONLY | O_BINARY);
-#else
-    fd=open(signed_file,O_RDONLY);
-#endif
     if(fd < 0)
         {
         perror(signed_file);
@@ -239,14 +243,14 @@ static void test_dsa_signature_clearsign_buf(const char *filename, const ops_sec
     
     pinfo=ops_parse_info_new();
     
-    memset(&validate_arg,'\0',sizeof validate_arg);
+    memset(&validate_arg, '\0', sizeof validate_arg);
     validate_arg.result=result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
-    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
-    ops_reader_set_fd(pinfo,fd);
+    ops_parse_options(pinfo, OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_cb_set(pinfo, callback_verify, &validate_arg);
+    ops_reader_set_fd(pinfo, fd);
     pinfo->rinfo.accumulate=ops_true;
     
     // Must de-armour because it's clearsigned
@@ -261,7 +265,7 @@ static void test_dsa_signature_clearsign_buf(const char *filename, const ops_sec
     
     // Tidy up
     //    if (has_armour)
-        ops_reader_pop_dearmour(pinfo);
+    ops_reader_pop_dearmour(pinfo);
     
     ops_parse_info_delete(pinfo);
     
@@ -271,14 +275,14 @@ static void test_dsa_signature_clearsign_buf(const char *filename, const ops_sec
 
     // Check signature with GPG
     {
-
-    snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
+    snprintf(cmd, sizeof cmd, "%s --verify %s", gpgcmd, signed_file);
     rtn=run(cmd);
-    CU_ASSERT(rtn==0);
+    CU_ASSERT(rtn == 0);
     }
     }
 
-static void test_dsa_signature_sign(const int use_armour, const char *filename, const ops_secret_key_t *skey)
+static void test_dsa_signature_sign(const int use_armour, const char *filename,
+				    const ops_secret_key_t *skey)
     {
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
@@ -288,8 +292,8 @@ static void test_dsa_signature_sign(const int use_armour, const char *filename, 
     ops_boolean_t overwrite=ops_true;
 
     // filenames
-    snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
-    snprintf(signed_file,sizeof signed_file,"%s.%s",myfile,suffix);
+    snprintf(myfile, sizeof myfile, "%s/%s", dir, filename);
+    snprintf(signed_file, sizeof signed_file, "%s.%s", myfile, suffix);
 
     ops_sign_file(myfile, signed_file, skey, use_armour, overwrite);
     //ops_sign_file(myfile, NULL, skey, use_armour, overwrite);
@@ -308,16 +312,10 @@ static void test_dsa_signature_sign(const int use_armour, const char *filename, 
     int rtn=0;
     
     if (debug)
-        {
-        fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
-        }
+        fprintf(stderr, "\n***\n*** Starting to parse for validation\n***\n");
     
     // open signed file
-#ifdef WIN32
-    fd=open(signed_file,O_RDONLY | O_BINARY);
-#else
-    fd=open(signed_file,O_RDONLY);
-#endif
+    fd=open(signed_file, O_RDONLY | O_BINARY);
     if(fd < 0)
         {
         perror(signed_file);
@@ -328,14 +326,14 @@ static void test_dsa_signature_sign(const int use_armour, const char *filename, 
     
     pinfo=ops_parse_info_new();
     
-    memset(&validate_arg,'\0',sizeof validate_arg);
+    memset(&validate_arg, '\0', sizeof validate_arg);
     validate_arg.result=result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
-    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-    ops_parse_cb_set(pinfo,callback_verify,&validate_arg);
-    ops_reader_set_fd(pinfo,fd);
+    ops_parse_options(pinfo, OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_cb_set(pinfo, callback_verify, &validate_arg);
+    ops_reader_set_fd(pinfo, fd);
     pinfo->rinfo.accumulate=ops_true;
     
     // Set up armour/passphrase options
@@ -360,14 +358,16 @@ static void test_dsa_signature_sign(const int use_armour, const char *filename, 
 
     // Check signature with GPG
     {
-
-    snprintf(cmd,sizeof cmd,"%s --verify %s", gpgcmd, signed_file);
+    snprintf(cmd, sizeof cmd, "%s --verify %s", gpgcmd, signed_file);
     rtn=run(cmd);
-    CU_ASSERT(rtn==0);
+    CU_ASSERT(rtn == 0);
     }
     }
 
-static void test_dsa_signature_sign_memory(const int use_armour, const void* input, const int input_len, const ops_secret_key_t *skey)
+static void test_dsa_signature_sign_memory(const int use_armour,
+					   const void* input,
+					   const int input_len,
+					   const ops_secret_key_t *skey)
     {
     int rtn=0;
     ops_memory_t* mem=NULL;
@@ -385,22 +385,22 @@ static void test_dsa_signature_sign_memory(const int use_armour, const void* inp
      */
 
     if (debug)
-        {
         fprintf(stderr,"\n***\n*** Starting to parse for validation\n***\n");
-        }
     
-    ops_write_file_from_buf("/tmp/memory.asc", ops_memory_get_data(mem), ops_memory_get_length(mem),ops_true);
+    ops_write_file_from_buf("/tmp/memory.asc", ops_memory_get_data(mem),
+			    ops_memory_get_length(mem),ops_true);
 
     // Set verification reader and handling options
     
-    ops_setup_memory_read(&pinfo, mem, &validate_arg, callback_verify, ops_true);
+    ops_setup_memory_read(&pinfo, mem, &validate_arg, callback_verify,
+			  ops_true);
     
-    memset(&validate_arg,'\0',sizeof validate_arg);
+    memset(&validate_arg, '\0', sizeof validate_arg);
     validate_arg.result=result;
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
-    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_options(pinfo, OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
     pinfo->rinfo.accumulate=ops_true;
     
     // Set up armour/passphrase options
@@ -425,43 +425,57 @@ static void test_dsa_signature_sign_memory(const int use_armour, const void* inp
 static void test_dsa_signature_large_noarmour_nopassphrase(void)
     {
     assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(OPS_UNARMOURED,filename_dsa_large_noarmour_nopassphrase, alphadsa_skey);
+    test_dsa_signature_sign(OPS_UNARMOURED,
+			    filename_dsa_large_noarmour_nopassphrase,
+			    alphadsa_skey);
     }
 
 static void test_dsa_signature_large_armour_nopassphrase(void)
     {
     assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(OPS_ARMOURED,filename_dsa_large_armour_nopassphrase, alphadsa_skey);
+    test_dsa_signature_sign(OPS_ARMOURED,
+			    filename_dsa_large_armour_nopassphrase,
+			    alphadsa_skey);
     }
 
 static void test_dsa_signature_noarmour_nopassphrase(void)
     {
     unsigned char testdata[MAXBUF];
+
     assert(pub_keyring.nkeys);
     assert(alphadsa_skey);
-    test_dsa_signature_sign(OPS_UNARMOURED,filename_dsa_noarmour_nopassphrase, alphadsa_skey);
-    create_testdata("test_dsa_signature_noarmour_nopassphrase",testdata, MAXBUF);
-    test_dsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF, alphadsa_skey);
+    test_dsa_signature_sign(OPS_UNARMOURED, filename_dsa_noarmour_nopassphrase,
+			    alphadsa_skey);
+    create_testdata("test_dsa_signature_noarmour_nopassphrase", testdata,
+		    MAXBUF);
+    test_dsa_signature_sign_memory(OPS_UNARMOURED, testdata, MAXBUF,
+				   alphadsa_skey);
     }
 
 static void test_dsa_signature_noarmour_passphrase(void)
     {
     unsigned char testdata[MAXBUF];
-    assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(OPS_UNARMOURED,filename_dsa_noarmour_passphrase, bravodsa_skey);
 
-    create_testdata("test_dsa_signature_noarmour_passphrase",testdata, MAXBUF);
-    test_dsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF, bravodsa_skey);
+    assert(pub_keyring.nkeys);
+    test_dsa_signature_sign(OPS_UNARMOURED, filename_dsa_noarmour_passphrase,
+			    bravodsa_skey);
+
+    create_testdata("test_dsa_signature_noarmour_passphrase", testdata, MAXBUF);
+    test_dsa_signature_sign_memory(OPS_UNARMOURED, testdata, MAXBUF,
+				   bravodsa_skey);
     }
 
 static void test_dsa_signature_armour_nopassphrase(void)
     {
     unsigned char testdata[MAXBUF];
-    assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(OPS_ARMOURED,filename_dsa_armour_nopassphrase, alphadsa_skey);
 
-    create_testdata("test_dsa_signature_armour_nopassphrase",testdata, MAXBUF);
-    test_dsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF, alphadsa_skey);
+    assert(pub_keyring.nkeys);
+    test_dsa_signature_sign(OPS_ARMOURED, filename_dsa_armour_nopassphrase,
+			    alphadsa_skey);
+
+    create_testdata("test_dsa_signature_armour_nopassphrase", testdata, MAXBUF);
+    test_dsa_signature_sign_memory(OPS_UNARMOURED, testdata, MAXBUF,
+				   alphadsa_skey);
     }
 
 static void test_dsa_signature_armour_passphrase(void)
@@ -469,34 +483,40 @@ static void test_dsa_signature_armour_passphrase(void)
     unsigned char testdata[MAXBUF];
 
     assert(pub_keyring.nkeys);
-    test_dsa_signature_sign(OPS_ARMOURED,filename_dsa_armour_passphrase, bravodsa_skey);
+    test_dsa_signature_sign(OPS_ARMOURED, filename_dsa_armour_passphrase,
+			    bravodsa_skey);
 
-    create_testdata("test_dsa_signature_armour_passphrase",testdata, MAXBUF);
-    test_dsa_signature_sign_memory(OPS_ARMOURED,testdata,MAXBUF, bravodsa_skey);
+    create_testdata("test_dsa_signature_armour_passphrase", testdata, MAXBUF);
+    test_dsa_signature_sign_memory(OPS_ARMOURED, testdata, MAXBUF,
+				   bravodsa_skey);
     }
 
 static void test_dsa_signature_clearsign_file_nopassphrase(void)
     {
     assert(pub_keyring.nkeys);
-    test_dsa_signature_clearsign_file(filename_dsa_clearsign_file_nopassphrase, alphadsa_skey);
+    test_dsa_signature_clearsign_file(filename_dsa_clearsign_file_nopassphrase,
+				      alphadsa_skey);
     }
 
 static void test_dsa_signature_clearsign_file_passphrase(void)
     {
     assert(pub_keyring.nkeys);
-    test_dsa_signature_clearsign_file(filename_dsa_clearsign_file_passphrase, bravodsa_skey);
+    test_dsa_signature_clearsign_file(filename_dsa_clearsign_file_passphrase,
+				      bravodsa_skey);
     }
 
 static void test_dsa_signature_clearsign_buf_nopassphrase(void)
     {
     assert(pub_keyring.nkeys);
-    test_dsa_signature_clearsign_buf(filename_dsa_clearsign_buf_nopassphrase, alphadsa_skey);
+    test_dsa_signature_clearsign_buf(filename_dsa_clearsign_buf_nopassphrase,
+				     alphadsa_skey);
     }
 
 static void test_dsa_signature_clearsign_buf_passphrase(void)
     {
     assert(pub_keyring.nkeys);
-    test_dsa_signature_clearsign_buf(filename_dsa_clearsign_buf_passphrase, bravodsa_skey);
+    test_dsa_signature_clearsign_buf(filename_dsa_clearsign_buf_passphrase,
+				     bravodsa_skey);
     }
 
 static void test_dsa_signature_dss(void)
@@ -504,17 +524,18 @@ static void test_dsa_signature_dss(void)
     unsigned char testdata[MAXBUF];
     assert(sec_keyring.nkeys);
     unsigned i;
-    for (i=0; i<sz_dsstests; i++)
+    for (i=0 ; i < sz_dsstests ; i++)
         {
         char teststr[MAXBUF];
         const ops_keydata_t* keydata;
         const ops_secret_key_t* skey;
 
-        snprintf(teststr,MAXBUF,"%s%d","test_dsa_signature_dss",i);
-        create_testdata(teststr,testdata,MAXBUF);
-        keydata=ops_keyring_find_key_by_userid(&sec_keyring,dsstests[i].userid);
+        snprintf(teststr, MAXBUF, "%s%d", "test_dsa_signature_dss", i);
+        create_testdata(teststr, testdata, MAXBUF);
+        keydata=ops_keyring_find_key_by_userid(&sec_keyring,
+					       dsstests[i].userid);
         skey=ops_get_secret_key_from_data(keydata);
-        test_dsa_signature_sign_memory(OPS_UNARMOURED,testdata,MAXBUF,skey);
+        test_dsa_signature_sign_memory(OPS_UNARMOURED, testdata, MAXBUF, skey);
         }
     }
 
@@ -533,34 +554,44 @@ static int add_tests(CU_pSuite suite)
     {
     // add tests to suite
     
-    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase", test_dsa_signature_noarmour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Unarmoured, no passphrase",
+			    test_dsa_signature_noarmour_nopassphrase))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Unarmoured, passphrase", test_dsa_signature_noarmour_passphrase))
+    if (NULL == CU_add_test(suite, "Unarmoured, passphrase",
+			    test_dsa_signature_noarmour_passphrase))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Clearsigned file, no passphrase", test_dsa_signature_clearsign_file_nopassphrase))
+    if (NULL == CU_add_test(suite, "Clearsigned file, no passphrase",
+			    test_dsa_signature_clearsign_file_nopassphrase))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Clearsigned file, passphrase", test_dsa_signature_clearsign_file_passphrase))
+    if (NULL == CU_add_test(suite, "Clearsigned file, passphrase",
+			    test_dsa_signature_clearsign_file_passphrase))
 	    return 0;
 
-    if (NULL == CU_add_test(suite, "Clearsigned buf, no passphrase", test_dsa_signature_clearsign_buf_nopassphrase))
+    if (NULL == CU_add_test(suite, "Clearsigned buf, no passphrase",
+			    test_dsa_signature_clearsign_buf_nopassphrase))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Clearsigned buf, passphrase", test_dsa_signature_clearsign_buf_passphrase))
+    if (NULL == CU_add_test(suite, "Clearsigned buf, passphrase",
+			    test_dsa_signature_clearsign_buf_passphrase))
 	    return 0;
 
-    if (NULL == CU_add_test(suite, "Armoured, no passphrase", test_dsa_signature_armour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Armoured, no passphrase",
+			    test_dsa_signature_armour_nopassphrase))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Armoured, passphrase", test_dsa_signature_armour_passphrase))
+    if (NULL == CU_add_test(suite, "Armoured, passphrase",
+			    test_dsa_signature_armour_passphrase))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Large, no armour, no passphrase", test_dsa_signature_large_noarmour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Large, no armour, no passphrase",
+			    test_dsa_signature_large_noarmour_nopassphrase))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Large, armour, no passphrase", test_dsa_signature_large_armour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Large, armour, no passphrase",
+			    test_dsa_signature_large_armour_nopassphrase))
 	    return 0;
     
     if (NULL == CU_add_test(suite, "DSS keys", test_dsa_signature_dss))
@@ -571,21 +602,21 @@ static int add_tests(CU_pSuite suite)
 	    return 0;
     */
     return 1;
-}
+    }
 
 CU_pSuite suite_dsa_signature()
-{
+    {
     CU_pSuite suite = NULL;
 
-    suite = CU_add_suite("DSA Signature Suite", init_suite_dsa_signature, clean_suite_dsa_signature);
+    suite = CU_add_suite("DSA Signature Suite", init_suite_dsa_signature,
+			 clean_suite_dsa_signature);
     if (!suite)
-	    return NULL;
+	return NULL;
 
     if (!add_tests(suite))
         return NULL;
 
     return suite;
     }
-
 
 // EOF
