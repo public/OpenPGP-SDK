@@ -146,7 +146,7 @@ static void test_dsa_signature_clearsign_file(const char *filename,
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
-    ops_parse_options(pinfo, OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_options(pinfo, OPS_PTAG_SS_ALL, OPS_PARSE_PARSED);
     ops_parse_cb_set(pinfo, callback_verify, &validate_arg);
     ops_reader_set_fd(pinfo, fd);
     pinfo->rinfo.accumulate=ops_true;
@@ -248,7 +248,7 @@ static void test_dsa_signature_clearsign_buf(const char *filename,
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
-    ops_parse_options(pinfo, OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_options(pinfo, OPS_PTAG_SS_ALL, OPS_PARSE_PARSED);
     ops_parse_cb_set(pinfo, callback_verify, &validate_arg);
     ops_reader_set_fd(pinfo, fd);
     pinfo->rinfo.accumulate=ops_true;
@@ -331,7 +331,7 @@ static void test_dsa_signature_sign(const int use_armour, const char *filename,
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
-    ops_parse_options(pinfo, OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_options(pinfo, OPS_PTAG_SS_ALL, OPS_PARSE_PARSED);
     ops_parse_cb_set(pinfo, callback_verify, &validate_arg);
     ops_reader_set_fd(pinfo, fd);
     pinfo->rinfo.accumulate=ops_true;
@@ -400,7 +400,7 @@ static void test_dsa_signature_sign_memory(const int use_armour,
     validate_arg.keyring=&pub_keyring;
     validate_arg.rarg=ops_reader_get_arg_from_pinfo(pinfo);
     
-    ops_parse_options(pinfo, OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+    ops_parse_options(pinfo, OPS_PTAG_SS_ALL, OPS_PARSE_PARSED);
     pinfo->rinfo.accumulate=ops_true;
     
     // Set up armour/passphrase options
