@@ -202,7 +202,6 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
     // Do the writing
 
     unsigned buffer[10240];
-    int done=0;
     for (;;)
         {
 	int n=0;
@@ -214,8 +213,6 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
 
 	// FIXME: apparently writing can't fail.
 	ops_write(buffer, n, cinfo);
-
-        done+=n;
         }
 
 
