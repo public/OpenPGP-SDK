@@ -537,7 +537,7 @@ callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinf
     {
     int debug=0;
 
-    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+    const ops_parser_content_union_t* content=&content_->content;
     
     OPS_USED(cbinfo);
     
