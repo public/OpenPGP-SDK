@@ -79,19 +79,26 @@ void create_testfile(const char *name, const unsigned int repeats);
 #define MAXBUF 1024
 
 ops_parse_cb_return_t
-callback_general(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+callback_general(const ops_parser_content_t *content_,
+		 ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-callback_cmd_get_secret_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+callback_cmd_get_secret_key(const ops_parser_content_t *content_,
+			    ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-test_cb_get_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+test_cb_get_passphrase(const ops_parser_content_t *content_,
+		       ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-callback_pk_session_key(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+callback_pk_session_key(const ops_parser_content_t *content_,
+			ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-callback_data_signature(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+callback_data_signature(const ops_parser_content_t *content_,
+			ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-callback_verify(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+callback_verify(const ops_parser_content_t *content_,
+		ops_parse_cb_info_t *cbinfo);
 ops_parse_cb_return_t
-callback_verify_example(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo);
+callback_verify_example(const ops_parser_content_t *content_,
+			ops_parse_cb_info_t *cbinfo);
 
 
 void reset_vars();
