@@ -200,9 +200,8 @@ static int bzip2_compressed_data_reader(void *dest,size_t length,
 		else
 		    n=sizeof arg->in;
 
-		if(!ops_stacked_limited_read((unsigned char *)arg->in, n,
-					     arg->region, errors, rinfo,
-					     cbinfo))
+		if(!ops_stacked_limited_read(arg->in, n, arg->region, errors,
+					     rinfo, cbinfo))
 		    return -1;
 
 		arg->bzstream.next_in=arg->in;
