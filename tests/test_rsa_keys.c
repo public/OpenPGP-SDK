@@ -46,7 +46,7 @@ int clean_suite_rsa_keys(void)
 static void test_rsa_keys_generate_keypair(void)
     {
     ops_keydata_t* keydata=ops_keydata_new();
-    CU_ASSERT(ops_rsa_generate_keypair(1024,65537,keydata)==ops_true);
+    CU_ASSERT(ops_rsa_generate_keypair(1024, 65537, keydata));
     ops_keydata_free(keydata);
     }
 
@@ -57,7 +57,7 @@ static void test_rsa_keys_selfsign_keypair(void)
 
     ops_keydata_t* keydata=NULL;
 
-    keydata=ops_rsa_create_selfsigned_keypair(1024,17,&uid);
+    keydata=ops_rsa_create_selfsigned_keypair(1024, 17, &uid);
 
     CU_ASSERT(keydata != NULL);
 
@@ -65,7 +65,8 @@ static void test_rsa_keys_selfsign_keypair(void)
     }
 
 static ops_parse_cb_return_t
-cb_get_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo __attribute__((unused)))
+cb_get_passphrase(const ops_parser_content_t *content_,
+		  ops_parse_cb_info_t *cbinfo __attribute__((unused)))
     {
     const ops_parser_content_union_t *content=&content_->content;
     //    validate_key_cb_arg_t *arg=ops_parse_cb_get_arg(cbinfo);
@@ -77,7 +78,8 @@ cb_get_passphrase(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbin
         /*
           Doing this so the test can be automated.
         */
-        *(content->secret_key_passphrase.passphrase)=ops_malloc_passphrase("hello");
+        *(content->secret_key_passphrase.passphrase)
+	    =ops_malloc_passphrase("hello");
         return OPS_KEEP_MEMORY;
         break;
 
@@ -98,9 +100,7 @@ static void verify_keypair(ops_boolean_t armoured)
     ops_keyring_t sec_keyring;
     const ops_public_key_t* pub_key=NULL;
     const ops_secret_key_t* sec_key=NULL;
-    const char* pp="hello";
-    const unsigned char *passphrase=(unsigned char *)pp;
-    const size_t pplen=strlen(pp);
+    static const unsigned char pp[]="hello";
     char filename[MAXBUF+1];
     int fd=0;
     char *suffix = armoured ? "asc" : "ops";
@@ -116,7 +116,7 @@ static void verify_keypair(ops_boolean_t armoured)
 
     uid.user_id=(unsigned char *) userid;
 
-    keydata=ops_rsa_create_selfsigned_keypair(1024,65537,&uid);
+    keydata=ops_rsa_create_selfsigned_keypair(1024, 65537, &uid);
     CU_ASSERT(keydata != NULL);
     pub_key=ops_get_public_key_from_data(keydata);
     sec_key=ops_get_secret_key_from_data(keydata);
@@ -126,10 +126,11 @@ static void verify_keypair(ops_boolean_t armoured)
      * pub key
      */
 
-    snprintf(filename,MAXBUF,"%s/%s.%s",dir,"ops_transferable_public_key",suffix);
-    fd=ops_setup_file_write(&cinfo, filename,overwrite);
-    ops_write_transferable_public_key(keydata,armoured,cinfo);
-    ops_teardown_file_write(cinfo,fd);
+    snprintf(filename, MAXBUF, "%s/%s.%s", dir, "ops_transferable_public_key",
+	     suffix);
+    fd=ops_setup_file_write(&cinfo, filename, overwrite);
+    ops_write_transferable_public_key(keydata, armoured, cinfo);
+    ops_teardown_file_write(cinfo, fd);
 
     /*
      * Validate public key with OPS
@@ -142,18 +143,21 @@ static void verify_keypair(ops_boolean_t armoured)
 
     result=ops_mallocz(sizeof(*result));
 
-    CU_ASSERT(ops_validate_all_signatures(result, &pub_keyring, NULL)==ops_true);
-    CU_ASSERT(result->valid_count==1);
+    CU_ASSERT(ops_validate_all_signatures(result, &pub_keyring, NULL));
+    CU_ASSERT(result->valid_count == 1);
 
-    CU_ASSERT(memcmp(result->valid_sigs[0].signer_id,keyid,OPS_KEY_ID_SIZE)==0);
-    CU_ASSERT(result->invalid_count==0);
-    CU_ASSERT(result->unknown_signer_count==0);
+    CU_ASSERT(memcmp(result->valid_sigs[0].signer_id, keyid, OPS_KEY_ID_SIZE)
+	      == 0);
+    CU_ASSERT(result->invalid_count == 0);
+    CU_ASSERT(result->unknown_signer_count == 0);
 
     ops_validate_result_free(result);
 
     // Validate public key with GPG
 
-    snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
+    snprintf(cmd, sizeof cmd,
+	     "cat %s | %s --import --no-allow-non-selfsigned-uid", filename,
+	     gpgcmd);
     rtn=run(cmd);
     CU_ASSERT(rtn==0); 
 
@@ -163,10 +167,12 @@ static void verify_keypair(ops_boolean_t armoured)
     
     result=ops_mallocz(sizeof(*result));
 
-    snprintf(filename,MAXBUF,"%s/%s.%s",dir,"ops_transferable_secret_key",suffix);
-    fd=ops_setup_file_write(&cinfo, filename,overwrite);
-    ops_write_transferable_secret_key(keydata,passphrase,pplen,armoured,cinfo);
-    ops_teardown_file_write(cinfo,fd);
+    snprintf(filename, MAXBUF, "%s/%s.%s", dir, "ops_transferable_secret_key",
+	     suffix);
+    fd=ops_setup_file_write(&cinfo, filename, overwrite);
+    ops_write_transferable_secret_key(keydata, pp, sizeof pp-1, armoured,
+				      cinfo);
+    ops_teardown_file_write(cinfo, fd);
 
     // generate keyring from this file
     ops_keyring_read_from_file(&sec_keyring, armoured, filename);
@@ -175,15 +181,18 @@ static void verify_keypair(ops_boolean_t armoured)
 
     result=ops_mallocz(sizeof(*result));
 
-    CU_ASSERT(ops_validate_all_signatures(result, &sec_keyring, cb_get_passphrase)==ops_true);
-    CU_ASSERT(result->valid_count==1);
-    CU_ASSERT(result->invalid_count==0);
-    CU_ASSERT(result->unknown_signer_count==0);
+    CU_ASSERT(ops_validate_all_signatures(result, &sec_keyring,
+					  cb_get_passphrase));
+    CU_ASSERT(result->valid_count == 1);
+    CU_ASSERT(result->invalid_count == 0);
+    CU_ASSERT(result->unknown_signer_count == 0);
 
     ops_validate_result_free(result);
 
     // validate with GPG
-    snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
+    snprintf(cmd, sizeof cmd,
+	     "cat %s | %s --import --no-allow-non-selfsigned-uid", filename,
+	     gpgcmd);
     rtn=run(cmd);
     CU_ASSERT(rtn==0); 
 
@@ -200,7 +209,8 @@ static void test_rsa_keys_read_from_file(void)
     {
     ops_keyring_t keyring;
     char filename[MAXBUF+1];
-    snprintf(filename,MAXBUF,"%s/%s", dir, "pubring.gpg");
+
+    snprintf(filename, MAXBUF, "%s/%s", dir, "pubring.gpg");
 
     memset(&keyring, '\0', sizeof keyring);
 
@@ -248,21 +258,21 @@ static void test_rsa_keys_verify_keypair_fail(void)
      */
 
     // Keyring 1
-    keydata=ops_rsa_create_selfsigned_keypair(1024,65537,&uid1);
+    keydata=ops_rsa_create_selfsigned_keypair(1024, 65537, &uid1);
     CU_ASSERT(keydata != NULL);
-    snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_1");
-    fd=ops_setup_file_write(&cinfo, filename,overwrite);
-    ops_write_transferable_public_key(keydata,OPS_ARMOURED,cinfo);
-    ops_teardown_file_write(cinfo,fd);
+    snprintf(filename, MAXBUF, "%s/%s", dir, "transferable_public_key_1");
+    fd=ops_setup_file_write(&cinfo, filename, overwrite);
+    ops_write_transferable_public_key(keydata, OPS_ARMOURED, cinfo);
+    ops_teardown_file_write(cinfo, fd);
     ops_keyring_read_from_file(&keyring1, OPS_ARMOURED, filename);
 
     // Keyring 2
-    keydata=ops_rsa_create_selfsigned_keypair(1024,65537,&uid2);
+    keydata=ops_rsa_create_selfsigned_keypair(1024, 65537, &uid2);
     CU_ASSERT(keydata != NULL);
-    snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_2");
-    fd=ops_setup_file_write(&cinfo, filename,overwrite);
-    ops_write_transferable_public_key(keydata,OPS_ARMOURED,cinfo);
-    ops_teardown_file_write(cinfo,fd);
+    snprintf(filename, MAXBUF, "%s/%s", dir, "transferable_public_key_2");
+    fd=ops_setup_file_write(&cinfo, filename, overwrite);
+    ops_write_transferable_public_key(keydata, OPS_ARMOURED, cinfo);
+    ops_teardown_file_write(cinfo, fd);
     ops_keyring_read_from_file(&keyring2, OPS_ARMOURED, filename);
 
     // Keyring 3
@@ -276,8 +286,8 @@ static void test_rsa_keys_verify_keypair_fail(void)
 
     snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_3_bad");
     fd=ops_setup_file_write(&cinfo, filename, overwrite);
-    ops_write_transferable_public_key(keydata,OPS_ARMOURED,cinfo);
-    ops_teardown_file_write(cinfo,fd);
+    ops_write_transferable_public_key(keydata, OPS_ARMOURED, cinfo);
+    ops_teardown_file_write(cinfo, fd);
     ops_keyring_read_from_file(&keyring3, OPS_ARMOURED, filename);
 
     /*
@@ -288,7 +298,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
     keydata1=ops_keyring_find_key_by_userid(&keyring1, name1);
     assert(keydata1);
 
-    CU_ASSERT(ops_validate_key_signatures(result, keydata1, &keyring2, NULL)==ops_false);
+    CU_ASSERT(!ops_validate_key_signatures(result, keydata1, &keyring2, NULL));
 
     CU_ASSERT(result->valid_count==0);
     CU_ASSERT(result->invalid_count==0);
@@ -306,15 +316,17 @@ static void test_rsa_keys_verify_keypair_fail(void)
     keydata3=ops_keyring_find_key_by_userid(&keyring3, name2);
     assert(keydata3);
 
-    CU_ASSERT(ops_validate_key_signatures(result, keydata3, &keyring3, NULL)==ops_false);
+    CU_ASSERT(!ops_validate_key_signatures(result, keydata3, &keyring3, NULL));
 
-    CU_ASSERT(result->valid_count==0);
-    CU_ASSERT(result->invalid_count==1);
-    CU_ASSERT(result->unknown_signer_count==0);
+    CU_ASSERT(result->valid_count == 0);
+    CU_ASSERT(result->invalid_count == 1);
+    CU_ASSERT(result->unknown_signer_count == 0);
     ops_validate_result_free(result);
 
     // validate with GPG - should fail
-    snprintf(cmd, sizeof cmd, "cat %s | %s --import --no-allow-non-selfsigned-uid", filename, gpgcmd);
+    snprintf(cmd, sizeof cmd,
+	     "cat %s | %s --import --no-allow-non-selfsigned-uid", filename,
+	     gpgcmd);
     rtn=run(cmd);
     CU_ASSERT(rtn!=0); 
 
@@ -350,28 +362,35 @@ CU_pSuite suite_rsa_keys()
     CU_pSuite suite=NULL;
 
     // add suite
-    suite=CU_add_suite("RSA Keys Suite", init_suite_rsa_keys, clean_suite_rsa_keys);
+    suite=CU_add_suite("RSA Keys Suite", init_suite_rsa_keys,
+		       clean_suite_rsa_keys);
     if (!suite)
         return NULL;
 
     // add tests to suite
 
-    if (NULL == CU_add_test(suite, "Generate key pair", test_rsa_keys_generate_keypair))
+    if (NULL == CU_add_test(suite, "Generate key pair",
+			    test_rsa_keys_generate_keypair))
         return NULL;
 
-    if (NULL == CU_add_test(suite, "Self-sign key pair", test_rsa_keys_selfsign_keypair))
+    if (NULL == CU_add_test(suite, "Self-sign key pair",
+			    test_rsa_keys_selfsign_keypair))
         return NULL;
 
-    if (NULL == CU_add_test(suite, "Verify self-signed key pair", test_rsa_keys_verify_keypair))
+    if (NULL == CU_add_test(suite, "Verify self-signed key pair",
+			    test_rsa_keys_verify_keypair))
         return NULL;
 
-    if (NULL == CU_add_test(suite, "Verify self-signed key pair (armoured)", test_rsa_keys_verify_armoured_keypair))
+    if (NULL == CU_add_test(suite, "Verify self-signed key pair (armoured)",
+			    test_rsa_keys_verify_armoured_keypair))
         return NULL;
 
-    if (NULL == CU_add_test(suite, "Verify self-signed key pair fails", test_rsa_keys_verify_keypair_fail))
+    if (NULL == CU_add_test(suite, "Verify self-signed key pair fails",
+			    test_rsa_keys_verify_keypair_fail))
         return NULL;
 
-    if (NULL == CU_add_test(suite, "Read keyring from file", test_rsa_keys_read_from_file))
+    if (NULL == CU_add_test(suite, "Read keyring from file",
+			    test_rsa_keys_read_from_file))
         return NULL;
 
     /*

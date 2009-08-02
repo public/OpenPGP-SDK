@@ -204,6 +204,7 @@ static ops_boolean_t write_public_key_body(const ops_public_key_t *key,
 	    && ops_write_mpi(key->key.elgamal.y,info);
 
     default:
+	fprintf(stderr, "Unknown algorithm %d\n", key->algorithm);
 	assert(0);
 	break;
 	}
