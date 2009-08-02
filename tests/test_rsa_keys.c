@@ -218,7 +218,6 @@ static void test_rsa_keys_verify_keypair_fail(void)
     ops_user_id_t uid1, uid2;
     ops_keydata_t* keydata=NULL;
     const ops_keydata_t* keydata1;
-    const ops_keydata_t* keydata2;
     const ops_keydata_t* keydata3;
     ops_create_info_t* cinfo=NULL;
     ops_validate_result_t* result=NULL;
@@ -259,7 +258,7 @@ static void test_rsa_keys_verify_keypair_fail(void)
 
     // Keyring 2
     keydata=ops_rsa_create_selfsigned_keypair(1024,65537,&uid2);
-    CU_ASSERT(keydata2 != NULL);
+    CU_ASSERT(keydata != NULL);
     snprintf(filename,MAXBUF,"%s/%s",dir,"transferable_public_key_2");
     fd=ops_setup_file_write(&cinfo, filename,overwrite);
     ops_write_transferable_public_key(keydata,OPS_ARMOURED,cinfo);
