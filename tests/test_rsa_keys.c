@@ -107,14 +107,14 @@ static void verify_keypair(ops_boolean_t armoured)
     char cmd[MAXBUF+1];
     int rtn=0;
     ops_boolean_t overwrite=ops_true;
-    char* userid="Test User 2<test2@nowhere.com>";
+    static unsigned char userid[]="Test User 2<test2@nowhere.com>";
     const unsigned char* keyid;
 
     memset(&pub_keyring, '\0', sizeof pub_keyring);
     memset(&sec_keyring, '\0', sizeof sec_keyring);
 
 
-    uid.user_id=(unsigned char *) userid;
+    uid.user_id=userid;
 
     keydata=ops_rsa_create_selfsigned_keypair(1024, 65537, &uid);
     CU_ASSERT(keydata != NULL);
