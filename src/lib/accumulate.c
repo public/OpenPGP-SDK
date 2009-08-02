@@ -97,7 +97,7 @@ accumulate_cb(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
     case OPS_PARSER_PACKET_END:
 	if(!cur)
 	    return OPS_RELEASE_MEMORY;
-    ops_add_packet_to_keydata(cur, &content->packet);
+	ops_add_packet_to_keydata(cur, &content->packet);
 	return OPS_KEEP_MEMORY;
 
     case OPS_PARSER_ERROR:
