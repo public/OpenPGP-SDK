@@ -371,12 +371,14 @@ ops_boolean_t ops_limited_read(unsigned char *dest,size_t length,
    \ingroup Core_ReadPackets
    \brief Call ops_limited_read on next in stack
 */
-ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
+ops_boolean_t ops_stacked_limited_read(void *dest, unsigned length,
 				       ops_region_t *region,
 				       ops_error_t **errors,
 				       ops_reader_info_t *rinfo,
 				       ops_parse_cb_info_t *cbinfo)
-    { return ops_limited_read(dest,length,region,errors,rinfo->next,cbinfo); }
+    {
+    return ops_limited_read(dest, length, region, errors, rinfo->next, cbinfo);
+    }
 
 static ops_boolean_t limited_read(unsigned char *dest,unsigned length,
 				  ops_region_t *region,ops_parse_info_t *info)

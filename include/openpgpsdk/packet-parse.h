@@ -148,7 +148,7 @@ ops_boolean_t ops_limited_read(unsigned char *dest,size_t length,
 			       ops_region_t *region,ops_error_t **errors,
 			       ops_reader_info_t *rinfo,
 			       ops_parse_cb_info_t *cbinfo);
-ops_boolean_t ops_stacked_limited_read(unsigned char *dest,unsigned length,
+ops_boolean_t ops_stacked_limited_read(void *dest,unsigned length,
 				       ops_region_t *region,
 				       ops_error_t **errors,
 				       ops_reader_info_t *rinfo,
