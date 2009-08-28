@@ -515,7 +515,7 @@ void create_small_testfile(const char* name)
 
 void create_large_testfile(const char* name)
     {
-    create_testfile(name, 10^6);
+    create_testfile(name, 1e6);
     }
 
 void create_testfile(const char *name, const unsigned int repeats)
