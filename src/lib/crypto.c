@@ -22,6 +22,7 @@
 #include <openpgpsdk/crypto.h>
 #include <openpgpsdk/random.h>
 #include <openpgpsdk/readerwriter.h>
+#include <openpgpsdk/streamwriter.h>
 #include <openpgpsdk/writer_armoured.h>
 #include "parse_local.h"
 
@@ -193,7 +194,7 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
         ops_writer_push_armoured_message(cinfo);
 
     // Push the encrypted writer
-    ops_writer_push_encrypt_se_ip(cinfo, pub_key);
+    ops_writer_push_stream_encrypt_se_ip(cinfo, pub_key);
 
     // Do the writing
 
