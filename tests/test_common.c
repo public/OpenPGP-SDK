@@ -486,9 +486,9 @@ char* create_testtext(const char *text, const unsigned int repeats)
 
     for (i=0 ; i < repeats ; i++)
         {
-        char* ptr=bigbuf+(i*(sz_one-1));
+        char* ptr=bigbuf+i*sz_one;
 	// FIXME: this should be memcpy or something.
-        snprintf(ptr, sz_one, buf);
+        memcpy(ptr, buf, sz_one);
         }
 
     return bigbuf;
