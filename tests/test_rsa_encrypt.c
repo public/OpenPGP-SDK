@@ -34,17 +34,25 @@
 
 #include "tests.h"
 
-static char *filename_rsa_noarmour_nopassphrase_singlekey="enc_rsa_noarmour_np_singlekey.txt";
-static char *filename_rsa_noarmour_passphrase_singlekey="enc_rsa_noarmour_pp_singlekey.txt";
-static char *filename_rsa_armour_nopassphrase_singlekey="enc_rsa_armour_np_singlekey.txt";
-static char *filename_rsa_armour_passphrase_singlekey="enc_rsa_armour_pp_singlekey.txt";
-static char *filename_rsa_large_noarmour_nopassphrase="enc_rsa_large_noarmour_np.txt";
-static char *filename_rsa_large_armour_nopassphrase="enc_rsa_large_armour_np.txt";
+static const char filename_rsa_noarmour_nopassphrase_singlekey[] =
+    "enc_rsa_noarmour_np_singlekey.txt";
+static const char filename_rsa_noarmour_passphrase_singlekey[] =
+    "enc_rsa_noarmour_pp_singlekey.txt";
+static const char filename_rsa_armour_nopassphrase_singlekey[] =
+    "enc_rsa_armour_np_singlekey.txt";
+static const char filename_rsa_armour_passphrase_singlekey[] =
+    "enc_rsa_armour_pp_singlekey.txt";
+static const char filename_rsa_large_noarmour_nopassphrase[] =
+    "enc_rsa_large_noarmour_np.txt";
+static const char filename_rsa_large_armour_nopassphrase[] =
+    "enc_rsa_large_armour_np.txt";
 
 static ops_parse_cb_return_t
-callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *cbinfo)
+callback_ops_decrypt(const ops_parser_content_t *content_,
+		     ops_parse_cb_info_t *cbinfo)
     {
-    ops_parser_content_union_t* content=(ops_parser_content_union_t *)&content_->content;
+    ops_parser_content_union_t* content
+	=(ops_parser_content_union_t *)&content_->content;
     static ops_boolean_t skipping;
 
     OPS_USED(cbinfo);
@@ -66,21 +74,21 @@ callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *c
 	    puts("Skipping...");
 	    skipping=ops_true;
 	    }
-	fwrite(content->unarmoured_text.data,1,
-	       content->unarmoured_text.length,stdout);
+	fwrite(content->unarmoured_text.data, 1,
+	       content->unarmoured_text.length, stdout);
 	break;
 
     case OPS_PTAG_CT_PK_SESSION_KEY:
-        return callback_pk_session_key(content_,cbinfo);
+        return callback_pk_session_key(content_, cbinfo);
 
     case OPS_PARSER_CMD_GET_SECRET_KEY:
-        return callback_cmd_get_secret_key(content_,cbinfo);
+        return callback_cmd_get_secret_key(content_, cbinfo);
 
     case OPS_PARSER_CMD_GET_SK_PASSPHRASE:
-        return test_cb_get_passphrase(content_,cbinfo);
+        return test_cb_get_passphrase(content_, cbinfo);
 
     case OPS_PTAG_CT_LITERAL_DATA_BODY:
-        return callback_literal_data(content_,cbinfo);
+        return callback_literal_data(content_, cbinfo);
 
     case OPS_PARSER_PTAG:
     case OPS_PTAG_CT_ARMOUR_HEADER:
@@ -96,7 +104,7 @@ callback_ops_decrypt(const ops_parser_content_t *content_,ops_parse_cb_info_t *c
 	break;
 
     default:
-        return callback_general(content_,cbinfo);
+        return callback_general(content_, cbinfo);
 	}
 
     return OPS_RELEASE_MEMORY;
@@ -132,7 +140,8 @@ int clean_suite_rsa_encrypt(void)
     return 0;
     }
 
-static int test_rsa_decrypt(const char *encfile, const char*testtext, const int use_armour)
+static int test_rsa_decrypt(const char *encfile, const char *testtext,
+			    const int use_armour)
     {
     int fd=0;
     ops_parse_info_t *pinfo=NULL;
@@ -162,12 +171,14 @@ static int test_rsa_decrypt(const char *encfile, const char*testtext, const int 
     
     // File contents should match
 
-    CU_ASSERT(memcmp(ops_memory_get_data(mem_out),testtext,ops_memory_get_length(mem_out))==0);
+    CU_ASSERT(memcmp(ops_memory_get_data(mem_out), testtext,
+		     ops_memory_get_length(mem_out)) == 0);
 
     return rtn;
     }
 
-static void test_rsa_encrypt(const int use_armour, const char* filename, const ops_keydata_t *pub_key)
+static void test_rsa_encrypt(const int use_armour, const char* filename,
+			     const ops_keydata_t *pub_key)
     {
     char cmd[MAXBUF+1];
     char myfile[MAXBUF+1];
@@ -181,10 +192,12 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
     int repeats=10;
 
     // filenames
-    snprintf(myfile,sizeof myfile,"%s/%s",dir,filename);
-    snprintf(encrypted_file,sizeof encrypted_file,"%s/%s.%s",dir,filename,suffix);
+    snprintf(myfile, sizeof myfile, "%s/%s", dir, filename);
+    snprintf(encrypted_file, sizeof encrypted_file, "%s/%s.%s", dir, filename,
+	     suffix);
 
-    ops_encrypt_file(myfile,encrypted_file, pub_key, use_armour, allow_overwrite);
+    ops_encrypt_file(myfile, encrypted_file, pub_key, use_armour,
+		     allow_overwrite);
 
     /*
      * Test results
@@ -192,21 +205,23 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
 
     // File contents should match - check with GPG
         
-    if (pub_key==alpha_pub_keydata)
+    if (pub_key == alpha_pub_keydata)
         pp[0]='\0';
-    else if (pub_key==bravo_pub_keydata)
-        snprintf(pp,sizeof pp," --passphrase %s ", bravo_passphrase);
-    snprintf(decrypted_file,sizeof decrypted_file,"%s/decrypted_%s",dir,filename);
-    snprintf(cmd,sizeof cmd,"cat %s | %s --decrypt --output=%s %s",encrypted_file, gpgcmd, decrypted_file, pp);
+    else if (pub_key == bravo_pub_keydata)
+        snprintf(pp, sizeof pp, " --passphrase %s ", bravo_passphrase);
+    snprintf(decrypted_file, sizeof decrypted_file, "%s/decrypted_%s", dir,
+	     filename);
+    snprintf(cmd, sizeof cmd, "cat %s | %s --decrypt --output=%s %s",
+	     encrypted_file, gpgcmd, decrypted_file, pp);
     //printf("cmd: %s\n", cmd);
     rtn=run(cmd);
-    CU_ASSERT(rtn==0);
-    CU_ASSERT(file_compare(myfile,decrypted_file)==0);
+    CU_ASSERT(rtn == 0);
+    CU_ASSERT(file_compare(myfile, decrypted_file) == 0);
 
     // File contents should match - checking with OPS
         
-    testtext=create_testtext(filename,repeats);
-    test_rsa_decrypt(encrypted_file,testtext, use_armour);
+    testtext=create_testtext(filename, repeats);
+    test_rsa_decrypt(encrypted_file, testtext, use_armour);
 
     // tidy up
     free(testtext);
@@ -214,32 +229,39 @@ static void test_rsa_encrypt(const int use_armour, const char* filename, const o
 
 static void test_rsa_encrypt_noarmour_nopassphrase_singlekey(void)
     {
-    test_rsa_encrypt(OPS_UNARMOURED,filename_rsa_noarmour_nopassphrase_singlekey, alpha_pub_keydata);
+    test_rsa_encrypt(OPS_UNARMOURED,
+		     filename_rsa_noarmour_nopassphrase_singlekey,
+		     alpha_pub_keydata);
     }
 
 static void test_rsa_encrypt_noarmour_passphrase_singlekey(void)
     {
-    test_rsa_encrypt(OPS_UNARMOURED,filename_rsa_noarmour_passphrase_singlekey,bravo_pub_keydata);
+    test_rsa_encrypt(OPS_UNARMOURED, filename_rsa_noarmour_passphrase_singlekey,
+		     bravo_pub_keydata);
     }
 
 static void test_rsa_encrypt_armour_nopassphrase_singlekey(void)
     {
-    test_rsa_encrypt(OPS_ARMOURED,filename_rsa_armour_nopassphrase_singlekey,alpha_pub_keydata);
+    test_rsa_encrypt(OPS_ARMOURED, filename_rsa_armour_nopassphrase_singlekey,
+		     alpha_pub_keydata);
     }
 
 static void test_rsa_encrypt_armour_passphrase_singlekey(void)
     {
-    test_rsa_encrypt(OPS_ARMOURED,filename_rsa_armour_passphrase_singlekey,bravo_pub_keydata);
+    test_rsa_encrypt(OPS_ARMOURED, filename_rsa_armour_passphrase_singlekey,
+		     bravo_pub_keydata);
     }
 
 static void test_rsa_encrypt_large_noarmour_nopassphrase(void)
     {
-    test_rsa_encrypt(OPS_UNARMOURED,filename_rsa_large_noarmour_nopassphrase, alpha_pub_keydata);
+    test_rsa_encrypt(OPS_UNARMOURED, filename_rsa_large_noarmour_nopassphrase,
+		     alpha_pub_keydata);
     }
 
 static void test_rsa_encrypt_large_armour_nopassphrase(void)
     {
-    test_rsa_encrypt(OPS_ARMOURED,filename_rsa_large_armour_nopassphrase, alpha_pub_keydata);
+    test_rsa_encrypt(OPS_ARMOURED, filename_rsa_large_armour_nopassphrase,
+		     alpha_pub_keydata);
     }
 
 /*
@@ -258,22 +280,28 @@ static int add_tests(CU_pSuite suite)
     {
     // add tests to suite
     
-    if (NULL == CU_add_test(suite, "Unarmoured, single key, no passphrase", test_rsa_encrypt_noarmour_nopassphrase_singlekey))
+    if (NULL == CU_add_test(suite, "Unarmoured, single key, no passphrase",
+			    test_rsa_encrypt_noarmour_nopassphrase_singlekey))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Unarmoured, single key, passphrase", test_rsa_encrypt_noarmour_passphrase_singlekey))
+    if (NULL == CU_add_test(suite, "Unarmoured, single key, passphrase",
+			    test_rsa_encrypt_noarmour_passphrase_singlekey))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Armoured, single key, no passphrase", test_rsa_encrypt_armour_nopassphrase_singlekey))
+    if (NULL == CU_add_test(suite, "Armoured, single key, no passphrase",
+			    test_rsa_encrypt_armour_nopassphrase_singlekey))
 	    return 0;
     
-    if (NULL == CU_add_test(suite, "Armoured, single key, passphrase", test_rsa_encrypt_armour_passphrase_singlekey))
+    if (NULL == CU_add_test(suite, "Armoured, single key, passphrase",
+			    test_rsa_encrypt_armour_passphrase_singlekey))
 	    return 0;
 
-    if (NULL == CU_add_test(suite, "Large, no armour, no passphrase", test_rsa_encrypt_large_noarmour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Large, no armour, no passphrase",
+			    test_rsa_encrypt_large_noarmour_nopassphrase))
 	    return 0;
 
-    if (NULL == CU_add_test(suite, "Large, armour, no passphrase", test_rsa_encrypt_large_armour_nopassphrase))
+    if (NULL == CU_add_test(suite, "Large, armour, no passphrase",
+			    test_rsa_encrypt_large_armour_nopassphrase))
 	    return 0;
 
     /*
@@ -288,7 +316,8 @@ CU_pSuite suite_rsa_encrypt()
     {
     CU_pSuite suite = NULL;
 
-    suite = CU_add_suite("RSA Encryption Suite", init_suite_rsa_encrypt, clean_suite_rsa_encrypt);
+    suite = CU_add_suite("RSA Encryption Suite", init_suite_rsa_encrypt,
+			 clean_suite_rsa_encrypt);
     if (!suite)
 	    return NULL;
 
