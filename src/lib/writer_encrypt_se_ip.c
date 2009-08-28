@@ -61,7 +61,7 @@ static void encrypt_se_ip_destroyer(ops_writer_info_t *winfo);
 void ops_writer_push_encrypt_se_ip(ops_create_info_t *cinfo,
 				   const ops_keydata_t *pub_key)
     {
-    ops_crypt_t* encrypt;
+    ops_crypt_t *encrypt;
     unsigned char *iv=NULL;
 
     // Create arg to be used with this writer
@@ -69,7 +69,7 @@ void ops_writer_push_encrypt_se_ip(ops_create_info_t *cinfo,
     encrypt_se_ip_arg_t *arg=ops_mallocz(sizeof *arg);
 
     // Create and write encrypted PK session key
-    ops_pk_session_key_t* encrypted_pk_session_key;
+    ops_pk_session_key_t *encrypted_pk_session_key;
     encrypted_pk_session_key=ops_create_pk_session_key(pub_key);
     ops_write_pk_session_key(cinfo, encrypted_pk_session_key);
 
@@ -110,13 +110,13 @@ static ops_boolean_t encrypt_se_ip_writer(const unsigned char *src,
     ops_create_info_t *my_cinfo;
 
     const unsigned int bufsz=128; // initial value; gets expanded as necessary
-    ops_setup_memory_write(&cinfo_literal, &mem_literal,bufsz);
-    ops_setup_memory_write(&cinfo_compressed, &mem_compressed,bufsz);
+    ops_setup_memory_write(&cinfo_literal, &mem_literal, bufsz);
+    ops_setup_memory_write(&cinfo_compressed, &mem_compressed, bufsz);
     ops_setup_memory_write(&my_cinfo, &my_mem, bufsz);
 
     // create literal data packet from source data
     ops_write_literal_data_from_buf(src, length, OPS_LDT_BINARY, cinfo_literal);
-    assert(ops_memory_get_length(mem_literal)>length);
+    assert(ops_memory_get_length(mem_literal) > length);
 
     // create compressed packet from literal data packet
     ops_write_compressed(ops_memory_get_data(mem_literal),
