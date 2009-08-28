@@ -35,7 +35,7 @@
 #include <openpgpsdk/create.h>
 #include <openpgpsdk/keyring.h>
 #include <openpgpsdk/random.h>
-#include <openpgpsdk/readerwriter.h>
+#include <openpgpsdk/streamwriter.h>
 
 #define MAX_PARTIAL_DATA_LENGTH 1073741824
 
@@ -56,8 +56,8 @@ static ops_boolean_t stream_encrypt_se_ip_writer(const unsigned char *src,
                                                  ops_error_t **errors,
                                                  ops_writer_info_t *winfo);
 
-static ops_boolean_t stream_encrypt_se_ip_finaliser(ops_error_t**      errors,
-                                                    ops_writer_info_t* winfo);
+static ops_boolean_t stream_encrypt_se_ip_finaliser(ops_error_t **errors,
+                                                    ops_writer_info_t *winfo);
 
 static void stream_encrypt_se_ip_destroyer (ops_writer_info_t *winfo);
 
@@ -121,14 +121,15 @@ unsigned int ops_calc_partial_data_length(unsigned int len)
     unsigned int mask = MAX_PARTIAL_DATA_LENGTH;
     assert( len > 0 );
 
-    if ( len > MAX_PARTIAL_DATA_LENGTH ) {
+    if (len > MAX_PARTIAL_DATA_LENGTH)
         return MAX_PARTIAL_DATA_LENGTH;
-    }
 
-    for ( i = 0; i <= 30; i++ ) {
-        if ( mask & len) break; 
+    for (i = 0 ; i <= 30 ; i++)
+	{
+        if (mask & len)
+	    break; 
         mask >>= 1;
-    }
+	}
 
     return mask;
     }
@@ -140,12 +141,13 @@ ops_boolean_t ops_write_partial_data_length(unsigned int len,
     int i;
     unsigned char c[1];
 
-    for ( i = 0; i <= 30; i++ ) {
-        if ( (len >> i) & 1) break; 
-    }
+    for (i = 0 ; i <= 30 ; i++)
+        if ((len >> i) & 1)
+	    break; 
 
     c[0] = 224 + i;
- 	return ops_write(c,1,info);
+
+    return ops_write(c, 1, info);
     }
 
 ops_boolean_t ops_stream_write_literal_data(const unsigned char *data, 
@@ -162,10 +164,11 @@ ops_boolean_t ops_stream_write_literal_data(const unsigned char *data,
     return ops_true;
     }
 
-ops_boolean_t ops_stream_write_literal_data_first(const unsigned char *data, 
-                                                  unsigned int len, 
-                                                  const ops_literal_data_type_t type,
-                                                  ops_create_info_t *info)
+ops_boolean_t
+ops_stream_write_literal_data_first(const unsigned char *data, 
+				    unsigned int len, 
+				    const ops_literal_data_type_t type,
+				    ops_create_info_t *info)
     {
     // \todo add filename 
     // \todo add date
@@ -250,7 +253,7 @@ ops_boolean_t ops_stream_write_se_ip_first(const unsigned char *data,
     ops_write(data, sz_pd - sz_preamble - 1, cinfo);
     arg->hash.add(&arg->hash, data, sz_pd - sz_preamble - 1);
 
-    data += (sz_pd - sz_preamble -1);  
+    data += (sz_pd - sz_preamble - 1);
     sz_towrite -= sz_pd;
 
     ops_writer_pop(cinfo);
@@ -294,11 +297,12 @@ ops_boolean_t ops_stream_write_se_ip_last(const unsigned char *data,
     // write length of last se_ip chunk
     ops_write_length(sz_buf, cinfo);
 
-    // encode everting
+    // encode everthing
     ops_writer_push_encrypt_crypt(cinfo, arg->crypt);
 
     ops_write(data, len, cinfo);
-    ops_write(ops_memory_get_data(mem_mdc), ops_memory_get_length(mem_mdc), cinfo);
+    ops_write(ops_memory_get_data(mem_mdc), ops_memory_get_length(mem_mdc),
+	      cinfo);
 
     ops_writer_pop(cinfo);
 
@@ -316,7 +320,8 @@ static ops_boolean_t stream_encrypt_se_ip_writer(const unsigned char *src,
 
     ops_boolean_t rtn=ops_true;
 
-    if ( arg->cinfo_literal == NULL ) { // first literal data chunk is not yet written
+    if (arg->cinfo_literal == NULL)
+	{ // first literal data chunk is not yet written
         size_t datalength;
         
         ops_memory_add(arg->mem_data,src,length); 
@@ -324,11 +329,12 @@ static ops_boolean_t stream_encrypt_se_ip_writer(const unsigned char *src,
         
         // 4.2.2.4. Partial Body Lengths
         // The first partial length MUST be at least 512 octets long.
-        if ( datalength < 512 ) {
+        if (datalength < 512) {
             return ops_true; // will wait for more data or end of stream            
         }
 
-        ops_setup_memory_write(&arg->cinfo_literal,&arg->mem_literal,datalength+32);
+        ops_setup_memory_write(&arg->cinfo_literal, &arg->mem_literal,
+			       datalength+32);
         ops_stream_write_literal_data_first(ops_memory_get_data(arg->mem_data),
                                             datalength,
                                             OPS_LDT_BINARY,
@@ -337,12 +343,14 @@ static ops_boolean_t stream_encrypt_se_ip_writer(const unsigned char *src,
         ops_stream_write_se_ip_first(ops_memory_get_data(arg->mem_literal), 
                                      ops_memory_get_length(arg->mem_literal), 
                                      arg, arg->cinfo_se_ip);
-    } else {
+	}
+    else
+	{
         ops_stream_write_literal_data(src, length, arg->cinfo_literal);
         ops_stream_write_se_ip(ops_memory_get_data(arg->mem_literal), 
                                ops_memory_get_length(arg->mem_literal), 
                                arg, arg->cinfo_se_ip);
-    }
+	}
 
     // now write memory to next writer
     rtn=ops_stacked_write(ops_memory_get_data(arg->mem_se_ip),
@@ -355,13 +363,14 @@ static ops_boolean_t stream_encrypt_se_ip_writer(const unsigned char *src,
     return rtn;
     }
 
-static ops_boolean_t stream_encrypt_se_ip_finaliser(ops_error_t**      errors,
-                                                    ops_writer_info_t* winfo)
+static ops_boolean_t stream_encrypt_se_ip_finaliser(ops_error_t **errors,
+                                                    ops_writer_info_t *winfo)
     {
     stream_encrypt_se_ip_arg_t *arg=ops_writer_get_arg(winfo);
     // write last chunk of data
 
-    if ( arg->cinfo_literal == NULL ) { 
+    if (arg->cinfo_literal == NULL)
+	{ 
         // first literal data chunk was not written
         // so we know the total length of data, write a simple packet
 
@@ -379,13 +388,15 @@ static ops_boolean_t stream_encrypt_se_ip_finaliser(ops_error_t**      errors,
                                ops_memory_get_length(arg->mem_literal), 
                                arg->crypt, arg->cinfo_se_ip);
 
-    } else {
+	}
+    else
+	{
         // finish writing
         ops_stream_write_literal_data_last(NULL, 0, arg->cinfo_literal);
         ops_stream_write_se_ip_last(ops_memory_get_data(arg->mem_literal), 
                                     ops_memory_get_length(arg->mem_literal), 
                                     arg, arg->cinfo_se_ip);
-    }
+	}
 
     // now write memory to next writer
     return ops_stacked_write(ops_memory_get_data(arg->mem_se_ip),
@@ -393,7 +404,7 @@ static ops_boolean_t stream_encrypt_se_ip_finaliser(ops_error_t**      errors,
                              errors, winfo);
     }
 
-static void stream_encrypt_se_ip_destroyer (ops_writer_info_t *winfo)
+static void stream_encrypt_se_ip_destroyer(ops_writer_info_t *winfo)
      
     {
     stream_encrypt_se_ip_arg_t *arg=ops_writer_get_arg(winfo);
@@ -407,6 +418,5 @@ static void stream_encrypt_se_ip_destroyer (ops_writer_info_t *winfo)
     free(arg->crypt);
     free(arg);
     }
-
 
 // EOF
