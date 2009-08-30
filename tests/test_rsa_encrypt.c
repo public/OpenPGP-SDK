@@ -132,7 +132,6 @@ int init_suite_rsa_encrypt(void)
 
 int clean_suite_rsa_encrypt(void)
     {
-	
     ops_finish();
 
     reset_vars();
