@@ -61,16 +61,8 @@ ops_keydata_t *ops_keydata_new(void)
     { return ops_mallocz(sizeof(ops_keydata_t)); }
 
 
-/**
- \ingroup HighLevel_Keyring
-
- \brief Frees keydata and its memory
-
- \param keydata Key to be freed.
-
- \note This frees the keydata itself, as well as any other memory alloc-ed by it. 
-*/
-void ops_keydata_free(ops_keydata_t *keydata)
+// Frees the content of a keydata structure, but not the keydata itself.
+static void keydata_internal_free(ops_keydata_t *keydata)
     {
     unsigned n;
 
@@ -91,6 +83,21 @@ void ops_keydata_free(ops_keydata_t *keydata)
     else
 	ops_secret_key_free(&keydata->key.skey);
 
+    }
+
+/**
+ \ingroup HighLevel_Keyring
+
+ \brief Frees keydata and its memory
+
+ \param keydata Key to be freed.
+
+ \note This frees the keydata itself, as well as any other memory
+       alloc-ed by it.
+*/
+void ops_keydata_free(ops_keydata_t *keydata)
+    {
+    keydata_internal_free(keydata);
     free(keydata);
     }
 
@@ -694,10 +701,9 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, const ops_boolea
     ops_parse_info_t *pinfo=NULL;
     ops_boolean_t res = ops_true;
 
-    pinfo=ops_parse_info_new();
+    ops_setup_memory_read(&pinfo, mem, NULL, cb_keyring_read,
+			  OPS_ACCUMULATE_NO);
     ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
-
-    ops_setup_memory_read(&pinfo, mem, NULL, cb_keyring_read, OPS_ACCUMULATE_NO);
 
     if (armour)
         { ops_reader_push_dearmour(pinfo); }
@@ -715,7 +721,9 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, const ops_boolea
     if (armour)
         ops_reader_pop_dearmour(pinfo);
 
-    // don't call teardown_memory_read because memory was passed in
+    // don't call teardown_memory_read because memory was passed
+    // in. But we need to free the parse_info object allocated by
+    // ops_setup_memory_read().
     ops_parse_info_delete(pinfo);
 
     return res;
@@ -732,6 +740,10 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, const ops_boolea
  */
 void ops_keyring_free(ops_keyring_t *keyring)
     {
+    int i;
+    for (i = 0; i < keyring->nkeys; i++)
+        keydata_internal_free(&keyring->keys[i]);
+
     free(keyring->keys);
     keyring->keys=NULL;
     keyring->nkeys=0;

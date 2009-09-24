@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2005-2008 Nominet UK (www.nic.uk)
+ * Copyright (c) 2005-2009 Nominet UK (www.nic.uk)
  * All rights reserved.
- * Contributors: Ben Laurie, Rachel Willmer. The Contributors have asserted
- * their moral rights under the UK Copyright Design and Patents Act 1988 to
+ * Contributors: Ben Laurie, Rachel Willmer, Alasdair Mackintosh.
+ * The Contributors have asserted their moral rights under the
+ * UK Copyright Design and Patents Act 1988 to
  * be recorded as the authors of this copyright work.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -21,7 +22,7 @@
 
 /** \file
  */
-   
+
 #include <zlib.h>
 #include <bzlib.h>
 #include <assert.h>
@@ -33,8 +34,12 @@
 #include <openpgpsdk/errors.h>
 #include "parse_local.h"
 #include <openpgpsdk/final.h>
+#include <openpgpsdk/partial.h>
+
+static const int debug = 0;
 
 #define DECOMPRESS_BUFFER	1024
+#define COMPRESS_BUFFER	        32768
 
 typedef struct
     {
@@ -63,6 +68,8 @@ typedef struct
     z_stream stream;
     unsigned char *src;
     unsigned char *dst;
+    size_t bytes_in;
+    size_t bytes_out;
     } compress_arg_t;
 
 // \todo remove code duplication between this and bzip2_compressed_data_reader
@@ -412,6 +419,160 @@ ops_boolean_t ops_write_compressed(const unsigned char *data,
             && ops_write_length(1+compress->stream.total_out, cinfo)
             && ops_write_scalar(OPS_C_ZLIB,1,cinfo)
             && ops_write(compress->dst, compress->stream.total_out,cinfo));
+    }
+
+
+// Writes out the header for the compressed packet. Invoked by the
+// partial stream writer. Note that writing the packet tag and the
+// packet length is handled by the partial stream writer.
+static ops_boolean_t write_compressed_header(ops_create_info_t *info,
+                                             void *header_data)
+    {
+    OPS_USED(header_data);
+    // Write the compression type. Currently we just use ZLIB
+    ops_write_scalar(OPS_C_ZLIB, 1, info);
+    return ops_true;
+    }
+
+static void zlib_error(ops_error_t **errors, z_stream *stream, int error)
+    {
+    OPS_ERROR_2(errors,OPS_E_FAIL,
+		"Error from compression stream %d (%s)", error,
+		stream->msg == NULL ? "Unknown" :  stream->msg);
+    }
+
+static ops_boolean_t stream_compress_writer(const unsigned char *src,
+                                            unsigned length,
+                                            ops_error_t **errors,
+                                            ops_writer_info_t *winfo)
+    {
+    // ZLib doesn't like being asked to compress nothing, so return if
+    // we are given no input.
+    if (length == 0)
+	return ops_true;
+    if (debug)
+	fprintf(stderr, "Compressing %u bytes\n", length);
+    compress_arg_t* compress = ops_writer_get_arg(winfo);
+    compress->bytes_in += length;
+    compress->stream.next_in = (void*) src;
+    compress->stream.avail_in = length;
+    ops_boolean_t result = ops_true;
+    do
+	{
+	compress->stream.next_out = compress->dst;
+	compress->stream.avail_out = COMPRESS_BUFFER;
+	int retcode = deflate(&compress->stream, Z_NO_FLUSH);
+	if (retcode != Z_OK)
+	    {
+	    zlib_error(errors, &compress->stream, retcode);
+	    deflateEnd(&compress->stream);
+	    return ops_false;
+	    }
+	unsigned bytes_to_write = COMPRESS_BUFFER - compress->stream.avail_out;
+	if (debug)
+	    fprintf(stderr, "bytes_to_write = %u\n", bytes_to_write);
+	compress->bytes_out += bytes_to_write;
+	result = ops_stacked_write(compress->dst, bytes_to_write, errors,
+				   winfo);
+	}
+    while (result && compress->stream.avail_out == 0);
+
+    return result;
+    }
+
+static ops_boolean_t stream_compress_finaliser(ops_error_t **errors,
+                                               ops_writer_info_t *winfo)
+    {
+    compress_arg_t* compress = ops_writer_get_arg(winfo);
+    compress->stream.next_in = NULL;
+    compress->stream.avail_in = 0;
+    int retcode = Z_OK;
+    int output_size = COMPRESS_BUFFER;
+    ops_boolean_t result = ops_true;
+    do
+	{
+	compress->stream.next_out = compress->dst;
+	compress->stream.avail_out = output_size;
+	retcode = deflate(&compress->stream, Z_FINISH);
+	if (retcode != Z_STREAM_END && retcode != Z_OK)
+	    {
+	    zlib_error(errors, &compress->stream, retcode);
+	    deflateEnd(&compress->stream);
+	    return ops_false;
+	    }
+	int bytes_to_write = output_size - compress->stream.avail_out;
+	if (debug)
+	    fprintf(stderr, "At end, bytes_to_write = %u\n", bytes_to_write);
+	compress->bytes_out += bytes_to_write;
+	result = ops_stacked_write(compress->dst, bytes_to_write, errors,
+				   winfo);
+
+	// If deflate returns Z_OK after we have asked to flush, it means
+	// that there was not enough space in the output buffer. Increase
+	// the buffer size and try again.
+	if (retcode != Z_STREAM_END)
+	    {
+	    if (debug)
+		fprintf(stderr, "Reallocating %u\n", output_size * 2);
+	    output_size *= 2;
+	    compress->dst = realloc(compress->dst, output_size);
+	    }
+	}
+    while (result && retcode != Z_STREAM_END);
+  
+    int error = deflateEnd(&compress->stream);
+    if (error != Z_OK)
+	{
+	zlib_error(errors, &compress->stream, error);
+	return ops_false;
+	}
+    return result;
+    }
+
+static void stream_compress_destroyer(ops_writer_info_t *winfo)
+    {
+    compress_arg_t* compress = ops_writer_get_arg(winfo);
+    if (debug)
+	fprintf(stderr, "Compressed %zu to %zu\n", compress->bytes_in,
+		compress->bytes_out);
+    free(compress->dst);
+    free(compress);
+    }
+
+/**
+\ingroup Core_WritePackets
+\brief Pushes a compressed writer onto the stack. Data written
+       will be encoded as a compressed packet.
+\param cinfo Write settings
+*/
+void ops_writer_push_compressed(ops_create_info_t *cinfo)
+    {
+    // This is a streaming writer, so we don't know the length in
+    // advance. Use a partial writer to handle the partial body
+    // packet lengths.
+    ops_writer_push_partial(COMPRESS_BUFFER,
+			    cinfo, OPS_PTAG_CT_COMPRESSED,
+			    write_compressed_header, NULL);
+
+    // Create arg to be used with this writer
+    // Remember to free this in the destroyer
+    compress_arg_t *compress = ops_mallocz(sizeof *compress);
+
+    compress->dst = malloc(COMPRESS_BUFFER);
+    const int level=Z_DEFAULT_COMPRESSION; // \todo allow varying levels
+    compress->stream.zalloc=Z_NULL;
+    compress->stream.zfree=Z_NULL;
+    compress->stream.opaque=NULL;
+    compress->stream.avail_out = COMPRESS_BUFFER;
+    // all other fields set to zero by use of ops_mallocz
+
+    if (deflateInit(&compress->stream, level) != Z_OK)
+	// can't initialise. Is there a better way to handle this?
+	assert(0);
+
+    // And push writer on stack
+    ops_writer_push(cinfo, stream_compress_writer, stream_compress_finaliser,
+		    stream_compress_destroyer, compress);
     }
 
 // EOF

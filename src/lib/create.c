@@ -762,6 +762,47 @@ ops_boolean_t ops_write_struct_secret_key(const ops_secret_key_t *key,
     }
 
 /**
+ * \ingroup InternalAPI
+ *
+ * \brief Initialise a temporary info structure that can be used for
+ * writing to a writer's parent.
+ *
+ * This is used by writers who want to use the various ops_write functions
+ * in order to write to the parent writer.
+ * Example code:
+ * \code
+ *   ops_boolean_t writer(const unsigned char *src,
+ *                        unsigned length,
+ *                        ops_error_t **errors,
+ *                        ops_writer_info_t *winfo) {
+ *     ops_create_info_t parent;
+ *     ops_prepare_parent_info(&parent, winfo, errors);
+ *
+ *     // The ptag will be written to the parent writer
+ *     ops_write_ptag(OPS_PTAG_CT_LITERAL_DATA, &parent);
+ *
+ *     // The data is written to the parent. This line is
+       // equivalent to:
+ *     //   ops_stacked_write(src, length, errors, winfo);
+ *     ops_boolean_t result = ops_write(src, length, info);
+ *     ops_move_errors(&parent_info, errors);
+ *     return result;
+ * \endcode
+ *
+ * \note It is the responsiblity of the caller to assign space for the parent
+ * structure, typically on the stack. IOn order to report errors correctly,
+ * use ops_move_errors() after the write operation.
+ *
+ * \see ops_move_errors
+ */
+void ops_prepare_parent_info(ops_create_info_t *parent_info,
+                             ops_writer_info_t *winfo)
+    {
+    parent_info->winfo = *winfo->next;
+    parent_info->errors = NULL;
+    }
+
+/**
  * \ingroup Core_Create
  *
  * \brief Create a new ops_create_info_t structure.
@@ -904,7 +945,8 @@ ops_boolean_t encode_m_buf(const unsigned char *M, size_t mLen,
 \brief Creates an ops_pk_session_key_t struct from keydata
 \param key Keydata to use
 \return ops_pk_session_key_t struct
-\note It is the caller's responsiblity to free the returned pointer
+\note It is the caller's responsiblity to free the returned pointer. Before freeing,
+      the key must be cleared by calling ops_pk_session_key_free()
 \note Currently hard-coded to use CAST5
 \note Currently hard-coded to use RSA
 */

@@ -22,6 +22,7 @@
 #include "CUnit/Basic.h"
  
 #include <openpgpsdk/types.h>
+#include <openpgpsdk/create.h>
 #include <openpgpsdk/hash.h>
 #include "openpgpsdk/packet.h"
 #include "openpgpsdk/packet-parse.h"
@@ -30,6 +31,7 @@
 #include "openpgpsdk/util.h"
 #include "openpgpsdk/crypto.h"
 #include "openpgpsdk/compress.h"
+#include "openpgpsdk/literal.h"
 #include "openpgpsdk/readerwriter.h"
 #include "openpgpsdk/random.h"
 #include "../src/lib/parse_local.h"
@@ -39,6 +41,8 @@
 #include <openssl/sha.h>
 
 #include "tests.h"
+
+static const char error_message[] = "test error";
 
 static unsigned char* mdc_data=NULL;
 static size_t sz_mdc_data=0;
@@ -152,8 +156,7 @@ callback_se_ip_data(const ops_parser_content_t *content_,ops_parse_cb_info_t *cb
     return OPS_RELEASE_MEMORY;
     }
  
-static void test_literal_data_packet_text()
-    {
+static void test_literal_data_packet_text() {
     char* testtext=NULL;
     ops_create_info_t *cinfo=NULL;
     ops_parse_info_t *pinfo=NULL;
@@ -168,7 +171,7 @@ static void test_literal_data_packet_text()
 
     // initialise needed structures for writing into memory
     ops_setup_memory_write(&cinfo,&mem,strlen(testtext));
-
+    
     // create literal data packet
     ops_write_literal_data_from_buf((unsigned char *)testtext,strlen(testtext),OPS_LDT_TEXT,cinfo);
 
@@ -199,7 +202,317 @@ static void test_literal_data_packet_text()
     ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
     ops_teardown_memory_read(pinfo,mem);
     free (testtext);
+}
+
+static void test_small_streamed_literal_data_packet_text()
+    {
+    char* testtext=NULL;
+    ops_create_info_t *cinfo=NULL;
+    ops_parse_info_t *pinfo=NULL;
+    ops_memory_t *mem=NULL;
+    ops_memory_t *mem_out=NULL;
+
+    int rtn=0;
+
+    // create test string
+    int repeats=5;
+    testtext=create_testtext("literal data packet text",repeats);
+
+    // We want a packet too short to be encoded as a partial length.
+    // The first partial packet must be at least 512 bytes, so our
+    // input packet must be shorter than this.
+    CU_ASSERT(strlen(testtext) < 512);
+    
+    // initialise needed structures for writing into memory
+    ops_setup_memory_write(&cinfo,&mem,strlen(testtext));
+
+    // create literal data packet
+    ops_writer_push_literal(cinfo);
+    CU_ASSERT(ops_write(testtext, strlen(testtext), cinfo));
+    CU_ASSERT(ops_writer_close(cinfo));
+    
+    /* mem now contains the literal data packet with the original text in it. */
+
+    // setup for reading from this mem
+    ops_setup_memory_read(&pinfo,mem,NULL,callback_literal_data, ops_false);
+
+    // setup for writing parsed data to mem_out
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
+
+    // other setup
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+
+    // do it
+    rtn=ops_parse_and_print_errors(pinfo);
+    CU_ASSERT(rtn==1);
+
+    /*
+     * test it's the same
+     */
+    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_out));
+    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_out),testtext,strlen(testtext))==0);
+
+    // cleanup
+    local_cleanup();
+    ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
+    ops_teardown_memory_read(pinfo,mem);
+    free (testtext);
     }
+
+static void check_error(ops_create_info_t *cinfo,
+                        int depth,
+                        ops_errcode_t code,
+                        const char* msg)
+    {
+    CU_ASSERT(cinfo->errors != NULL);
+    if (cinfo->errors != NULL)
+        {
+        int count = 0;
+        ops_error_t *error = cinfo->errors;
+        while(count < depth)
+            {
+            if (error->next == NULL)
+                break;
+            count++;
+            error = error->next;
+            }
+        CU_ASSERT(count == depth);
+        if (count == depth)
+            {
+            CU_ASSERT(error->next == NULL);
+            CU_ASSERT(error->errcode == code);
+            CU_ASSERT(strcmp(error->comment, msg) == 0);
+            }
+        }
+    }
+
+static void test_small_streamed_literal_data_packet_error()
+    {
+      char* testtext = create_testtext("literal packet error", 10);
+      // We want a packet too short to be encoded as a partial length.
+      // The first partial packet must be at least 512 bytes, so our
+      // input packet must be shorter than this.
+      CU_ASSERT(strlen(testtext) < 512);
+      ops_create_info_t *cinfo = ops_create_info_new();
+
+      // Set up error writer. This will return a failure on the first
+      // write. Create literal data packet using the error writer.
+      ops_writer_set_err(cinfo, OPS_E_W_WRITE_FAILED, error_message);
+      ops_writer_push_literal_with_opts(cinfo, 512);
+
+      // Next check relies on the known behaviour of the partial
+      // writer. When writing the first packet, if it's less than the
+      // partial packet length we just biffer it internally, and
+      // return. Hence the call to ops_write will work, but the call
+      // top ops_close() will attempt to flush the internal buffer,
+      // and that will fail.
+      CU_ASSERT(ops_write(testtext, strlen(testtext), cinfo));
+      CU_ASSERT(!ops_writer_close(cinfo));
+      check_error(cinfo, 0, OPS_E_W_WRITE_FAILED, error_message);
+      //ops_create_info_delete(cinfo);
+      free (testtext);
+    }
+
+static void test_large_streamed_literal_data_packet_error()
+    {
+      char* testtext = create_testtext("literal packet error", 100);
+      CU_ASSERT(strlen(testtext) > 1024);
+      ops_create_info_t *cinfo = ops_create_info_new();
+      // Set up error writer. This will return a failure on the first
+      // write. Create a literal data packet
+      error_arg_t *arg = ops_writer_set_err(cinfo,
+                                            OPS_E_W_WRITE_FAILED,
+                                            error_message);
+      ops_writer_push_literal_with_opts(cinfo, 1024);
+
+      CU_ASSERT(!ops_write(testtext, strlen(testtext), cinfo));
+      check_error(cinfo, 0, OPS_E_W_WRITE_FAILED, error_message);
+      // Rest the error arg so that we get a different error when we
+      // try and write the final packet during close.
+      arg->times_called = 0;
+      arg->code = OPS_E_W_WRITE_TOO_SHORT;
+      CU_ASSERT(!ops_writer_close(cinfo));
+      check_error(cinfo, 1, OPS_E_W_WRITE_TOO_SHORT, error_message);
+      ops_create_info_delete(cinfo);
+      free (testtext);
+    }
+
+
+/*
+ * Reads a partial length encoding from a buffer.
+ */
+static ops_boolean_t get_partial_length(const unsigned char *data,
+                                        unsigned *length,
+                                        unsigned *enc_bytes ) {
+  if(data[0] < 192)
+  {
+    // 1. One-octet packet
+    *length=data[0];
+    *enc_bytes = 1;
+    return ops_false;
+  }
+  else if (data[0] >= 192 && data[0] <= 223)
+  {
+    // 2. Two-octet packet
+    unsigned first = (data[0]-192) << 8;
+    *length = first + data[1] + 192;
+    *enc_bytes = 2;
+    return ops_false;
+  }
+  else if (data[0]==255)
+  {
+    *length = (data[1] << 24) | (data[2] << 16) | (data[3] << 8)  | data[4];
+    *enc_bytes = 5;
+    return ops_false;
+  }
+  else if (data[0]>=224 && data[0]<255)
+  {
+    // 4. Partial Body Length
+    *length = 1 << (data[0] & 0x1F);
+    *enc_bytes = 1;
+    return ops_true;
+  } else {
+    CU_ASSERT(0);
+    *length = 0;
+    *enc_bytes = 0;
+    return ops_false;
+  }
+}
+
+
+/*
+ * Copies a single packet with partial length encoding into a new
+ * memory buffer. Starts copying from 'offset' and returns the new
+ * offset.
+ */
+static size_t copy_one_packet(ops_memory_t *input, size_t offset, ops_create_info_t *output) {
+  size_t mem_length = ops_memory_get_length(input);  
+  CU_ASSERT(mem_length >= offset);
+  size_t remaining = mem_length - offset;
+  CU_ASSERT(remaining > 3);
+  ops_create_info_t *tmp_info;
+  ops_memory_t *tmp;
+  ops_setup_memory_write(&tmp_info, &tmp, remaining);
+  ops_boolean_t partial;
+  size_t new_offset = offset + 1;
+  const unsigned char *data = ops_memory_get_data(input);
+  do {
+    unsigned length;
+    unsigned enc_bytes;
+    partial = get_partial_length(data + new_offset, &length, &enc_bytes);
+    ops_write(data + new_offset + enc_bytes, length, tmp_info);
+    new_offset += enc_bytes + length;
+    CU_ASSERT(mem_length >= new_offset);
+  } while(partial);
+  ops_writer_close(tmp_info);
+
+  // Write the ptag from the input packet
+  ops_write(ops_memory_get_data(input) + offset, 1, output);
+  // Write the (non-partial) length of the packet
+  ops_write_length(ops_memory_get_length(tmp), output);
+  ops_write(ops_memory_get_data(tmp), ops_memory_get_length(tmp), output);
+  return new_offset;
+}
+
+/*
+ * Copies one or more packets with partial length encoding into a new
+ * memory buffer, re-encoding as a fixed-length packets. Used for
+ * testing output that produces partial length encoded packets. We can
+ * get rid of this when the main toolkit supports parsing
+ * partial-length encoded packets. Note that this function does not
+ * perform rigourous validation of the input.
+ */
+extern ops_memory_t* copy_partial_packet(ops_memory_t *input) {
+  size_t mem_length = ops_memory_get_length(input);
+  CU_ASSERT(mem_length > 3);
+
+  ops_create_info_t *result_info;
+  ops_memory_t *result;
+  ops_setup_memory_write(&result_info, &result, mem_length);
+  size_t offset = 0;
+  do {
+    offset = copy_one_packet(input, offset, result_info);
+  } while(offset < mem_length);
+  ops_create_info_delete(result_info);
+  return result;
+}
+
+/*
+ * Writes 'num_writes' packets each of 'write_size' bytes to a literal
+ * output stream with a given packet_size.
+*/
+static void streamed_literal_data_packet_text(unsigned write_size,
+                                              unsigned num_writes,
+                                              unsigned packet_size)
+    {
+    fprintf(stderr, "Writing %u chunks of %u into buffer %u\n",
+            num_writes, write_size, packet_size);
+    char* testtext=NULL;
+    ops_create_info_t *cinfo=NULL;
+    ops_parse_info_t *pinfo=NULL;
+    ops_memory_t *tmp=NULL;
+    ops_memory_t *mem=NULL;
+    ops_memory_t *mem_out=NULL;
+
+    int rtn=0;
+
+    // create test string
+    const char *base_text = "literal data packet text";
+    int repeats = ((write_size * num_writes) / strlen(base_text)) + 1;
+    testtext=create_testtext("literal data packet text",repeats);
+    CU_ASSERT(strlen(testtext) >= write_size * num_writes);
+    testtext[write_size * num_writes] = '\0';    
+    CU_ASSERT(strlen(testtext) > 512);
+    // initialise needed structures for writing into memory
+    ops_setup_memory_write(&cinfo,&tmp,strlen(testtext));
+
+    // create literal data packet
+    ops_writer_push_literal_with_opts(cinfo, packet_size);
+    unsigned i;
+    for (i = 0; i < num_writes; i++) {
+      CU_ASSERT(ops_write(testtext + i * write_size, write_size, cinfo));
+    }
+    CU_ASSERT(ops_writer_close(cinfo));
+    /* tmp now contains the literal data packet with the original text in it.
+       Convert this to non-partial format.
+     */
+    mem = copy_partial_packet(tmp);
+    ops_teardown_memory_write(cinfo, tmp);
+    
+    // setup for reading from this mem
+    ops_setup_memory_read(&pinfo,mem,NULL,callback_literal_data, ops_false);
+
+    // setup for writing parsed data to mem_out
+    ops_setup_memory_write(&pinfo->cbinfo.cinfo, &mem_out, 128);
+
+    // other setup
+    ops_parse_options(pinfo,OPS_PTAG_SS_ALL,OPS_PARSE_PARSED);
+
+    // do it
+    rtn=ops_parse_and_print_errors(pinfo);
+    CU_ASSERT(rtn==1);
+
+    /*
+     * test it's the same
+     */
+    CU_ASSERT(strlen(testtext)==ops_memory_get_length(mem_out));
+    CU_ASSERT(strncmp((char *)ops_memory_get_data(mem_out),testtext,strlen(testtext))==0);
+
+    // cleanup
+    local_cleanup();
+    ops_teardown_memory_write(pinfo->cbinfo.cinfo,mem_out);
+    ops_teardown_memory_read(pinfo,mem);
+    free (testtext);
+    }
+
+static void test_large_streamed_literal_data_packet_text() {
+  streamed_literal_data_packet_text(1024, 1, 1024);
+  streamed_literal_data_packet_text(1023, 1, 1024);
+  streamed_literal_data_packet_text(1025, 1, 1024);
+  streamed_literal_data_packet_text(5120, 1, 1024);
+  streamed_literal_data_packet_text(100, 12, 1024);
+  streamed_literal_data_packet_text(2048, 2, 1024);
+}
 
 static void test_literal_data_packet_data()
     {
@@ -249,7 +562,7 @@ static void test_literal_data_packet_data()
     free (in);
     }
 
-static void test_compressed_literal_data_packet_text()
+static void compressed_literal_data_packet_text(ops_boolean_t streaming)
     {
     int debug=0;
     char* testtext=NULL;
@@ -294,8 +607,20 @@ static void test_compressed_literal_data_packet_text()
         }
 
     // create compressed packet
-    ops_write_compressed(ops_memory_get_data(mem_uncompress), ops_memory_get_length(mem_uncompress), cinfo_compress);
-
+    if (!streaming)
+        {
+        ops_write_compressed(ops_memory_get_data(mem_uncompress), ops_memory_get_length(mem_uncompress), cinfo_compress);
+        ops_writer_close(cinfo_compress);
+        }
+    else
+        {
+          ops_writer_push_compressed(cinfo_compress);
+          ops_write(ops_memory_get_data(mem_uncompress), ops_memory_get_length(mem_uncompress), cinfo_compress);
+          ops_writer_close(cinfo_compress);
+          ops_memory_t *tmp = mem_compress;
+          mem_compress = copy_partial_packet(tmp);
+          ops_memory_free(tmp);
+        }
     // mem_compress should now contain a COMPRESSION packet containing the LDT
 
     if (debug)
@@ -338,6 +663,58 @@ static void test_compressed_literal_data_packet_text()
     ops_teardown_memory_read(pinfo,mem_compress);
     //    ops_teardown_memory_read(pinfo,mem);
     free (testtext);
+    }
+
+static void test_compressed_literal_data_packet_text() {
+  compressed_literal_data_packet_text(ops_false);
+}
+
+static void test_streaming_compressed_literal_data_packet_text() {
+  compressed_literal_data_packet_text(ops_true);
+}
+
+static void test_compressed_small_data_error()
+    {
+    // The compress writer buffers up data inside. By chosing
+    // a small input, we expect the initial write to succeed,
+    // as the data will be buffered.
+    char* testtext = create_testtext("compressed packet error", 1);
+    ops_create_info_t *cinfo = ops_create_info_new();
+    // Set up error writer. This will return a failure on the first
+    // write. Create a literal data packet
+    ops_writer_set_err(cinfo, OPS_E_W_WRITE_FAILED, error_message);
+    ops_writer_push_compressed(cinfo);
+    // We except the write to succeed, as the data will be buffered.
+    CU_ASSERT(ops_write(testtext, strlen(testtext), cinfo));
+    CU_ASSERT(!ops_writer_close(cinfo));
+    check_error(cinfo, 0, OPS_E_W_WRITE_FAILED, error_message);
+    ops_create_info_delete(cinfo);
+    free(testtext);
+    }
+
+static void test_compressed_large_data_error()
+    {
+    // The compress writer can buffer up a fairly big chunk of data
+    // inside before doing a write. Just choose a big chunk here, so that
+    // we get a failure on the first write operation.
+    char* testtext = create_testtext("compressed packet error", 100000);
+    ops_create_info_t *cinfo = ops_create_info_new();
+    // Set up error writer. This will return a failure on the first
+    // write. Create a literal data packet
+    error_arg_t *arg = ops_writer_set_err(cinfo,
+                                          OPS_E_W_WRITE_FAILED,
+                                          error_message);
+    ops_writer_push_compressed(cinfo);
+    CU_ASSERT(!ops_write(testtext, strlen(testtext), cinfo));
+    check_error(cinfo, 0, OPS_E_W_WRITE_FAILED, error_message);
+    // Rest the error arg so that we get a different error when we
+    // try and write the final packet during close.
+    arg->times_called = 0;
+    arg->code = OPS_E_W_WRITE_TOO_SHORT;
+    CU_ASSERT(!ops_writer_close(cinfo));
+    check_error(cinfo, 1, OPS_E_W_WRITE_TOO_SHORT, error_message);
+    ops_create_info_delete(cinfo);
+    free(testtext);
     }
 
 static void test_ops_mdc()
@@ -504,11 +881,32 @@ CU_pSuite suite_packet_types()
     
     if (NULL == CU_add_test(suite, "Tag 11: Literal Data packet in Text mode", test_literal_data_packet_text))
 	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Tag 11: Small streamed Literal Data packet in Text mode", test_small_streamed_literal_data_packet_text))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Tag 11: Small streamed Literal Data packet with error", test_small_streamed_literal_data_packet_error))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Tag 11: Large streamed Literal Data packet in Text mode", test_large_streamed_literal_data_packet_text))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Tag 11: Large streamed Literal Data packet with error", test_large_streamed_literal_data_packet_error))
+	    return NULL;
     
     if (NULL == CU_add_test(suite, "Tag 11: Literal Data packet in Data mode", test_literal_data_packet_data))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Tag 8 and 11: Compressed Literal Data packet in Text mode", test_compressed_literal_data_packet_text))
+	    return NULL;
+
+    if (NULL == CU_add_test(suite, "Tag 8 and 11: Streaming compressed Literal Data packet in Text mode", test_streaming_compressed_literal_data_packet_text))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Tag 8: Streaming compressed small packet with error", test_compressed_small_data_error))
+	    return NULL;
+    
+    if (NULL == CU_add_test(suite, "Tag 8: Streaming compressed large packet with error", test_compressed_large_data_error))
 	    return NULL;
     
     if (NULL == CU_add_test(suite, "Tag 19: Modification Detection Code packet", test_ops_mdc))

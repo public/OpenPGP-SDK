@@ -19,7 +19,8 @@ LIBOBJS = packet-parse.o packet-print.o packet-show.o \
         writer_fd.o writer_memory.o \
         writer.o writer_skey_checksum.o  writer_armour.o \
         writer_encrypt_se_ip.o writer_encrypt.o \
-        writer_stream_encrypt_se_ip.o
+        writer_stream_encrypt_se_ip.o writer_literal.o \
+        writer_partial.o
 
 headers:
 	cd ../../include/openpgpsdk && $(MAKE) headers

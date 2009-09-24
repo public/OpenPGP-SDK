@@ -112,7 +112,7 @@ static void test_rsa_signature_clearsign_file(const char *filename,
     overwrite=ops_true;
     ops_sign_file_as_cleartext(myfile, NULL, skey, overwrite);
 
-    check_sig(signed_file);
+    check_sig(signed_file, ops_true);
     }
 
 static void test_rsa_signature_clearsign_buf(const char *filename,
@@ -142,7 +142,7 @@ static void test_rsa_signature_clearsign_buf(const char *filename,
     ops_write_file_from_buf(signed_file, ops_memory_get_data(output),
 			    ops_memory_get_length(output), overwrite);
 
-    check_sig(signed_file);
+    check_sig(signed_file, ops_true);
     }
 
 static void test_rsa_signature_sign(const int use_armour, const char *filename,
@@ -157,7 +157,43 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename,
 
     ops_sign_file(myfile, signed_file, skey, use_armour, overwrite);
 
-    check_sig(signed_file);
+    check_sig(signed_file, use_armour);
+    }
+
+static void test_rsa_signature_sign_stream(const int use_armour, const char *filename,
+                                           const ops_secret_key_t *skey)
+    {
+    char myfile[MAXBUF];
+    char signed_file[MAXBUF];
+    char buffer[MAXBUF];
+    char *suffix= use_armour ? "streamed.asc" : "streamed.gpg";
+    ops_boolean_t overwrite=ops_true;
+
+    set_up_file_names(myfile, signed_file, filename, suffix);
+
+    ops_create_info_t *info;
+    ops_memory_t *tmp;
+    ops_setup_memory_write(&info, &tmp, MAXBUF);
+    ops_writer_push_signed(info, OPS_SIG_BINARY, skey);
+
+    int input_fd = open(myfile, O_RDONLY | O_BINARY);
+    CU_ASSERT(input_fd >= 0);
+    for (;;)
+        {
+        ssize_t n = read(input_fd, buffer, MAXBUF);
+        CU_ASSERT(n >= 0);
+        if (n == 0)
+          break;
+        ops_write(buffer, n, info);
+        }
+    close(input_fd);
+    ops_writer_close(info);
+    ops_memory_t *signed_memory = copy_partial_packet(tmp);
+    ops_write_file_from_buf(signed_file, ops_memory_get_data(signed_memory),
+			    ops_memory_get_length(signed_memory), overwrite);
+    ops_teardown_memory_write(info, tmp);
+    ops_memory_free(signed_memory);
+    check_sig(signed_file, use_armour);
     }
 
 static void test_rsa_signature_sign_memory(const int use_armour,
@@ -197,6 +233,10 @@ static void test_rsa_signature_large_noarmour_nopassphrase(void)
     test_rsa_signature_sign(OPS_UNARMOURED,
 			    filename_rsa_large_noarmour_nopassphrase,
 			    alpha_skey);
+
+    test_rsa_signature_sign_stream(OPS_UNARMOURED,
+                                   filename_rsa_large_noarmour_nopassphrase,
+                                   alpha_skey);
     }
 
 static void test_rsa_signature_large_armour_nopassphrase(void)
@@ -204,6 +244,10 @@ static void test_rsa_signature_large_armour_nopassphrase(void)
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(OPS_ARMOURED,
 			    filename_rsa_large_armour_nopassphrase, alpha_skey);
+
+    test_rsa_signature_sign_stream(OPS_ARMOURED,
+                                   filename_rsa_large_armour_nopassphrase,
+                                   alpha_skey);
     }
 
 static void test_rsa_signature_noarmour_nopassphrase(void)
@@ -217,16 +261,18 @@ static void test_rsa_signature_noarmour_nopassphrase(void)
     test_rsa_signature_sign_memory(OPS_UNARMOURED, testdata, MAXBUF,
 				   alpha_skey);
     }
-
 static void test_rsa_signature_noarmour_passphrase(void)
     {
     unsigned char testdata[MAXBUF];
     assert(pub_keyring.nkeys);
-    test_rsa_signature_sign(OPS_ARMOURED, filename_rsa_noarmour_passphrase,
+    test_rsa_signature_sign(OPS_UNARMOURED, filename_rsa_noarmour_passphrase,
 			    bravo_skey);
 
+    test_rsa_signature_sign_stream(OPS_UNARMOURED, filename_rsa_noarmour_passphrase,
+                                   bravo_skey);
+
     create_testdata("test_rsa_signature_noarmour_passphrase", testdata, MAXBUF);
-    test_rsa_signature_sign_memory(OPS_ARMOURED, testdata, MAXBUF, bravo_skey);
+    test_rsa_signature_sign_memory(OPS_UNARMOURED, testdata, MAXBUF, bravo_skey);
     }
 
 static void test_rsa_signature_armour_nopassphrase(void)
@@ -235,6 +281,8 @@ static void test_rsa_signature_armour_nopassphrase(void)
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(OPS_ARMOURED, filename_rsa_armour_nopassphrase,
 			    alpha_skey);
+    test_rsa_signature_sign_stream(OPS_ARMOURED, filename_rsa_armour_nopassphrase,
+                                   alpha_skey);
 
     create_testdata("test_rsa_signature_armour_nopassphrase", testdata, MAXBUF);
     test_rsa_signature_sign_memory(OPS_ARMOURED, testdata, MAXBUF, alpha_skey);
@@ -247,6 +295,8 @@ static void test_rsa_signature_armour_passphrase(void)
     assert(pub_keyring.nkeys);
     test_rsa_signature_sign(OPS_ARMOURED, filename_rsa_armour_passphrase,
 			    bravo_skey);
+    test_rsa_signature_sign_stream(OPS_ARMOURED, filename_rsa_armour_passphrase,
+                                   bravo_skey);
 
     create_testdata("test_rsa_signature_armour_passphrase", testdata, MAXBUF);
     test_rsa_signature_sign_memory(OPS_ARMOURED, testdata, MAXBUF, bravo_skey);
@@ -279,7 +329,6 @@ static void test_rsa_signature_clearsign_buf_passphrase(void)
     test_rsa_signature_clearsign_buf(filename_rsa_clearsign_buf_passphrase,
 				     bravo_skey);
     }
-
 /*
 static void test_todo(void)
     {
@@ -302,11 +351,10 @@ static int add_tests(CU_pSuite suite)
     if (NULL == CU_add_test(suite, "Unarmoured, passphrase",
 			    test_rsa_signature_noarmour_passphrase))
 	    return 0;
-    
     if (NULL == CU_add_test(suite, "Clearsigned file, no passphrase",
 			    test_rsa_signature_clearsign_file_nopassphrase))
 	    return 0;
-    
+
     if (NULL == CU_add_test(suite, "Clearsigned file, passphrase",
 			    test_rsa_signature_clearsign_file_passphrase))
 	    return 0;
@@ -334,7 +382,6 @@ static int add_tests(CU_pSuite suite)
     if (NULL == CU_add_test(suite, "Large, armour, no passphrase",
 			    test_rsa_signature_large_armour_nopassphrase))
 	    return 0;
-    
     /*
     if (NULL == CU_add_test(suite, "Tests to be implemented", test_todo))
 	    return 0;

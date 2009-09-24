@@ -1,6 +1,10 @@
 Changes since V0.9
 ==================
 
+  *) Lovely rejigging and extra implementation to handle partial
+     length encoding and signatures in a much cleaner way.
+     [Alasdair Mackintosh <alasdair@google.com>]
+
   *) Ask gpg to use fast randomness during testing.
      [Daniel Kahn Gillmor <dkg@fifthhorseman.net> and Ben Laurie]
 

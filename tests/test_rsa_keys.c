@@ -146,7 +146,8 @@ static void verify_keypair(ops_boolean_t armoured)
     CU_ASSERT(ops_validate_all_signatures(result, &pub_keyring, NULL));
     CU_ASSERT(result->valid_count == 1);
 
-    CU_ASSERT(memcmp(result->valid_sigs[0].signer_id, keyid, OPS_KEY_ID_SIZE)
+    if (result->valid_count == 1)
+      CU_ASSERT(memcmp(result->valid_sigs[0].signer_id, keyid, OPS_KEY_ID_SIZE)
 	      == 0);
     CU_ASSERT(result->invalid_count == 0);
     CU_ASSERT(result->unknown_signer_count == 0);

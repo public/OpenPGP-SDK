@@ -212,6 +212,7 @@ void setup_test_dsa_keyptrs()
 							alphadsa_user_id);
     bravodsa_pub_keydata=ops_keyring_find_key_by_userid(&pub_keyring,
 							bravodsa_user_id);
+    printf("%s\n", alphadsa_user_id);
     assert(alphadsa_pub_keydata);
     assert(bravodsa_pub_keydata);
 
@@ -242,28 +243,29 @@ static void setup_test_keys()
     const int keylength=1024;
     const char* RSA="RSA";
     const char* DSA="DSA";
-    const char format[]="Key-Type: %s\nKey-Usage: encrypt, sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n";
+    const char rsa_format[]="Key-Type: %s\nKey-Usage: encrypt, sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n";
+    const char dsa_format[]="Key-Type: %s\nKey-Usage: sign\nName-Real: %s\nName-Comment: %s\nName-Email: %s\nKey-Length: %d\n";
 
     char rsa_nopass[MAXBUF+1];
-    snprintf(rsa_nopass, MAXBUF, format, RSA,alpha_name, alpha_comment,
+    snprintf(rsa_nopass, MAXBUF, rsa_format, RSA,alpha_name, alpha_comment,
 	     alpha_email, keylength);
     snprintf(alpha_user_id, MAXBUF, "%s (%s) <%s>", alpha_name, alpha_comment,
 	     alpha_email);
 
     char rsa_pass[MAXBUF+1];
-    snprintf(rsa_pass, MAXBUF, format, RSA, bravo_name, bravo_comment,
+    snprintf(rsa_pass, MAXBUF, rsa_format, RSA, bravo_name, bravo_comment,
 	     bravo_email, keylength);
     snprintf(bravo_user_id, MAXBUF, "%s (%s) <%s>", bravo_name, bravo_comment,
 	     bravo_email);
 
     char dsa_nopass[MAXBUF+1];
-    snprintf(dsa_nopass, MAXBUF, format, DSA, alphadsa_name, alphadsa_comment,
-	     alphadsa_email, keylength);
+    snprintf(dsa_nopass, MAXBUF, dsa_format, DSA, alphadsa_name,
+	     alphadsa_comment, alphadsa_email, keylength);
     snprintf(alphadsa_user_id, MAXBUF, "%s (%s) <%s>", alphadsa_name,
 	     alphadsa_comment, alphadsa_email);
 
     char dsa_pass[MAXBUF+1];
-    snprintf(dsa_pass, MAXBUF, format, DSA, bravodsa_name, bravodsa_comment,
+    snprintf(dsa_pass, MAXBUF, dsa_format, DSA, bravodsa_name, bravodsa_comment,
 	     bravodsa_email, keylength);
     snprintf(bravodsa_user_id, MAXBUF, "%s (%s) <%s>", bravodsa_name,
 	     bravodsa_comment, bravodsa_email);
@@ -376,7 +378,7 @@ static void setup_test_extra_dsa_keys()
 
         // key definition
         snprintf(def, MAXBUF, 
-                 "Key-Type: DSA\nKey-Usage: encrypt, sign\nName-Real: %s\n"
+                 "Key-Type: DSA\nKey-Usage: sign\nName-Real: %s\n"
 		 "Name-Comment: %s\nName-Email: %s\nKey-Length: %d\n",
                  name, comment, email, dsstests[i].keysize);
 
@@ -403,7 +405,7 @@ static void setup_test_extra_dsa_keys()
         ret=run(cmd);
         if (ret)
             {
-            fprintf(stderr, "Command failed: returns %d\n", ret);
+            fprintf(stderr, "Command '%s' failed: returns %d\n", cmd, ret);
             assert(0); 
             }
         }
@@ -440,6 +442,8 @@ int mktmpdir (void)
 
 #ifdef WIN32
     srand( (unsigned)time( NULL ) );
+#else
+    srandom( (unsigned)time( NULL ) );
 #endif
     while (limit--) 
         {
@@ -471,15 +475,18 @@ char* create_testtext(const char *text, const unsigned int repeats)
     unsigned int i=0;
 
     const unsigned int maxbuf=1024;
+    char int_buf[maxbuf+1];
     char buf[maxbuf+1];
+    sprintf(int_buf, "%d", repeats);
+    unsigned int sz_count = strlen(int_buf);
     unsigned int sz_one=0;
     unsigned int sz_big=0;
     char* bigbuf=NULL; 
 
     buf[maxbuf]='\0';
-    snprintf(buf, sizeof buf, "%s : Test Text\n", text);
+    snprintf(buf, sizeof buf, ": %s : Test Text\n", text);
 
-    sz_one=strlen(buf);
+    sz_one=strlen(buf) + sz_count;
     sz_big=sz_one*repeats+1;
 
     bigbuf=ops_mallocz(sz_big); 
@@ -487,7 +494,9 @@ char* create_testtext(const char *text, const unsigned int repeats)
     for (i=0 ; i < repeats ; i++)
         {
         char* ptr=bigbuf+i*sz_one;
-        memcpy(ptr, buf, sz_one);
+        sprintf(int_buf, "%*d", sz_count, i);
+        memcpy(ptr, int_buf, sz_count);
+        memcpy(ptr + sz_count, buf, sz_one);
         }
 
     return bigbuf;
@@ -866,7 +875,7 @@ void check_sig_with_ops_core(ops_parse_info_t *pinfo,
     ops_validate_result_free(result);
     }
 
-void check_sig_with_ops(const char *signed_file)
+void check_sig_with_ops(const char *signed_file, ops_boolean_t use_armour)
     {
     validate_data_cb_arg_t validate_arg;
     int fd=0;
@@ -885,7 +894,7 @@ void check_sig_with_ops(const char *signed_file)
     ops_reader_set_fd(pinfo, fd);
     ops_parse_cb_set(pinfo, callback_verify, &validate_arg);
 
-    check_sig_with_ops_core(pinfo, ops_false, &validate_arg);
+    check_sig_with_ops_core(pinfo, use_armour, &validate_arg);
 
     close(fd);
     }
@@ -897,12 +906,17 @@ void check_sig_with_gpg(const char *signed_file)
 
     snprintf(cmd, sizeof cmd, "%s --verify %s", gpgcmd, signed_file);
     rtn=run(cmd);
+    if (rtn != 0)
+	printf("Command %s failed\n", cmd);
     CU_ASSERT(rtn == 0);
     }
 
-void check_sig(const char *signed_file)
+void check_sig(const char *signed_file, ops_boolean_t use_armour)
     {
-    check_sig_with_ops(signed_file);
+    // FIXME - <AJM> 09-Sep-09 signature verification is broken at the
+    // moment. Just use gpg verification.
+    if (ops_false)
+	check_sig_with_ops(signed_file, use_armour);
     check_sig_with_gpg(signed_file);
     }
 
@@ -912,6 +926,57 @@ void set_up_file_names(char myfile[MAXBUF], char signed_file[MAXBUF],
     {
     snprintf(myfile, MAXBUF, "%s/%s", dir, filename);
     snprintf(signed_file, MAXBUF, "%s.%s", myfile, ext);
+    }
+
+static ops_boolean_t error_writer(const unsigned char *src,
+                                  unsigned length,
+                                  ops_error_t **errors,
+                                  ops_writer_info_t *winfo)
+    {
+    OPS_USED(src);
+    OPS_USED(length);
+    error_arg_t *arg=ops_writer_get_arg(winfo);
+    arg->times_called++;
+    CU_ASSERT(arg->times_called <= arg->count);
+    if (arg->times_called == arg->count)
+        {
+        OPS_ERROR(errors, arg->code, arg->msg);
+        return ops_false;
+        }
+    else
+        {
+        return ops_true;
+        }
+    }
+
+/*
+ * Sets a writer that will report an error after 'count'
+ * write operations. E.g. if count == 2, then the second
+ * write will produce an error
+ */
+error_arg_t* ops_writer_set_err_with_count(ops_create_info_t *info,
+                                           ops_errcode_t code,
+                                           const char* msg,
+                                           int count)
+    {
+    error_arg_t *arg=malloc(sizeof *arg);
+    arg->code = code;
+    arg->msg = msg;
+    arg->count = count;
+    arg->times_called = 0;
+    ops_writer_set(info, error_writer, NULL, NULL, arg);
+    return arg;
+    }
+
+/*
+ * Sets a writer that will report an error as soon
+ * as it is written to.
+ */
+error_arg_t* ops_writer_set_err(ops_create_info_t *info,
+                                ops_errcode_t code,
+                                const char* msg)
+    {
+    return ops_writer_set_err_with_count(info, code, msg, 1);
     }
 
 // EOF

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2008 Nominet UK (www.nic.uk)
+ * Copyright (c) 2005-2009 Nominet UK (www.nic.uk)
  * All rights reserved.
  * Contributors: Ben Laurie, Rachel Willmer. The Contributors have asserted
  * their moral rights under the UK Copyright Design and Patents Act 1988 to
@@ -19,16 +19,17 @@
  * limitations under the License.
  */
 
-/** \file
- */
+#ifndef __OPS_LITERAL_H__
+#define __OPS_LITERAL_H__
 
-#include "packet-parse.h"
 
-int ops_decompress(ops_region_t *region,ops_parse_info_t *parse_info,
-		   ops_compression_type_t type);
+ops_boolean_t write_literal_header(ops_create_info_t *info,
+                                   void *header_data);
 
-ops_boolean_t ops_write_compressed(const unsigned char* data,
-                                   const unsigned int len,
-                                   ops_create_info_t *cinfo);
+void ops_writer_push_literal(ops_create_info_t *info);
+void ops_writer_push_literal_with_opts(ops_create_info_t *info,
+				       unsigned int buf_size);
 
-void ops_writer_push_compressed(ops_create_info_t *cinfo);
+#endif /* __OPS_LITERAL_H__ */
+
+// EOF

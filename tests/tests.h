@@ -44,7 +44,8 @@
 
 #include "CUnit/Basic.h"
 
-CU_pSuite suite_crypto();
+extern CU_pSuite suite_crypto();
+extern CU_pSuite suite_writers();
 extern CU_pSuite suite_cmdline();
 extern CU_pSuite suite_packet_types();
 extern CU_pSuite suite_rsa_decrypt();
@@ -183,12 +184,29 @@ struct validate_data_cb_arg;
 void check_sig_with_ops_core(ops_parse_info_t *pinfo,
 			     ops_boolean_t use_armour,
 			     struct validate_data_cb_arg *validate_arg);
-void check_sig(const char *signed_file);
+void check_sig(const char *signed_file, ops_boolean_t use_armour);
 
 void set_up_file_names(char myfile[MAXBUF], char signed_file[MAXBUF],
 		       const char *filename, const char *ext);
 
+extern ops_memory_t* copy_partial_packet(ops_memory_t *input);
 
 
+typedef struct
+    {
+    const char *msg;
+    ops_errcode_t code;
+    int times_called;
+    int count;
+    } error_arg_t;
+
+error_arg_t* ops_writer_set_err_with_count(ops_create_info_t *info,
+                                           ops_errcode_t code,
+                                           const char* msg,
+                                           int count);
+
+error_arg_t* ops_writer_set_err(ops_create_info_t *info,
+                                ops_errcode_t code,
+                                const char* msg);
 #endif
 

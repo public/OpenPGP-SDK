@@ -42,7 +42,7 @@
 
 #define MAXBUF 1024
 
-static const char* usage="%s --list-keys | --list-packets | --encrypt | --decrypt | --sign | --clearsign | --verify [--keyring=<keyring>] [--userid=<userid>] [--file=<filename>] [--armour] [--homedir=<homedir>]\n";
+static const char* usage="%s --list-keys | --list-packets | --encrypt | --decrypt | --sign | --clearsign | --verify [--keyring=<keyring>] [--userid=<userid>] [--file=<filename>] [--out=<outputfile>] [--armour] [--homedir=<homedir>]\n";
 static const char* usage_list_keys="%s --list-keys [--keyring=<keyring>]\n";
 static const char* usage_find_key="%s --find-key --userid=<userid> [--keyring=<keyring>] \n";
 static const char* usage_export_key="%s --export-key --userid=<userid> [--keyring=<keyring>] \n";
@@ -77,6 +77,7 @@ KEYRING,
 USERID,
 PASSPHRASE,
 FILENAME,
+OUTPUT_FILENAME,
 ARMOUR,
 HOMEDIR,
 NUMBITS
@@ -104,6 +105,7 @@ static struct option long_options[]=
     { "userid", required_argument, NULL, USERID },
     { "passphrase", required_argument, NULL, PASSPHRASE },
     { "file", required_argument, NULL, FILENAME },
+    { "out", required_argument, NULL, OUTPUT_FILENAME },
     { "homedir", required_argument, NULL, HOMEDIR },
     { "armour", no_argument, NULL, ARMOUR },
     { "numbits", required_argument, NULL, NUMBITS },
@@ -114,6 +116,20 @@ void print_usage(const char* usage, char* pname)
     {
     fprintf(stderr, "\nUsage: ");
     fprintf(stderr, usage, basename(pname));
+    }
+
+
+void get_output_filename(char outputfilename[MAXBUF+1], const char* base_file, const char* output_file, int armour)
+    {
+      if (strcmp(output_file, "") == 0)
+          {
+          const char* suffix = armour ? ".asc" : ".gpg";
+          snprintf(outputfilename,MAXBUF,"%s%s", base_file, suffix);
+          }
+      else
+          {
+          snprintf(outputfilename,MAXBUF,"%s", output_file);
+          }
     }
 
 int main(int argc, char **argv)
@@ -129,6 +145,7 @@ int main(int argc, char **argv)
     char opt_userid[MAXBUF+1]="";
     char opt_passphrase[MAXBUF+1]="";
     char opt_filename[MAXBUF+1]="";
+    char opt_output_filename[MAXBUF+1]="";
     char opt_homedir[MAXBUF+1]="";
 
     int got_homedir=0;
@@ -146,7 +163,6 @@ int main(int argc, char **argv)
     ops_keyring_t* secring=NULL;
     char secring_name[MAXBUF+1]="";
     const ops_keydata_t* keydata=NULL;
-    char *suffix=NULL;
     char *dir=NULL;
     char default_homedir[MAXBUF+1]="";
     ops_boolean_t overwrite=ops_true;
@@ -245,6 +261,11 @@ int main(int argc, char **argv)
             snprintf(opt_filename,MAXBUF,"%s",optarg);
             got_filename=1;
             break;
+
+      case OUTPUT_FILENAME:
+           assert(optarg);
+           snprintf(opt_output_filename,MAXBUF,"%s",optarg);
+           break;
             
         case ARMOUR:
             armour=1;
@@ -456,7 +477,6 @@ int main(int argc, char **argv)
             exit(-1);
             }
 
-        suffix=armour ? ".asc" : ".gpg";
         keydata=ops_keyring_find_key_by_userid(pubring,opt_userid);
         if (!keydata)
             {
@@ -466,7 +486,7 @@ int main(int argc, char **argv)
             }
 
         // outputfilename
-        snprintf(outputfilename,MAXBUF,"%s%s", opt_filename,suffix);
+        get_output_filename(outputfilename, opt_filename, opt_output_filename, armour);
 
         overwrite=ops_true;
         ops_encrypt_file(opt_filename, outputfilename, keydata, armour,overwrite);
@@ -502,9 +522,12 @@ int main(int argc, char **argv)
         skey=ops_decrypt_secret_key_from_data(keydata,opt_passphrase);
         assert(skey);
 
+        // outputfilename
+        get_output_filename(outputfilename, opt_filename, opt_output_filename, armour);
+
         // sign file
         overwrite=ops_true;
-        ops_sign_file(opt_filename, NULL, skey, armour, overwrite);
+        ops_sign_file(opt_filename, outputfilename, skey, armour, overwrite);
         break;
 
     case CLEARSIGN:
@@ -525,9 +548,12 @@ int main(int argc, char **argv)
         skey=ops_decrypt_secret_key_from_data(keydata,opt_passphrase);
         assert(skey);
 
+        // outputfilename
+        get_output_filename(outputfilename, opt_filename, opt_output_filename, armour);
+
         // sign file
         overwrite=ops_true;
-        ops_sign_file_as_cleartext(opt_filename, NULL, skey, overwrite);
+        ops_sign_file_as_cleartext(opt_filename, outputfilename, skey, overwrite);
         break;
 
     case VERIFY:

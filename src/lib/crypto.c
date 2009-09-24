@@ -19,7 +19,9 @@
  * limitations under the License.
  */
 
+#include <openpgpsdk/compress.h>
 #include <openpgpsdk/crypto.h>
+#include <openpgpsdk/literal.h>
 #include <openpgpsdk/random.h>
 #include <openpgpsdk/readerwriter.h>
 #include <openpgpsdk/streamwriter.h>
@@ -195,6 +197,7 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
 
     // Push the encrypted writer
     ops_writer_push_stream_encrypt_se_ip(cinfo, pub_key);
+    ops_writer_push_literal(cinfo);
 
     // Do the writing
 
@@ -218,6 +221,49 @@ ops_boolean_t ops_encrypt_file(const char* input_filename,
     ops_teardown_file_write(cinfo, fd_out);
 
     return ops_true;
+    }
+
+/**
+   \ingroup HighLevel_Crypto
+   Encrypt a compressed, signed stream.
+   \param cinfo the structure describing where the output will be written.
+   \param public_key the key used to encrypt the data
+   \param secret_key the key used to sign the data. If NULL, the data
+          will not be signed
+   \param compress If true, compress the stream before encrypting
+   \param use_armour Write armoured text, if set
+   \see ops_setup_file_write
+
+   Example Code:
+   \code
+    const char* filename = "armour_nocompress_sign.asc";
+    ops_create_info_t *info;
+    int fd = ops_setup_file_write(&info, filename, ops_true);
+    if (fd < 0) {
+      fprintf(stderr, "Cannot write to %s\n", filename);
+      return -1;
+    }
+    ops_encrypt_stream(info, public_key, secret_key, ops_false, ops_true);
+    ops_write(cleartext, strlen(cleartext), info);
+    ops_writer_close(info);
+    ops_create_info_delete(info);
+   \endcode
+*/
+extern void ops_encrypt_stream(ops_create_info_t* cinfo,
+                               const ops_keydata_t* public_key,
+                               const ops_secret_key_t* secret_key,
+                               const ops_boolean_t compress,
+                               const ops_boolean_t use_armour)
+    {
+    if (use_armour)
+	ops_writer_push_armoured_message(cinfo);
+    ops_writer_push_stream_encrypt_se_ip(cinfo, public_key);
+    if (compress)
+	ops_writer_push_compressed(cinfo);
+    if (secret_key != NULL)
+	ops_writer_push_signed(cinfo, OPS_SIG_BINARY, secret_key);
+    else
+	ops_writer_push_literal(cinfo);
     }
 
 /**

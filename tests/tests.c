@@ -33,9 +33,50 @@
 
 #include "tests.h"
 
-int main()
+static void list_suites()
     {
+    CU_pTestRegistry registry = CU_get_registry();
+    printf("There are %d suites\n", registry->uiNumberOfSuites);
+    CU_pSuite suite = registry->pSuite;
+    while (suite != NULL)
+        {
+        printf("  %s\n", suite->pName);
+        suite = suite->pNext;
+        }
+    }
 
+static CU_ErrorCode run_suite(const char *name)
+    {
+    CU_pTestRegistry registry = CU_get_registry();
+    CU_pSuite suite = registry->pSuite;
+    while (suite != NULL)
+        {
+        if (strcmp(name, suite->pName) == 0)
+            {
+              printf("Running \"%s\"\n", suite->pName);
+              // CUnit will return an error if suite != NULL. Doh...
+              fprintf(stderr, "But this won't work as CUnit is currently broken...");
+              return CU_basic_run_suite(suite);
+            }
+        suite = suite->pNext;
+        }
+    fprintf(stderr, "Cannot find suite \"%s\"\n", name);
+    return CUE_NOSUITE;
+    }
+
+int main(int argc, char **argv)
+    {
+    if (argc > 1)
+        {
+          if (strncasecmp(argv[1], "-h", 2) == 0 ||
+              strncasecmp(argv[1], "--h", 3) == 0)
+              {
+              printf("Useage: tests <testsuite name> [<testsuite name> ...]\n");
+              printf("        tests -l to list test suites\n");
+              return 0;
+              }
+        }
+        
     setup();
 
     if (CUE_SUCCESS != CU_initialize_registry())
@@ -112,10 +153,35 @@ int main()
         CU_cleanup_registry();
         return CU_get_error();
         }
-
     // Run tests
     CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
+
+    if (argc > 1)
+        {
+        if (strncasecmp(argv[1], "-l", 2) == 0 ||
+            strncasecmp(argv[1], "--l", 3) == 0)
+            {
+            list_suites();
+            return 0;
+            }
+        else
+            {
+              int i;
+              CU_ErrorCode error = CUE_SUCCESS;
+              for (i = 1; i < argc; i++)
+                  {
+                    if (error == CUE_SUCCESS)
+                        {
+                        error = run_suite(argv[i]);
+                        printf("Error = %d %s\n", error, CU_get_error_msg());
+                        }
+                  }
+            }
+        }
+    else
+        {
+        CU_basic_run_tests();
+        }
     cleanup();
     CU_cleanup_registry();
 

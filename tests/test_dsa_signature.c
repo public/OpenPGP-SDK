@@ -113,7 +113,7 @@ static void test_dsa_signature_clearsign_file(const char *filename,
     ops_sign_file_as_cleartext(myfile, NULL, skey, overwrite);
 
     // validate output
-    check_sig(signed_file);
+    check_sig(signed_file, ops_true);
     }
 
 static void test_dsa_signature_clearsign_buf(const char *filename,
@@ -144,7 +144,7 @@ static void test_dsa_signature_clearsign_buf(const char *filename,
 			    ops_memory_get_length(output), overwrite);
 
     // validate output
-    check_sig(signed_file);
+    check_sig(signed_file, ops_true);
     }
 
 static void test_dsa_signature_sign(const int use_armour, const char *filename,
@@ -160,7 +160,7 @@ static void test_dsa_signature_sign(const int use_armour, const char *filename,
     ops_sign_file(myfile, signed_file, skey, use_armour, overwrite);
 
     // validate output
-    check_sig(signed_file);
+    check_sig(signed_file, ops_true);
     }
 
 static void test_dsa_signature_sign_memory(const int use_armour,

@@ -87,6 +87,7 @@ void ops_writer_push_encrypt_se_ip(ops_create_info_t *cinfo,
     ops_writer_push(cinfo, encrypt_se_ip_writer, NULL, encrypt_se_ip_destroyer,
 		    arg);
     // tidy up
+    ops_pk_session_key_free(encrypted_pk_session_key);
     free(encrypted_pk_session_key);
     free(iv);
     }
