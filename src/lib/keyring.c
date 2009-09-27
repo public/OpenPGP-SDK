@@ -741,6 +741,7 @@ ops_boolean_t ops_keyring_read_from_mem(ops_keyring_t *keyring, const ops_boolea
 void ops_keyring_free(ops_keyring_t *keyring)
     {
     int i;
+
     for (i = 0; i < keyring->nkeys; i++)
         keydata_internal_free(&keyring->keys[i]);
 

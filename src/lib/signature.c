@@ -1345,42 +1345,42 @@ typedef struct {
 static ops_boolean_t stream_signature_writer(const unsigned char *src,
                                              unsigned length,
                                              ops_error_t **errors,
-                                             ops_writer_info_t *winfo) {
-  signature_arg_t* arg = ops_writer_get_arg(winfo);
-  // Add the input data to the hash. At the end, we will use the hash
-  // to generate a signature packet.
-  ops_hash_t* hash = ops_signature_get_hash(arg->signature);
-  hash->add(hash, src, length);
+                                             ops_writer_info_t *winfo)
+    {
+    signature_arg_t* arg = ops_writer_get_arg(winfo);
+    // Add the input data to the hash. At the end, we will use the hash
+    // to generate a signature packet.
+    ops_hash_t* hash = ops_signature_get_hash(arg->signature);
+    hash->add(hash, src, length);
 
-  
-  return ops_stacked_write(src, length, errors, winfo);
-}
+    return ops_stacked_write(src, length, errors, winfo);
+    }
 
 static ops_boolean_t stream_signature_write_trailer(ops_create_info_t *cinfo,
-                                                    void *data) {
+                                                    void *data)
+    {
+    signature_arg_t* arg = data;
+    unsigned char keyid[OPS_KEY_ID_SIZE];
 
-  signature_arg_t* arg = data;
-  // add subpackets to signature
-  // - creation time
-  // - key id
+    // add subpackets to signature
+    // - creation time
+    // - key id
+    ops_signature_add_creation_time(arg->signature,time(NULL));
+    ops_keyid(keyid, &arg->skey->public_key);
+    ops_signature_add_issuer_key_id(arg->signature, keyid);
+    ops_signature_hashed_subpackets_end(arg->signature);
 
-  ops_signature_add_creation_time(arg->signature,time(NULL));
+    // write out signature
+    return ops_write_signature(arg->signature, &arg->skey->public_key,
+			       arg->skey, cinfo);
+    }
 
-  unsigned char keyid[OPS_KEY_ID_SIZE];
-  ops_keyid(keyid, &arg->skey->public_key);
-  ops_signature_add_issuer_key_id(arg->signature, keyid);
-  ops_signature_hashed_subpackets_end(arg->signature);
-
-  // write out signature
-  return ops_write_signature(arg->signature, &arg->skey->public_key,
-                             arg->skey, cinfo);
-}
-
-static void stream_signature_destroyer(ops_writer_info_t *winfo) {
-  signature_arg_t* arg = ops_writer_get_arg(winfo);
-  ops_create_signature_delete(arg->signature);
-  free(arg);
-}
+static void stream_signature_destroyer(ops_writer_info_t *winfo)
+    {
+    signature_arg_t* arg = ops_writer_get_arg(winfo);
+    ops_create_signature_delete(arg->signature);
+    free(arg);
+    }
 
 /**
 \ingroup Core_WritePackets
@@ -1398,38 +1398,37 @@ output, and it will be encoded as a literal packet and signed.
 */
 ops_boolean_t ops_writer_push_signed(ops_create_info_t *cinfo,
                                      const ops_sig_type_t sig_type,
-                                     const ops_secret_key_t *skey) {
+                                     const ops_secret_key_t *skey)
+    {
+    // \todo allow choice of hash algorithams
+    // enforce use of SHA1 for now
 
-  // \todo allow choice of hash algorithams
-  // enforce use of SHA1 for now
+    // Create arg to be used with this writer
+    // Remember to free this in the destroyer
+    signature_arg_t *signature_arg = ops_mallocz(sizeof *signature_arg);
+    signature_arg->signature = ops_create_signature_new();
+    signature_arg->hash_alg = OPS_HASH_SHA1;
+    signature_arg->skey = skey;
+    signature_arg->sig_type = sig_type;
+    ops_signature_start_message_signature(signature_arg->signature,
+					  signature_arg->skey,
+					  signature_arg->hash_alg,
+					  signature_arg->sig_type);
 
-  // Create arg to be used with this writer
-  // Remember to free this in the destroyer
-  signature_arg_t *signature_arg = ops_mallocz(sizeof *signature_arg);
-  signature_arg->signature = ops_create_signature_new();
-  signature_arg->hash_alg = OPS_HASH_SHA1;
-  signature_arg->skey = skey;
-  signature_arg->sig_type = sig_type;
-  ops_signature_start_message_signature(signature_arg->signature,
-                                        signature_arg->skey,
-                                        signature_arg->hash_alg,
-                                        signature_arg->sig_type);
+    if (!ops_write_one_pass_sig(signature_arg->skey,
+				signature_arg->hash_alg,
+				signature_arg->sig_type,
+				cinfo))
+	return ops_false;
 
-  if (!ops_write_one_pass_sig(signature_arg->skey,
-                              signature_arg->hash_alg,
-                              signature_arg->sig_type,
-                              cinfo)) {
-    return ops_false;
-  }
-
-  ops_writer_push_partial_with_trailer(0, cinfo, OPS_PTAG_CT_LITERAL_DATA,
-                                       write_literal_header, NULL,
-                                       stream_signature_write_trailer,
-                                       signature_arg);
-  // And push writer on stack
-  ops_writer_push(cinfo, stream_signature_writer, NULL,
-                  stream_signature_destroyer,signature_arg);
-  return ops_true;
-}
+    ops_writer_push_partial_with_trailer(0, cinfo, OPS_PTAG_CT_LITERAL_DATA,
+					 write_literal_header, NULL,
+					 stream_signature_write_trailer,
+					 signature_arg);
+    // And push writer on stack
+    ops_writer_push(cinfo, stream_signature_writer, NULL,
+		    stream_signature_destroyer,signature_arg);
+    return ops_true;
+    }
 
 // EOF

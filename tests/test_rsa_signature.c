@@ -160,7 +160,8 @@ static void test_rsa_signature_sign(const int use_armour, const char *filename,
     check_sig(signed_file, use_armour);
     }
 
-static void test_rsa_signature_sign_stream(const int use_armour, const char *filename,
+static void test_rsa_signature_sign_stream(const int use_armour,
+					   const char *filename,
                                            const ops_secret_key_t *skey)
     {
     char myfile[MAXBUF];
@@ -183,7 +184,7 @@ static void test_rsa_signature_sign_stream(const int use_armour, const char *fil
         ssize_t n = read(input_fd, buffer, MAXBUF);
         CU_ASSERT(n >= 0);
         if (n == 0)
-          break;
+	    break;
         ops_write(buffer, n, info);
         }
     close(input_fd);
