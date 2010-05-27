@@ -1,6 +1,9 @@
 Changes since V0.9
 ==================
 
+  *) Various warnings from gcc 4.6 fixed.
+     [Brian Lewis <brian@lorf.org>]
+
   *) Lovely rejigging and extra implementation to handle partial
      length encoding and signatures in a much cleaner way.
      [Alasdair Mackintosh <alasdair@google.com>]
