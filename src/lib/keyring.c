@@ -323,15 +323,11 @@ const unsigned char* ops_get_user_id(const ops_keydata_t *key, unsigned index)
 
 ops_boolean_t ops_is_key_supported(const ops_keydata_t *keydata)
     {
-    if ( keydata->type == OPS_PTAG_CT_PUBLIC_KEY ) {
-        if ( keydata->key.pkey.algorithm == OPS_PKA_RSA ) {
+    if(keydata->type == OPS_PTAG_CT_PUBLIC_KEY)
+	{
+        if(keydata->key.pkey.algorithm == OPS_PKA_RSA)
             return ops_true;
         }
-    } else if ( keydata->type == OPS_PTAG_CT_PUBLIC_KEY ) {
-        if ( keydata->key.skey.algorithm == OPS_PKA_RSA ) {
-            return ops_true;
-        }
-    }
     return ops_false;
     }
 
