@@ -496,7 +496,7 @@ static void print_text_breakdown( ops_text_t *text)
     for(i=0 ; i<text->known.used ; i++)
 	{
 	print_indent();
-	printf(prefix);
+	fputs(prefix,stdout);
 	printf("%s\n",text->known.strings[i]);
 	}
 
@@ -513,7 +513,7 @@ static void print_text_breakdown( ops_text_t *text)
     for( i=0; i < text->unknown.used; i++) 
 	{
 	print_indent();
-	printf(prefix);
+	fputs(prefix,stdout);
 	printf("%s\n",text->unknown.strings[i]);
 	}
 	
