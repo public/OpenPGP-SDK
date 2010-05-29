@@ -151,9 +151,7 @@ int main(int argc, char **argv)
     int got_homedir=0;
     int got_keyring=0;
     int got_userid=0;
-    int got_passphrase=0;
     int got_filename=0;
-    int got_numbits=0;
     int numbits=DEFAULT_NUMBITS;
     char outputfilename[MAXBUF+1]="";
     ops_keyring_t* myring=NULL;
@@ -253,7 +251,6 @@ int main(int argc, char **argv)
         case PASSPHRASE:
             assert(optarg);
             snprintf(opt_passphrase,MAXBUF,"%s",optarg);
-            got_passphrase=1;
             break;
             
         case FILENAME:
@@ -281,7 +278,6 @@ int main(int argc, char **argv)
         case NUMBITS:
             assert(optarg);
             numbits=atoi(optarg);
-            got_numbits=1;
             break;
 
         default:

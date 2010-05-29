@@ -60,8 +60,6 @@ void test_crypt_mpi(void)
     unsigned char in[BSZ];
     unsigned char out[BSZ];
 
-    ops_boolean_t rtn;
-    
     ops_pk_session_key_t *encrypted_pk_session_key=NULL;
 
     encrypted_pk_session_key=ops_create_pk_session_key(pubkey);
@@ -69,7 +67,9 @@ void test_crypt_mpi(void)
     // the encrypted_mpi is now in session_key->parameters.rsa.encrypted_m
 
     // decrypt it
-    rtn=ops_decrypt_and_unencode_mpi(out,BSZ, encrypted_pk_session_key->parameters.rsa.encrypted_m, &seckey->key.skey);
+    ops_decrypt_and_unencode_mpi(out, BSZ,
+			  encrypted_pk_session_key->parameters.rsa.encrypted_m,
+				 &seckey->key.skey);
 
     // is it the same?
     CU_ASSERT(memcmp((char *)in,(char *)out,sizeof(in))==0);

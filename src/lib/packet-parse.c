@@ -2161,7 +2161,6 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     int ret=1;
     ops_region_t encregion;
     ops_region_t *saved_region=NULL;
-    size_t checksum_length=2;
     ops_hash_t checkhash;
     int blocksize;
     ops_boolean_t crypted;
@@ -2186,8 +2185,6 @@ static int parse_secret_key(ops_region_t *region,ops_parse_info_t *pinfo)
     if(!limited_read(c,1,region,pinfo))
 	return 0;
     C.secret_key.s2k_usage=c[0];
-    if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
-	checksum_length=20;
 
     if(C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED
        || C.secret_key.s2k_usage == OPS_S2KU_ENCRYPTED_AND_HASHED)
@@ -3054,8 +3051,7 @@ int ops_parse(ops_parse_info_t *pinfo)
 
 int ops_parse_and_print_errors(ops_parse_info_t *pinfo)
     {
-    int r;
-    r=ops_parse(pinfo);
+    ops_parse(pinfo);
     ops_print_errors(pinfo->errors);
     return pinfo->errors ? 0 : 1;
     }

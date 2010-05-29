@@ -362,7 +362,8 @@ typedef struct
     ops_public_key_t		public_key;
     ops_s2k_usage_t		s2k_usage;
     ops_s2k_specifier_t		s2k_specifier;
-    ops_public_key_algorithm_t	algorithm;
+    ops_symmetric_algorithm_t	algorithm;  // the algorithm used to encrypt
+    					    // the key
     ops_hash_algorithm_t	hash_algorithm;
     unsigned char		salt[OPS_SALT_SIZE];
     unsigned			octet_count;

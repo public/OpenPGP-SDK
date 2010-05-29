@@ -107,11 +107,10 @@ ops_boolean_t encode_hash_buf(const unsigned char *M, size_t mLen,
     // implementation of EMSA-PKCS1-v1_5, as defined in OpenPGP RFC
 
     unsigned i;
-
-    int n=0;
+    int n;
     ops_hash_t hash;
     int hash_sz=0;
-    int encoded_hash_sz=0;
+    //    int encoded_hash_sz=0;
     int prefix_sz=0;
     unsigned padding_sz=0;
     unsigned encoded_msg_sz=0;
@@ -135,7 +134,7 @@ ops_boolean_t encode_hash_buf(const unsigned char *M, size_t mLen,
         prefix=prefix_sha1; 
         prefix_sz=sizeof prefix_sha1;
         hash_sz=OPS_SHA1_HASH_SIZE;
-        encoded_hash_sz=hash_sz+prefix_sz;
+	//        encoded_hash_sz=hash_sz+prefix_sz;
         // \todo why is Ben using a PS size of 90 in rsa_sign?
         // (keysize-hashsize-1-2)
         padding_sz=90;
@@ -165,6 +164,7 @@ ops_boolean_t encode_hash_buf(const unsigned char *M, size_t mLen,
     // finally, write out hashed result
     
     n=hash.finish(&hash, &EM[i]);
+    assert(n == hash_sz);
 
     encoded_msg_sz=i+hash_sz-1;
 

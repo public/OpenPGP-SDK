@@ -98,8 +98,6 @@ static void verify_keypair(ops_boolean_t armoured)
     ops_validate_result_t* result=NULL;
     ops_keyring_t pub_keyring;
     ops_keyring_t sec_keyring;
-    const ops_public_key_t* pub_key=NULL;
-    const ops_secret_key_t* sec_key=NULL;
     static const unsigned char pp[]="hello";
     char filename[MAXBUF+1];
     int fd=0;
@@ -118,8 +116,8 @@ static void verify_keypair(ops_boolean_t armoured)
 
     keydata=ops_rsa_create_selfsigned_keypair(1024, 65537, &uid);
     CU_ASSERT(keydata != NULL);
-    pub_key=ops_get_public_key_from_data(keydata);
-    sec_key=ops_get_secret_key_from_data(keydata);
+    ops_get_public_key_from_data(keydata);
+    ops_get_secret_key_from_data(keydata);
     keyid=ops_get_key_id(keydata);
 
     /*
